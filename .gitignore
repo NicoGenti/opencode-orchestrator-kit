@@ -1,0 +1,52 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build output (Vite static site — uploaded by CI, never committed)
+site/
+.vite/
+dist/
+build/
+out/
+
+# Temp / cache
+.tmp/
+.temp/
+.cache/
+.eslintcache
+
+# Bun
+bun.lockb
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Environment / local secrets
+.env
+.env.*
+!.env.example
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+
+# Coverage
+coverage/
+
+# Bun runtime caches
+.bun/
+
+# Internal orchestration state (session memory + drafts)
+.context/
+plan/
+.opencode/

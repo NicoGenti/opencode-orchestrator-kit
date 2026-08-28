@@ -1,0 +1,21 @@
+# Generated artifact directories
+site/
+dist/
+build/
+out/
+.vite/
+
+# Local scaffolding and session memory
+.context/
+.tmp/
+.temp/
+.cache/
+
+# Legacy kit files preserved byte-for-byte from the imported repository.
+# These predate the static-site import and MUST NOT be reformatted.
+AGENTS.md
+CONTRIBUTING.md
+LICENSE.txt
+agents/
+skills/
+docs/
