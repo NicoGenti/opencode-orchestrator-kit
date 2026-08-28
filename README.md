@@ -14,6 +14,22 @@ It **self-bootstraps on any repository**, known or unknown: the `profiler` agent
 
 Works with plain `opencode` CLI — no plugin required. Optional notes for [OpenCode Studio](https://github.com/Microck/opencode-studio) users live in `docs/SETUP-OPENCODE-STUDIO.md`.
 
+## 🌐 Project site
+
+The kit ships a static landing page (Vite + React + Tailwind) built with **Bun 1.2.21** and deployed to GitHub Pages:
+
+**https://nicogenti.github.io/opencode-orchestrator-kit/**
+
+Local setup and build:
+
+```bash
+bun install --frozen-lockfile   # install pinned deps using the tracked bun.lock
+bun run dev:docs                # local dev server
+bun run build:docs              # produces ./site (generated artifact — gitignored)
+```
+
+The `site/` directory is a **generated artifact**: it is ignored by Git and uploaded by CI on every push to `main` via `.github/workflows/deploy.yml`. Never commit its contents — rebuild with `bun run build:docs` instead.
+
 ## ⚙️ How it works
 
 The orchestrator never touches application code. It only classifies, delegates, and checkpoints.
@@ -27,13 +43,13 @@ The orchestrator never touches application code. It only classifies, delegates, 
 
 > "Add refresh-token rotation to the auth service."
 
-| Step | Agent | What happens |
-|---|---|---|
-| 1 | `explorer` | Reads the current auth flow, read-only. |
-| 2 | `planner` | Turns findings into a phased plan in `plan/draft/`. |
-| 3 | `developer-fixer` | Implements **one phase at a time**, fresh context each time — no compounding drift across a long session. |
-| 4 | `test-engineer` | Writes and runs tests for the new rotation logic. |
-| 5 | `security` | Reviews the auth-sensitive change before it reaches `plan/complete/`. |
+| Step | Agent             | What happens                                                                                              |
+| ---- | ----------------- | --------------------------------------------------------------------------------------------------------- |
+| 1    | `explorer`        | Reads the current auth flow, read-only.                                                                   |
+| 2    | `planner`         | Turns findings into a phased plan in `plan/draft/`.                                                       |
+| 3    | `developer-fixer` | Implements **one phase at a time**, fresh context each time — no compounding drift across a long session. |
+| 4    | `test-engineer`   | Writes and runs tests for the new rotation logic.                                                         |
+| 5    | `security`        | Reviews the auth-sensitive change before it reaches `plan/complete/`.                                     |
 
 The orchestrator itself never edits `auth.ts` — it only routes, checkpoints, and moves the plan file across the kanban.
 
@@ -46,19 +62,19 @@ The orchestrator itself never edits `auth.ts` — it only routes, checkpoints, a
 
 ## 👥 Agent roster
 
-| Agent | Role | Notes |
-|---|---|---|
-| 🧭 `orchestrator` | Routes every request, never executes | Only agent allowed to touch `.context/*` and move `plan/*` files |
-| 🩺 `profiler` | Repo bootstrap: stack/CI detection, memory + plan scaffolding | Runs once per repo, idempotent |
-| 🔎 `explorer` | Codebase/file/symbol research | Read-only |
-| 📚 `librarian` | Docs, remote examples, repo history | Read-only |
-| 🔮 `oracle` | Architecture/design/strategy advice | Read-only |
-| 🗺️ `planner` | Turns exploration into phased plans | Writes to `plan/draft/` only |
-| 🔧 `developer-fixer` | Implementation, TDD, single-phase execution | Follows the 9-section task spec |
-| 🧪 `test-engineer` | Tests, coverage, reproduction | |
-| 🛡️ `code-reviewer` / `security` | Review passes | Split by concern, not duplicated |
-| 🏗️ `build-helper` / `npm-helper` / `deploy-helper` / `pc-doctor` | Toolchain/CI/environment triage | Scoped by failure type |
-| ✍️ `writer` | Documentation generation | |
+| Agent                                                            | Role                                                          | Notes                                                            |
+| ---------------------------------------------------------------- | ------------------------------------------------------------- | ---------------------------------------------------------------- |
+| 🧭 `orchestrator`                                                | Routes every request, never executes                          | Only agent allowed to touch `.context/*` and move `plan/*` files |
+| 🩺 `profiler`                                                    | Repo bootstrap: stack/CI detection, memory + plan scaffolding | Runs once per repo, idempotent                                   |
+| 🔎 `explorer`                                                    | Codebase/file/symbol research                                 | Read-only                                                        |
+| 📚 `librarian`                                                   | Docs, remote examples, repo history                           | Read-only                                                        |
+| 🔮 `oracle`                                                      | Architecture/design/strategy advice                           | Read-only                                                        |
+| 🗺️ `planner`                                                     | Turns exploration into phased plans                           | Writes to `plan/draft/` only                                     |
+| 🔧 `developer-fixer`                                             | Implementation, TDD, single-phase execution                   | Follows the 9-section task spec                                  |
+| 🧪 `test-engineer`                                               | Tests, coverage, reproduction                                 |                                                                  |
+| 🛡️ `code-reviewer` / `security`                                  | Review passes                                                 | Split by concern, not duplicated                                 |
+| 🏗️ `build-helper` / `npm-helper` / `deploy-helper` / `pc-doctor` | Toolchain/CI/environment triage                               | Scoped by failure type                                           |
+| ✍️ `writer`                                                      | Documentation generation                                      |                                                                  |
 
 Full contracts, permissions, and model fallbacks are defined in each `agents/*.md` file and summarized in `AGENTS.md`.
 

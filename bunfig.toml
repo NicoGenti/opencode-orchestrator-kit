@@ -1,0 +1,16 @@
+# Bun configuration for the opencode-orchestrator-kit static site.
+#
+# This file intentionally keeps only registry and install-mode settings that
+# are required for a reproducible CI build. No package exclusions are
+# configured here; the dependency closure in package.json is the single
+# source of truth for what gets installed.
+
+[install]
+# Pin the registry so frozen installs in CI resolve against the same index.
+registry = "https://registry.npmjs.org/"
+
+[install.cache]
+# Disable the shared global cache for frozen installs to make lockfile
+# resolution fully deterministic across machines and CI runners.
+disable = false
+disableManifest = true
