@@ -14,67 +14,61 @@ It **self-bootstraps on any repository**, known or unknown: the `profiler` agent
 
 Works with plain `opencode` CLI — no plugin required. Optional notes for [OpenCode Studio](https://github.com/Microck/opencode-studio) users live in `docs/SETUP-OPENCODE-STUDIO.md`.
 
-## 🌐 Project site
-
-The kit ships a static landing page (Vite + React + Tailwind) built with **Bun 1.2.21** and deployed to GitHub Pages:
-
-**https://nicogenti.github.io/opencode-orchestrator-kit/**
-
-Local setup and build:
-
-```bash
-bun install --frozen-lockfile   # install pinned deps using the tracked bun.lock
-bun run dev:docs                # local dev server
-bun run build:docs              # produces ./site (generated artifact — gitignored)
-```
-
-The `site/` directory is a **generated artifact**: it is ignored by Git and uploaded by CI on every push to `main` via `.github/workflows/deploy.yml`. Never commit its contents — rebuild with `bun run build:docs` instead.
-
 ## ⚙️ How it works
 
 The orchestrator never touches application code. It only classifies, delegates, and checkpoints.
 
 1. 🔎 **Bootstrap** — `profiler` fingerprints the repo (stack, CI, structure) and scaffolds `.context/` and `plan/` on first run.
 2. 🧭 **Route** — the orchestrator reads the request and session memory, then picks the most specific specialist (or a small parallel/sequential subtask set).
-3. 🛠️ **Delegate** — each specialist gets a precise, RFC-2119-worded 9-section task spec (Goal, Success Criteria, Scope, Safety, Inputs, Outputs, Test Plan, Verification, Edge Cases) — never a vague prompt.
-4. ✅ **Verify & checkpoint** — results are validated against the spec, `.context/progress.md` is updated, and multi-phase plans advance one phase at a time with fresh context per phase.
+3. 🖐️ **Confirm** — before delegating to any specialist that will create, edit, or delete files (`developer-fixer`, `build-helper`, `deploy-helper`, `npm-helper`, `test-engineer`), the orchestrator summarizes the change in plain language and waits for your explicit yes in the same session — no file gets touched without that confirmation, once per phase for multi-phase plans.
+4. 🛠️ **Delegate** — each specialist gets a precise, RFC-2119-worded 9-section task spec (Goal, Success Criteria, Scope, Safety, Inputs, Outputs, Test Plan, Verification, Edge Cases) — never a vague prompt.
+5. ✅ **Verify & checkpoint** — results are validated against the spec, `.context/progress.md` is updated, and multi-phase plans advance one phase at a time with fresh context per phase.
 
 ## 💡 A concrete example
 
 > "Add refresh-token rotation to the auth service."
 
-| Step | Agent             | What happens                                                                                              |
-| ---- | ----------------- | --------------------------------------------------------------------------------------------------------- |
-| 1    | `explorer`        | Reads the current auth flow, read-only.                                                                   |
-| 2    | `planner`         | Turns findings into a phased plan in `plan/draft/`.                                                       |
-| 3    | `developer-fixer` | Implements **one phase at a time**, fresh context each time — no compounding drift across a long session. |
-| 4    | `test-engineer`   | Writes and runs tests for the new rotation logic.                                                         |
-| 5    | `security`        | Reviews the auth-sensitive change before it reaches `plan/complete/`.                                     |
+| Step | Agent | What happens |
+|---|---|---|
+| 1 | `explorer` | Reads the current auth flow, read-only. |
+| 2 | `planner` | Turns findings into a phased plan in `plan/draft/`. |
+| 3 | `developer-fixer` | Implements **one phase at a time**, fresh context each time — no compounding drift across a long session. Each phase starts only after you confirm it. |
+| 4 | `test-engineer` | Writes and runs tests for the new rotation logic. |
+| 5 | `security` | Reviews the auth-sensitive change before it reaches `plan/complete/`. |
 
-The orchestrator itself never edits `auth.ts` — it only routes, checkpoints, and moves the plan file across the kanban.
+The orchestrator itself never edits `auth.ts` — it only routes, checkpoints, confirms with you before delegation, and moves the plan file across the kanban.
+
+## 🌱 Perché nasce questo kit
+
+Chi usa agenti AI per programmare finisce quasi sempre nello stesso problema: un unico modello, generalista e costoso, che fa ricerca, pianifica, scrive codice e si autoreviziona nella stessa conversazione lunghissima. Il contesto si satura, i costi salgono, e non c'è¤¤ nessun momento in cui un umano possa davvero fermare il flusso prima che il codice venga toccato.
+
+Questo kit nasce per invertire quella logica: un solo agente "smistatore" (`orchestrator`) che non scrive mai codice, una squadra di 14 specialisti ognuno sul modello più economico adatto al proprio compito, e un **gate di conferma umano** inserito subito dopo la pianificazione — nessuna modifica al codice parte senza che tu l'abbia vista e approvata prima.
+
+Il risultato è un workflow che costa meno token, è più tracciabile (ogni decisione finisce in `.context/decisions.md`), e ti lascia sempre in controllo dell'ultimo passo: applicare la modifica.
 
 ## 🎯 Why this exists
 
 - **Routes, never executes** — `agents/orchestrator.md` can only classify and delegate; it cannot edit application code or run tests.
+- **Never modifies without asking** — before any file-writing specialist runs, the orchestrator confirms the exact change with you in plain language, independent of any native OpenCode permission prompt.
 - **Matches model to task** — cheap/local models for exploration and bootstrapping, stronger models reserved for design, implementation, and review.
 - **Keeps context small** — session memory (`progress.md`, `decisions.md`, `issues.md`) is bullet-point only and auto-archived past ~3k tokens.
 - **Adapts to any repo** — `profiler` runs once per repo, detects the stack via manifest globbing (with Repomix as fallback for ambiguous/monorepo cases), and never touches application code.
 
 ## 👥 Agent roster
 
-| Agent                                                            | Role                                                          | Notes                                                            |
-| ---------------------------------------------------------------- | ------------------------------------------------------------- | ---------------------------------------------------------------- |
-| 🧭 `orchestrator`                                                | Routes every request, never executes                          | Only agent allowed to touch `.context/*` and move `plan/*` files |
-| 🩺 `profiler`                                                    | Repo bootstrap: stack/CI detection, memory + plan scaffolding | Runs once per repo, idempotent                                   |
-| 🔎 `explorer`                                                    | Codebase/file/symbol research                                 | Read-only                                                        |
-| 📚 `librarian`                                                   | Docs, remote examples, repo history                           | Read-only                                                        |
-| 🔮 `oracle`                                                      | Architecture/design/strategy advice                           | Read-only                                                        |
-| 🗺️ `planner`                                                     | Turns exploration into phased plans                           | Writes to `plan/draft/` only                                     |
-| 🔧 `developer-fixer`                                             | Implementation, TDD, single-phase execution                   | Follows the 9-section task spec                                  |
-| 🧪 `test-engineer`                                               | Tests, coverage, reproduction                                 |                                                                  |
-| 🛡️ `code-reviewer` / `security`                                  | Review passes                                                 | Split by concern, not duplicated                                 |
-| 🏗️ `build-helper` / `npm-helper` / `deploy-helper` / `pc-doctor` | Toolchain/CI/environment triage                               | Scoped by failure type                                           |
-| ✍️ `writer`                                                      | Documentation generation                                      |                                                                  |
+| Agent | Role | Notes |
+|---|---|---|
+| 🧭 `orchestrator` | Routes every request, never executes | Only agent allowed to touch `.context/*` and move `plan/*` files; owns the pre-delegation confirmation gate |
+| 🩺 `profiler` | Repo bootstrap: stack/CI detection, memory + plan scaffolding | Runs once per repo, idempotent |
+| 🔎 `explorer` | Codebase/file/symbol research | Read-only |
+| 📚 `librarian` | Docs, remote examples, repo history | Read-only |
+| 🔮 `oracle` | Architecture/design/strategy advice | Read-only |
+| 🗺️ `planner` | Turns exploration into phased plans | Writes to `plan/draft/` only |
+| 🔧 `developer-fixer` | Implementation, TDD, single-phase execution | Follows the 9-section task spec; gated by user confirmation |
+| 🧪 `test-engineer` | Tests, coverage, reproduction | Gated by user confirmation |
+| 🛡️ `code-reviewer` / `security` | Review passes | Split by concern, not duplicated |
+| 🏗️ `build-helper` / `npm-helper` / `deploy-helper` / `pc-doctor` | Toolchain/CI/environment triage | Scoped by failure type; the first three are gated by user confirmation |
+| ✍️ `writer` | Documentation generation | |
 
 Full contracts, permissions, and model fallbacks are defined in each `agents/*.md` file and summarized in `AGENTS.md`.
 

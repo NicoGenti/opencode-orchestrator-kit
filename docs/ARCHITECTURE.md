@@ -11,17 +11,22 @@ Orchestrator  ──(step 0: no PROJECT-PROFILE.md yet?)──▶  profiler
      │◀──────────────── stack, CI, plan/, .context/ ─────────┘
      │
      ▼
-Observe → Orient → Decide → Act (todowrite + task delegation)
+Observe → Orient → Decide
      │
-     ├──▶ explorer / librarian        (read-only research)
-     ├──▶ oracle                      (design/strategy advice)
-     ├──▶ planner                     (phased plan → plan/draft/)
-     ├──▶ developer-fixer             (one phase at a time, fresh context)
-     ├──▶ test-engineer               (tests, coverage)
-     ├──▶ code-reviewer / security    (review, split by concern)
-     ├──▶ build-helper / npm-helper /
-     │    deploy-helper / pc-doctor   (toolchain & CI/CD triage)
-     └──▶ writer                      (documentation)
+     ├──▶ explorer / librarian / oracle / planner /
+     │    code-reviewer / security          (read-only or plan-only — no gate needed)
+     │
+     └──▶ developer-fixer / build-helper / npm-helper /
+          deploy-helper / test-engineer      (will create, edit, or delete files)
+              │
+              ▼
+        🖐️  Pre-Delegation Confirmation Gate
+        (orchestrator summarizes the change and asks the
+         user to confirm explicitly, in the root session,
+         before issuing the delegation — see below)
+              │
+              ▼
+          Act (todowrite + task delegation)
      │
      ▼
 Orchestrator validates output, updates .context/*.md,
@@ -29,6 +34,17 @@ moves plan/* files between kanban columns
 ```
 
 The Orchestrator itself never touches application code, dependencies, or configuration. Its own write permissions are limited to three session-memory files and `plan/**/*.md` file moves — everything else is delegated.
+
+## Human-in-the-loop confirmation gate
+
+Before delegating to any agent that writes, edits, or deletes files — `developer-fixer`, `build-helper`, `deploy-helper`, `npm-helper`, or `test-engineer` — the orchestrator MUST pause and get explicit user confirmation in the root session (full rule: `agents/orchestrator.md`, "Pre-Delegation Confirmation Gate").
+
+This exists as a second, independent layer on top of OpenCode's native `permission` system (`allow`/`ask`/`deny` on each agent's `edit`/`bash` tools):
+
+- **Why not rely on the native `ask` permission alone**: subagents run in child sessions spawned via the `task` tool, and permission prompts from a child session are meant to bubble up to the root session where the user is chatting with the orchestrator. This bubbling is not guaranteed across every OpenCode version/nesting depth — known upstream reports describe nested-subagent permission questions getting stuck in the child session and never reaching the user, which would silently stall the workflow if it were the *only* gate.
+- **What the software-level gate guarantees**: because the orchestrator itself asks the confirmation question, in plain conversational language, in the same session the user is already in, the confirmation cannot get lost in a child-session bubbling failure — it does not depend on OpenCode's permission-prompt routing at all.
+- **Granularity**: for multi-phase plans (see "Multi-Phase Plan Execution" in `agents/orchestrator.md`), each phase delegated to `developer-fixer` requires its own confirmation — a single upfront approval for the whole plan is not sufficient.
+- **Scope**: read-only or plan-only agents (`explorer`, `librarian`, `oracle`, `code-reviewer`, `security`, `planner`, `profiler`) never touch application files and are exempt from this gate.
 
 ## Why this saves tokens and cost
 
