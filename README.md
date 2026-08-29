@@ -38,13 +38,13 @@ The orchestrator never touches application code. It only classifies, delegates, 
 
 The orchestrator itself never edits `auth.ts` — it only routes, checkpoints, confirms with you before delegation, and moves the plan file across the kanban.
 
-## 🌱 Perché nasce questo kit
+## 🌱 Why this kit exists
 
-Chi usa agenti AI per programmare finisce quasi sempre nello stesso problema: un unico modello, generalista e costoso, che fa ricerca, pianifica, scrive codice e si autoreviziona nella stessa conversazione lunghissima. Il contesto si satura, i costi salgono, e non c'è¤¤ nessun momento in cui un umano possa davvero fermare il flusso prima che il codice venga toccato.
+Anyone using AI agents for programming ends up in the same problem: a single, generalist, expensive model that does research, planning, coding, and self-review inside one endlessly long conversation. Context saturates, costs rise, and there's no moment where a human can actually stop the flow before code gets touched.
 
-Questo kit nasce per invertire quella logica: un solo agente "smistatore" (`orchestrator`) che non scrive mai codice, una squadra di 14 specialisti ognuno sul modello più economico adatto al proprio compito, e un **gate di conferma umano** inserito subito dopo la pianificazione — nessuna modifica al codice parte senza che tu l'abbia vista e approvata prima.
+This kit inverts that logic: a single "router" agent (`orchestrator`) that never writes code, a team of 14 specialists each running on the cheapest model suited to their task, and a **human confirmation gate** inserted right after planning — no code change goes through without you seeing and approving it first.
 
-Il risultato è un workflow che costa meno token, è più tracciabile (ogni decisione finisce in `.context/decisions.md`), e ti lascia sempre in controllo dell'ultimo passo: applicare la modifica.
+The result is a workflow that costs fewer tokens, is more traceable (every decision lands in `.context/decisions.md`), and keeps you in control of the last step: applying the change.
 
 ## 🎯 Why this exists
 
