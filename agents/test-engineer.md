@@ -7,6 +7,14 @@ model: ollama/minimax-m3:cloud
 temperature: 0.3
 tools: {}
 permission:
+  edit:
+    "*.test.*": ask
+    "*.spec.*": ask
+    "*_test.*": ask
+    "test/**": ask
+    "tests/**": ask
+    "__tests__/**": ask
+    "*": deny
   bash:
     "*": ask
     sed *: deny
@@ -70,4 +78,3 @@ You MUST NOT:
 - Explain standard testing theory (what a mock is, why AAA structure matters) in the report — assume that context is known.
 - Paste full test file contents into the report when the file itself is the artifact; summarize what was added.
 - Add a closing summary that restates the coverage table already given.
-</content>
