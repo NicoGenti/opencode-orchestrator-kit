@@ -4,7 +4,7 @@ This kit does not require [OpenCode Studio](https://github.com/Microck/opencode-
 
 ## Background
 
-Studio organizes OpenCode into isolated **profiles**, each with its own config, history, and sessions, typically stored under `~/.config/opencode-profiles/<profile-name>/` and pointed to via the `OPENCODE_CONFIG_DIR` environment variable when that profile is active. Installing the kit "into a profile" means placing `AGENTS.md`, `CONTRIBUTING.md`, `agents/`, and `skills/` inside that profile's config directory, exactly as you would for the global native path — just scoped to one profile instead of your whole machine.
+Studio organizes OpenCode into isolated **profiles**, each with its own config, history, and sessions, typically stored under `~/.config/opencode-profiles/<profile-name>/` and pointed to via the `OPENCODE_CONFIG_DIR` environment variable when that profile is active. Installing the kit "into a profile" means placing `AGENTS.md`, `CONTRIBUTING.md`, `agents/`, `skills/`, and `command/` inside that profile's config directory, exactly as you would for the global native path — just scoped to one profile instead of your whole machine.
 
 ## Install
 
@@ -16,9 +16,9 @@ Studio organizes OpenCode into isolated **profiles**, each with its own config, 
 ./install.sh studio <profile-name>
 ```
 
-This copies `AGENTS.md`, `CONTRIBUTING.md`, `agents/`, and `skills/` into `~/.config/opencode-profiles/<profile-name>/`. Use `./install.sh --symlink studio <profile-name>` if you want the profile to stay in sync with `git pull` on the kit.
+This copies `AGENTS.md`, `CONTRIBUTING.md`, `agents/`, `skills/`, and `command/` into `~/.config/opencode-profiles/<profile-name>/`. Use `./install.sh --symlink studio <profile-name>` if you want the profile to stay in sync with `git pull` on the kit.
 
-4. Activate that profile in Studio and open a session — the same first-run bootstrap described in `SETUP-NATIVE.md` (step 4) applies: the orchestrator will delegate to `profiler` automatically on any repo without a `PROJECT-PROFILE.md`.
+4. Activate that profile in Studio and open a session. Run **`/start-session`** first — the same first-run bootstrap described in `SETUP-NATIVE.md` (step 4) applies: the orchestrator will delegate to `profiler` automatically on any repo without a `PROJECT-PROFILE.md`, load `.context/*.md`, and give you a short Italian status summary before waiting for your next instruction. Make this your first command in every new session on this profile.
 
 ## Known issue: global `AGENTS.md` precedence
 

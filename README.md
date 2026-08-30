@@ -20,9 +20,8 @@ The orchestrator never touches application code. It only classifies, delegates, 
 
 1. 🔎 **Bootstrap** — `profiler` fingerprints the repo (stack, CI, structure) and scaffolds `.context/` and `plan/` on first run.
 2. 🧭 **Route** — the orchestrator reads the request and session memory, then picks the most specific specialist (or a small parallel/sequential subtask set).
-3. 🖐️ **Confirm** — before delegating to any specialist that will create, edit, or delete files (`developer-fixer`, `build-helper`, `deploy-helper`, `npm-helper`, `test-engineer`), the orchestrator summarizes the change in plain language and waits for your explicit yes in the same session — no file gets touched without that confirmation, once per phase for multi-phase plans.
-4. 🛠️ **Delegate** — each specialist gets a precise, RFC-2119-worded 9-section task spec (Goal, Success Criteria, Scope, Safety, Inputs, Outputs, Test Plan, Verification, Edge Cases) — never a vague prompt.
-5. ✅ **Verify & checkpoint** — results are validated against the spec, `.context/progress.md` is updated, and multi-phase plans advance one phase at a time with fresh context per phase.
+3. 🛠️ **Delegate** — each specialist gets a precise, RFC-2119-worded 9-section task spec (Goal, Success Criteria, Scope, Safety, Inputs, Outputs, Test Plan, Verification, Edge Cases) — never a vague prompt.
+4. ✅ **Verify & checkpoint** — results are validated against the spec, `.context/progress.md` is updated, and multi-phase plans advance one phase at a time with fresh context per phase.
 
 ## 💡 A concrete example
 
@@ -32,24 +31,15 @@ The orchestrator never touches application code. It only classifies, delegates, 
 |---|---|---|
 | 1 | `explorer` | Reads the current auth flow, read-only. |
 | 2 | `planner` | Turns findings into a phased plan in `plan/draft/`. |
-| 3 | `developer-fixer` | Implements **one phase at a time**, fresh context each time — no compounding drift across a long session. Each phase starts only after you confirm it. |
+| 3 | `developer-fixer` | Implements **one phase at a time**, fresh context each time — no compounding drift across a long session. |
 | 4 | `test-engineer` | Writes and runs tests for the new rotation logic. |
 | 5 | `security` | Reviews the auth-sensitive change before it reaches `plan/complete/`. |
 
-The orchestrator itself never edits `auth.ts` — it only routes, checkpoints, confirms with you before delegation, and moves the plan file across the kanban.
-
-## 🌱 Why this kit exists
-
-Anyone using AI agents for programming ends up in the same problem: a single, generalist, expensive model that does research, planning, coding, and self-review inside one endlessly long conversation. Context saturates, costs rise, and there's no moment where a human can actually stop the flow before code gets touched.
-
-This kit inverts that logic: a single "router" agent (`orchestrator`) that never writes code, a team of 14 specialists each running on the cheapest model suited to their task, and a **human confirmation gate** inserted right after planning — no code change goes through without you seeing and approving it first.
-
-The result is a workflow that costs fewer tokens, is more traceable (every decision lands in `.context/decisions.md`), and keeps you in control of the last step: applying the change.
+The orchestrator itself never edits `auth.ts` — it only routes, checkpoints, and moves the plan file across the kanban.
 
 ## 🎯 Why this exists
 
 - **Routes, never executes** — `agents/orchestrator.md` can only classify and delegate; it cannot edit application code or run tests.
-- **Never modifies without asking** — before any file-writing specialist runs, the orchestrator confirms the exact change with you in plain language, independent of any native OpenCode permission prompt.
 - **Matches model to task** — cheap/local models for exploration and bootstrapping, stronger models reserved for design, implementation, and review.
 - **Keeps context small** — session memory (`progress.md`, `decisions.md`, `issues.md`) is bullet-point only and auto-archived past ~3k tokens.
 - **Adapts to any repo** — `profiler` runs once per repo, detects the stack via manifest globbing (with Repomix as fallback for ambiguous/monorepo cases), and never touches application code.
@@ -58,27 +48,27 @@ The result is a workflow that costs fewer tokens, is more traceable (every decis
 
 | Agent | Role | Notes |
 |---|---|---|
-| 🧭 `orchestrator` | Routes every request, never executes | Only agent allowed to touch `.context/*` and move `plan/*` files; owns the pre-delegation confirmation gate |
+| 🧭 `orchestrator` | Routes every request, never executes | Only agent allowed to touch `.context/*` and move `plan/*` files |
 | 🩺 `profiler` | Repo bootstrap: stack/CI detection, memory + plan scaffolding | Runs once per repo, idempotent |
 | 🔎 `explorer` | Codebase/file/symbol research | Read-only |
 | 📚 `librarian` | Docs, remote examples, repo history | Read-only |
 | 🔮 `oracle` | Architecture/design/strategy advice | Read-only |
 | 🗺️ `planner` | Turns exploration into phased plans | Writes to `plan/draft/` only |
-| 🔧 `developer-fixer` | Implementation, TDD, single-phase execution | Follows the 9-section task spec; gated by user confirmation |
-| 🧪 `test-engineer` | Tests, coverage, reproduction | Gated by user confirmation |
+| 🔧 `developer-fixer` | Implementation, TDD, single-phase execution | Follows the 9-section task spec |
+| 🧪 `test-engineer` | Tests, coverage, reproduction | |
 | 🛡️ `code-reviewer` / `security` | Review passes | Split by concern, not duplicated |
-| 🏗️ `build-helper` / `npm-helper` / `deploy-helper` / `pc-doctor` | Toolchain/CI/environment triage | Scoped by failure type; the first three are gated by user confirmation |
+| 🏗️ `build-helper` / `npm-helper` / `deploy-helper` / `pc-doctor` | Toolchain/CI/environment triage | Scoped by failure type |
 | ✍️ `writer` | Documentation generation | |
 
 Full contracts, permissions, and model fallbacks are defined in each `agents/*.md` file and summarized in `AGENTS.md`.
 
 ## 🚀 Quickstart — native OpenCode (no plugin)
 
-1. Clone this repo, or copy just `agents/`, `skills/`, `AGENTS.md`, and `CONTRIBUTING.md` into your target project.
+1. Clone this repo, or copy just `agents/`, `skills/`, `command/`, `AGENTS.md`, and `CONTRIBUTING.md` into your target project.
 2. Place them where OpenCode looks for them:
-   - **Project-only**: `.opencode/agents/`, `.opencode/skills/`, and `AGENTS.md` at the project root.
-   - **Every project on your machine**: `~/.config/opencode/agents/`, `~/.config/opencode/skills/`, `~/.config/opencode/AGENTS.md`.
-3. Run `opencode` inside the target repo and invoke the orchestrator (`@orchestrator`, or set it as your default agent). On first run it detects there's no `PROJECT-PROFILE.md`/`plan/` structure and delegates to `profiler` automatically — no manual config needed.
+   - **Project-only**: `.opencode/agents/`, `.opencode/skills/`, `.opencode/command/`, and `AGENTS.md` at the project root.
+   - **Every project on your machine**: `~/.config/opencode/agents/`, `~/.config/opencode/skills/`, `~/.config/opencode/command/`, `~/.config/opencode/AGENTS.md`.
+3. Run `opencode` inside the target repo, invoke the orchestrator (`@orchestrator`, or set it as your default agent), then run **`/start-session`** — do this at the start of every new session, before any other instruction. It makes the orchestrator run its bootstrap cycle explicitly: delegate to `profiler` if there's no `PROJECT-PROFILE.md`/`plan/` structure yet, load `.context/progress.md`/`decisions.md`/`issues.md`, and give you a 3–4 line Italian summary of the stack, current status, and latest issue/decision before waiting for your next instruction. See `command/start-session.md`.
 4. See `docs/SETUP-NATIVE.md` for the manual install path, or run the scripted one:
 
 ```bash
@@ -93,6 +83,7 @@ If you manage OpenCode via [opencode-studio](https://github.com/Microck/opencode
 
 - **Swap models per agent** by editing the `model:` field in each agent's frontmatter — nothing else needs to change.
 - **Add project-specific skills** under `skills/<name>/SKILL.md`; the orchestrator loads them on demand via the `skill` tool.
+- **Add or edit slash commands** under `command/<name>.md`; each file's frontmatter (`description`, `agent`) plus body defines a reusable prompt — e.g. `command/start-session.md` runs the orchestrator's bootstrap cycle at the start of every session.
 - **Engineering baseline** (secrets hygiene, git hygiene, definition of done) lives in `CONTRIBUTING.md` and applies globally unless a project overrides it.
 
 ## 📄 License
