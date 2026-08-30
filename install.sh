@@ -49,6 +49,7 @@ install_into() {
   link_or_copy "$KIT_DIR/CONTRIBUTING.md" "$base/CONTRIBUTING.md"
   link_or_copy "$KIT_DIR/agents"          "$base/agents"
   link_or_copy "$KIT_DIR/skills"          "$base/skills"
+  link_or_copy "$KIT_DIR/command"         "$base/command"
 }
 
 case "$TARGET" in
@@ -57,11 +58,12 @@ case "$TARGET" in
     # AGENTS.md and CONTRIBUTING.md live at project root, not inside .opencode/
     link_or_copy "$KIT_DIR/AGENTS.md"       "$(pwd)/AGENTS.md"
     link_or_copy "$KIT_DIR/CONTRIBUTING.md" "$(pwd)/CONTRIBUTING.md"
-    echo "Done. Run 'opencode' inside this project and select the orchestrator agent."
+    echo "Done. Run 'opencode' inside this project, select the orchestrator agent, and run /start-session to bootstrap it."
     ;;
   global)
     install_into "$HOME/.config/opencode"
     echo "Done. This kit is now available in every OpenCode project on this machine."
+    echo "Run /start-session at the start of every new session to bootstrap the orchestrator."
     ;;
   studio)
     if [[ -z "$PROFILE_NAME" ]]; then
@@ -79,6 +81,7 @@ case "$TARGET" in
     echo "it currently takes precedence over the profile's AGENTS.md in some OpenCode"
     echo "versions. If routing rules seem ignored, temporarily rename/remove the"
     echo "global AGENTS.md, or merge its contents into this profile's copy."
+    echo "Run /start-session at the start of every new session to bootstrap the orchestrator."
     ;;
   *)
     usage
