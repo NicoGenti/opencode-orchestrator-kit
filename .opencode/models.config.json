@@ -1,0 +1,53 @@
+{
+  "$schema": "https://nicogenti.github.io/opencode-orchestrator-kit/schemas/models.config.schema.json",
+  "version": 1,
+  "description": "Centralized model-tier configuration for opencode-orchestrator-kit. Agent frontmatter references logical tiers ({{TIER_REASONING}}, {{TIER_CODE}}, {{TIER_FAST}}) instead of hardcoded model IDs. install.sh / scripts/apply-model-preset.py resolves tokens to concrete provider/model IDs at install time using the preset selected below.",
+  "tiers": {
+    "TIER_REASONING": "Deep reasoning / architecture / orchestration — used by orchestrator, oracle, security, planner.",
+    "TIER_CODE": "Implementation, review, and test-writing — used by code-reviewer, developer-fixer, test-engineer.",
+    "TIER_FAST": "Lightweight utility and high-throughput tasks — used by explorer, librarian, pc-doctor, npm-helper, build-helper, deploy-helper, writer, profiler."
+  },
+  "default_preset": "opencode-go",
+  "presets": {
+    "opencode-go": {
+      "label": "OpenCode Go (default cloud router)",
+      "description": "Default cloud router plus fast specialist endpoints. Mirrors the kit's out-of-the-box behavior: the router's flagship model for reasoning, and cloud-hosted specialist models for code and fast utility work.",
+      "requires": [],
+      "models": {
+        "TIER_REASONING": "opencode-go/gpt-5.6-luna",
+        "TIER_CODE": "ollama/minimax-m3:cloud",
+        "TIER_FAST": "ollama/deepseek-v4-flash:cloud"
+      }
+    },
+    "local-ollama": {
+      "label": "Local Ollama (fully offline)",
+      "description": "Runs entirely on a local Ollama daemon. Pull the models first: `ollama pull qwen2.5-coder:32b && ollama pull qwen2.5-coder:14b && ollama pull deepseek-coder:6.7b`.",
+      "requires": ["ollama serve running on http://localhost:11434"],
+      "models": {
+        "TIER_REASONING": "ollama/qwen2.5-coder:32b",
+        "TIER_CODE": "ollama/qwen2.5-coder:14b",
+        "TIER_FAST": "ollama/deepseek-coder:6.7b"
+      }
+    },
+    "commercial-api-anthropic": {
+      "label": "Commercial API — Anthropic Claude",
+      "description": "Standard Anthropic Claude configuration. Requires ANTHROPIC_API_KEY. Verify exact model IDs with `opencode models` before install, as Anthropic revises IDs over time.",
+      "requires": ["ANTHROPIC_API_KEY"],
+      "models": {
+        "TIER_REASONING": "anthropic/claude-opus-4-1",
+        "TIER_CODE": "anthropic/claude-sonnet-4-5",
+        "TIER_FAST": "anthropic/claude-haiku-4-5"
+      }
+    },
+    "commercial-api-openai": {
+      "label": "Commercial API — OpenAI",
+      "description": "Standard OpenAI configuration using GPT-4o for reasoning/code and GPT-4o-mini for fast utility work. Requires OPENAI_API_KEY.",
+      "requires": ["OPENAI_API_KEY"],
+      "models": {
+        "TIER_REASONING": "openai/gpt-4o",
+        "TIER_CODE": "openai/gpt-4o",
+        "TIER_FAST": "openai/gpt-4o-mini"
+      }
+    }
+  }
+}
