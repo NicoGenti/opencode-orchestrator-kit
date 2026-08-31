@@ -2,7 +2,7 @@
 
 **A strict-orchestrator, multi-agent workflow for [OpenCode](https://opencode.ai) — one router agent that never writes code, and a roster of specialists each pinned to the cheapest model that can do the job.**
 
-[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE.txt) [![OpenCode](https://img.shields.io/badge/works%20with-OpenCode%20CLI-blue)](https://opencode.ai) [![OpenCode Studio](https://img.shields.io/badge/optional-OpenCode%20Studio-lightgrey)](https://github.com/Microck/opencode-studio) [![Agents](https://img.shields.io/badge/agents-15-orange)](agents) [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE.txt) [![OpenCode](https://img.shields.io/badge/works%20with-OpenCode%20CLI-blue)](https://opencode.ai) [![OpenCode Studio](https://img.shields.io/badge/optional-OpenCode%20Studio-lightgrey)](https://github.com/Microck/opencode-studio) [![Agents](https://img.shields.io/badge/agents-15-orange)](agents) [![Tests](https://github.com/NicoGenti/opencode-orchestrator-kit/actions/workflows/test.yml/badge.svg)](https://github.com/NicoGenti/opencode-orchestrator-kit/actions/workflows/test.yml) [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
 ---
 
@@ -83,7 +83,6 @@ If you manage OpenCode via [opencode-studio](https://github.com/Microck/opencode
 
 - **Swap models per agent** by editing the `model:` field in each agent's frontmatter — nothing else needs to change.
 - **Add project-specific skills** under `skills/<name>/SKILL.md`; the orchestrator loads them on demand via the `skill` tool.
-- **Add or edit slash commands** under `command/<name>.md`; each file's frontmatter (`description`, `agent`) plus body defines a reusable prompt — e.g. `command/start-session.md` runs the orchestrator's bootstrap cycle at the start of every session.
 - **Engineering baseline** (secrets hygiene, git hygiene, definition of done) lives in `CONTRIBUTING.md` and applies globally unless a project overrides it.
 
 ## 📄 License
