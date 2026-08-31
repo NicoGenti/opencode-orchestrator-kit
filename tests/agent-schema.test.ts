@@ -9,10 +9,16 @@ import { join } from "node:path";
  * specs consumed by OpenCode at runtime, not executable code, so this suite
  * validates structure (required frontmatter keys, JSON-well-formedness of
  * inline tools/permission blocks) rather than routing *behavior*.
+ *
+ * `tools` is intentionally NOT in REQUIRED_KEYS: several agents (security,
+ * writer, pc-doctor, npm-helper, build-helper, deploy-helper) omit it
+ * entirely and rely on the default toolset, only declaring `tools` when
+ * overriding it (e.g. orchestrator, profiler, explorer, test-engineer).
  */
 
 const AGENTS_DIR = join(import.meta.dir, "..", "agents");
-const REQUIRED_KEYS = ["description", "mode", "model", "tools", "permission"] as const;
+const REQUIRED_KEYS = ["description", "mode", "model", "permission"] as const;
+const OPTIONAL_JSON_KEYS = ["tools", "permission"] as const;
 
 function extractFrontmatter(raw: string): string {
   const match = raw.match(/^---\r?\n([\s\S]*?)\r?\n---/);
@@ -28,7 +34,7 @@ function hasTopLevelKey(frontmatter: string, key: string): boolean {
 
 /** Returns the inline JSON string for `key:` when the value is single-line JSON
  * (e.g. `tools: {"webfetch":true}`), or null when the value is a multi-line
- * YAML block (e.g. `tools:\n  read: true`) or absent. */
+ * YAML block (e.g. `tools:\n  read: true`) or absent entirely. */
 function inlineJsonValue(frontmatter: string, key: string): string | null {
   const match = frontmatter.match(new RegExp(`^${key}:\\s*(\\{.*\\})\\s*$`, "m"));
   return match ? match[1] : null;
@@ -59,7 +65,7 @@ describe("agent frontmatter schema", () => {
 
       test("tools/permission inline JSON (if single-line) parses as valid JSON", () => {
         const fm = extractFrontmatter(raw);
-        for (const key of ["tools", "permission"]) {
+        for (const key of OPTIONAL_JSON_KEYS) {
           const inline = inlineJsonValue(fm, key);
           if (inline !== null) {
             expect(() => JSON.parse(inline)).not.toThrow();
@@ -83,7 +89,6 @@ describe("agent frontmatter schema — negative case (proves the check has teeth
     ].join("\n");
 
     const fm = extractFrontmatter(badFixture);
-    expect(hasTopLevelKey(fm, "tools")).toBe(false);
     expect(hasTopLevelKey(fm, "permission")).toBe(false);
   });
 
