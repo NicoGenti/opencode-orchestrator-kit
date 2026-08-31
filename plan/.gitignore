@@ -1,0 +1,4 @@
+# Kanban plan files (draft/in-progress/qa/complete) are local working notes only.
+# They are intentionally not committed to git.
+*
+!.gitignore
