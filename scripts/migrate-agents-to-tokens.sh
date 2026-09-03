@@ -21,17 +21,28 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 replace() {
-  local file="$1" old="$2" token="$3"
-  if grep -qF "model: ${old}" "agents/${file}"; then
-    sed -i.bak "s|^model: ${old}\$|model: {{${token}}}|" "agents/${file}"
-    rm -f "agents/${file}.bak"
-    echo "  ${file}: ${old} -> {{${token}}}"
+  local dir="$1" file="$2" old="$3" token="$4"
+  if grep -qF "model: ${old}" "${dir}/${file}"; then
+    sed -i.bak "s|^model: ${old}\$|model: {{${token}}}|" "${dir}/${file}"
+    rm -f "${dir}/${file}.bak"
+    echo "  ${dir}/${file}: ${old} -> {{${token}}}"
   else
-    echo "  ${file}: SKIPPED (expected value not found, check manually)"
+    echo "  ${dir}/${file}: SKIPPED (expected value not found, check manually)"
   fi
 }
 
-echo "Migrating agents/*.md to logical model tiers..."
+replace_in() {
+  local file="$1" old="$2" token="$3"
+  if [[ -f "agents/${file}" ]]; then
+    replace "agents" "${file}" "${old}" "${token}"
+  elif [[ -f "extras/${file}" ]]; then
+    replace "extras" "${file}" "${old}" "${token}"
+  else
+    echo "  ${file}: SKIPPED (not found in agents/ or extras/)"
+  fi
+}
+
+echo "Migrating agents/*.md and extras/*.md to logical model tiers..."
 
 # TIER_REASONING - orchestration, architecture advice, security, planning
 replace "orchestrator.md"     "opencode-go/gpt-5.6-luna"        "TIER_REASONING"
@@ -47,11 +58,11 @@ replace "test-engineer.md"    "ollama/minimax-m3:cloud"         "TIER_CODE"
 # TIER_FAST - lightweight utility / high-throughput tasks
 replace "explorer.md"         "ollama/deepseek-v4-flash:cloud"  "TIER_FAST"
 replace "librarian.md"        "ollama/deepseek-v4-flash:cloud"  "TIER_FAST"
-replace "pc-doctor.md"        "ollama/deepseek-v4-flash:cloud"  "TIER_FAST"
+replace_in "pc-doctor.md"    "ollama/deepseek-v4-flash:cloud"  "TIER_FAST"
 replace "npm-helper.md"       "ollama/deepseek-v4-flash:cloud"  "TIER_FAST"
 replace "build-helper.md"     "ollama/deepseek-v4-flash:cloud"  "TIER_FAST"
 replace "deploy-helper.md"    "ollama/deepseek-v4-flash:cloud"  "TIER_FAST"
-replace "writer.md"           "ollama/deepseek-v4-flash:cloud"  "TIER_FAST"
+replace_in "writer.md"       "ollama/deepseek-v4-flash:cloud"  "TIER_FAST"
 replace "profiler.md"         "ollama/deepseek-v4-flash:cloud"  "TIER_FAST"
 
 echo "Done. Review the diff, then run:"

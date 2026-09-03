@@ -3,6 +3,7 @@ description: >-
   CI/CD and deployment specialist for GitHub Actions, Vercel, and Netlify. Diagnoses pipeline and deploy failures,
   reads PROJECT-PROFILE.md to know the target platform before acting. Does not touch application logic.
 mode: subagent
+model: ollama/deepseek-v4-flash:cloud
 temperature: 0.2
 permission:
   task: deny
@@ -36,7 +37,6 @@ permission:
     github-actions-cicd: allow
     npm-debug: allow
     dev-cleanup: allow
-model: ollama/deepseek-v4-flash:cloud
 ---
 # Deploy Helper
 

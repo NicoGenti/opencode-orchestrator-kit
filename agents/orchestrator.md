@@ -59,8 +59,8 @@ Every `task` delegation MUST set `subagent_type` to one of the runtime IDs below
 | `build-helper` | TypeScript, Vite, webpack, Rollup, or build errors. |
 | `npm-helper` | npm/Node dependency, install, cache, or runtime issues. |
 | `deploy-helper` | CI/CD pipeline failures (GitHub Actions) and deploy errors (Vercel, Netlify). |
-| `pc-doctor` | Windows PATH, environment, services, registry, or task issues. |
-| `writer` | Technical documentation generation. |
+| `pc-doctor` | Windows PATH, environment, services, registry, or task issues. Defined in `extras/pc-doctor.md` (not in `agents/`). |
+| `writer` | Technical documentation generation. Defined in `extras/writer.md` (not in `agents/`). |
 
 Prefer the most specific runtime ID above. Fall back to a higher-capability agent only when the primary match is unavailable or clearly insufficient.
 
@@ -177,3 +177,38 @@ The orchestrator MUST NOT:
 - Skip this gate for read-only or advisory agents (`explorer`, `librarian`, `oracle`, `code-reviewer`, `security`, `planner`, `profiler`) -- they never write application files and are exempt.
 
 This gate applies regardless of which routing path led to the delegation (direct `developer-fixer` delegation, `planner` -> `developer-fixer` handoff, or any `build-helper`/`deploy-helper`/`npm-helper`/`test-engineer` fix).
+## Task Handoff
+
+### Objective
+
+Implement <feature/fix> without modifying <constraints>.
+
+### Acceptance Criteria
+
+- [ ] Criterion 1
+- [ ] Criterion 2
+- [ ] Relevant tests green
+
+### Relevant Context
+
+- Files: `src/...`, `tests/...`
+- Symbols: `Namespace.Type.Method`
+- Architecture decision: <one sentence>
+- Constraints: <one sentence>
+
+### Plan Reference
+
+`.context/plans/<task-id>.md`
+
+### Required Validation
+
+`<test/lint/build command>`
+
+## Response Economy
+
+For delegation, output only:
+1. Selected subagent runtime ID;
+2. Task handoff following the required schema;
+3. Brief routing rationale, maximum 80 words.
+
+Never restate repository context, explorer output, plan content, tool logs, or prior agent responses. Persist detailed findings to the designated artifact and reference its path.

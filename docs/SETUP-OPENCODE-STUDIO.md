@@ -32,4 +32,4 @@ If your profile's orchestrator behavior doesn't match what's in this kit's `AGEN
 
 ## Multiple profiles, multiple rosters
 
-Because each profile has its own config directory, you can install different versions of the kit (or different agent subsets) per profile — e.g., one profile tuned for a .NET backend with `dotnet-conventions` and `deploy-helper` prioritized, another for a frontend repo leaning on `angular-patterns` and `build-helper`. Just re-run `install.sh studio <profile-name>` for each profile you want it in.
+Because each profile has its own config directory, you can install different versions of the kit (or different agent subsets) per profile — e.g., one profile tuned for a .NET backend with `skills/examples/dotnet-conventions` and `deploy-helper` prioritized, another for a frontend repo leaning on `skills/examples/angular-patterns` and `build-helper`. Just re-run `install.sh studio <profile-name>` for each profile you want it in.

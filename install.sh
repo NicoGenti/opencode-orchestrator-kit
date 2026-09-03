@@ -2,27 +2,61 @@
 # OpenCode Orchestrator Kit — installer
 # Works for native OpenCode (project or global config) and for OpenCode Studio profiles.
 # Usage:
-#   ./install.sh project              # copy into ./.opencode/ + ./AGENTS.md (this repo only)
-#   ./install.sh global               # copy into ~/.config/opencode/ (all projects)
-#   ./install.sh studio <profile>     # copy into an OpenCode Studio profile directory
-#   ./install.sh --symlink ...        # same targets, but symlink instead of copy (keeps kit updatable via git pull)
+#   ./install.sh project                       # copy into ./.opencode/ + ./AGENTS.md (this repo only)
+#   ./install.sh global                        # copy into ~/.config/opencode/ (all projects)
+#   ./install.sh studio <profile>              # copy into an OpenCode Studio profile directory
+#   ./install.sh --symlink ...                 # same targets, but symlink instead of copy (keeps kit updatable via git pull)
+#   ./install.sh --with-extras ...             # also install extras/ directory (pc-doctor, writer)
+#   ./install.sh --with-examples ...           # also install skills/examples/ directory
 
 set -euo pipefail
 
 KIT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MODE="copy"
 TARGET="${1:-}"
+WITH_EXTRAS=false
+WITH_EXAMPLES=false
 
-if [[ "${1:-}" == "--symlink" ]]; then
-  MODE="symlink"
-  TARGET="${2:-}"
-  PROFILE_NAME="${3:-}"
-else
+# Parse optional flags
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    --with-extras)
+      WITH_EXTRAS=true
+      shift
+      ;;
+    --with-examples)
+      WITH_EXAMPLES=true
+      shift
+      ;;
+    --symlink)
+      MODE="symlink"
+      TARGET="${2:-}"
+      PROFILE_NAME="${3:-}"
+      shift
+      ;;
+    *)
+      break
+      ;;
+  esac
+done
+
+if [[ "${1:-}" != "--symlink" ]]; then
   PROFILE_NAME="${2:-}"
 fi
 
 usage() {
-  echo "Usage: $0 [--symlink] {project|global|studio <profile-name>}"
+  echo "Usage: $0 [--symlink] [--with-extras] [--with-examples] {project|global|studio <profile-name>}"
+  echo ""
+  echo "Options:"
+  echo "  --with-extras    Install extras/ directory (pc-doctor, writer)"
+  echo "  --with-examples  Install skills/examples/ directory (language-specific skill examples)"
+  echo ""
+  echo "Modes:"
+  echo "  project              Install into ./.opencode/ + ./AGENTS.md (this repo only)"
+  echo "  global               Install into ~/.config/opencode/ (all projects)"
+  echo "  studio <profile>     Install into an OpenCode Studio profile directory"
+  echo ""
+  echo "  --symlink            Symlink instead of copy (keeps kit updatable via git pull)"
   exit 1
 }
 
@@ -48,7 +82,13 @@ install_into() {
   link_or_copy "$KIT_DIR/AGENTS.md"      "$base/AGENTS.md"
   link_or_copy "$KIT_DIR/CONTRIBUTING.md" "$base/CONTRIBUTING.md"
   link_or_copy "$KIT_DIR/agents"          "$base/agents"
+  if [[ "$WITH_EXTRAS" == "true" ]]; then
+    link_or_copy "$KIT_DIR/extras"        "$base/extras"
+  fi
   link_or_copy "$KIT_DIR/skills"          "$base/skills"
+  if [[ "$WITH_EXAMPLES" == "true" ]]; then
+    link_or_copy "$KIT_DIR/skills/examples" "$base/skills/examples"
+  fi
   link_or_copy "$KIT_DIR/command"         "$base/command"
 }
 

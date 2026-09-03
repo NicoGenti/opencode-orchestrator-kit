@@ -3,7 +3,7 @@ description: >-
   Unified implementation agent. Operates in Fixer mode (exact-spec execution, zero extra research) when given a
   complete task spec, or Developer mode (strict TDD) when given a partial/exploratory request.
 mode: subagent
-model: ollama/minimax-m3:cloud
+model: opencode-go/minimax-m3
 temperature: 0.2
 tools:
   edit: true

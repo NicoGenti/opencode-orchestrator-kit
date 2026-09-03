@@ -1,12 +1,15 @@
 import { describe, expect, test } from "bun:test";
 import { readdirSync, readFileSync, statSync } from "node:fs";
-import { join } from "node:path";
+import { basename, dirname, join } from "node:path";
 
 /**
  * Schema-validation tests for skills/<name>/SKILL.md frontmatter.
  *
  * Skill files use a simpler two-key frontmatter (`name`, `description`) than
  * agent files — see tests/agent-schema.test.ts for the richer agent schema.
+ *
+ * Recursively scans the entire skills/ tree (including skills/examples/) so
+ * that example skills stored under subdirectories are also validated.
  */
 
 const SKILLS_DIR = join(import.meta.dir, "..", "skills");
@@ -29,18 +32,33 @@ function topLevelValue(frontmatter: string, key: string): string | null {
   return match ? match[1].trim() : null;
 }
 
-const skillDirs = readdirSync(SKILLS_DIR).filter((name) =>
-  statSync(join(SKILLS_DIR, name)).isDirectory(),
-);
+/**
+ * Recursively collect all SKILL.md file paths under the skills/ tree.
+ * The skill name (used for the "name" frontmatter assertion) is derived from
+ * the immediate parent directory of each SKILL.md.
+ */
+function collectSkillFiles(dir: string): Array<{ path: string; skillName: string }> {
+  const results: Array<{ path: string; skillName: string }> = [];
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const fullPath = join(dir, entry.name);
+    if (entry.isDirectory()) {
+      results.push(...collectSkillFiles(fullPath));
+    } else if (entry.name === "SKILL.md") {
+      results.push({ path: fullPath, skillName: basename(dir) });
+    }
+  }
+  return results;
+}
+
+const skillFiles = collectSkillFiles(SKILLS_DIR);
 
 describe("skill frontmatter schema", () => {
   test("skills/ directory contains skill definitions", () => {
-    expect(skillDirs.length).toBeGreaterThan(0);
+    expect(skillFiles.length).toBeGreaterThan(0);
   });
 
-  for (const dir of skillDirs) {
-    describe(`${dir}/SKILL.md`, () => {
-      const path = join(SKILLS_DIR, dir, "SKILL.md");
+  for (const { path, skillName } of skillFiles) {
+    describe(`${skillName}/SKILL.md`, () => {
       const raw = readFileSync(path, "utf-8");
 
       test("has a parseable frontmatter block", () => {
@@ -57,7 +75,7 @@ describe("skill frontmatter schema", () => {
 
       test("\"name\" matches the containing folder name", () => {
         const fm = extractFrontmatter(raw);
-        expect(topLevelValue(fm, "name")).toBe(dir);
+        expect(topLevelValue(fm, "name")).toBe(skillName);
       });
 
       test("has content beyond the frontmatter block", () => {
