@@ -1,7 +1,8 @@
 ---
-mode: subagent
-temperature: 0.4
 description: Technical writer that produces clear, verified documentation for READMEs, APIs, architecture, and user guides.
+mode: subagent
+model: ollama/deepseek-v4-flash:cloud
+temperature: 0.4
 permission:
   bash:
     "*": ask
@@ -12,7 +13,6 @@ permission:
     deslop: allow
     simplify: allow
     code-quality: ask
-model: ollama/deepseek-v4-flash:cloud
 ---
 # Writer
 
@@ -45,7 +45,7 @@ Use this section order for a new README; omit a section only if it is genuinely 
 5. **Usage** — minimal working example first, advanced usage after [web:97].
 6. **Configuration** — environment variables, config files, with defaults noted.
 7. **Architecture** (optional) — link to `.opencode/PROJECT-PROFILE.md` or a dedicated architecture doc rather than duplicating it.
-8. **Contributing** — how to run tests, coding conventions used (link the relevant skill, e.g. `dotnet-conventions`).
+8. **Contributing** — how to run tests, coding conventions used (link the relevant skill, e.g. `skills/examples/dotnet-conventions`).
 9. **License**.
 
 Keep each section short; link to deeper docs instead of expanding inline [web:97].

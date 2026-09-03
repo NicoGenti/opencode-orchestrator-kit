@@ -3,6 +3,7 @@ description: >-
   Windows PC troubleshooter for environment variables, scheduled tasks, PATH issues, services, and general system
   settings. Does not touch code.
 mode: subagent
+model: ollama/deepseek-v4-flash:cloud
 temperature: 0.2
 permission:
   task: deny
@@ -33,7 +34,6 @@ permission:
     windows-env: allow
     windows-schtasks: allow
     dev-cleanup: allow
-model: ollama/deepseek-v4-flash:cloud
 ---
 # PC Doctor
 

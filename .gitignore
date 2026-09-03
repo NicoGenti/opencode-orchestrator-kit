@@ -48,5 +48,16 @@ coverage/
 
 # Internal orchestration state (session memory + drafts)
 .context/
+!.context/
+!.context/progress.md
+!.context/decisions.md
+!.context/issues.md
 plan/
+!plan/
+!plan/README.md
 .opencode/
+!.opencode/
+!.opencode/PROJECT-PROFILE.md
+
+# Output files
+output*.txt

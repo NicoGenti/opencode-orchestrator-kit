@@ -3,6 +3,7 @@ description: >-
   Build-tool error specialist for TypeScript, Vite, webpack, Rollup, esbuild, Sass, PostCSS, and native
   modules.Diagnoses from error output and applies minimal fixes. Does not refactor application code.
 mode: subagent
+model: ollama/deepseek-v4-flash:cloud
 temperature: 0.2
 permission:
   task: deny
@@ -41,7 +42,6 @@ permission:
     build-debug: allow
     npm-debug: allow
     dev-cleanup: allow
-model: ollama/deepseek-v4-flash:cloud
 ---
 # Build Helper
 

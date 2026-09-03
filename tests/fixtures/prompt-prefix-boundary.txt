@@ -1,0 +1,16 @@
+AGENTS.md
+agents/build-helper.md
+agents/code-reviewer.md
+agents/deploy-helper.md
+agents/developer-fixer.md
+agents/explorer.md
+agents/librarian.md
+agents/npm-helper.md
+agents/oracle.md
+agents/orchestrator.md
+agents/planner.md
+agents/profiler.md
+agents/security.md
+agents/test-engineer.md
+extras/pc-doctor.md
+extras/writer.md

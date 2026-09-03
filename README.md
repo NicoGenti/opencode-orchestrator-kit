@@ -60,11 +60,11 @@ The orchestrator itself never edits `auth.ts` — it only routes, checkpoints, a
 | 🏗️ `build-helper` / `npm-helper` / `deploy-helper` / `pc-doctor` | Toolchain/CI/environment triage | Scoped by failure type |
 | ✍️ `writer` | Documentation generation | |
 
-Full contracts, permissions, and model fallbacks are defined in each `agents/*.md` file and summarized in `AGENTS.md`.
+Full contracts, permissions, and model fallbacks are defined in each `agents/*.md` file (with the `pc-doctor` and `writer` specialists living in `extras/*.md` instead) and summarized in `AGENTS.md`.
 
 ## 🚀 Quickstart — native OpenCode (no plugin)
 
-1. Clone this repo, or copy just `agents/`, `skills/`, `command/`, `AGENTS.md`, and `CONTRIBUTING.md` into your target project.
+1. Clone this repo, or copy just `agents/`, `extras/`, `skills/`, `command/`, `AGENTS.md`, and `CONTRIBUTING.md` into your target project.
 2. Place them where OpenCode looks for them:
    - **Project-only**: `.opencode/agents/`, `.opencode/skills/`, `.opencode/command/`, and `AGENTS.md` at the project root.
    - **Every project on your machine**: `~/.config/opencode/agents/`, `~/.config/opencode/skills/`, `~/.config/opencode/command/`, `~/.config/opencode/AGENTS.md`.

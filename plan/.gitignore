@@ -2,3 +2,4 @@
 # They are intentionally not committed to git.
 *
 !.gitignore
+!README.md

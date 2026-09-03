@@ -3,6 +3,7 @@ description: >-
   Security engineer focused on vulnerability detection, threat modeling, and secure coding practices. Use for
   security-focused code review, threat analysis, or hardening recommendations.
 mode: primary
+model: opencode-go/kimi-k3
 temperature: 0.2
 permission:
   "*": deny
@@ -22,7 +23,6 @@ permission:
     "*": deny
     security: allow
     code-quality: allow
-model: opencode-go/kimi-k3
 ---
 # Security Auditor
 

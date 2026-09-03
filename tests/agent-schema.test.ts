@@ -1,9 +1,9 @@
 import { describe, expect, test } from "bun:test";
-import { readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 /**
- * Schema-validation tests for agents/*.md frontmatter.
+ * Schema-validation tests for agents/*.md and extras/*.md frontmatter.
  *
  * Scope note (see issue #6 and its scoping comment): agent files are prompt
  * specs consumed by OpenCode at runtime, not executable code, so this suite
@@ -14,9 +14,15 @@ import { join } from "node:path";
  * writer, pc-doctor, npm-helper, build-helper, deploy-helper) omit it
  * entirely and rely on the default toolset, only declaring `tools` when
  * overriding it (e.g. orchestrator, profiler, explorer, test-engineer).
+ *
+ * The pc-doctor and writer specialists live under `extras/` rather than
+ * `agents/`; this suite scans both directories and tags each file with the
+ * directory it came from for clearer error messages.
  */
 
-const AGENTS_DIR = join(import.meta.dir, "..", "agents");
+const REPO_ROOT = join(import.meta.dir, "..");
+const AGENTS_DIR = join(REPO_ROOT, "agents");
+const EXTRAS_DIR = join(REPO_ROOT, "extras");
 const REQUIRED_KEYS = ["description", "mode", "model", "permission"] as const;
 const OPTIONAL_JSON_KEYS = ["tools", "permission"] as const;
 
@@ -40,16 +46,20 @@ function inlineJsonValue(frontmatter: string, key: string): string | null {
   return match ? match[1] : null;
 }
 
-const agentFiles = readdirSync(AGENTS_DIR).filter((f) => f.endsWith(".md"));
+const agentFiles = [
+  ...readdirSync(AGENTS_DIR).filter((f) => f.endsWith(".md")).map((f) => ({ dir: "agents", file: f })),
+  ...(existsSync(EXTRAS_DIR) ? readdirSync(EXTRAS_DIR).filter((f) => f.endsWith(".md")).map((f) => ({ dir: "extras", file: f })) : []),
+];
 
 describe("agent frontmatter schema", () => {
-  test("agents/ directory contains agent definitions", () => {
+  test("agents/ (and optionally extras/) directory contains agent definitions", () => {
     expect(agentFiles.length).toBeGreaterThan(0);
   });
 
-  for (const file of agentFiles) {
-    describe(file, () => {
-      const raw = readFileSync(join(AGENTS_DIR, file), "utf-8");
+  for (const { dir, file } of agentFiles) {
+    const label = `${dir}/${file}`;
+    describe(label, () => {
+      const raw = readFileSync(join(REPO_ROOT, dir, file), "utf-8");
 
       test("has a parseable frontmatter block", () => {
         const fm = extractFrontmatter(raw);

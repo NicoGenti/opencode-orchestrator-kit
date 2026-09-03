@@ -15,7 +15,7 @@ Usage:
 Notes:
   - Idempotent: running twice with the same preset is a no-op on the second run.
   - Only rewrites the `model:` line inside the YAML frontmatter (between the
-    first pair of `---` markers) of each agents/*.md file.
+    first pair of `---` markers) of each agents/*.md (or extras/*.md) file.
   - To switch presets later, first restore tokens with --restore, or re-run
     with a different preset (it replaces whatever the current model value is,
     not just tokens, provided the same token map applies).

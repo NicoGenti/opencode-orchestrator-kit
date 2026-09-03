@@ -3,7 +3,7 @@ description: >-
   QA engineer that designs focused test strategy, writes behavior-level tests, analyzes coverage, and uses the prove-it
   pattern to reproduce bugs.
 mode: subagent
-model: ollama/minimax-m3:cloud
+model: opencode-go/minimax-m3
 temperature: 0.3
 tools: {}
 permission:
