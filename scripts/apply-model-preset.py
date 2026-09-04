@@ -2,15 +2,27 @@
 """
 apply-model-preset.py — Phase 1 model portability tool for opencode-orchestrator-kit.
 
-Resolves logical model tiers ({{TIER_REASONING}}, {{TIER_CODE}}, {{TIER_FAST}})
-in agent frontmatter to concrete provider/model IDs, based on a preset defined
-in .opencode/models.config.json.
+Resolves logical model tiers ({{TIER_ROUTER}}, {{TIER_REASONING}}, {{TIER_CODE}},
+{{TIER_FAST}}, {{TIER_REVIEW}}) in agent frontmatter to concrete provider/model
+IDs, based on a preset defined in .opencode/models.config.json (or the
+committed template at templates/models.config.json).
+
+Tier roles (canonical):
+  TIER_ROUTER    — orchestrator / routing agent
+  TIER_REASONING — deep reasoning, architecture, security, planning
+  TIER_CODE      — implementation, tests, code authoring
+  TIER_FAST      — lightweight utility / high-throughput tasks
+  TIER_REVIEW    — general correctness / quality review
+
+Required tiers: TIER_REASONING, TIER_CODE, TIER_FAST (the original three).
+Optional tiers: TIER_ROUTER, TIER_REVIEW (fall back to TIER_REASONING and
+TIER_CODE respectively when omitted from a preset).
 
 Usage:
-  python3 scripts/apply-model-preset.py --preset opencode-go
-  python3 scripts/apply-model-preset.py --preset local-ollama --agents-dir agents
+  python3 scripts/apply-model-preset.py --preset default
+  python3 scripts/apply-model-preset.py --preset default --agents-dir agents
   python3 scripts/apply-model-preset.py --list
-  python3 scripts/apply-model-preset.py --preset commercial-api-anthropic --dry-run
+  python3 scripts/apply-model-preset.py --preset default --dry-run
 
 Notes:
   - Idempotent: running twice with the same preset is a no-op on the second run.
@@ -19,6 +31,9 @@ Notes:
   - To switch presets later, first restore tokens with --restore, or re-run
     with a different preset (it replaces whatever the current model value is,
     not just tokens, provided the same token map applies).
+  - --restore uses canonical-order tie-breaking when the same model ID maps to
+    multiple tiers across presets (first tier in canonical TOKENS order wins)
+    and emits a stderr warning when ambiguous.
 """
 import argparse
 import json
@@ -26,8 +41,26 @@ import re
 import sys
 from pathlib import Path
 
-TOKENS = ("TIER_REASONING", "TIER_CODE", "TIER_FAST")
+# Canonical five-token list, in canonical order.
+TOKENS = (
+    "TIER_ROUTER",
+    "TIER_REASONING",
+    "TIER_CODE",
+    "TIER_FAST",
+    "TIER_REVIEW",
+)
+
+# Required subset. Only these three must be present in every valid preset.
+REQUIRED_TOKENS = ("TIER_REASONING", "TIER_CODE", "TIER_FAST")
+
+# Optional tiers that fall back to a required tier when omitted.
+TIER_FALLBACKS = {
+    "TIER_ROUTER": "TIER_REASONING",
+    "TIER_REVIEW": "TIER_CODE",
+}
+
 MODEL_LINE_RE = re.compile(r"^model:\s*(\S+)\s*$", re.MULTILINE)
+PLACEHOLDER_PREFIX = "placeholder/"
 
 
 def load_config(config_path: Path) -> dict:
@@ -49,8 +82,24 @@ def resolve_value(current_value: str, tier_map: dict):
     for token in TOKENS:
         placeholder = "{{" + token + "}}"
         if current_value == placeholder:
-            return tier_map[token]
+            return tier_map.get(token)
     return None
+
+
+def apply_fallbacks(preset_models: dict) -> dict:
+    """One-hop fallback: TIER_ROUTER -> TIER_REASONING, TIER_REVIEW -> TIER_CODE."""
+    out = dict(preset_models)
+    for token in TOKENS:
+        if token in out and out[token]:
+            continue
+        fallback = TIER_FALLBACKS.get(token)
+        if fallback and out.get(fallback):
+            out[token] = out[fallback]
+    return out
+
+
+def has_placeholder(value: str) -> bool:
+    return isinstance(value, str) and value.startswith(PLACEHOLDER_PREFIX)
 
 
 def process_file(path: Path, tier_map: dict, dry_run: bool, force: bool) -> str:
@@ -82,6 +131,43 @@ def process_file(path: Path, tier_map: dict, dry_run: bool, force: bool) -> str:
     if not dry_run:
         path.write_text(new_text, encoding="utf-8")
     return f"{current_value} -> {new_value}"
+
+
+def build_reverse_map(presets: dict) -> tuple:
+    """
+    Build a reverse model->tier map from all presets combined.
+
+    Determinism rule: when the same concrete model ID maps to multiple
+    tiers across presets, the first tier encountered in canonical TOKENS
+    order wins. The losing tiers are returned in `ambiguous` so the caller
+    can warn rather than silently pick one.
+    """
+    reverse_map: dict = {}
+    ambiguous: list = []
+    # Iterate presets in stable sorted order, then each preset's tiers in
+    # canonical TOKENS order, so the first assignment is deterministic.
+    for preset_name in sorted(presets.keys()):
+        preset = presets[preset_name]
+        for tier in TOKENS:
+            model = preset.get("models", {}).get(tier)
+            if not model:
+                continue
+            if not isinstance(model, str) or not model:
+                continue
+            if model in reverse_map:
+                existing = reverse_map[model]
+                if existing != tier:
+                    ambiguous.append(
+                        f"{model}: already mapped to {existing}, "
+                        f"ignored mapping to {tier} (preset {preset_name})"
+                    )
+                continue
+            if has_placeholder(model):
+                # Skip placeholder values for the reverse map — they cannot
+                # round-trip back to a tier without leaking the placeholder.
+                continue
+            reverse_map[model] = tier
+    return reverse_map, ambiguous
 
 
 def restore_tokens(path: Path, reverse_map: dict, dry_run: bool) -> str:
@@ -125,8 +211,11 @@ def main():
     if args.list:
         for name, preset in presets.items():
             print(f"{name}: {preset.get('label', '')}")
-            for tier, model in preset.get("models", {}).items():
-                print(f"    {tier} -> {model}")
+            for tier in TOKENS:
+                model = preset.get("models", {}).get(tier)
+                if model:
+                    marker = " [placeholder]" if has_placeholder(model) else ""
+                    print(f"    {tier} -> {model}{marker}")
         return
 
     agents_dir = Path(args.agents_dir)
@@ -134,10 +223,15 @@ def main():
         sys.exit(f"error: agents dir not found: {agents_dir}")
 
     if args.restore:
-        reverse_map = {}
-        for preset in presets.values():
-            for tier, model in preset.get("models", {}).items():
-                reverse_map[model] = tier
+        reverse_map, ambiguous = build_reverse_map(presets)
+        if ambiguous:
+            print(
+                f"warning: {len(ambiguous)} ambiguous model-to-tier mapping(s); "
+                "using canonical-order tie-breaking.",
+                file=sys.stderr,
+            )
+            for entry in ambiguous:
+                print(f"  - {entry}", file=sys.stderr)
         for path in sorted(agents_dir.glob("*.md")):
             result = restore_tokens(path, reverse_map, args.dry_run)
             print(f"{path.name}: {result}")
@@ -148,12 +242,23 @@ def main():
     if args.preset not in presets:
         sys.exit(f"error: unknown preset '{args.preset}'. Available: {', '.join(presets)}")
 
-    tier_map = presets[args.preset]["models"]
-    missing = [t for t in TOKENS if t not in tier_map]
+    raw_tier_map = presets[args.preset]["models"]
+    missing = [t for t in REQUIRED_TOKENS if t not in raw_tier_map]
     if missing:
-        sys.exit(f"error: preset '{args.preset}' is missing tiers: {missing}")
+        sys.exit(f"error: preset '{args.preset}' is missing required tier(s): {', '.join(missing)}")
 
-    print(f"Applying preset '{args.preset}' to {agents_dir}/*.md" + (" [dry-run]" if dry_run else "") if False else f"Applying preset '{args.preset}' to {agents_dir}/*.md" + (" [dry-run]" if args.dry_run else ""))
+    tier_map = apply_fallbacks(raw_tier_map)
+
+    placeholders = [t for t in TOKENS if t in tier_map and has_placeholder(tier_map[t])]
+    if placeholders:
+        sys.exit(
+            f"error: preset '{args.preset}' has unresolved placeholder(s) for tier(s): "
+            f"{', '.join(placeholders)}. Run scripts/validate-models.sh and edit the "
+            "preset before applying."
+        )
+
+    suffix = " [dry-run]" if args.dry_run else ""
+    print(f"Applying preset '{args.preset}' to {agents_dir}/*.md{suffix}")
     for path in sorted(agents_dir.glob("*.md")):
         result = process_file(path, tier_map, args.dry_run, args.force)
         print(f"  {path.name}: {result}")

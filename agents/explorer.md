@@ -1,7 +1,7 @@
 ---
 description: Fast codebase explorer that finds files, traces symbols, and answers structure questions at a chosen depth.
 mode: subagent
-model: ollama/deepseek-v4-flash:cloud
+model: {{TIER_FAST}}
 temperature: 0.1
 tools:
   code-review-graph_get_minimal_context_tool: true

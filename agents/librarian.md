@@ -3,7 +3,7 @@ description: >-
   Research-focused agent that explains code across repositories, cites official docs, and finds relevant implementation
   examples.
 mode: subagent
-model: ollama/deepseek-v4-flash:cloud
+model: {{TIER_FAST}}
 temperature: 0.1
 tools: {}
 permission:

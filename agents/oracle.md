@@ -1,7 +1,7 @@
 ---
 description: Read-only technical advisor that gives one well-reasoned recommendation for architecture, design, or strategy.
 mode: subagent
-model: opencode-go/kimi-k3
+model: {{TIER_REASONING}}
 temperature: 0.5
 tools: {}
 permission:

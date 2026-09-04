@@ -131,16 +131,14 @@ describe("frontmatter top-level ordering (Phase 1)", () => {
 
 describe("frontmatter top-level ordering — `mode: primary` invariant", () => {
   /**
-   * The original Phase 1 spec assumed a single `mode: primary` and required
-   * it to live in agents/orchestrator.md. The repository currently has two
-   * primary agents — agents/orchestrator.md and agents/security.md — and
-   * Phase 1's "preserve existing schema/routing behavior" and "no frontmatter
-   * value changes" rules forbid touching either value. The test below
-   * therefore asserts the *current* repository state. Reconciling the spec's
-   * "single primary" wording with the existing two-primary reality is left
-   * to the orchestrator / user.
+   * Phase 2 resolved the pre-existing two-primary discrepancy between
+   * `agents/orchestrator.md` and `agents/security.md`. The session must
+   * have exactly one default entry point: `agents/orchestrator.md`. The
+   * test below asserts that `agents/orchestrator.md` is the sole
+   * `mode: primary` agent. AGENTS.md's "Single Primary Resolution (Phase 2)"
+   * section documents this contract.
    */
-  test("`mode: primary` files match the current repository state (orchestrator + security)", () => {
+  test("exactly one `mode: primary` agent (orchestrator only)", () => {
     const primaryMatches: string[] = [];
     for (const file of readdirSync(AGENTS_DIR).filter((f) => f.endsWith(".md"))) {
       const raw = readFileSync(join(AGENTS_DIR, file), "utf-8");
@@ -166,7 +164,7 @@ describe("frontmatter top-level ordering — `mode: primary` invariant", () => {
       if (inFm) primaryMatches.push(`agents/${file}`);
     }
     primaryMatches.sort();
-    expect(primaryMatches).toEqual(["agents/orchestrator.md", "agents/security.md"]);
+    expect(primaryMatches).toEqual(["agents/orchestrator.md"]);
   });
 });
 

@@ -1,52 +1,52 @@
 {
   "$schema": "https://nicogenti.github.io/opencode-orchestrator-kit/schemas/models.config.schema.json",
-  "version": 1,
-  "description": "Centralized model-tier configuration for opencode-orchestrator-kit. Agent frontmatter references logical tiers ({{TIER_REASONING}}, {{TIER_CODE}}, {{TIER_FAST}}) instead of hardcoded model IDs. install.sh / scripts/apply-model-preset.py resolves tokens to concrete provider/model IDs at install time using the preset selected below.",
+  "version": 2,
+  "description": "Local user model-profile. Edited by the user (or by install.sh) to point the five logical tier tokens at concrete provider/model IDs. Agent frontmatter references logical tiers ({{TIER_ROUTER}}, {{TIER_REASONING}}, {{TIER_CODE}}, {{TIER_FAST}}, {{TIER_REVIEW}}) instead of hardcoded model IDs; install.sh / scripts/apply-model-preset.py resolve tokens to concrete provider/model IDs at install time using the preset selected below. This file is user-local and gitignored.",
   "tiers": {
-    "TIER_REASONING": "Deep reasoning / architecture / orchestration — used by orchestrator, oracle, security, planner.",
-    "TIER_CODE": "Implementation, review, and test-writing — used by code-reviewer, developer-fixer, test-engineer.",
-    "TIER_FAST": "Lightweight utility and high-throughput tasks — used by explorer, librarian, pc-doctor, npm-helper, build-helper, deploy-helper, writer, profiler."
+    "TIER_ROUTER": "Routing agent — used by orchestrator.",
+    "TIER_REASONING": "Deep reasoning / architecture / orchestration — used by oracle, security, planner. Required.",
+    "TIER_CODE": "Implementation, code authoring, and test-writing — used by developer-fixer and test-engineer. Required.",
+    "TIER_FAST": "Lightweight utility and high-throughput tasks — used by profiler, explorer, librarian, build-helper, npm-helper, deploy-helper, pc-doctor, writer. Required.",
+    "TIER_REVIEW": "General correctness / quality review — used by code-reviewer. Falls back to TIER_CODE when omitted."
   },
-  "default_preset": "opencode-go",
+  "fallbacks": {
+    "TIER_ROUTER": "TIER_REASONING",
+    "TIER_REVIEW": "TIER_CODE"
+  },
+  "default_preset": "default",
   "presets": {
-    "opencode-go": {
-      "label": "OpenCode Go (default cloud router)",
-      "description": "Default cloud router plus fast specialist endpoints. Mirrors the kit's out-of-the-box behavior: the router's flagship model for reasoning, and cloud-hosted specialist models for code and fast utility work.",
+    "default": {
+      "label": "OpenCode Go + Ollama Cloud (default)",
+      "description": "Known-good default profile mirroring the kit's out-of-the-box behavior: a flagship reasoning model, cloud-hosted specialists for code and review, and a fast cloud model for utility tasks.",
       "requires": [],
       "models": {
-        "TIER_REASONING": "opencode-go/gpt-5.6-luna",
-        "TIER_CODE": "ollama/minimax-m3:cloud",
+        "TIER_ROUTER": "opencode-go/gpt-5.6-luna",
+        "TIER_REASONING": "opencode-go/kimi-k3",
+        "TIER_CODE": "opencode-go/minimax-m3",
+        "TIER_REVIEW": "opencode-go/minimax-m3",
         "TIER_FAST": "ollama/deepseek-v4-flash:cloud"
       }
     },
-    "local-ollama": {
-      "label": "Local Ollama (fully offline)",
-      "description": "Runs entirely on a local Ollama daemon. Pull the models first: `ollama pull qwen2.5-coder:32b && ollama pull qwen2.5-coder:14b && ollama pull deepseek-coder:6.7b`.",
-      "requires": ["ollama serve running on http://localhost:11434"],
+    "opencode-go": {
+      "label": "OpenCode Go (legacy alias of `default`)",
+      "description": "Backward-compatible alias of the `default` preset. Retained so older install commands and migration scripts that target `--preset opencode-go` keep working.",
+      "requires": [],
       "models": {
-        "TIER_REASONING": "ollama/qwen2.5-coder:32b",
-        "TIER_CODE": "ollama/qwen2.5-coder:14b",
-        "TIER_FAST": "ollama/deepseek-coder:6.7b"
+        "TIER_ROUTER": "opencode-go/gpt-5.6-luna",
+        "TIER_REASONING": "opencode-go/kimi-k3",
+        "TIER_CODE": "opencode-go/minimax-m3",
+        "TIER_REVIEW": "opencode-go/minimax-m3",
+        "TIER_FAST": "ollama/deepseek-v4-flash:cloud"
       }
     },
-    "commercial-api-anthropic": {
-      "label": "Commercial API — Anthropic Claude",
-      "description": "Standard Anthropic Claude configuration. Requires ANTHROPIC_API_KEY. Verify exact model IDs with `opencode models` before install, as Anthropic revises IDs over time.",
-      "requires": ["ANTHROPIC_API_KEY"],
+    "three-tier-legacy": {
+      "label": "Three-tier legacy preset (backward-compat fixture)",
+      "description": "Declares only the original three required tiers (TIER_REASONING, TIER_CODE, TIER_FAST). TIER_ROUTER and TIER_REVIEW must resolve through their one-hop fallbacks (TIER_ROUTER -> TIER_REASONING, TIER_REVIEW -> TIER_CODE). Used to exercise the fallback path in tests.",
+      "requires": [],
       "models": {
-        "TIER_REASONING": "anthropic/claude-opus-4-1",
-        "TIER_CODE": "anthropic/claude-sonnet-4-5",
-        "TIER_FAST": "anthropic/claude-haiku-4-5"
-      }
-    },
-    "commercial-api-openai": {
-      "label": "Commercial API — OpenAI",
-      "description": "Standard OpenAI configuration using GPT-4o for reasoning/code and GPT-4o-mini for fast utility work. Requires OPENAI_API_KEY.",
-      "requires": ["OPENAI_API_KEY"],
-      "models": {
-        "TIER_REASONING": "openai/gpt-4o",
-        "TIER_CODE": "openai/gpt-4o",
-        "TIER_FAST": "openai/gpt-4o-mini"
+        "TIER_REASONING": "test/legacy-reasoning",
+        "TIER_CODE": "test/legacy-code",
+        "TIER_FAST": "test/legacy-fast"
       }
     }
   }

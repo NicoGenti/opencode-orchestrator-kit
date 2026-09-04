@@ -26,7 +26,7 @@ function extractSection(markdown: string, headingRegex: RegExp): string {
   }
   const start = startMatch.index + startMatch[0].length;
   const rest = markdown.slice(start);
-  const nextHeading = rest.search(/\n##\s/);
+  const nextHeading = rest.search(/\r?\n##\s/);
   return nextHeading === -1 ? rest : rest.slice(0, nextHeading);
 }
 
@@ -43,8 +43,8 @@ function extractBacktickIds(tableSection: string): Set<string> {
 const orchestratorMd = readFileSync(join(AGENTS_DIR, "orchestrator.md"), "utf-8");
 const agentsMd = readFileSync(join(REPO_ROOT, "AGENTS.md"), "utf-8");
 
-const routingTableIds = extractBacktickIds(extractSection(orchestratorMd, /##\s+Agent Routing\n/));
-const rosterTableIds = extractBacktickIds(extractSection(agentsMd, /##\s+Runtime Subagent Roster\n/));
+const routingTableIds = extractBacktickIds(extractSection(orchestratorMd, /##\s+Agent Routing\r?\n/));
+const rosterTableIds = extractBacktickIds(extractSection(agentsMd, /##\s+Runtime Subagent Roster\r?\n/));
 
 const agentIdsInAgents = readdirSync(AGENTS_DIR)
   .filter((f) => f.endsWith(".md") && f !== "orchestrator.md")

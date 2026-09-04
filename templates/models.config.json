@@ -1,0 +1,43 @@
+{
+  "$schema": "https://nicogenti.github.io/opencode-orchestrator-kit/schemas/models.config.schema.json",
+  "version": 2,
+  "description": "Phase 1 model-profile template for opencode-orchestrator-kit. Editable by the user; copied to .opencode/models.config.json by install.sh. Agent frontmatter references logical tiers ({{TIER_ROUTER}}, {{TIER_REASONING}}, {{TIER_CODE}}, {{TIER_FAST}}, {{TIER_REVIEW}}) instead of hardcoded model IDs; install.sh / scripts/apply-model-preset.py resolve tokens to concrete provider/model IDs at install time using the preset selected below. Two profiles are shipped: `default` (known-good) and `generic` (unresolved placeholders meant to be edited by the user).",
+  "tiers": {
+    "TIER_ROUTER": "Routing agent — used by orchestrator. Falls back to TIER_REASONING when omitted.",
+    "TIER_REASONING": "Deep reasoning / architecture / orchestration — used by oracle, security, planner. Required.",
+    "TIER_CODE": "Implementation, code authoring, and test-writing — used by developer-fixer and test-engineer. Required.",
+    "TIER_FAST": "Lightweight utility and high-throughput tasks — used by profiler, explorer, librarian, build-helper, npm-helper, deploy-helper, pc-doctor, writer. Required.",
+    "TIER_REVIEW": "General correctness / quality review — used by code-reviewer. Falls back to TIER_CODE when omitted."
+  },
+  "fallbacks": {
+    "TIER_ROUTER": "TIER_REASONING",
+    "TIER_REVIEW": "TIER_CODE"
+  },
+  "default_preset": "default",
+  "presets": {
+    "default": {
+      "label": "OpenCode Go + Ollama Cloud (known-good)",
+      "description": "Known-good default profile mirroring the kit's out-of-the-box behavior: a flagship reasoning model, cloud-hosted specialists for code and review, and a fast cloud model for utility tasks. Validates clean against scripts/validate-models.sh.",
+      "requires": [],
+      "models": {
+        "TIER_ROUTER": "opencode-go/gpt-5.6-luna",
+        "TIER_REASONING": "opencode-go/kimi-k3",
+        "TIER_CODE": "opencode-go/minimax-m3",
+        "TIER_REVIEW": "opencode-go/minimax-m3",
+        "TIER_FAST": "ollama/deepseek-v4-flash:cloud"
+      }
+    },
+    "generic": {
+      "label": "Generic profile (unresolved placeholders — edit before use)",
+      "description": "Editable generic profile with placeholder/* sentinel values for every required tier. The placeholder/* prefix is reserved: scripts/validate-models.sh exits non-zero while any value still starts with 'placeholder/', and scripts/apply-model-preset.py refuses to apply a preset that still has unresolved placeholders. Edit each tier to a real provider/model ID, save, then re-run scripts/validate-models.sh.",
+      "requires": [],
+      "models": {
+        "TIER_ROUTER": "placeholder/router-model-id",
+        "TIER_REASONING": "placeholder/reasoning-model-id",
+        "TIER_CODE": "placeholder/code-model-id",
+        "TIER_REVIEW": "placeholder/review-model-id",
+        "TIER_FAST": "placeholder/fast-model-id"
+      }
+    }
+  }
+}

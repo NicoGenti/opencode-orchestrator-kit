@@ -1,7 +1,7 @@
 ---
 description: Technical writer that produces clear, verified documentation for READMEs, APIs, architecture, and user guides.
 mode: subagent
-model: ollama/deepseek-v4-flash:cloud
+model: {{TIER_FAST}}
 temperature: 0.4
 permission:
   bash:
