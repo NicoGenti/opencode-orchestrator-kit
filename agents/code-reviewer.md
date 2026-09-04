@@ -3,7 +3,7 @@ description: >-
   Systematic code reviewer that finds bugs, security flaws, and design risks before release, then ranks them and
   recommends concrete fixes.
 mode: subagent
-model: opencode-go/minimax-m3
+model: {{TIER_REVIEW}}
 temperature: 0.2
 tools:
   code-review-graph_detect_changes_tool: true

@@ -48,22 +48,24 @@ This document defines the **strict orchestrator** role for `orchestrator` and th
 
 ## Runtime Subagent Roster
 
-| Runtime ID | Role | Read/write scope |
-| --- | --- | --- |
-| `profiler` | Repo bootstrap: stack/CI detection, empty-repo intake, `plan/` scaffolding. Runs once per repo. | Writes only `PROJECT-PROFILE.md`, `.context/*` templates, `plan/README.md`, `plan/*/.gitkeep` |
-| `explorer` | Codebase, file, or symbol exploration. | Read-only |
-| `librarian` | Documentation lookups, remote examples, repository history. | Read-only |
-| `oracle` | Architecture, design, or strategy advice. | Read-only |
-| `planner` | Turns exploration into a phased development plan. | Writes to `plan/draft/` only |
-| `developer-fixer` | Implementation, TDD, single-phase execution against a precise spec. | Writes application code/tests per scope |
-| `test-engineer` | Tests, coverage, reproduction. | Writes tests only unless explicitly delegated otherwise |
-| `code-reviewer` | General correctness/design/quality review. | Read-only |
-| `security` | Vulnerability, threat-model, hardening review. | Read-only |
-| `build-helper` | TypeScript/Vite/webpack/build-tool errors. | Scoped fixes |
-| `npm-helper` | npm/Node dependency, install, cache issues. | Scoped fixes |
-| `deploy-helper` | CI/CD pipeline and deploy platform failures. | Scoped fixes |
-| `pc-doctor` | Windows/local environment, PATH, services. Defined in `extras/pc-doctor.md`. | Scoped fixes |
-| `writer` | Technical documentation generation. Defined in `extras/writer.md`. | Docs only, never executable code |
+The roster is partitioned into four tiers. Tiers differ in **when** the orchestrator invokes an agent, not in tool permissions. The set of runtime IDs in this table MUST stay set-equal to the IDs in `agents/orchestrator.md`'s "Runtime Roster" table.
+
+| Runtime ID | Tier | Role | Read/write scope |
+| --- | --- | --- | --- |
+| `profiler` | Core routing | Repo bootstrap: stack/CI detection, empty-repo intake, `plan/` scaffolding. Runs once per repo. | Writes only `PROJECT-PROFILE.md`, `.context/*` templates, `plan/README.md`, `plan/*/.gitkeep` |
+| `explorer` | Core routing | Codebase, file, or symbol exploration. | Read-only |
+| `oracle` | Core routing | Architecture, design, or strategy advice. The standard non-trivial workflow is `explorer` → `oracle` → `planner` → `developer-fixer`. | Read-only |
+| `planner` | Core routing | Turns exploration into a phased development plan. | Writes to `plan/draft/` only |
+| `developer-fixer` | Core delivery | Implementation, TDD, single-phase execution against a precise spec. | Writes application code/tests per scope |
+| `test-engineer` | Core delivery | Tests, coverage, reproduction. | Writes tests only unless explicitly delegated otherwise |
+| `code-reviewer` | Core delivery | General correctness/design/quality review. | Read-only |
+| `security` | Core delivery | Vulnerability, threat-model, hardening review. | Read-only |
+| `build-helper` | Conditional operations | TypeScript/Vite/webpack/build-tool errors. Invoked ONLY on a matching build-tool failure (see `agents/orchestrator.md`'s disambiguation section). | Scoped fixes |
+| `npm-helper` | Conditional operations | npm/Node dependency, install, cache issues. Invoked ONLY on a matching Node toolchain failure. | Scoped fixes |
+| `deploy-helper` | Conditional operations | CI/CD pipeline and deploy platform failures. Invoked ONLY on a matching CI/CD or deploy-platform failure. | Scoped fixes |
+| `pc-doctor` | Explicit opt-in extra | Windows/local environment, PATH, services. Defined in `extras/pc-doctor.md`. Load only on explicit opt-in or when the failure is clearly Windows-local. | Scoped fixes |
+| `writer` | Explicit opt-in extra | Technical documentation generation. Defined in `extras/writer.md`. Load only on explicit opt-in. | Docs only, never executable code |
+| `librarian` | Explicit opt-in extra | Documentation lookups, remote examples, repository history. Load only on explicit opt-in; not part of the standard `oracle`-led workflow. | Read-only |
 
 Model assignment (primary/fallback per agent) lives in each `agents/<name>.md` (or `extras/<name>.md` for `pc-doctor` and `writer`) frontmatter, not in this file — this keeps model choice editable per deployment without touching the orchestration contract.
 
@@ -158,9 +160,9 @@ The relevant guard tests are:
 - `tests/assembly-order.test.ts` — asserts the deterministic `AGENTS.md` → sorted `agents/` → sorted `extras/` enumeration.
 - `tests/stable-prefix-boundary.test.ts` — asserts the boundary exactly matches the committed baseline and explicitly excludes `.opencode/context/` and `.opencode/models.config.json`.
 
-### Known Discrepancy (Out of Scope)
+### Single Primary Resolution (Phase 2)
 
-The repository currently has a pre-existing two-primary discrepancy: `agents/orchestrator.md` and `agents/security.md` both declare `mode: primary`. This contract does **not** assert that there is a single primary agent, does not prescribe a resolution, and does not authorize changing either value. Reconciling the spec's single-primary wording with the existing two-primary reality is left to a separate decision.
+`agents/orchestrator.md` is the sole `mode: primary` agent. Phase 2 changed `agents/security.md` from `mode: primary` to `mode: subagent` so the session has exactly one default entry point. The `tests/frontmatter-order.test.ts` primary-agent expectation reflects this: exactly `["agents/orchestrator.md"]` MUST appear in the `mode: primary` set.
 
 ### Scope of This Contract
 

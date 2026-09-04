@@ -4,7 +4,7 @@ description: >-
   orchestrator's 9-section spec format, and hands it off to developer-fixer for execution. May request additional
   exploration before finalizing a plan.
 mode: subagent
-model: ollama/glm-5.2:cloud
+model: {{TIER_REASONING}}
 temperature: 0.3
 tools:
   read: true

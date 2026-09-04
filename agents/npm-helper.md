@@ -3,7 +3,7 @@ description: >-
   npm and Node.js error specialist for dev folders. Diagnoses install/runtime/peer-dep/cache/native-module issues and
   applies minimal fixes. Does not modify application source code.
 mode: subagent
-model: ollama/deepseek-v4-flash:cloud
+model: {{TIER_FAST}}
 temperature: 0.2
 permission:
   task: deny

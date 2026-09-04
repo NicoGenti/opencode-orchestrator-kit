@@ -2,8 +2,8 @@
 description: >-
   Security engineer focused on vulnerability detection, threat modeling, and secure coding practices. Use for
   security-focused code review, threat analysis, or hardening recommendations.
-mode: primary
-model: opencode-go/kimi-k3
+mode: subagent
+model: {{TIER_REASONING}}
 temperature: 0.2
 permission:
   "*": deny
@@ -151,7 +151,7 @@ You MUST NOT:
 
 ## Usage
 
-This agent runs as a **primary** agent. Switch to it via Tab key when you need a security-focused review of a codebase, a specific change, a file, or a system component.
+This agent is a core-delivery subagent of the `orchestrator`. It is invoked via the orchestrator's `task` delegation when a request matches the criteria below. It is not a user-selectable primary entry point — `agents/orchestrator.md` is the sole primary.
 
 ### When to Use
 

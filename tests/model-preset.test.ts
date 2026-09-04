@@ -13,17 +13,22 @@ const {
   getDefaultPreset,
   validatePreset,
   resolveModelConfig,
+  applyTierFallbacks,
   TOKENS,
+  REQUIRED_TOKENS,
+  TIER_FALLBACKS,
 } = await import("../scripts/resolve-model-preset.ts");
 
 const FIXTURE_CONFIG = {
   "$schema": "https://nicogenti.github.io/opencode-orchestrator-kit/schemas/models.config.schema.json",
-  "version": 1,
+  "version": 2,
   "description": "Test configuration",
   "tiers": {
+    "TIER_ROUTER": "Test routing tier",
     "TIER_REASONING": "Test reasoning tier",
     "TIER_CODE": "Test code tier",
-    "TIER_FAST": "Test fast tier"
+    "TIER_FAST": "Test fast tier",
+    "TIER_REVIEW": "Test review tier"
   },
   "default_preset": "test-preset",
   "presets": {
@@ -32,9 +37,11 @@ const FIXTURE_CONFIG = {
       "description": "Test preset description",
       "requires": [],
       "models": {
+        "TIER_ROUTER": "test/router-model",
         "TIER_REASONING": "test/reasoning-model",
         "TIER_CODE": "test/code-model",
-        "TIER_FAST": "test/fast-model"
+        "TIER_FAST": "test/fast-model",
+        "TIER_REVIEW": "test/review-model"
       }
     },
     "another-preset": {
@@ -42,14 +49,32 @@ const FIXTURE_CONFIG = {
       "description": "Another preset description",
       "requires": [],
       "models": {
+        "TIER_ROUTER": "another/router-model",
         "TIER_REASONING": "another/reasoning-model",
         "TIER_CODE": "another/code-model",
-        "TIER_FAST": "another/fast-model"
+        "TIER_FAST": "another/fast-model",
+        "TIER_REVIEW": "another/review-model"
       }
     }
   }
 };
 
+// Three-tier legacy preset: only TIER_REASONING, TIER_CODE, TIER_FAST.
+// Used to prove the backward-compat / fallback semantics.
+const THREE_TIER_CONFIG = {
+  presets: {
+    "three-tier-legacy": {
+      "label": "Three-tier legacy fixture",
+      "models": {
+        "TIER_REASONING": "legacy/reasoning",
+        "TIER_CODE": "legacy/code",
+        "TIER_FAST": "legacy/fast"
+      }
+    }
+  }
+};
+
+// Preset missing a required tier.
 const INVALID_CONFIG = {
   "presets": {
     "invalid-preset": {
@@ -60,6 +85,50 @@ const INVALID_CONFIG = {
     }
   }
 };
+
+describe("resolve-model-preset.ts — canonical five-token list", () => {
+  test("TOKENS contains the five canonical tier names in canonical order", () => {
+    expect(TOKENS).toEqual([
+      "TIER_ROUTER",
+      "TIER_REASONING",
+      "TIER_CODE",
+      "TIER_FAST",
+      "TIER_REVIEW",
+    ]);
+  });
+
+  test("REQUIRED_TOKENS contains the original three required tiers", () => {
+    expect(REQUIRED_TOKENS).toEqual([
+      "TIER_REASONING",
+      "TIER_CODE",
+      "TIER_FAST",
+    ]);
+    // All required tokens must be in TOKENS (no aliases).
+    for (const t of REQUIRED_TOKENS) {
+      expect(TOKENS).toContain(t);
+    }
+  });
+
+  test("TIER_FALLBACKS maps optional tiers to required tiers only", () => {
+    expect(TIER_FALLBACKS).toEqual({
+      TIER_ROUTER: "TIER_REASONING",
+      TIER_REVIEW: "TIER_CODE",
+    });
+    // Fallback targets must be required tiers (no chained fallbacks).
+    for (const target of Object.values(TIER_FALLBACKS)) {
+      expect(REQUIRED_TOKENS).toContain(target);
+    }
+  });
+
+  test("isTierToken recognises every canonical token", async () => {
+    const { isTierToken } = await import("../scripts/resolve-model-preset.ts");
+    for (const t of TOKENS) {
+      expect(isTierToken(`{{${t}}}`)).toBe(true);
+    }
+    expect(isTierToken("concrete/model")).toBe(false);
+    expect(isTierToken("{{UNKNOWN_TIER}}")).toBe(false);
+  });
+});
 
 describe("resolve-model-preset.ts — model-preset resolution", () => {
   let tempDir: string;
@@ -96,14 +165,16 @@ describe("resolve-model-preset.ts — model-preset resolution", () => {
     await expect(loadModelConfig(invalidPath, tempDir)).rejects.toThrow();
   });
 
-  test("resolvePreset resolves a valid preset", () => {
+  test("resolvePreset resolves a valid preset with all five tiers", () => {
     const config = FIXTURE_CONFIG;
     const resolved = resolvePreset(config, "test-preset");
     expect(resolved.preset).toBe("test-preset");
     expect(resolved.models).toEqual({
-      "TIER_REASONING": "test/reasoning-model",
-      "TIER_CODE": "test/code-model",
-      "TIER_FAST": "test/fast-model"
+      TIER_ROUTER: "test/router-model",
+      TIER_REASONING: "test/reasoning-model",
+      TIER_CODE: "test/code-model",
+      TIER_FAST: "test/fast-model",
+      TIER_REVIEW: "test/review-model",
     });
   });
 
@@ -118,15 +189,25 @@ describe("resolve-model-preset.ts — model-preset resolution", () => {
     expect(() => resolvePreset(config, "nonexistent")).toThrow();
   });
 
-  test("resolvePreset throws on invalid preset (missing tiers)", () => {
+  test("resolvePreset throws on invalid preset (missing required tiers)", () => {
     const config = INVALID_CONFIG;
     expect(() => resolvePreset(config, "invalid-preset")).toThrow();
   });
 
-  test("resolveModelValue resolves a tier token", async () => {
+  test("resolveModelValue resolves every canonical tier token", async () => {
     const config = FIXTURE_CONFIG;
-    const resolved = await resolveModelValue("{{TIER_REASONING}}", config, "test-preset");
-    expect(resolved).toBe("test/reasoning-model");
+    // The expected mapping below mirrors FIXTURE_CONFIG; explicit is clearer than computing from the token name.
+    const explicit: Record<string, string> = {
+      TIER_ROUTER: "test/router-model",
+      TIER_REASONING: "test/reasoning-model",
+      TIER_CODE: "test/code-model",
+      TIER_FAST: "test/fast-model",
+      TIER_REVIEW: "test/review-model",
+    };
+    for (const token of TOKENS) {
+      const resolved = await resolveModelValue(`{{${token}}}`, config, "test-preset");
+      expect(resolved).toBe(explicit[token]);
+    }
   });
 
   test("resolveModelValue returns concrete value unchanged", async () => {
@@ -151,9 +232,11 @@ describe("resolve-model-preset.ts — model-preset resolution", () => {
     const config = FIXTURE_CONFIG;
     const preset = getPreset(config, "test-preset");
     expect(preset).toEqual({
-      "TIER_REASONING": "test/reasoning-model",
-      "TIER_CODE": "test/code-model",
-      "TIER_FAST": "test/fast-model"
+      TIER_ROUTER: "test/router-model",
+      TIER_REASONING: "test/reasoning-model",
+      TIER_CODE: "test/code-model",
+      TIER_FAST: "test/fast-model",
+      TIER_REVIEW: "test/review-model",
     });
   });
 
@@ -177,10 +260,6 @@ describe("resolve-model-preset.ts — model-preset resolution", () => {
   test("validatePreset returns false for invalid preset", () => {
     const config = FIXTURE_CONFIG;
     expect(validatePreset(config, "nonexistent")).toBe(false);
-  });
-
-  test("TOKENS contains all required tier names", () => {
-    expect(TOKENS).toEqual(["TIER_REASONING", "TIER_CODE", "TIER_FAST"]);
   });
 
   test("loadModelConfig handles malformed JSON gracefully", async () => {
@@ -249,5 +328,118 @@ describe("resolve-model-preset.ts — model-preset resolution", () => {
     const badPath = join(tempDir, "bad-structure.json");
     writeFileSync(badPath, JSON.stringify({ not: "a config" }));
     await expect(resolveModelConfig(badPath, tempDir)).rejects.toThrow();
+  });
+});
+
+describe("resolve-model-preset.ts — backward-compat three-tier presets", () => {
+  test("three-tier preset resolves through one-hop fallbacks", () => {
+    const resolved = resolvePreset(THREE_TIER_CONFIG, "three-tier-legacy");
+    expect(resolved.preset).toBe("three-tier-legacy");
+    // Required tiers preserve their original concrete IDs.
+    expect(resolved.models.TIER_REASONING).toBe("legacy/reasoning");
+    expect(resolved.models.TIER_CODE).toBe("legacy/code");
+    expect(resolved.models.TIER_FAST).toBe("legacy/fast");
+    // Optional tiers fall back exactly once.
+    expect(resolved.models.TIER_ROUTER).toBe("legacy/reasoning");
+    expect(resolved.models.TIER_REVIEW).toBe("legacy/code");
+  });
+
+  test("resolveModelValue resolves {{TIER_ROUTER}} via fallback", async () => {
+    const resolved = await resolveModelValue(
+      "{{TIER_ROUTER}}",
+      THREE_TIER_CONFIG,
+      "three-tier-legacy",
+    );
+    expect(resolved).toBe("legacy/reasoning");
+  });
+
+  test("resolveModelValue resolves {{TIER_REVIEW}} via fallback", async () => {
+    const resolved = await resolveModelValue(
+      "{{TIER_REVIEW}}",
+      THREE_TIER_CONFIG,
+      "three-tier-legacy",
+    );
+    expect(resolved).toBe("legacy/code");
+  });
+
+  test("explicit optional tier wins over fallback", () => {
+    const config = {
+      presets: {
+        "explicit-router": {
+          models: {
+            TIER_ROUTER: "explicit/router",
+            TIER_REASONING: "r1",
+            TIER_CODE: "c1",
+            TIER_FAST: "f1",
+          },
+        },
+      },
+    };
+    const resolved = resolvePreset(config, "explicit-router");
+    expect(resolved.models.TIER_ROUTER).toBe("explicit/router");
+    expect(resolved.models.TIER_REASONING).toBe("r1");
+    expect(resolved.models.TIER_REVIEW).toBe("c1");
+  });
+
+  test("preset missing a required tier fails even with fallbacks available", () => {
+    const config = {
+      presets: {
+        "missing-code": {
+          models: {
+            TIER_ROUTER: "r0",
+            TIER_REASONING: "r1",
+            TIER_FAST: "f1",
+            // TIER_CODE missing — fallback cannot substitute (no chain).
+          },
+        },
+      },
+    };
+    expect(() => resolvePreset(config, "missing-code")).toThrow();
+  });
+});
+
+describe("resolve-model-preset.ts — applyTierFallbacks (pure function)", () => {
+  test("fills in missing TIER_ROUTER and TIER_REVIEW via fallbacks", () => {
+    const out = applyTierFallbacks({
+      TIER_REASONING: "r",
+      TIER_CODE: "c",
+      TIER_FAST: "f",
+    });
+    expect(out).toEqual({
+      TIER_REASONING: "r",
+      TIER_CODE: "c",
+      TIER_FAST: "f",
+      TIER_ROUTER: "r",
+      TIER_REVIEW: "c",
+    });
+  });
+
+  test("preserves explicit values when both fallback and explicit are present", () => {
+    const out = applyTierFallbacks({
+      TIER_ROUTER: "explicit-router",
+      TIER_REASONING: "r",
+      TIER_CODE: "c",
+      TIER_FAST: "f",
+      TIER_REVIEW: "explicit-review",
+    });
+    expect(out.TIER_ROUTER).toBe("explicit-router");
+    expect(out.TIER_REVIEW).toBe("explicit-review");
+  });
+
+  test("does not chain fallbacks (no TIER_REASONING -> no TIER_ROUTER substitution)", () => {
+    const out = applyTierFallbacks({
+      TIER_CODE: "c",
+      TIER_FAST: "f",
+      // TIER_REASONING missing — TIER_ROUTER must NOT silently pick TIER_CODE.
+    });
+    expect(out.TIER_ROUTER).toBeUndefined();
+    expect(out.TIER_REVIEW).toBe("c");
+  });
+
+  test("does not mutate the input map", () => {
+    const input = { TIER_REASONING: "r", TIER_CODE: "c", TIER_FAST: "f" };
+    const snapshot = JSON.stringify(input);
+    applyTierFallbacks(input);
+    expect(JSON.stringify(input)).toBe(snapshot);
   });
 });

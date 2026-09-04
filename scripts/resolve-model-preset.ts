@@ -4,9 +4,23 @@ import { join, resolve, isAbsolute, normalize, sep } from 'path';
 /**
  * Model-preset resolution module.
  *
- * Resolves logical model tiers ({{TIER_REASONING}}, {{TIER_CODE}}, {{TIER_FAST}})
- * to concrete provider/model IDs based on a preset defined in
- * .opencode/models.config.json.
+ * Resolves logical model tiers ({{TIER_ROUTER}}, {{TIER_REASONING}}, {{TIER_CODE}},
+ * {{TIER_FAST}}, {{TIER_REVIEW}}) to concrete provider/model IDs based on a
+ * preset defined in .opencode/models.config.json.
+ *
+ * Tier roles (canonical, in canonical order):
+ *   TIER_ROUTER    — orchestrator / routing agent
+ *   TIER_REASONING — deep reasoning, architecture, security, planning
+ *   TIER_CODE      — implementation, tests, code authoring
+ *   TIER_FAST      — lightweight utility / high-throughput tasks
+ *   TIER_REVIEW    — general correctness / quality review
+ *
+ * Backward compatibility:
+ *   The original three required tokens (TIER_REASONING, TIER_CODE, TIER_FAST)
+ *   remain required. The two new tokens (TIER_ROUTER, TIER_REVIEW) fall back
+ *   to TIER_REASONING and TIER_CODE respectively when omitted from a preset.
+ *   A preset that only declares the original three tiers therefore still
+ *   resolves router and review through the fallback chain.
  *
  * Security:
  * - Only reads from the configured path (no path traversal)
@@ -15,7 +29,28 @@ import { join, resolve, isAbsolute, normalize, sep } from 'path';
  * - Handles missing/invalid config gracefully
  */
 
-export const TOKENS = ['TIER_REASONING', 'TIER_CODE', 'TIER_FAST'] as const;
+/** Canonical five-token list, in canonical order. */
+export const TOKENS = [
+  'TIER_ROUTER',
+  'TIER_REASONING',
+  'TIER_CODE',
+  'TIER_FAST',
+  'TIER_REVIEW',
+] as const;
+
+/** Original three tiers that MUST be present in every valid preset. */
+export const REQUIRED_TOKENS = ['TIER_REASONING', 'TIER_CODE', 'TIER_FAST'] as const;
+
+/**
+ * Optional fallback chain used when an optional tier is missing from a preset.
+ * Each key is a tier that may be omitted; the value is the tier to substitute
+ * when resolving. Fallbacks are one-hop only and never chained.
+ */
+export const TIER_FALLBACKS: Readonly<Record<string, (typeof TOKENS)[number]>> = {
+  TIER_ROUTER: 'TIER_REASONING',
+  TIER_REVIEW: 'TIER_CODE',
+};
+
 export type TierName = (typeof TOKENS)[number];
 
 export interface ModelConfig {
@@ -96,10 +131,38 @@ export async function loadModelConfig(
 }
 
 /**
+ * Apply one-hop fallbacks to a raw preset model map.
+ *
+ * Given a preset's `models` record (which may omit TIER_ROUTER and/or
+ * TIER_REVIEW), returns a fully-populated tier map where every canonical
+ * token has a concrete model ID. Falls back exactly once; no chained
+ * fallbacks. If a required tier is missing, the original record is
+ * returned untouched (the required-tier error is raised separately by
+ * `resolvePreset`).
+ */
+export function applyTierFallbacks(
+  presetModels: Record<string, string>,
+): Record<string, string> {
+  const out: Record<string, string> = { ...presetModels };
+  for (const token of TOKENS) {
+    if (out[token]) continue;
+    const fallback = TIER_FALLBACKS[token];
+    if (fallback && out[fallback]) {
+      out[token] = out[fallback];
+    }
+  }
+  return out;
+}
+
+/**
  * Resolve a single tier token to its concrete model ID.
  *
+ * Honors the optional fallback chain. If `value` is one of the canonical
+ * `{{TIER_*}}` placeholders, returns the corresponding entry from
+ * `tierMap`. The tierMap is assumed to already have fallbacks applied.
+ *
  * @param value - The current value (may be a token like {{TIER_REASONING}} or a concrete model ID)
- * @param tierMap - Map of tier names to concrete model IDs
+ * @param tierMap - Map of tier names to concrete model IDs (with fallbacks applied)
  * @returns Resolved model ID, or null if value is not a known token
  */
 export function resolveValue(value: string, tierMap: Record<string, string>): string | null {
@@ -152,10 +215,14 @@ export function getPreset(config: ModelConfig, presetName: string): Record<strin
 /**
  * Resolve a preset name to its model configuration.
  *
+ * Validation rule: every entry in `REQUIRED_TOKENS` must be present in the
+ * preset's raw model map. Optional tiers (TIER_ROUTER, TIER_REVIEW) are
+ * filled in through the one-hop fallback chain by `applyTierFallbacks`.
+ *
  * @param config - The model configuration
  * @param presetName - Name of the preset (or null to use default_preset)
- * @returns ResolvedConfig with preset name and model map
- * @throws Error if preset is not found or invalid
+ * @returns ResolvedConfig with preset name and full tier map
+ * @throws Error if preset is not found or required tiers are missing
  */
 export function resolvePreset(config: ModelConfig, presetName: string | null = null): ResolvedConfig {
   const targetPreset = presetName || config.default_preset;
@@ -163,22 +230,30 @@ export function resolvePreset(config: ModelConfig, presetName: string | null = n
     throw new Error('No preset specified and no default_preset in config');
   }
 
-  const models = getPreset(config, targetPreset);
-  if (!models) {
+  const rawModels = getPreset(config, targetPreset);
+  if (!rawModels) {
     const available = listPresets(config).join(', ');
     throw new Error(
       `Preset '${targetPreset}' not found. Available presets: ${available}`
     );
   }
 
-  // Validate all required tiers are present
-  for (const token of TOKENS) {
-    if (!models[token]) {
-      throw new Error(
-        `Preset '${targetPreset}' is missing required tier: ${token}`
-      );
+  // Validate all required tiers are present in the raw preset map.
+  // Optional tiers (TIER_ROUTER, TIER_REVIEW) are filled in by
+  // applyTierFallbacks below — their absence is not an error.
+  const missing: string[] = [];
+  for (const token of REQUIRED_TOKENS) {
+    if (!rawModels[token]) {
+      missing.push(token);
     }
   }
+  if (missing.length > 0) {
+    throw new Error(
+      `Preset '${targetPreset}' is missing required tier(s): ${missing.join(', ')}`
+    );
+  }
+
+  const models = applyTierFallbacks(rawModels);
 
   return { preset: targetPreset, models };
 }

@@ -5,7 +5,7 @@ description: >-
   .context/ memory templates, and scaffolds the plan/ kanban folder structure. Runs once per repo (idempotent on
   re-run: only creates what is missing).
 mode: subagent
-model: ollama/deepseek-v4-flash:cloud
+model: {{TIER_FAST}}
 temperature: 0.1
 tools:
   read: true
