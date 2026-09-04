@@ -1,5 +1,5 @@
-import { describe, expect, test } from "bun:test";
-import { existsSync } from "node:fs";
+import { beforeAll, describe, expect, test } from "bun:test";
+import { chmodSync, existsSync } from "node:fs";
 import { spawnSync, SpawnSyncReturns } from "node:child_process";
 import { join, resolve } from "node:path";
 
@@ -69,6 +69,23 @@ function runWithExports(
 }
 
 const skipIfNoBash = bashAvailable() ? describe : describe.skip;
+
+// CI-only hermeticity: ensure the spawned scripts have the execute bit set
+// before any test invokes them. Both files are committed with mode 100644;
+// on strict POSIX filesystems (e.g. GitHub Actions `actions/checkout`),
+// the missing `+x` causes the stdin-driven spawn to fail with
+// `Permission denied` (exit 126). Local WSL's permissive mount masked
+// the issue. The chmod is wrapped in try/catch so platforms without
+// POSIX semantics (e.g. Windows) don't crash the suite.
+beforeAll(() => {
+  for (const p of [DETECT_OS_RAW, INSTALL_SH_RAW]) {
+    try {
+      chmodSync(p, 0o755);
+    } catch {
+      // best-effort; chmod is unsupported on some filesystems
+    }
+  }
+});
 
 skipIfNoBash("detect-os.sh — preflight", () => {
   test("script exists", () => {
