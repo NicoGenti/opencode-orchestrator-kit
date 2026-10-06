@@ -39,7 +39,8 @@ const TUPLE_FIELDS = [
   "agent_calls",
   "input_tokens",
   "output_tokens",
-  "confidence",
+  "user_confidence",
+  "evaluator_confidence",
   "dci_immediate",
   "dci_delayed",
   "retries",
@@ -120,21 +121,54 @@ describe("research-mode — v0.6.0 Cognitive Research Mode", () => {
     expect(section).toContain("No header, no prose, append-only");
   });
 
-  test("metric tuple declares all 16 fields", () => {
+  test("metric tuple declares all 17 fields (canon: command/research-mode.md)", () => {
     for (const field of TUPLE_FIELDS) {
-      expect(new RegExp(`^${field}\\s`, "m").test(section)).toBe(true);
+      expect(new RegExp(`^${field}\\s`, "m").test(researchCmd)).toBe(true);
     }
+  });
+
+  test("confidence normalisation: separate user / evaluator confidence, old 'confidence' retired", () => {
+    expect(researchCmd).toContain("user_confidence");
+    expect(researchCmd).toContain("evaluator_confidence");
+    expect(researchCmd).toMatch(/user_confidence.*developer self-rated confidence 1-5/is);
+    expect(researchCmd).toMatch(/evaluator_confidence.*coach's confidence in its verdict 1-5/is);
+    // the bare field name must not appear as a tuple line anymore
+    expect(researchCmd).not.toMatch(/^confidence\s/m);
   });
 
   test("slot alternates deterministically in activation order", () => {
     expect(section).toContain("alternates deterministically in activation order");
     expect(section).toContain("first active task = A");
+    expect(researchCmd).toContain("The slot is assigned when the task begins");
   });
 
   test("bugfix_ref convention and tokens_source honesty field present", () => {
-    expect(section).toContain('plan=<earlierNNNN>');
-    expect(section).toContain("tokens_source");
-    expect(section).toContain("honesty field");
+    expect(researchCmd).toContain('plan=<earlierNNNN>');
+    expect(researchCmd).toContain("tokens_source");
+    expect(researchCmd).toContain("honesty field");
+  });
+
+  // ── Group RM6 (v0.6.1): A/B slots are behavioral, not labels ─────────────────
+
+  test("slot A (control) runs WITHOUT the comprehension gate: 0 coach calls, no questions", () => {
+    for (const doc of [section, researchCmd]) {
+      expect(doc).toContain("Slot A (control)");
+      expect(doc).toMatch(/Slot A[\s\S]{0,400}WITHOUT the comprehension gate/);
+      expect(doc).toContain("0 coach calls");
+    }
+     expect(researchCmd).toContain("no calibration question");
+  });
+
+  test("slot B (treatment) runs WITH the comprehension gate: classify NONE/LIGHT/DEEP", () => {
+    for (const doc of [section, researchCmd]) {
+      expect(doc).toContain("Slot B (treatment)");
+      expect(doc).toMatch(/Slot B[\s\S]{0,200}(WITH the (full )?comprehension gate|comprehension gate)/);
+      expect(doc).toContain("possible RETRY");
+    }
+  });
+
+  test("both slots complete the task; only the comprehension layer differs", () => {
+    expect(researchCmd).toContain("Both slots complete the same engineering task");
   });
 
   // ── Group RM5: mode-off regression ───────────────────────────────────────────

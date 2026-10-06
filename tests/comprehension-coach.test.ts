@@ -161,11 +161,15 @@ describe("comprehension-coach — Phase 1 agent + baseline", () => {
     // Since v0.4.0 the coach DOES score DCI — but only inside ## EVALUATE
     // (positive assertions live in the "v0.4.0 DCI + calibration" describe
     // below). This guard locks the confinement: outside the EVALUATE
-    // section no numeric range pattern may appear.
+    // section no numeric range pattern may appear. The ## Output Format
+    // section (v0.6.1) legitimately hosts the evaluator_confidence 1-5
+    // scale, so it is stripped from the checked region too.
     const start = raw.indexOf("## EVALUATE");
     const end = raw.indexOf("## Retry Protocol");
+    const ofStart = raw.indexOf("## Output Format");
     const outside =
-      raw.slice(0, start) + raw.slice(end === -1 ? raw.length : end);
+      raw.slice(0, start) +
+      raw.slice(end === -1 ? raw.length : end, ofStart === -1 ? raw.length : ofStart);
     expect(outside).not.toMatch(/[0-9]\s*-\s*[0-9]/);
   });
 
@@ -173,8 +177,10 @@ describe("comprehension-coach — Phase 1 agent + baseline", () => {
     const raw = readFileSync(COACH_PATH, "utf-8");
     const start = raw.indexOf("## EVALUATE");
     const end = raw.indexOf("## Retry Protocol");
+    const ofStart = raw.indexOf("## Output Format");
     const outside =
-      raw.slice(0, start) + raw.slice(end === -1 ? raw.length : end);
+      raw.slice(0, start) +
+      raw.slice(end === -1 ? raw.length : end, ofStart === -1 ? raw.length : ofStart);
     expect(outside).not.toMatch(/\bDCI\b/);
   });
 
@@ -317,9 +323,12 @@ describe("comprehension-coach — v0.4.0 DCI + calibration", () => {
     expect(raw).toMatch(/Maximum 1 retry/);
   });
 
-  test("Output Format invariant: Comprehension: PASS | SKIPPED preserved", () => {
+  test("Output Format invariant: structured minimal block with all four outcomes", () => {
     const raw = readFileSync(COACH_PATH, "utf-8");
-    expect(raw).toMatch(/Comprehension: PASS \| SKIPPED/);
+    // v0.6.1: verdict line carries the full allowed outcome set;
+    // PASS/FAIL/SKIPPED are terminals, RETRY consumes the single hint+follow-up.
+    expect(raw).toMatch(/Comprehension: <PASS \| RETRY \| FAIL \| SKIPPED>/);
+    expect(raw).toMatch(/evaluator_confidence: <1-5>/);
   });
 
   test("DCI does NOT influence verdict — mention in rubric", () => {

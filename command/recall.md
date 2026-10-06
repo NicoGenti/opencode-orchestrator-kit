@@ -16,20 +16,23 @@ Comando `/recall`. Flusso di ri-attivazione di una sessione di comprensione pass
 3. **Load questions**: read the per-plan record at `.context/comprehension/<plan-id>.md` if it exists (`src=stored`); otherwise reconstruct from the plan's Goal/Scope section in `plan/complete/<plan-id>.md` (`src=reconstructed`), inferring questions that map to the plan's stated acceptance criteria.
 4. **Show ALL questions** (with `- ?` prefix), one per line. No code, no diffs, no explanations yet.
 5. **User answers from memory** (no tooling, no file access during this step).
-6. **Code inspection** (v0.3.1 token-aware comprehension): if needed, show the relevant diff with `maxDiffLines=300` — diff lines ONLY, correlated symbols surrounding each change, NEVER full files, NEVER repo-wide scans.
+6. **Code inspection** (v0.3.1 token-aware comprehension, v0.6.1 caps): if needed, show the relevant diff with `maxDiffLines=300` and correlated symbols capped at `maxRelatedSymbols=3` — diff lines ONLY, NEVER full files, NEVER repo-wide scans.
 7. **Evaluation** delegated to `comprehension-coach` using the v0.4.0 DCI rubric with the identical whitelist input (goal, changed file list, focused diff, minimal surrounding symbols). The coach's rubric score is the DCI verdict.
 8. **Retry/skip** (v0.3.0 verbatim): maximum 1 retry; `skip comprehension` is always available; no reveal of expected answers during retry.
 9. **Outcome**: append dci1-format row to `.context/comprehension-log.md` AND note in `.context/progress.md`; update the per-plan record's `outcome` and `dci` fields. Format:
 
 ```
-<date> | plan=<NNNN> | type=dci1 | src=stored|reconstructed | retry=<0|1> | conf=<1-5>|conf=n/a | DCI=<score>/<available_score> | DCI=skipped | outcome=PASS|FAIL|RETRY|SKIPPED
+<date> | plan=<NNNN> | type=dci1 | src=stored|reconstructed | retry=<0|1> | user_conf=<1-5>|n/a | evaluator_conf=<1-5>|n/a | DCI=<score>/<available_score> | DCI=skipped | outcome=PASS|FAIL|RETRY|SKIPPED
 ```
 
-- `outcome=SKIPPED` row format: `conf=n/a | DCI=skipped | outcome=SKIPPED` (no `conf=` numeric field).
+- `outcome=SKIPPED` row format: `user_conf=n/a | evaluator_conf=n/a | DCI=skipped | outcome=SKIPPED` (no numeric confidence fields).
+- v0.6.1: the two confidence fields are distinct normalised values — `user_conf` is the developer's calibration self-rating, `evaluator_conf` the coach's confidence in its verdict; the old overloaded single `conf=` field is retired.
 - Same header-once rule as the telemetry writer; same append-only discipline.
 - The log file `.context/comprehension-log.md` is the single sink for all dci1 rows.
 
 **Metric caveat (Retention = DCI₁/DCI₀)**: "è una nostra metrica operativa, non una metrica scientificamente validata". Retention compares the delayed DCI₁ (via `/recall`) with the immediate DCI₀ recorded at gate time; it is an operational metric, not a validated scientific one. v0.5.0 only accumulates dci1 data.
+
+**Budget (v0.6.1 normalisation)**: before the user answers, only the plan document and the per-plan record's saved questions are consulted. After the answer, reads are limited to the diff/file/symbol matter pertinent to the selected plan, respecting `maxDiffLines=300` and `maxRelatedSymbols=3` — never a whole-repo scan, never a whole-file read when a bounded slice suffices.
 
 **Whitelist of sources**: ONLY the plan document in `plan/complete/` and the per-plan record in `.context/comprehension/` may be consulted during /recall. NO repo-wide scans, NO scanning of other plans, NO ad-hoc file reads beyond the selected plan's document.
 

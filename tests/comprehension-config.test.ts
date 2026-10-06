@@ -176,56 +176,61 @@ describe("comprehension-config — Group A: template", () => {
 
 // ── Group B: Cross-check orchestrator defaults ─────────────────────────────────
 
-describe("comprehension-config — Group B: orchestrator cross-check", () => {
+describe("comprehension-config — Group B: defaults table cross-check", () => {
+  // v0.6.1: the default limits table is canonical in the comprehension-workflow
+  // skill (loaded on demand); agents/orchestrator.md keeps only the pointer.
+  const skillPath = join(REPO_ROOT, "skills/comprehension-workflow/SKILL.md");
+  const raw = readFileSync(skillPath, "utf-8");
+
   test("Configuration and precedence section exists in orchestrator", () => {
-    const raw = readFileSync(ORCHESTRATOR_PATH, "utf-8");
-    expect(raw).toMatch(/### Configuration and precedence/);
+    const orch = readFileSync(ORCHESTRATOR_PATH, "utf-8");
+    expect(orch).toMatch(/### Configuration and precedence/);
   });
 
   // Table cells are written "| `key` | `value` |"; allow arbitrary spacing.
   test("defaults table lists enabled true", () => {
-    const raw = readFileSync(ORCHESTRATOR_PATH, "utf-8");
     expect(raw).toMatch(/\|\s*`enabled`\s*\|\s*`true`\s*\|/);
   });
 
   test("defaults table lists light.questions 2", () => {
-    const raw = readFileSync(ORCHESTRATOR_PATH, "utf-8");
     expect(raw).toMatch(/\|\s*`light\.questions`\s*\|\s*`2`\s*\|/);
   });
 
   test("defaults table lists deep.questions 4", () => {
-    const raw = readFileSync(ORCHESTRATOR_PATH, "utf-8");
     expect(raw).toMatch(/\|\s*`deep\.questions`\s*\|\s*`4`\s*\|/);
   });
 
   test("defaults table lists deep.escalationTier TIER_REVIEW", () => {
-    const raw = readFileSync(ORCHESTRATOR_PATH, "utf-8");
     expect(raw).toMatch(/\|\s*`deep\.escalationTier`\s*\|\s*`TIER_REVIEW`\s*\|/);
   });
 
   test("defaults table lists context.maxDiffLines 300", () => {
-    const raw = readFileSync(ORCHESTRATOR_PATH, "utf-8");
     expect(raw).toMatch(/\|\s*`context\.maxDiffLines`\s*\|\s*`300`\s*\|/);
   });
 
   test("defaults table lists context.unifiedContextLines 3", () => {
-    const raw = readFileSync(ORCHESTRATOR_PATH, "utf-8");
     expect(raw).toMatch(/\|\s*`context\.unifiedContextLines`\s*\|\s*`3`\s*\|/);
   });
 
   test("defaults table lists context.maxRelatedSymbols 3", () => {
-    const raw = readFileSync(ORCHESTRATOR_PATH, "utf-8");
     expect(raw).toMatch(/\|\s*`context\.maxRelatedSymbols`\s*\|\s*`3`\s*\|/);
   });
 
   test("defaults table lists evaluation.maxRetries 1", () => {
-    const raw = readFileSync(ORCHESTRATOR_PATH, "utf-8");
     expect(raw).toMatch(/\|\s*`evaluation\.maxRetries`\s*\|\s*`1`\s*\|/);
   });
 
   test("defaults table lists evaluation.escalateOnAmbiguity true", () => {
-    const raw = readFileSync(ORCHESTRATOR_PATH, "utf-8");
     expect(raw).toMatch(/\|\s*`evaluation\.escalateOnAmbiguity`\s*\|\s*`true`\s*\|/);
+  });
+
+  test("orchestrator keeps the tier-token prohibition line (Group D fixture)", () => {
+    const orch = readFileSync(ORCHESTRATOR_PATH, "utf-8");
+    const tier = ["TIER", "COMPREHENSION"].join("_");
+    expect(orch).toContain(
+      "No new tier token is introduced (no `" + tier +
+      "`); tier resolution stays on the existing `TIER_FAST` / `TIER_REVIEW` mapping via the preset resolver."
+    );
   });
 });
 

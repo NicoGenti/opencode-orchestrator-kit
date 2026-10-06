@@ -53,7 +53,10 @@ describe("recall-command — v0.5.0 Comprehension Retention", () => {
     expect(recall).toContain("type=dci1");
     expect(recall).toContain("DCI=<score>/<available_score>");
     expect(recall).toContain("DCI=skipped | outcome=SKIPPED");
-    expect(recall).toContain("conf=<1-5>|conf=n/a");
+    // v0.6.1: confidence normalised into two distinct fields
+    expect(recall).toContain("user_conf=<1-5>|n/a");
+    expect(recall).toContain("evaluator_conf=<1-5>|n/a");
+    expect(recall).not.toMatch(/conf=<1-5>\|conf=n\/a/); // old overloaded field retired
   });
 
   test("src=reconstructed path + sources whitelist present", () => {

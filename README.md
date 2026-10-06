@@ -237,12 +237,15 @@ unità di inferenza aggiuntiva?" — how much human comprehension is preserved
 per unit of additional inference.
 
 `/research-mode on` (explicit confirmation required, or `research.enabled` in
-the configuration as the same explicit opt-in) starts an A/B crossover: the
-normal workflow runs as slot A, the comprehension workflow as slot B,
-alternating deterministically in activation order. Each completed task
-appends exactly one JSON object — a 16-field metric tuple — to
+the configuration as the same explicit opt-in) starts an A/B crossover whose
+slots are **behavioral, not labels**: slot A (control) runs the normal
+workflow with no comprehension gate (no questions, 0 coach calls), slot B
+(treatment) runs the same task with the full comprehension gate; the slot
+alternates deterministically in activation order. Each completed task appends
+exactly one JSON object — a 17-field metric tuple with normalised
+`user_confidence` and `evaluator_confidence` — to
 `.context/research-dataset.jsonl` (metrics only, untracked by design, never
-loaded by `/start-session`).
+loaded by `/start-session`; full contract in `command/research-mode.md`).
 
 The headline metric is the **Cognitive Overhead Ratio (COR)**: comprehension
 tokens over total task tokens, compared across A/B pairs (e.g. `bugfix_ref`

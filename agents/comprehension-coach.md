@@ -48,12 +48,13 @@ Ask only what the developer's answer would reveal about genuine comprehension, n
 After the developer responds, assess whether the answer demonstrates real understanding or is shallow/recited. Provide a brief verdict:
 
 - **PASS** — the developer's reconstruction is accurate and shows genuine comprehension.
-- **RETRY** — the answer reveals a gap; provide exactly one focused hint (a file path, a symbol name, or a single structural observation) and allow one follow-up question.
+- **RETRY** — the answer reveals a gap that one focused hint may close; provide exactly one focused hint (a file path, a symbol name, or a single structural observation) and allow one follow-up question.
+- **FAIL** — terminal negative outcome: the follow-up after a RETRY still fails to demonstrate comprehension, or the first attempt is so far off that a hint would be guesswork. FAIL ends the evaluation; it is never softened into PASS.
 - **SKIPPED** — the developer wrote `skip comprehension`; record `SKIPPED` and stop immediately.
 
 ### DCI scoring
 
-Score each dimension 0-2 — every evaluation assigns a score of 0 (wrong/absent), 1 (partial), or 2 (accurate) to each of the four dimensions: FLOW, RATIONALE, PREDICTION, LOCALIZATION. In LIGHT mode, any dimension not covered by the questions is marked N/A and the denominator becomes available_score (sum of the maximum scores of the scored dimensions). In DEEP mode all four dimensions are scored — DCI=<score>/8. The emission format is the literal string DCI=<score>/<available_score> (in DEEP available_score is always 8). The DCI does NOT influence the verdict: PASS/RETRY/SKIPPED are governed by the existing rules. On SKIPPED the coach does NOT emit DCI (the telemetry line is composed by the orchestrator).
+Score each dimension 0-2 — every evaluation assigns a score of 0 (wrong/absent), 1 (partial), or 2 (accurate) to each of the four dimensions: FLOW, RATIONALE, PREDICTION, LOCALIZATION. In LIGHT mode, any dimension not covered by the questions is marked N/A and the denominator becomes available_score (sum of the maximum scores of the scored dimensions). In DEEP mode all four dimensions are scored — DCI=<score>/8. The emission format is the literal string DCI=<score>/<available_score> (in DEEP available_score is always 8). The DCI does NOT influence the verdict: PASS/RETRY/FAIL/SKIPPED are governed by the existing rules. On SKIPPED the coach does NOT emit DCI (the telemetry line is composed by the orchestrator).
 
 EVALUATE consumes the Q→symbol map produced by CHALLENGE and re-reads ONLY the symbols referenced in its own questions (example format: Q1 → `PaymentService.process()`). Any whole-file re-read in EVALUATE is FORBIDDEN. CHALLENGE context may extend up to the slice provided by the Slicer when one is present.
 
@@ -61,10 +62,10 @@ EVALUATE consumes the Q→symbol map produced by CHALLENGE and re-reads ONLY the
 
 Maximum 1 retry total per comprehension session:
 
-1. First attempt → PASS (finish) / RETRY (one hint + one follow-up) / SKIPPED (finish).
-2. One follow-up → PASS (finish) / finish without further evaluation.
+1. First attempt → PASS (finish) / RETRY (one hint + one follow-up) / FAIL (finish) / SKIPPED (finish).
+2. One follow-up → PASS (finish) / FAIL (finish).
 
-No further retries after the first follow-up. No unbounded loops.
+No further retries after the first follow-up. No unbounded loops. The final verdict after the follow-up is FINAL — there is never a second evaluation pass.
 
 ## Skip Protocol
 
@@ -83,10 +84,14 @@ Your input is limited to: the developer's **goal**, the **changed file list**, t
 
 ## Output Format
 
-After EVALUATE, emit exactly:
+After EVALUATE, emit exactly this block, and nothing else:
 
 ```
-Comprehension: PASS | SKIPPED
+Comprehension: <PASS | RETRY | FAIL | SKIPPED>
+evaluator_confidence: <1-5>
 ```
 
-No additional commentary required.
+- `evaluator_confidence` — the coach's confidence in its own verdict (integer 1-5). On SKIPPED (no evaluation performed) emit `evaluator_confidence: n/a`; the orchestrator normalises it in telemetry.
+- The DCI value, when produced, is the last line of the EVALUATE response in the rubric's format (see DCI scoring); on SKIPPED the coach does NOT emit DCI — the telemetry line is composed by the orchestrator.
+- Never include the developer's `user_confidence` — the calibration self-rating is the orchestrator's to record, not the coach's to rate or repeat.
+- No additional commentary required.

@@ -2,6 +2,17 @@
 
 All notable changes to this project are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Starting from v0.3.0, this project follows [Semantic Versioning](https://semver.org/) (SemVer): PATCH = fixes and tuning; MINOR = new backward-compatible capabilities; MAJOR = breaking changes to orchestration or configuration.
 
+## [0.6.1] — 2026-10-07
+
+### Changed
+
+- **On-demand cognitive workflow details**: the comprehension-gate operational protocol (configuration precedence, Slicer pipeline, telemetry row contract, per-plan retention records, escalation routing, /recall flow) moved out of `agents/orchestrator.md` into the new `comprehension-workflow` skill, loaded only when running a LIGHT/DEEP gate or `/recall` — the orchestrator keeps routing, NONE/LIGHT/DEEP classification, activation conditions and token-efficiency budgets, with a regression test pinning the prompt budget at 27,000 characters.
+- **Research A/B slots are now behavioral, not labels**: slot A (control) runs the workflow without the comprehension gate (no classification, no questions, 0 coach calls, `gate_type=n/a`), slot B (treatment) runs it with the full gate; the canonical tuple contract moved to `command/research-mode.md`.
+- **Confidence normalised**: the overloaded `confidence` telemetry field is retired in favour of two distinct values — `user_confidence` (developer calibration self-rating 1-5) and `evaluator_confidence` (coach's confidence in its verdict 1-5) — across telemetry, per-plan records, /recall rows and the research tuple (now 17 fields).
+- **Coach outcome set corrected**: allowed verdicts are now `PASS | RETRY | FAIL | SKIPPED` (FAIL added as terminal negative outcome, previously missing), DCI separated from the verdict, structured minimal output with `evaluator_confidence`.
+- **DCI denominator rule enforced**: every dimension scores 0-2 and valid denominators derive only from the dimensions actually evaluated (even values 2-8); incoherent examples such as a score-denominator pair of 4/5 removed from shipped files.
+- **/recall budget clarified**: before the user answers only the plan document + saved questions are consulted; after the answer reads stay within `maxDiffLines=300` and `maxRelatedSymbols=3` of the selected plan — never a whole-repo scan, never a whole-file read when a bounded slice suffices; retrieval-before-explanation unchanged.
+
 ## [0.6.0] — 2026-10-06
 
 ### Added
