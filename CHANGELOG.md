@@ -2,6 +2,21 @@
 
 All notable changes to this project are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Starting from v0.3.0, this project follows [Semantic Versioning](https://semver.org/) (SemVer): PATCH = fixes and tuning; MINOR = new backward-compatible capabilities; MAJOR = breaking changes to orchestration or configuration.
 
+## [0.3.1] — 2026-10-06
+
+### Added
+
+- **templates/comprehension.config.json**: new user-local comprehension config template (enabled, mode, light/deep question counts, context limits maxDiffLines/unifiedContextLines/maxRelatedSymbols, evaluation maxRetries/escalateOnAmbiguity). File > built-in defaults; invalid values → defaults + warning, never hard failure; enabled false → gate disabled (back to v0.2.2 behavior).
+- **Context slicing (explorer-as-Slicer)**: git diff → changed symbols → surrounding context → hotspot extract ≤ maxDiffLines (300) focused lines → slice passed to coach. Task NONE = 0 agent calls. Coach never receives raw git/bash access.
+- **EVALUATE Q→symbol narrowing**: coach re-reads only the symbols referenced by its own questions (Q→symbol map), no whole-file re-reads in evaluation. Asymmetric context: CHALLENGE sees the slice, EVALUATE sees only referenced symbols.
+- **Escalation routing**: exactly ONE escalation per evaluation, only when ambiguous OR security-critical OR architectural uncertainty; escalationTier (default TIER_REVIEW) resolved via models.config.json tier→agent mapping — follows the tier, not the agent name. escalateOnAmbiguity false → FAIL with skip suggestion, never guessed PASS.
+- **docs/CONFIGURATION.md**: new "## Comprehension configuration" section with schema, defaults table, precedence rules, and manual copy instructions.
+- **tests/comprehension-config.test.ts**: new test suite (Groups A–F) covering config schema, defaults, orchestrator/coach doc presence, negative cases, and an unknown-tier sweep (no new tier tokens introduced).
+
+### Changed
+
+- No routing changes to existing agents. Comprehension gate remains opt-out (enabled true by default). Test suite grows from 414 to 455 pass.
+
 ## [Unreleased]
 
 ## [0.3.0] — 2026-10-06

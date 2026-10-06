@@ -1,0 +1,24 @@
+{
+  "comprehension": {
+    "enabled": true,
+    "mode": "adaptive",
+    "light": {
+      "questions": 2,
+      "modelTier": "TIER_FAST"
+    },
+    "deep": {
+      "questions": 4,
+      "modelTier": "TIER_FAST",
+      "escalationTier": "TIER_REVIEW"
+    },
+    "context": {
+      "maxDiffLines": 300,
+      "unifiedContextLines": 3,
+      "maxRelatedSymbols": 3
+    },
+    "evaluation": {
+      "maxRetries": 1,
+      "escalateOnAmbiguity": true
+    }
+  }
+}

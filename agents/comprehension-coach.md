@@ -43,6 +43,8 @@ After the developer responds, assess whether the answer demonstrates real unders
 - **RETRY** — the answer reveals a gap; provide exactly one focused hint (a file path, a symbol name, or a single structural observation) and allow one follow-up question.
 - **SKIPPED** — the developer wrote `skip comprehension`; record `SKIPPED` and stop immediately.
 
+EVALUATE consumes the Q→symbol map produced by CHALLENGE and re-reads ONLY the symbols referenced in its own questions (example format: Q1 → `PaymentService.process()`). Any whole-file re-read in EVALUATE is FORBIDDEN. CHALLENGE context may extend up to the slice provided by the Slicer when one is present.
+
 ## Retry Protocol
 
 Maximum 1 retry total per comprehension session:

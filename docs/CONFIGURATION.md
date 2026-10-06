@@ -232,3 +232,69 @@ python3 scripts/apply-model-preset.py --preset default
 
 This split — committed template, gitignored user copy — is the same
 pattern the kit uses for `.opencode/context/` and `.opencode/PROJECT-PROFILE.md`.
+
+## Comprehension configuration
+
+Comprehension gate limits are read from a user-local config file you copy manually
+from `templates/comprehension.config.json` into `.opencode/comprehension.config.json`.
+`install.sh` does not install `templates/`.
+
+### Schema
+
+```json
+{
+  "comprehension": {
+    "enabled": true,
+    "mode": "adaptive",
+    "light": { "questions": 2, "modelTier": "TIER_FAST" },
+    "deep": { "questions": 4, "modelTier": "TIER_FAST", "escalationTier": "TIER_REVIEW" },
+    "context": { "maxDiffLines": 300, "unifiedContextLines": 3, "maxRelatedSymbols": 3 },
+    "evaluation": { "maxRetries": 1, "escalateOnAmbiguity": true }
+  }
+}
+```
+
+### Default limits
+
+| Key | Default |
+| --- | --- |
+| `enabled` | `true` |
+| `mode` | `adaptive` |
+| `light.questions` | `2` |
+| `light.modelTier` | `TIER_FAST` |
+| `deep.questions` | `4` |
+| `deep.modelTier` | `TIER_FAST` |
+| `deep.escalationTier` | `TIER_REVIEW` |
+| `context.maxDiffLines` | `300` |
+| `context.unifiedContextLines` | `3` |
+| `context.maxRelatedSymbols` | `3` |
+| `evaluation.maxRetries` | `1` |
+| `evaluation.escalateOnAmbiguity` | `true` |
+
+### Precedence
+
+File value > built-in defaults. If the file is absent, empty, or not valid JSON → all limits fall back to the built-in defaults above, and you receive ONE warning line in the progress notes (never a hard failure). Invalid individual values (e.g. negative `questions`, unknown keys) are treated as invalid → that entry falls back to its default with a one-line warning.
+
+> **Warning**: malformed config never causes a hard failure — the orchestrator always falls back to safe defaults and logs a warning.
+
+### Manual copy
+
+Because `install.sh` does not copy `templates/`, create the config yourself:
+
+```bash
+cp templates/comprehension.config.json .opencode/comprehension.config.json
+# then edit .opencode/comprehension.config.json to taste
+```
+
+### Slicing and escalation
+
+Both slicing behaviour and escalation routing are configured through the same config limits:
+
+- `context.maxDiffLines` (default 300) — triggers context slicing when the estimated change exceeds this threshold.
+- `context.unifiedContextLines` (default 3) — lines of context around each changed symbol.
+- `context.maxRelatedSymbols` (default 3) — maximum related symbols included in the slice.
+- `deep.escalationTier` (default `TIER_REVIEW`) — tier used for the escalation agent, resolved through the tier→roster mapping.
+
+### `enabled: false` re-enables v0.2.2 behaviour
+
+Setting `enabled: false` short-circuits the entire comprehension gate. The orchestrator proceeds straight to close and records `comprehension=DISABLED` in the progress notes — effectively restoring the v0.2.2 behaviour without downgrading.

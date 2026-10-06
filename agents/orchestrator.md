@@ -160,6 +160,62 @@ A task reaches `plan/complete/` only when BOTH hold:
 - **TECHNICALLY_DONE**: tests/review green (technical validation complete).
 - **HUMAN_OWNED**: comprehension PASS or SKIPPED.
 
+### Configuration and precedence
+
+The comprehension gate reads its limits from a user-local config file: `.opencode/comprehension.config.json` (user copies it manually from `templates/comprehension.config.json`; `install.sh` does not install `templates/`).
+
+**Precedence**: file value > built-in defaults. If the file is absent, empty, or not valid JSON → all limits fall back to the built-in defaults listed below, and the user receives ONE warning line in the progress notes (never a hard failure).
+
+**Invalid values** (e.g. negative `questions`, missing required keys) are detected by the orchestrator's validator and treated as invalid → the offending entry falls back to its default, with a one-line warning logged.
+
+**Default limits**:
+
+| Key | Default |
+| --- | --- |
+| `enabled` | `true` |
+| `mode` | `adaptive` |
+| `light.questions` | `2` |
+| `light.modelTier` | `TIER_FAST` |
+| `deep.questions` | `4` |
+| `deep.modelTier` | `TIER_FAST` |
+| `deep.escalationTier` | `TIER_REVIEW` |
+| `context.maxDiffLines` | `300` |
+| `context.unifiedContextLines` | `3` |
+| `context.maxRelatedSymbols` | `3` |
+| `evaluation.maxRetries` | `1` |
+| `evaluation.escalateOnAmbiguity` | `true` |
+
+The orchestrator reads these limits when composing delegations to `comprehension-coach`.  
+`enabled: false` skips the gate entirely — orchestrator proceeds straight to close and records `comprehension=DISABLED` in the progress notes.
+
+No new tier token is introduced (no `TIER_COMPREHENSION`); tier resolution stays on the existing `TIER_FAST` / `TIER_REVIEW` mapping via the preset resolver.
+
+### Context slicing (Slicer)
+
+**Trigger** — the Slicer activates ONLY when the estimated change size exceeds `context.maxDiffLines` (default 300) or when the number of changed files requires a bounded slice. Tasks classified NONE receive 0 coach calls (no slice needed). Small changes follow the unchanged v0.3.0 path (specialist change report + coach reads the listed files only).
+
+**Execution** — the orchestrator delegates to `explorer` (read-only, `TIER_FAST`, already chartered for symbol tracing). The coach NEVER receives bash access to `git diff` and its read scope is never widened.
+
+**Pipeline** — `git diff` → changed symbols → small surrounding context (`unifiedContextLines: 3`, `maxRelatedSymbols: 3`) → hotspot behavioral extract ≤ `maxDiffLines` focused lines → slice delivered to `comprehension-coach`. The full diff or whole files are NEVER sent.
+
+**Asymmetric context** — CHALLENGE may see up to the slice; EVALUATE re-reads only the symbols referenced by its own questions — a whole-file re-read in EVALUATE is forbidden (full rule in `agents/comprehension-coach.md`).
+
+### Escalation routing
+
+**Trigger** — exactly ONE escalation per task evaluation, and ONLY when one of these three conditions holds: (a) the evaluation result is ambiguous, (b) the reasoning involves security-critical concerns, or (c) the architectural decision cannot be confidently judged.
+
+**Mapping** — `escalationTier` from the config (default `TIER_REVIEW`) is resolved through the existing tier→roster mapping. The escalation delegates to the agent whose primary tier is `TIER_REVIEW` — in the shipped roster that is `code-reviewer`. If a user re-points `TIER_REVIEW` to a different agent via `models.config.json`, the escalation follows the tier, not the fixed name.
+
+**Scope** — escalation is a scoped, read-only delegation. It re-evaluates ONLY the ambiguous Q→symbol pairs from the original evaluation. It never re-reads the entire slice and never handles questions outside the ambiguous pairs.
+
+**Never on PASS** — escalation never fires on a verdict of PASS. It is reserved for ambiguous or high-stakes cases only.
+
+**Conservative budget consumption** — escalation consumes the single `evaluation.maxRetries` retry budget. When escalation runs, its verdict is FINAL: no second evaluation, no second retry.
+
+**`escalateOnAmbiguity: false`** — when the config disables ambiguity escalation, an ambiguous evaluation resolves to FAIL with a skip suggestion. The verdict never defaults to a guessed PASS.
+
+**`enabled: false`** — when the comprehension gate is disabled entirely, the escalation clause is irrelevant: the gate has already short-circuited and no evaluation occurs.
+
 ## Delegation Rules
 
 The orchestrator SHOULD prefer the most specific available agent. The orchestrator SHOULD split large requests into smaller, independent subtasks — for multi-phase plans this is a MUST, per "Multi-Phase Plan Execution" above.
