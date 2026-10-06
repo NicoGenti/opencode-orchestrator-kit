@@ -156,15 +156,26 @@ describe("comprehension-coach — Phase 1 agent + baseline", () => {
     expect(raw).toMatch(/LOCALIZATION/);
   });
 
-  test("body contains NO numeric DCI scoring schema (no '0-2' range pattern)", () => {
+  test("DCI scoring confined to ## EVALUATE (no numeric range pattern outside it)", () => {
     const raw = readFileSync(COACH_PATH, "utf-8");
-    // Guard against a numeric scoring table like "0-2" or "DCI" scoring
-    expect(raw).not.toMatch(/[0-9]\s*-\s*[0-9]/);
+    // Since v0.4.0 the coach DOES score DCI — but only inside ## EVALUATE
+    // (positive assertions live in the "v0.4.0 DCI + calibration" describe
+    // below). This guard locks the confinement: outside the EVALUATE
+    // section no numeric range pattern may appear.
+    const start = raw.indexOf("## EVALUATE");
+    const end = raw.indexOf("## Retry Protocol");
+    const outside =
+      raw.slice(0, start) + raw.slice(end === -1 ? raw.length : end);
+    expect(outside).not.toMatch(/[0-9]\s*-\s*[0-9]/);
   });
 
-  test("body contains no DCI scoring reference", () => {
+  test("DCI references confined to ## EVALUATE (no 'DCI' outside it)", () => {
     const raw = readFileSync(COACH_PATH, "utf-8");
-    expect(raw).not.toMatch(/\bDCI\b/);
+    const start = raw.indexOf("## EVALUATE");
+    const end = raw.indexOf("## Retry Protocol");
+    const outside =
+      raw.slice(0, start) + raw.slice(end === -1 ? raw.length : end);
+    expect(outside).not.toMatch(/\bDCI\b/);
   });
 
   // ── Group 4: Forbidden-context list + input whitelist ─────────────────────
@@ -230,5 +241,100 @@ describe("comprehension-coach — Phase 1 agent + baseline", () => {
     // Unbounded: "keep asking", "repeat until", "loop indefinitely"
     expect(raw).not.toMatch(/keep asking/i);
     expect(raw).not.toMatch(/loop indefinitely/i);
+  });
+});
+
+describe("comprehension-coach — v0.4.0 DCI + calibration", () => {
+  // Uses the same COACH_PATH and readFileSync pattern as Phase 1
+
+  test("DCI rubric present: Score each dimension 0-2", () => {
+    const raw = readFileSync(COACH_PATH, "utf-8");
+    expect(raw).toMatch(/Score each dimension 0-2/);
+  });
+
+  test("DCI rubric contains all four dimension names", () => {
+    const raw = readFileSync(COACH_PATH, "utf-8");
+    expect(raw).toMatch(/FLOW/);
+    expect(raw).toMatch(/RATIONALE/);
+    expect(raw).toMatch(/PREDICTION/);
+    expect(raw).toMatch(/LOCALIZATION/);
+  });
+
+  test("DCI emission format: DCI=<score>/<available_score>", () => {
+    const raw = readFileSync(COACH_PATH, "utf-8");
+    expect(raw).toMatch(/DCI=<score>\/<available_score>/);
+  });
+
+  test("DCI emission format: DEEP variant DCI=<score>/8", () => {
+    const raw = readFileSync(COACH_PATH, "utf-8");
+    expect(raw).toMatch(/DCI=<score>\/8/);
+  });
+
+  test("calibration question is inside CHALLENGE section (before EVALUATE)", () => {
+    const raw = readFileSync(COACH_PATH, "utf-8");
+    const idxChallenge = raw.indexOf("## CHALLENGE");
+    const idxEvaluate = raw.indexOf("## EVALUATE");
+    const idxCalibration = raw.indexOf("Quanto pensi di aver compreso la modifica?");
+    expect(idxCalibration).toBeGreaterThan(idxChallenge);
+    expect(idxCalibration).toBeLessThan(idxEvaluate);
+  });
+
+  test("calibration question is NOT in EVALUATE section", () => {
+    const raw = readFileSync(COACH_PATH, "utf-8");
+    const idxEvaluate = raw.indexOf("## EVALUATE");
+    const idxDciScoring = raw.indexOf("### DCI scoring");
+    const idxCalibration = raw.indexOf("Quanto pensi di aver compreso la modifica?");
+    // calibration question must be before EVALUATE or after DCI scoring section ends
+    // DCI scoring section starts at ### DCI scoring; it ends before ## Retry Protocol
+    const idxRetryProtocol = raw.indexOf("## Retry Protocol");
+    const afterEvaluateAndBeforeDciScoring = idxCalibration > idxEvaluate && idxCalibration < idxDciScoring;
+    const afterDciScoring = idxCalibration > idxDciScoring && idxCalibration < idxRetryProtocol;
+    expect(afterEvaluateAndBeforeDciScoring || afterDciScoring).toBe(false);
+  });
+
+  test("NONE verbatim: NONE-classified sessions never reach the gate", () => {
+    const raw = readFileSync(COACH_PATH, "utf-8");
+    expect(raw).toMatch(/NONE-classified sessions never reach the gate and are never asked the calibration question/);
+  });
+
+  test("LIGHT mode N/A concession present in rubric", () => {
+    const raw = readFileSync(COACH_PATH, "utf-8");
+    // The DCI scoring section must mention N/A in the context of LIGHT mode
+    const idxDciScoring = raw.indexOf("### DCI scoring");
+    const idxRetryProtocol = raw.indexOf("## Retry Protocol");
+    const dciSection = raw.substring(idxDciScoring, idxRetryProtocol);
+    expect(dciSection).toMatch(/N\/A/);
+    expect(dciSection).toMatch(/LIGHT/);
+  });
+
+  test("RETRY invariant: exactly one focused hint preserved", () => {
+    const raw = readFileSync(COACH_PATH, "utf-8");
+    expect(raw).toMatch(/exactly one focused hint/);
+  });
+
+  test("Retry Protocol invariant: Maximum 1 retry preserved", () => {
+    const raw = readFileSync(COACH_PATH, "utf-8");
+    expect(raw).toMatch(/Maximum 1 retry/);
+  });
+
+  test("Output Format invariant: Comprehension: PASS | SKIPPED preserved", () => {
+    const raw = readFileSync(COACH_PATH, "utf-8");
+    expect(raw).toMatch(/Comprehension: PASS \| SKIPPED/);
+  });
+
+  test("DCI does NOT influence verdict — mention in rubric", () => {
+    const raw = readFileSync(COACH_PATH, "utf-8");
+    const idxDciScoring = raw.indexOf("### DCI scoring");
+    const idxRetryProtocol = raw.indexOf("## Retry Protocol");
+    const dciSection = raw.substring(idxDciScoring, idxRetryProtocol);
+    expect(dciSection).toMatch(/does NOT influence the verdict/);
+  });
+
+  test("SKIPPED: coach does NOT emit DCI — mention in rubric", () => {
+    const raw = readFileSync(COACH_PATH, "utf-8");
+    const idxDciScoring = raw.indexOf("### DCI scoring");
+    const idxRetryProtocol = raw.indexOf("## Retry Protocol");
+    const dciSection = raw.substring(idxDciScoring, idxRetryProtocol);
+    expect(dciSection).toMatch(/SKIPPED.*does NOT emit DCI|On SKIPPED.*does NOT emit DCI/);
   });
 });

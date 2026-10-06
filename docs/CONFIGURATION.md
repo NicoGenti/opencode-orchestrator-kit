@@ -295,6 +295,12 @@ Both slicing behaviour and escalation routing are configured through the same co
 - `context.maxRelatedSymbols` (default 3) — maximum related symbols included in the slice.
 - `deep.escalationTier` (default `TIER_REVIEW`) — tier used for the escalation agent, resolved through the tier→roster mapping.
 
+### Telemetry log
+
+Every gated evaluation appends exactly one line to `.context/comprehension-log.md` (append-only; created on first write with a single header comment). The log is telemetry, not session memory: `/start-session` never loads it, and the write happens only after the verdict is final.
+
+The file is untracked by design: `.gitignore` covers `.context/` with an explicit negation list for the three memory files (`progress.md`, `decisions.md`, `issues.md`) only — never add the comprehension log to that negation list. Lines carry metrics only (timestamp, mode, DCI, confidence, outcome); user answers, questions, diffs, and paths are never logged.
+
 ### `enabled: false` re-enables v0.2.2 behaviour
 
 Setting `enabled: false` short-circuits the entire comprehension gate. The orchestrator proceeds straight to close and records `comprehension=DISABLED` in the progress notes — effectively restoring the v0.2.2 behaviour without downgrading.

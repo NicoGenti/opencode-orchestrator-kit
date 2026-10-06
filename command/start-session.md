@@ -11,3 +11,5 @@ New session. Before doing anything else, run your bootstrap cycle:
 4. Do not start any new work. Wait for my next instruction after the summary.
 
 If none of the bootstrap files exist (repo has never been profiled before), state this explicitly and ask me if you want the `profiler` to run now.
+
+The comprehension telemetry write (`.context/comprehension-log.md`) is NOT part of bootstrap. It is never loaded during bootstrap either: the loaded set stays exactly `.context/progress.md`, `.context/decisions.md`, `.context/issues.md` (the comprehension log is telemetry, not session memory). Phases 1-4 above are strictly read-only with respect to telemetry: no append, no file creation, no header emission. Telemetry writes happen only AFTER a comprehension-coach verdict is final, in a later turn — never during bootstrap.

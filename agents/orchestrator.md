@@ -216,6 +216,39 @@ No new tier token is introduced (no `TIER_COMPREHENSION`); tier resolution stays
 
 **`enabled: false`** — when the comprehension gate is disabled entirely, the escalation clause is irrelevant: the gate has already short-circuited and no evaluation occurs.
 
+### Telemetry writer
+
+The orchestrator acts as a **local telemetry writer** for the comprehension gate. This is NOT a new subagent, NOT a new tier, and does not touch `models.config.json` — it is purely an append-only side-effect of orchestrator's own verdict handling.
+
+After **every** `comprehension-coach` evaluation reaches a final verdict — `PASS`, resolved `RETRY` (second attempt that PASSes), `FAIL`, or `SKIPPED` — the orchestrator MUST append EXACTLY ONE line to `.context/comprehension-log.md`. The file is append-only: never overwrite, never rewrite, never delete individual rows.
+
+Line format (single space-separated fields, no user-answer content):
+
+```
+<ISO 8601 timestamp> mode=<LIGHT|DEEP> DCI=<score>/<available_score>|skipped conf=<1-5>|n/a outcome=<PASS|FAIL|RETRY|SKIPPED>
+```
+
+- `DCI=skipped` and `conf=n/a` are emitted verbatim strings (used for `SKIPPED` and any other case where the score is not computed).
+- `<score>/<available_score>` carries the comprehension-coach's numeric verdict (e.g. `DCI=4/5`).
+- `conf` is the coach's self-rated confidence, integer 1-5; `n/a` only when no score was produced.
+- `outcome` is the orchestrator's final disposition for this evaluation cycle.
+
+Privacy by design: the log MUST NOT include any user answer text, question text, reasoning excerpts, file diffs, file paths, or symbol names. The line is a metric row, not a transcript.
+
+First-write bootstrap: on the FIRST write of a session, if `.context/comprehension-log.md` does not yet exist, create it with EXACTLY one header comment line and then append the evaluation row on the next line:
+
+```
+# comprehension telemetry (one line per evaluation; no user answers)
+```
+
+The header line is written exactly once per session (i.e. once per file). Subsequent appends in the same session never re-emit the header.
+
+NONE-classified sessions: the orchestrator MUST NOT write to `.context/comprehension-log.md` at all and MUST NOT create the file. The gate short-circuits with zero coach calls and zero telemetry rows.
+
+SKIPPED outcome: emit a single row with `DCI=skipped` and `conf=n/a`, regardless of the original classification bucket.
+
+The write happens AFTER the verdict is final — never during bootstrap, never during the CHALLENGE/EVALUATE dialogue, never as a side-effect of reading existing rows. The orchestrator MUST treat `.context/comprehension-log.md` as a strictly append-only artifact from the moment the first verdict lands onward.
+
 ## Delegation Rules
 
 The orchestrator SHOULD prefer the most specific available agent. The orchestrator SHOULD split large requests into smaller, independent subtasks — for multi-phase plans this is a MUST, per "Multi-Phase Plan Execution" above.
