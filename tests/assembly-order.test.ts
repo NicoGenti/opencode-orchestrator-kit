@@ -131,6 +131,7 @@ describe("assembly order (Phase 2) — repository enumeration", () => {
       agents: [
         "agents/build-helper.md",
         "agents/code-reviewer.md",
+        "agents/comprehension-coach.md",
         "agents/deploy-helper.md",
         "agents/developer-fixer.md",
         "agents/explorer.md",

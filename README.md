@@ -34,6 +34,7 @@ The orchestrator never touches application code. It only classifies, delegates, 
 | 3 | `developer-fixer` | Implements **one phase at a time**, fresh context each time — no compounding drift across a long session. |
 | 4 | `test-engineer` | Writes and runs tests for the new rotation logic. |
 | 5 | `security` | Reviews the auth-sensitive change before it reaches `plan/complete/`. |
+| 6 | comprehension-coach | Orchestrator classifies cognitive relevance first (NONE/LIGHT/DEEP). NONE = done. LIGHT = up to 2 questions. DEEP = up to 4 questions. skip comprehension → SKIPPED. |
 
 The orchestrator itself never edits `auth.ts` — it only routes, checkpoints, and moves the plan file across the kanban.
 
@@ -61,6 +62,7 @@ helpers that exist for completeness:
 | **Testing** (test authoring, coverage, reproduction) | `test-engineer` | |
 | **Review** (general correctness / quality) | `code-reviewer` | Optional distinct from security review. |
 | **Security** (vulnerability, threat-model, hardening) | `security` | Routed for auth, crypto, input-handling, secrets changes. |
+| **Human Comprehension** (post-review comprehension check) | comprehension-coach | Read-only. CHALLENGE then EVALUATE. skip comprehension → SKIPPED. Technical verification (code-reviewer/security) is distinct from human comprehension verification (comprehension-coach). |
 
 Full contracts, permissions, and model fallbacks are defined in each `agents/*.md` file
 (with the `pc-doctor` and `writer` specialists living in `extras/*.md` instead) and
@@ -69,7 +71,7 @@ summarized in `AGENTS.md`. The roster is partitioned by tier:
 | Tier | Agents | Installed by default? |
 | --- | --- | --- |
 | Core routing (always installed) | `orchestrator`, `profiler`, `explorer`, `oracle`, `planner` | ✅ Yes |
-| Core delivery (always installed) | `developer-fixer`, `test-engineer`, `code-reviewer`, `security` | ✅ Yes |
+| Core delivery (always installed) | `developer-fixer`, `test-engineer`, `code-reviewer`, `security`, `comprehension-coach` | ✅ Yes |
 | Operations helpers (always installed, routed only on matching failure) | `build-helper`, `npm-helper`, `deploy-helper` | ✅ Yes |
 | Explicit opt-in extras | `pc-doctor` (Windows-local only), `writer` (docs generation) | ❌ `--with-extras` only |
 | Optional, explicitly opt-in | `librarian` (docs lookups, remote examples) | ❌ Installed only if you add it yourself |

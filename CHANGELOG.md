@@ -1,8 +1,21 @@
 # Changelog
 
-All notable changes to this project are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project does not yet follow a formal versioning scheme.
+All notable changes to this project are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Starting from v0.3.0, this project follows [Semantic Versioning](https://semver.org/) (SemVer): PATCH = fixes and tuning; MINOR = new backward-compatible capabilities; MAJOR = breaking changes to orchestration or configuration.
 
 ## [Unreleased]
+
+## [0.3.0] — 2026-10-06
+
+### Added
+- **Human Comprehension Gate (MVP)**: new read-only comprehension-coach agent — CHALLENGE then EVALUATE only, retrieval before explanation, max 1 retry, skip comprehension → SKIPPED. Four dimension tags (FLOW, RATIONALE, PREDICTION, LOCALIZATION); no numeric DCI scoring in this release.
+- **agents/comprehension-coach.md**: new subagent (mode: subagent, model: {{TIER_FAST}}, permission: read-only with task: deny). Input whitelist (goal, changed file list, focused diff, minimal surrounding symbols). Forbidden: whole conversation, whole plan, whole repository, prior transcripts.
+- **Comprehension gate in orchestrator**: after code-reviewer/security pass, orchestrator classifies cognitive relevance (NONE/LIGHT/DEEP) — classification stays in orchestrator, not delegated. Gate exempts the coach from Pre-Delegation Confirmation Gate (read-only agent). Two-phase closing: TECHNICALLY_DONE + HUMAN_OWNED (PASS/SKIPPED). NONE = 0 additional calls; LIGHT = max 2 questions; DEEP = max 4 questions.
+- **Roster AGENTS.md extended**: comprehension-coach joins Core delivery as post-verification agent. Conceptual split: technical verification (code-reviewer/security) ≠ human comprehension verification (comprehension-coach).
+- **Baseline prompt-prefix updated**: agents/comprehension-coach.md appended to tests/fixtures/prompt-prefix-boundary.txt in sorted position (after code-reviewer, before deploy-helper).
+- **tests/comprehension-coach.test.ts**: new test file asserting read-only surface (no webfetch, task: deny, no write/edit allow), {{TIER_FAST}} model token, dimension tags present, no numeric DCI schema, forbidden-context list, skip word → SKIPPED outcome, max 1 retry protocol.
+
+### Notes
+- SemVer adoption: starting v0.3.0 this project follows Semantic Versioning (SemVer). PATCH = fixes and tuning; MINOR = new backward-compatible capabilities; MAJOR = breaking changes to orchestration or configuration.
 
 ## [0.2.2] - 2026-09-04
 

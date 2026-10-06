@@ -59,6 +59,7 @@ The roster is partitioned into four tiers. Tiers differ in **when** the orchestr
 | `developer-fixer` | Core delivery | Implementation, TDD, single-phase execution against a precise spec. | Writes application code/tests per scope |
 | `test-engineer` | Core delivery | Tests, coverage, reproduction. | Writes tests only unless explicitly delegated otherwise |
 | `code-reviewer` | Core delivery | General correctness/design/quality review. | Read-only |
+| `comprehension-coach` | Core delivery | Post-review human comprehension verification (CHALLENGE then EVALUATE). Classification (NONE/LIGHT/DEEP) is performed by the orchestrator — no extra agent call for classification. Technical verification (code-reviewer/security) is distinct from human comprehension verification (comprehension-coach). | Read-only (no write/edit, no delegation, no webfetch) |
 | `security` | Core delivery | Vulnerability, threat-model, hardening review. | Read-only |
 | `build-helper` | Conditional operations | TypeScript/Vite/webpack/build-tool errors. Invoked ONLY on a matching build-tool failure (see `agents/orchestrator.md`'s disambiguation section). | Scoped fixes |
 | `npm-helper` | Conditional operations | npm/Node dependency, install, cache issues. Invoked ONLY on a matching Node toolchain failure. | Scoped fixes |

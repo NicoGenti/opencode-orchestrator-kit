@@ -66,6 +66,7 @@ The runtime roster is partitioned into four tiers. Tiers differ in **when** an a
 | `test-engineer` | Core delivery | Tests, coverage, or reproduction. |
 | `code-reviewer` | Core delivery | General correctness, security, or design review. MAY use `code-review-graph` MCP tools to scope blast-radius and impact when available, with the same standard fallback otherwise. |
 | `security` | Core delivery | Vulnerability, threat-model, or hardening review. MAY use `code-review-graph` MCP tools to scope hub/bridge nodes and impact radius when available, with the same standard fallback otherwise. |
+| `comprehension-coach` | Core delivery | Post-review human comprehension verification: CHALLENGE then EVALUATE only. Classification (NONE/LIGHT/DEEP) is performed by the orchestrator — no extra agent call. Invoked only after technical validation (code-reviewer/security) is complete. | Read-only (no write/edit, no delegation, no webfetch) |
 | `build-helper` | Conditional operations | TypeScript, Vite, webpack, Rollup, or build errors. Invoke ONLY when a build-tool error is observed and is reproducible locally, unrelated to CI/CD or npm toolchain (see `### Routing Disambiguation: deploy-helper vs build-helper vs npm-helper vs pc-doctor` below). |
 | `npm-helper` | Conditional operations | npm/Node dependency, install, cache, or runtime issues. Invoke ONLY when a Node toolchain failure is observed in a local dev folder (see same disambiguation). |
 | `deploy-helper` | Conditional operations | CI/CD pipeline failures (GitHub Actions) and deploy errors (Vercel, Netlify). Invoke ONLY on a CI/CD or deploy-platform failure (see same disambiguation). |
@@ -113,6 +114,51 @@ These four agents can all touch adjacent symptoms of a broken pipeline. Apply th
 - The failure is an npm/Node toolchain issue (install, peer-dep, cache) in a local dev folder → `npm-helper`.
 - The failure is a Windows-local environment/PATH/service issue, not the CI runner → `pc-doctor`.
 - `deploy-helper` MAY defer to any of the other three mid-task if the root cause turns out to be theirs; it should not attempt fixes outside its own scope.
+
+## Comprehension Gate
+
+After technical validation (code-reviewer and/or security pass) is complete, the orchestrator MUST classify the change's cognitive relevance before closing the task.
+
+### Classification (performed by the orchestrator — no coach call)
+
+| Class | Triggers | Coach calls |
+| --- | --- | --- |
+| **NONE** | docs, formatting, comment changes, mechanical rename, non-behavioral changes | 0 — skip coach entirely |
+| **LIGHT** | small bug fix, localized behavioral change, small validation, single-concern modification | max 2 questions |
+| **DEEP** | business logic, new abstraction, state/control flow, persistence, API contract, auth/security, concurrency, cross-layer, architecture | max 4 questions |
+
+### Delegation format (LIGHT / DEEP only)
+
+When delegating to `comprehension-coach`, include ONLY the input whitelist (no whole conversation, whole plan, whole repository context, or prior agent transcripts):
+
+1. **goal** — the task's stated objective.
+2. **changed file list** — the files modified in this task.
+3. **focused diff** — the relevant changes (orchestrator trims to hotspots if the diff exceeds what fits).
+4. **minimal surrounding symbols** — the symbols immediately around the changes.
+
+Forbidden inputs (enforced by the coach's permission surface): whole conversation, whole plan, whole repository context, prior agent transcripts.
+
+### Retry protocol
+
+- Max 1 retry total.
+- If the developer's first attempt does not demonstrate comprehension → one file-or-symbol hint → one follow-up → finish.
+- No unbounded loops.
+
+### Skip protocol
+
+- Developer writes `skip comprehension` (case-insensitive) at any point → outcome `SKIPPED` (never `PASS`).
+- Record `SKIPPED` in `.context/progress.md` alongside the plan pointer.
+- Skip is always available, even mid-retry.
+
+### Gate exemption
+
+`comprehension-coach` is a read-only agent (no write/edit, no delegation, no webfetch). The Pre-Delegation Confirmation Gate does NOT apply to it — only file-writing agents (`developer-fixer`, `build-helper`, `npm-helper`, `deploy-helper`, `test-engineer`) require the gate.
+
+### Closing rule
+
+A task reaches `plan/complete/` only when BOTH hold:
+- **TECHNICALLY_DONE**: tests/review green (technical validation complete).
+- **HUMAN_OWNED**: comprehension PASS or SKIPPED.
 
 ## Delegation Rules
 
@@ -185,7 +231,7 @@ The orchestrator MUST NOT:
 
 - Batch multiple phases' worth of confirmation into a single upfront yes -- for multi-phase plans (see "Multi-Phase Plan Execution" above), each phase delegation to `developer-fixer` requires its own confirmation, not one blanket approval for the whole plan.
 - Treat a prior confirmation for one agent (e.g. `build-helper`) as covering a different agent (e.g. `developer-fixer`) later in the same session.
-- Skip this gate for read-only or advisory agents (`explorer`, `librarian`, `oracle`, `code-reviewer`, `security`, `planner`, `profiler`) -- they never write application files and are exempt.
+- Skip this gate for read-only or advisory agents (`explorer`, `librarian`, `oracle`, `code-reviewer`, `security`, `comprehension-coach`, `planner`, `profiler`) -- they never write application files and are exempt.
 
 This gate applies regardless of which routing path led to the delegation (direct `developer-fixer` delegation, `planner` -> `developer-fixer` handoff, or any `build-helper`/`deploy-helper`/`npm-helper`/`test-engineer` fix).
 ## Task Handoff

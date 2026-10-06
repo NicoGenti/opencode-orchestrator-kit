@@ -31,6 +31,19 @@ Observe → Orient → Decide
      ▼
 Orchestrator validates output, updates .context/*.md,
 moves plan/* files between kanban columns
+     │
+     ▼
+TECHNICALLY_DONE (tests + code-review/security pass)
+     │
+     ▼
+Classify cognitive relevance (orchestrator, no coach call)
+     │
+     ├── NONE ──────────────────────► DONE
+     │                               (0 additional calls)
+     ├── LIGHT (2 questions max) ──► HUMAN_OWNED
+     │   (comprehension-coach)
+     └── DEEP (4 questions max) ───► HUMAN_OWNED
+         (comprehension-coach)
 ```
 
 The Orchestrator itself never touches application code, dependencies, or configuration. Its own write permissions are limited to three session-memory files and `plan/**/*.md` file moves — everything else is delegated.
@@ -45,6 +58,22 @@ This exists as a second, independent layer on top of OpenCode's native `permissi
 - **What the software-level gate guarantees**: because the orchestrator itself asks the confirmation question, in plain conversational language, in the same session the user is already in, the confirmation cannot get lost in a child-session bubbling failure — it does not depend on OpenCode's permission-prompt routing at all.
 - **Granularity**: for multi-phase plans (see "Multi-Phase Plan Execution" in `agents/orchestrator.md`), each phase delegated to `developer-fixer` requires its own confirmation — a single upfront approval for the whole plan is not sufficient.
 - **Scope**: read-only or plan-only agents (`explorer`, `librarian`, `oracle`, `code-reviewer`, `security`, `planner`, `profiler`) never touch application files and are exempt from this gate.
+
+## Comprehension gate
+
+After technical validation is complete (tests green, code-review and/or security pass), the orchestrator classifies the change's cognitive relevance:
+
+| Class | When | Coach calls |
+| --- | --- | --- |
+| **NONE** | docs, formatting, comments, mechanical rename, non-behavioral | 0 |
+| **LIGHT** | small bug fix, localized change, single concern | max 2 questions |
+| **DEEP** | business logic, new abstraction, state/control flow, persistence, API contract, auth, concurrency, cross-layer, architecture | max 4 questions |
+
+NONE costs zero additional agent calls — `comprehension-coach` is never invoked. LIGHT and DEEP delegate to `comprehension-coach` (read-only: CHALLENGE then EVALUATE, never explains before the developer's attempt). `comprehension-coach` is exempt from the Pre-Delegation Confirmation Gate (read-only agent).
+
+The task closes as **HUMAN_OWNED** only after comprehension is PASS or SKIPPED — not merely TECHNICALLY_DONE. Both states must hold before moving to `plan/complete/`. Skip is always available: `skip comprehension` (case-insensitive) yields `SKIPPED`, never `PASS`.
+
+Input to `comprehension-coach` is strictly limited to: task goal, changed file list, focused diff, minimal surrounding symbols. Whole conversation, whole plan, whole repository, and prior agent transcripts are forbidden inputs (enforced by the coach's permission surface).
 
 ## Why this saves tokens and cost
 
