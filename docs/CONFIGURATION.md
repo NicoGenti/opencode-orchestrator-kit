@@ -294,12 +294,16 @@ Both slicing behaviour and escalation routing are configured through the same co
 - `context.unifiedContextLines` (default 3) — lines of context around each changed symbol.
 - `context.maxRelatedSymbols` (default 3) — maximum related symbols included in the slice.
 - `deep.escalationTier` (default `TIER_REVIEW`) — tier used for the escalation agent, resolved through the tier→roster mapping.
+- `recall.enabled` (default `true`) — enables the manual `/recall` command (per-plan comprehension records + delayed DCI₁ evaluation).
+- `recall.automatic` (default `false`, hard limit) — automatic recall is a non-goal: no scheduler, no trigger; `/recall` runs only on explicit user invocation.
 
 ### Telemetry log
 
 Every gated evaluation appends exactly one line to `.context/comprehension-log.md` (append-only; created on first write with a single header comment). The log is telemetry, not session memory: `/start-session` never loads it, and the write happens only after the verdict is final.
 
 The file is untracked by design: `.gitignore` covers `.context/` with an explicit negation list for the three memory files (`progress.md`, `decisions.md`, `issues.md`) only — never add the comprehension log to that negation list. Lines carry metrics only (timestamp, mode, DCI, confidence, outcome); user answers, questions, diffs, and paths are never logged.
+
+Since v0.5.0, `/recall` appends delayed-evaluation rows of type `dci1` to the same log, using the same append-only and metrics-only rules; the asked knowledge questions live in the per-plan records at `.context/comprehension/<plan-id>.md` (same directory, also untracked), never in the log itself.
 
 ### `enabled: false` re-enables v0.2.2 behaviour
 

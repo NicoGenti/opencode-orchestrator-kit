@@ -91,10 +91,22 @@ describe("comprehension-config — Group A: template", () => {
     expect(() => JSON.parse(raw)).not.toThrow();
   });
 
-  test("top-level key is 'comprehension'", () => {
+  test("top-level keys are comprehension + recall", () => {
     const raw = readFileSync(CONFIG_PATH, "utf-8");
     const parsed = JSON.parse(raw);
-    expect(Object.keys(parsed)).toEqual(["comprehension"]);
+    expect(Object.keys(parsed)).toEqual(["comprehension", "recall"]);
+  });
+
+  test("recall.enabled is true", () => {
+    const raw = readFileSync(CONFIG_PATH, "utf-8");
+    const parsed = JSON.parse(raw);
+    expect(parsed.recall.enabled).toBe(true);
+  });
+
+  test("recall.automatic is false (manual-only hard default)", () => {
+    const raw = readFileSync(CONFIG_PATH, "utf-8");
+    const parsed = JSON.parse(raw);
+    expect(parsed.recall.automatic).toBe(false);
   });
 
   test("light.questions is 2", () => {

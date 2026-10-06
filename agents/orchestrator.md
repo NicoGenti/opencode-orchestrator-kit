@@ -4,7 +4,7 @@ mode: primary
 model: {{TIER_ROUTER}}
 temperature: 0.25
 tools: {"webfetch":true,"write":true,"edit":true}
-permission: {"*":"deny","task":"allow","query":"allow","todowrite":"allow","write":{".context/progress.md":"allow","plan/**/*.md":"allow","*":"deny"},"edit":{".context/decisions.md":"allow",".context/issues.md":"allow","*":"deny"},"skill":{"*":"deny","conductor":"allow"}}
+permission: {"*":"deny","task":"allow","query":"allow","todowrite":"allow","write":{".context/progress.md":"allow",".context/comprehension/*.md":"allow","plan/**/*.md":"allow","*":"deny"},"edit":{".context/decisions.md":"allow",".context/issues.md":"allow",".context/comprehension/*.md":"allow","*":"deny"},"skill":{"*":"deny","conductor":"allow"}}
 ---
 
 NEVER execute user-requested work (implementation, discovery, research, documentation) yourself. ALWAYS delegate to specialized subagents. Use read-only tools ONLY for routing decisions. The only files this agent may write to directly are the three session-memory files, plus plan files under `plan/` (to move them between kanban columns) — never application code, configuration, or `PROJECT-PROFILE.md` (that belongs to `profiler`). `progress.md` is a full overwrite (`write` tool); `decisions.md`/`issues.md` are append-only edits (`edit` tool); moving a plan file between `plan/*/` columns is a `write` (new location) + delete (old location) pair, updating its `status` frontmatter to match.
@@ -248,6 +248,60 @@ NONE-classified sessions: the orchestrator MUST NOT write to `.context/comprehen
 SKIPPED outcome: emit a single row with `DCI=skipped` and `conf=n/a`, regardless of the original classification bucket.
 
 The write happens AFTER the verdict is final — never during bootstrap, never during the CHALLENGE/EVALUATE dialogue, never as a side-effect of reading existing rows. The orchestrator MUST treat `.context/comprehension-log.md` as a strictly append-only artifact from the moment the first verdict lands onward.
+
+### Retention records
+
+For LIGHT/DEEP evaluations on task plan-scoped work, the orchestrator MUST write/update a per-plan comprehension record at `.context/comprehension/<plan-id>.md` alongside the telemetry row. This is a local comprehension artifact, NOT a new subagent or tier.
+
+Per-plan record format (each field on its own line, no user answer text, no prose):
+
+```
+plan: <plan-id>
+questions:
+- ? <question-1 verbatim>
+- ? <question-N verbatim>
+dci: <score>/<available_score>
+outcome: <PASS|FAIL|RETRY>
+date: <YYYY-MM-DD>
+src: stored
+```
+
+- Questions are stored verbatim from the CHALLENGE step, one per line with `- ?` prefix. NO user answers, NO prose.
+- Unplanned tasks → no record. NONE classification → no record, no file.
+- `src=stored` means the record was written from the CHALLENGE dialogue; `src=reconstructed` is used only during /recall reconstruction (see below).
+- Records are write-once per plan (update only the `outcome` and `dci` fields if the same plan is re-evaluated).
+
+### Manual /recall
+
+The `/recall` command re-activates a past comprehension session for a plan. It is a strict read-only diagnostic and comprehension re-verification flow — never a replay of work, never an implicit re-delegation.
+
+**Invariant**: ALL questions are shown BEFORE any code or explanation is displayed.
+
+**Pre-condition**: `.context/comprehension-log.md` is read ONLY during explicit `/recall` invocation — never at session start, never during bootstrap.
+
+**Flow (9 steps)**:
+
+1. **List candidates**: scan `plan/complete/*.md` and existing `.context/comprehension/*.md` records; present to user as a numbered list (plan-id + last outcome + date).
+2. **User selects** the plan to recall (number or plan-id).
+3. **Load questions**: read the per-plan record at `.context/comprehension/<plan-id>.md` if it exists (`src=stored`); otherwise reconstruct from the plan's Goal/Scope section in `plan/complete/<plan-id>.md` (`src=reconstructed`), inferring questions that map to the plan's stated acceptance criteria.
+4. **Show ALL questions** (with `- ?` prefix), one per line. No code, no diffs, no explanations yet.
+5. **User answers from memory** (no tooling, no file access during this step).
+6. **Code inspection** (v0.3.1 token-aware comprehension): if needed, show the relevant diff with `maxDiffLines=300` — diff lines ONLY, correlated symbols surrounding each change, NEVER full files, NEVER repo-wide scans.
+7. **Evaluation** delegated to `comprehension-coach` using the v0.4.0 DCI rubric with the identical whitelist input (goal, changed file list, focused diff, minimal surrounding symbols). The coach's rubric score is the DCI verdict.
+8. **Retry/skip** (v0.3.0 verbatim): maximum 1 retry; `skip comprehension` is always available; no reveal of expected answers during retry.
+9. **Outcome**: append dci1-format row to `.context/comprehension-log.md` AND note in `.context/progress.md`; update the per-plan record's `outcome` and `dci` fields. Format:
+
+```
+<date> | plan=<NNNN> | type=dci1 | src=stored|reconstructed | retry=<0|1> | conf=<1-5>|conf=n/a | DCI=<score>/<available_score> | DCI=skipped | outcome=PASS|FAIL|RETRY|SKIPPED
+```
+
+- `outcome=SKIPPED` row format: `conf=n/a | DCI=skipped | outcome=SKIPPED` (no `conf=` numeric field).
+- Same header-once rule as the telemetry writer; same append-only discipline.
+- The log file `.context/comprehension-log.md` is the single sink for all dci1 rows.
+
+**Whitelist of sources**: ONLY the plan document in `plan/complete/` and the per-plan record in `.context/comprehension/` may be consulted during /recall. NO repo-wide scans, NO scanning of other plans, NO ad-hoc file reads beyond the selected plan's document.
+
+**Isolation**: Manual invocation only. Nothing in this profile may trigger `/recall` automatically. `.context/comprehension-log.md` is read exclusively during `/recall` invocation, never at session start, never during bootstrap.
 
 ## Delegation Rules
 

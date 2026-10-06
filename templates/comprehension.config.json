@@ -20,5 +20,9 @@
       "maxRetries": 1,
       "escalateOnAmbiguity": true
     }
+  },
+  "recall": {
+    "enabled": true,
+    "automatic": false
   }
 }

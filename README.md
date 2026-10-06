@@ -213,7 +213,7 @@ If you manage OpenCode via [opencode-studio](https://github.com/Microck/opencode
 - **Engineering baseline** (secrets hygiene, git hygiene, definition of done)
   lives in `CONTRIBUTING.md` and applies globally unless a project overrides it.
 
-## 📏 Measurement (v0.4.0)
+## 📏 Measurement (v0.4.0, /recall since v0.5.0)
 
 The gate measures, not just gates. Each evaluation gets a **DCI score**
 (`DCI=<score>/<available_score>`, 0–2 per dimension), compared against a
@@ -221,6 +221,12 @@ self-estimate (1–5) asked at session opening. Results land in an append-only
 telemetry log (`.context/comprehension-log.md`, metrics-only, untracked by
 design) that `/start-session` never loads. Calibrate the prompt tiers in
 `docs/CONFIGURATION.md`.
+
+Since v0.5.0, the manual `/recall` command re-tests a completed plan's
+comprehension from memory (questions first, code after) and appends delayed
+`type=dci1` rows to the same log. **Retention = DCI₁/DCI₀**: è una nostra
+metrica operativa, non una metrica scientificamente validata. Pairing
+machinery lands with v0.6.0 — v0.5.0 only accumulates data.
 
 ## 📄 License
 
