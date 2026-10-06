@@ -2,6 +2,21 @@
 
 All notable changes to this project are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Starting from v0.3.0, this project follows [Semantic Versioning](https://semver.org/) (SemVer): PATCH = fixes and tuning; MINOR = new backward-compatible capabilities; MAJOR = breaking changes to orchestration or configuration.
 
+## [0.6.0] — 2026-10-06
+
+### Added
+
+- **Cognitive Research Mode**: an opt-in engineering-metrics layer activated with `/research-mode on`, running A/B comparisons between the normal workflow and the comprehension workflow to measure how much human comprehension is preserved per unit of additional inference.
+- **JSONL research dataset**: `.context/research-dataset.jsonl` gains exactly one JSON object per completed task — a 16-field metric tuple (slot label, task type, gate type, duration, agent calls, estimated input/output tokens, confidence, immediate and delayed comprehension scores, retries, skip flag, bugfix reference, token-provenance honesty field).
+- **Deterministic slot alternation**: first active task = A, next = B, then A, B, … in activation order; the slot is recorded per tuple for post-hoc A/B pairing.
+- **Explicit activation with confirmation**: `/research-mode on` asks for explicit confirmation before enabling; setting `research.enabled` in the configuration counts as the same explicit opt-in. Default OFF, zero overhead when inactive — the dataset is never read and never written.
+- **Cognitive Overhead Ratio (COR)**: comprehension tokens over total task tokens, computable per A/B pair from the dataset — an operational engineering metric, not a scientifically validated one (ad-hoc analysis only).
+- **Bootstrap isolation preserved**: the research dataset is declared excluded from the loaded set in `/start-session`; it is read and written only inside the research lifecycle.
+
+### Changed
+
+- Configuration file gains a third top-level section, `research` (default `false`), documented in `docs/CONFIGURATION.md` alongside comprehension and recall.
+
 ## [0.5.0] — 2026-10-06
 
 ### Added

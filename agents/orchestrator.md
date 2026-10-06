@@ -303,6 +303,53 @@ The `/recall` command re-activates a past comprehension session for a plan. It i
 
 **Isolation**: Manual invocation only. Nothing in this profile may trigger `/recall` automatically. `.context/comprehension-log.md` is read exclusively during `/recall` invocation, never at session start, never during bootstrap.
 
+### Research mode (opt-in)
+
+Research mode is an opt-in engineering-metrics collection layer. It is OFF by default and produces zero overhead when inactive: the dataset file is never read, never written, and no token cost is incurred.
+
+**Activation**:
+- Command: `/research-mode on` requires explicit user confirmation with the exact phrase `Research mode changes session behavior. Confirm activation?` before enabling.
+- Config: `research.enabled: true` in `.opencode/comprehension.config.json` (user edit = explicit opt-in).
+- Default when neither is set: OFF.
+
+**When active — lifecycle wrap per task**:
+For every completed task while research mode is active, the orchestrator appends exactly one JSON object as one line to `.context/research-dataset.jsonl`. No header, no prose, append-only.
+
+Metric tuple fields (all required unless noted):
+```
+date          ISO 8601 date of task completion
+plan          plan identifier e.g. plan=0005; empty string "" when unplanned
+slot           "A" or "B" — alternates deterministically in activation order: first active task = A, next = B, then A, B, …
+task_type     classification of the task (e.g. feature, bugfix, refactor, docs)
+gate_type     comprehension gate applied (NONE / LIGHT / DEEP / n/a)
+duration_min  task duration in minutes (float)
+agent_calls   number of subagent delegations for this task (integer)
+input_tokens  estimated input tokens consumed (integer; tokens_source=estimated)
+output_tokens estimated output tokens produced (integer; tokens_source=estimated)
+confidence    self-rated orchestrator confidence 1-5 (integer)
+dci_immediate DCI score from immediate comprehension gate (n/a if none)
+dci_delayed   DCI score from delayed comprehension gate or /recall (n/a if not applicable)
+retries       number of comprehension-coach retries (integer)
+skipped       whether comprehension was skipped (boolean)
+bugfix_ref    "plan=<NNNN>" when a later bugfix plan explicitly references this plan; empty string "" otherwise
+tokens_source "estimated" (default) | "exact" — honesty field disclosing token count provenance
+```
+
+Slot alternation: A, B, A, B… in chronological order of task activation. The slot is assigned when the task begins and recorded in the tuple. No re-assignment after the fact.
+
+Bugfix reference convention: when a bugfix plan (one whose goal is to fix a defect) is created and the defect traces back to a specific earlier plan, write `bugfix_ref: "plan=<earlierNNNN>"`. When no such reference applies, write `bugfix_ref: ""`.
+
+**When inactive — zero overhead**:
+No research lifecycle is entered. `.context/research-dataset.jsonl` is never read, never written, and no token accounting is performed. The file may or may not exist on disk; its presence is irrelevant to normal operation.
+
+**Privacy invariant** (verbatim):
+> No source code and no personal answers are ever written to the dataset.
+
+**Isolation**:
+`.context/research-dataset.jsonl` is NEVER loaded by `/start-session` or by any bootstrap procedure. It is read and written only inside the research lifecycle — never during session start, never during comprehension-gate evaluation, never during `/recall`. The dataset is not part of the loaded set declared in `command/start-session.md`.
+
+**What never enters the dataset**: source code excerpts, file diffs, symbol names, user answers to comprehension questions, user-provided text of any kind, or any content that could identify a specific user response. Only the metric tuple fields listed above are written.
+
 ## Delegation Rules
 
 The orchestrator SHOULD prefer the most specific available agent. The orchestrator SHOULD split large requests into smaller, independent subtasks — for multi-phase plans this is a MUST, per "Multi-Phase Plan Execution" above.

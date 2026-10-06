@@ -24,5 +24,8 @@
   "recall": {
     "enabled": true,
     "automatic": false
+  },
+  "research": {
+    "enabled": false
   }
 }

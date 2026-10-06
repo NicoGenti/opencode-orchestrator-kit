@@ -91,10 +91,10 @@ describe("comprehension-config — Group A: template", () => {
     expect(() => JSON.parse(raw)).not.toThrow();
   });
 
-  test("top-level keys are comprehension + recall", () => {
+  test("top-level keys are comprehension + recall + research", () => {
     const raw = readFileSync(CONFIG_PATH, "utf-8");
     const parsed = JSON.parse(raw);
-    expect(Object.keys(parsed)).toEqual(["comprehension", "recall"]);
+    expect(Object.keys(parsed)).toEqual(["comprehension", "recall", "research"]);
   });
 
   test("recall.enabled is true", () => {
@@ -107,6 +107,12 @@ describe("comprehension-config — Group A: template", () => {
     const raw = readFileSync(CONFIG_PATH, "utf-8");
     const parsed = JSON.parse(raw);
     expect(parsed.recall.automatic).toBe(false);
+  });
+
+  test("research.enabled is false (explicit activation only)", () => {
+    const raw = readFileSync(CONFIG_PATH, "utf-8");
+    const parsed = JSON.parse(raw);
+    expect(parsed.research.enabled).toBe(false);
   });
 
   test("light.questions is 2", () => {

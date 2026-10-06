@@ -296,6 +296,7 @@ Both slicing behaviour and escalation routing are configured through the same co
 - `deep.escalationTier` (default `TIER_REVIEW`) — tier used for the escalation agent, resolved through the tier→roster mapping.
 - `recall.enabled` (default `true`) — enables the manual `/recall` command (per-plan comprehension records + delayed DCI₁ evaluation).
 - `recall.automatic` (default `false`, hard limit) — automatic recall is a non-goal: no scheduler, no trigger; `/recall` runs only on explicit user invocation.
+- `research.enabled` (default `false`) — enables the opt-in research mode (A/B crossover slots + Cognitive Overhead Ratio metrics) for a session. Explicit activation only: `/research-mode on` (with confirmation) or this flag. When off, the research dataset (`.context/research-dataset.jsonl`) is never read and never written — zero overhead.
 
 ### Telemetry log
 

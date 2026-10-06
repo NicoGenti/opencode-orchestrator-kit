@@ -225,8 +225,32 @@ design) that `/start-session` never loads. Calibrate the prompt tiers in
 Since v0.5.0, the manual `/recall` command re-tests a completed plan's
 comprehension from memory (questions first, code after) and appends delayed
 `type=dci1` rows to the same log. **Retention = DCI₁/DCI₀**: è una nostra
-metrica operativa, non una metrica scientificamente validata. Pairing
-machinery lands with v0.6.0 — v0.5.0 only accumulates data.
+metrica operativa, non una metrica scientificamente validata. Slot labels
+land with the v0.6.0 research mode; pairing stays ad-hoc — v0.5.0 only
+accumulates data.
+
+## 🔬 Research (since v0.6.0)
+
+An opt-in experiment layer answering the framing question of the whole
+measurement effort: "Quanta comprensione umana riusciamo a preservare per
+unità di inferenza aggiuntiva?" — how much human comprehension is preserved
+per unit of additional inference.
+
+`/research-mode on` (explicit confirmation required, or `research.enabled` in
+the configuration as the same explicit opt-in) starts an A/B crossover: the
+normal workflow runs as slot A, the comprehension workflow as slot B,
+alternating deterministically in activation order. Each completed task
+appends exactly one JSON object — a 16-field metric tuple — to
+`.context/research-dataset.jsonl` (metrics only, untracked by design, never
+loaded by `/start-session`).
+
+The headline metric is the **Cognitive Overhead Ratio (COR)**: comprehension
+tokens over total task tokens, compared across A/B pairs (e.g. `bugfix_ref`
+traces a later bugfix plan back to the plan under test). COR is an
+operational engineering metric, not a scientifically validated one — ad-hoc
+analysis only. When the mode is off, the dataset is never read and never
+written: zero overhead. Privacy invariant: No source code and no personal
+answers are ever written to the dataset.
 
 ## 📄 License
 
