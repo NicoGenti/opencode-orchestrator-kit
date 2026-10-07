@@ -22,14 +22,54 @@ const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 /** Dataset event contract version (DatasetEventV1). */
 export const SCHEMA_VERSION = 1 as const;
 
-/** research_id format: `res-<YYYYMMDD>-<HHMMSS>` from the task start time (24h clock). */
-const RESEARCH_ID_RE = /^res-\d{8}-\d{6}$/;
+/**
+ * research_id format v0.6.5: `res-<YYYYMMDD>-<HHMMSS>-<8 hex>` — timestamp from
+ * task start (24h clock) plus a deterministic/uniqueness suffix (8 hex chars,
+ * UUID-style: activation-index or random hex). The suffix makes concurrent
+ * tasks in the same second collision-proof while keeping the timestamp part
+ * human-sortable. One research_id is generated per task at start and reused
+ * unchanged for the task's recall event and comprehension record (no
+ * regeneration, no mutation over the task → recall lifecycle).
+ */
+const RESEARCH_ID_RE = /^res-\d{8}-\d{6}-[0-9a-fA-F]{8}$/;
+/** Legacy pre-v0.6.5 format, rejected on write (kept for migration tests). */
+const LEGACY_RESEARCH_ID_RE = /^res-\d{8}-\d{6}$/;
 const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const DCI_RE = /^DCI=(\d+)\/(\d+)$/;
 
 export function isValidResearchId(v: unknown): boolean {
   return typeof v === "string" && RESEARCH_ID_RE.test(v);
 }
+
+/** Pre-v0.6.5 timestamp-only id: rejected on write, recognised only in migration tests. */
+export function isLegacyResearchId(v: unknown): boolean {
+  return typeof v === "string" && LEGACY_RESEARCH_ID_RE.test(v);
+}
+
+/** Deterministic collision-free suffix generator: 8 hex chars from a counter source. */
+export function makeResearchIdSuffix(seed: {
+  timestamp: string;
+  index: number;
+}): string {
+  // FNV-1a over `timestamp:index` → stable, unique per (second, activation index).
+  let h = 0x811c9dc5;
+  const input = `${seed.timestamp}:${seed.index}`;
+  for (let i = 0; i < input.length; i++) {
+    h ^= input.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  return (h >>> 0).toString(16).padStart(8, "0");
+}
+
+export function makeResearchId(seed: { timestamp: string; index: number }): string {
+  return `res-${seed.timestamp}-${makeResearchIdSuffix(seed)}`;
+}
+
+export const MAKE_RESEARCH_ID_NOTE =
+  "Activation index: 0-based counter of tasks activated inside the same " +
+  "research session; combined with the task-start timestamp it yields a " +
+  "deterministic, collision-free id that the recall event and the " +
+  "comprehension record reuse verbatim.";
 
 export const GATE_TYPES = ["n/a", "NONE", "LIGHT", "DEEP"] as const;
 export type GateType = (typeof GATE_TYPES)[number];
@@ -187,7 +227,7 @@ export function validateTaskEvent(e: Record<string, unknown>): string[] {
   if ("schema_version" in e && e.schema_version !== SCHEMA_VERSION)
     errs.push(`schema_version must be ${SCHEMA_VERSION}`);
   if ("research_id" in e && !isValidResearchId(e.research_id))
-    errs.push("research_id must match res-YYYYMMDD-HHMMSS");
+    errs.push("research_id must match res-YYYYMMDD-HHMMSS-8hex (v0.6.5 suffix format)");
   if ("date" in e && !(typeof e.date === "string" && ISO_DATE_RE.test(e.date)))
     errs.push("date must be ISO YYYY-MM-DD");
   if ("plan" in e && typeof e.plan !== "string") errs.push("plan must be a string");
@@ -270,7 +310,7 @@ export function validateRecallEvent(e: Record<string, unknown>): string[] {
   if ("schema_version" in e && e.schema_version !== SCHEMA_VERSION)
     errs.push(`schema_version must be ${SCHEMA_VERSION}`);
   if ("research_id" in e && !isValidResearchId(e.research_id))
-    errs.push("research_id must match res-YYYYMMDD-HHMMSS");
+    errs.push("research_id must match res-YYYYMMDD-HHMMSS-8hex (v0.6.5 suffix format)");
   if ("date" in e && !(typeof e.date === "string" && ISO_DATE_RE.test(e.date)))
     errs.push("date must be ISO YYYY-MM-DD");
   if ("dci_delayed" in e && !validDCI(e.dci_delayed))

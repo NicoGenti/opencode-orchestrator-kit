@@ -207,12 +207,12 @@ describe("workflow-hardening — W8 P0 frontend permissions (v0.6.2)", () => {
     expect(fm).toContain('".context/research-dataset.jsonl":"allow"');
   });
 
-  test("W8b: orchestrator edit permission covers BOTH metric sinks (v0.6.4)", () => {
+  test("W8b v0.6.5 least privilege: dataset has NO edit permission (append-only by permission)", () => {
     const fm = ORCH.slice(0, ORCH.indexOf("\n---", 4));
     const em = fm.match(/"edit":\s*\{([\s\S]*?)\}/);
     expect(em).not.toBeNull();
     expect(em[1]).toContain('".context/comprehension-log.md":"allow"');
-    expect(em[1]).toContain('".context/research-dataset.jsonl":"allow"');
+    expect(em[1]).not.toContain('".context/research-dataset.jsonl"');
   });
 });
 

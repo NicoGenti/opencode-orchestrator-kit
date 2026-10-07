@@ -113,3 +113,50 @@ describe("routing consistency — negative case (proves the check has teeth)", (
     }
   });
 });
+
+// ---------------------------------------------------------------------------
+// v0.6.5 — prose-level routing consistency + anti-tier pin (B6)
+// ---------------------------------------------------------------------------
+
+const orchBody = orchestratorMd.slice(orchestratorMd.indexOf("\n---", 4) + 4);
+
+describe("routing consistency — orchestrator.md prose (v0.6.5)", () => {
+  // Every runtime id the prose instructs to route to must be a real runtime
+  // file — catches drift in sections the table-only scan misses.
+  test("every `backticked` runtime id in prose resolves to agents/ or extras/", () => {
+    const proseIds = Array.from(orchBody.matchAll(/`([a-z0-9-]+)`/g))
+      .map((m) => m[1])
+      .filter((id) => agentFileExists(id) && id !== "orchestrator");
+    expect(proseIds.length).toBeGreaterThan(0);
+    for (const id of new Set(proseIds)) {
+      expect(agentFileExists(id)).toBe(true);
+    }
+  });
+
+  test("no prose token names a retired runtime that is not an agent file", () => {
+    const retiredNames = ["sisyphus", "metis", "momus", "explore", "fixer", "hephaestus"];
+    for (const name of retiredNames) {
+      // (?<![\w-]) / (?![\w-]): retired ids flagged only as standalone tokens —
+      // a hyphenated compound like `developer-fixer` is not a retired name.
+      expect(orchBody.toLowerCase()).not.toMatch(new RegExp(`(?<![\\w-])${name}(?![\\w-])`, "i"));
+    }
+  });
+
+  test("prose names no Tier L/M/H classification (anti-tier pin)", () => {
+    const lower = orchBody.toLowerCase();
+    for (const tier of ["tier l", "tier m", "tier h"]) {
+      expect(lower.includes(tier)).toBe(false);
+    }
+    expect(lower).not.toMatch(/\btier-(?:l|m|h)\b/);
+    expect(lower).not.toMatch(/tier (?:l|m|h) (?:classification|model|escalation)/);
+  });
+});
+
+describe("routing consistency — AGENTS.md roster prose (v0.6.5)", () => {
+  const rosterBody = agentsMd.slice(agentsMd.indexOf("## Runtime Subagent Roster"));
+
+  test("roster prose lists no Tier L/M/H tiers", () => {
+    expect(rosterBody.toLowerCase()).not.toMatch(/\btier-[lmh]\b/);
+    expect(rosterBody.toLowerCase()).not.toMatch(/\b(?:l|m|h)\s*tier\b/);
+  });
+});

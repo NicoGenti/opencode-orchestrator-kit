@@ -2,6 +2,19 @@
 
 All notable changes to this project are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Starting from v0.3.0, this project follows [Semantic Versioning](https://semver.org/) (SemVer): PATCH = fixes and tuning; MINOR = new backward-compatible capabilities; MAJOR = breaking changes to orchestration or configuration.
 
+## [0.6.5] — 2026-10-07
+
+### Fixed
+
+- **Regression cleanup (routing)**: the `Tier Classification (Phase 2)` section is removed from `agents/orchestrator.md` — routing no longer estimates Tier L/M/H and routes directly through the real runtime roster (`profiler`…`librarian`, incl. `extras/`); model-size tiers stay a runtime concern and are pinned out of routing prose.
+- **Routing-consistency extended beyond the table**: the prose of `orchestrator.md` is now scanned too — every runtime id named for routing must exist in `agents/`/`extras/`; anti-Tier-L/M/H pins (orchestrator prose + AGENTS.md roster); retired taxonomy tokens (`sisyphus`, `metis`, `momus`, `explore`, `fixer`, `hephaestus`) are rejected as standalone words (hyphenated compounds like `developer-fixer` stay legitimate).
+- **Unique `research_id` format v0.6.5 (`res-YYYYMMDD-HHMMSS-8hex`)**: an 8-hex uniqueness suffix (deterministic FNV-1a over `timestamp:index`, UUID-style, 32-bit entropy) makes tasks activated in the same second collision-proof while the timestamp part stays human-sortable; the hex class is case-insensitive; the validator message and flow examples in `command/research-mode.md` carry the suffix; the FNV-1a reference pin in the tests is corrected to the real value (`7b5ce7f3`).
+- **`research_id` lifecycle + record**: the id is generated ONCE at task start and reused verbatim on the recall event and in the per-plan record (never regenerated/mutated); the per-plan record gains a `research_id: <res-YYYYMMDD-HHMMSS-8hex>|n/a` field and `/recall` copies the correlation id from it verbatim — `plan` remains human metadata, never the dataset key.
+- **Snapshot semantics for `.context/progress.md`**: orchestrator Close and `/recall` step 9 (command + skill) now explicitly full-overwrite `progress.md` — snapshot of the CURRENT state, pointer removal on completion, never a per-task history line ("update", not "append/accumulate").
+- **Least privilege on the dataset (P3)**: `.context/research-dataset.jsonl` loses the orchestrator's edit permission — append-only by permission surface, not just by convention (the v0.6.4 backfill is already retired with the v0.6.4 append-only recall event); the comprehension log keeps exactly one sanctioned bounded edit (malformed-row normalisation); `W8b` test pin inverted accordingly.
+- **DatasetEventV1 invariance pins**: `TASK_FIELDS` (19, canonical order), `RECALL_FIELDS` (8, canonical order) and the `FORBIDDEN` set are pinned exhaustively — any schema change to the research contract must now be a deliberate, documented act (silent drift fails the suite).
+- **Prompt budget held**: `agents/orchestrator.md` stays within the 24,000-char budget (W1 pin unchanged; currently ≈19.9k).
+
 ## [0.6.4] — 2026-10-07
 
 ### Fixed

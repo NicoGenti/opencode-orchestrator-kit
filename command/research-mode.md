@@ -97,15 +97,15 @@ writer test. The backtick-free markers `SIM-U` and `SIM-C` mark the recorded use
 lines mark the coach verdict block.
 
 ```
- orchestrator → assign research_id=res-20261007-143000 + slot A   [control: no classification, no gate]
+ orchestrator → assign research_id=res-20261007-143000-a1b2c3d4 + slot A   [control: no classification, no gate]
  → run the normal workflow — delegate explorer (bounded repo survey),
    delegate developer-fixer (implement + self-verify)             [task delegations: 2]
  → at task end append ONE task event to .context/research-dataset.jsonl:
- {"event":"task","schema_version":1,"research_id":"res-20261007-143000","date":"2026-10-07","plan":"","slot":"A","task_type":"bugfix","gate_type":"n/a","duration_min":12,"agent_calls":2,"input_tokens":14300,"output_tokens":2100,"user_confidence":"n/a","evaluator_confidence":"n/a","dci_immediate":"n/a","retries":0,"skipped":false,"bugfix_ref":"","tokens_source":"estimated"}
+ {"event":"task","schema_version":1,"research_id":"res-20261007-143000-a1b2c3d4","date":"2026-10-07","plan":"","slot":"A","task_type":"bugfix","gate_type":"n/a","duration_min":12,"agent_calls":2,"input_tokens":14300,"output_tokens":2100,"user_confidence":"n/a","evaluator_confidence":"n/a","dci_immediate":"n/a","retries":0,"skipped":false,"bugfix_ref":"","tokens_source":"estimated"}
 ```
 
 ```
- orchestrator → assign research_id=res-20261007-154500 + slot B; classify(mode=LIGHT, tier=TIER_FAST)   [slot B: gate active, gate_type=LIGHT]
+ orchestrator → assign research_id=res-20261007-154500-9f3e2b7c + slot B; classify(mode=LIGHT, tier=TIER_FAST)   [slot B: gate active, gate_type=LIGHT]
  SIM-U: "user_conf=2 — the failing assertion is allowed.length === hits.length"
  → calibration + 2 questions (max 2 in LIGHT) before any code or explanation
  SIM-C: RETRY
@@ -123,12 +123,12 @@ lines mark the coach verdict block.
    developer-fixer; `agent_calls` counts every one of them
  → at task end append ONE task event to .context/research-dataset.jsonl (and store `research_id`
    in the per-plan record so a later /recall can correlate):
- {"event":"task","schema_version":1,"research_id":"res-20261007-154500","date":"2026-10-07","plan":"0007","slot":"B","task_type":"test","gate_type":"LIGHT","duration_min":21,"agent_calls":4,"input_tokens":19400,"output_tokens":3500,"user_confidence":2,"evaluator_confidence":4,"dci_immediate":"DCI=4/4","retries":1,"skipped":false,"bugfix_ref":"plan=0006","tokens_source":"exact"}
+ {"event":"task","schema_version":1,"research_id":"res-20261007-154500-9f3e2b7c","date":"2026-10-07","plan":"0007","slot":"B","task_type":"test","gate_type":"LIGHT","duration_min":21,"agent_calls":4,"input_tokens":19400,"output_tokens":3500,"user_confidence":2,"evaluator_confidence":4,"dci_immediate":"DCI=4/4","retries":1,"skipped":false,"bugfix_ref":"plan=0006","tokens_source":"exact"}
 ```
 
 ```
  /recall (plan 0007, days later) — after the dci1 evaluation, append ONE recall event:
- {"event":"recall","schema_version":1,"research_id":"res-20261007-154500","date":"2026-10-09","dci_delayed":"DCI=3/4","evaluator_confidence":3,"retries":0,"skipped":false}
+ {"event":"recall","schema_version":1,"research_id":"res-20261007-154500-9f3e2b7c","date":"2026-10-09","dci_delayed":"DCI=3/4","evaluator_confidence":3,"retries":0,"skipped":false}
  The task event above is untouched — same line, same values: the dataset is an append-only event
  log and no dataset edit is ever sanctioned (no backfill, no rewrite, no delete).
 ```
@@ -136,7 +136,12 @@ lines mark the coach verdict block.
 What the flow pins (and tests assert): slots alternate A→B by activation index (task 0 = A,
 task 1 = B); each task emits exactly ONE task event, canonical key order per the contract;
 `research_id` is unique per task, present on the task event AND the recall event (correlation);
-`plan` is metadata (slot A carries ""). Slot A shows NO classification at all (no
+its format is `res-YYYYMMDD-HHMMSS-8hex` (v0.6.5): the task-start timestamp plus a
+deterministic uniqueness suffix (8 hex chars, e.g. derived from the task's activation index),
+so tasks activated in the same second never collide; the id is generated ONCE at task start
+and reused verbatim on the recall event and in the per-plan record — never regenerated or
+mutated over the task → recall lifecycle. `plan` is metadata (slot A carries ""). Slot A shows
+NO classification at all (no
 `classify(...)` line), emits `gate_type="n/a"`, 0 gate overhead, `skipped=false`, and
 `agent_calls=2` — exactly the two delegations its flow shows. Slot B runs the LIGHT gate
 (classify NONE/LIGHT/DEEP), emits the atomic coach block (RETRY DCI 2/4 → PASS DCI 4/4),

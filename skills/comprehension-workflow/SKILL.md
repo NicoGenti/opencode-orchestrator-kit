@@ -68,7 +68,7 @@ Line format (single space-separated fields, no user-answer content):
 `<ISO 8601 timestamp> mode=<LIGHT|DEEP> DCI=<score>/<available_score>|skipped evaluator_conf=<1-5>|n/a outcome=<PASS|FAIL|RETRY|SKIPPED> user_conf=<1-5>|n/a`
 ```
 
-**Hard boundary (v0.6.4)**: `.context/comprehension-log.md` and `.context/research-dataset.jsonl` are append-only telemetry artifacts — the orchestrator appends rows and performs only one sanctioned bounded edit, and may read them ONLY under explicit user invocation (`/recall` for the log; the research lifecycle for the dataset). Sanctioned dataset flow: `/recall` APPENDS a new row linked by `research_id` (no backfill, no modification of existing rows). Sanctioned log edit: normalise a malformed row to the canonical format. No other edits, no deletes, no history rewrites, no writes from other steps. Neither is ever read during bootstrap.
+**Hard boundary (v0.6.4)**: `.context/comprehension-log.md` and `.context/research-dataset.jsonl` are append-only telemetry artifacts — the orchestrator appends rows and performs only one sanctioned bounded edit, and may read them ONLY under explicit user invocation (`/recall` for the log; the research lifecycle for the dataset). Sanctioned dataset flow: `/recall` APPENDS a new row linked by `research_id` (no backfill, no modification of existing rows). The dataset has NO edit permission (v0.6.5 least privilege — append-only by permission, not just by convention). Sanctioned log edit: normalise a malformed row to the canonical format. No other edits, no deletes, no history rewrites, no writes from other steps. Neither is ever read during bootstrap.
 
 **Normalised confidence contract (v0.6.1)** — exactly two integer 1-5 confidence values exist in the whole workflow, never overloaded:
 
@@ -107,6 +107,7 @@ Per-plan record format (each field on its own line, no user answer text, no pros
 
 ```
 plan: <plan-id>
+research_id: <res-YYYYMMDD-HHMMSS-8hex>|n/a
 questions:
 - ? <question-1 verbatim>
 - ? <question-N verbatim>
@@ -118,6 +119,11 @@ src: stored
 ```
 
 - Questions are stored verbatim from the CHALLENGE step, one per line with `- ?` prefix. NO user answers, NO prose.
+- **research_id correlation (v0.6.5)**: when Research Mode is active, the record carries the
+  task's `research_id` (format `res-YYYYMMDD-HHMMSS-8hex`); it is written once at task end and
+  NEVER regenerated or mutated. `/recall` recovers the correlation id from this field and
+  copies it verbatim into the recall event — the plan id is metadata for humans, never the
+  dataset's primary key: the id in the dataset is always the `research_id`.
 - `user_conf` is the developer's `user_confidence` (calibration question, 1-5); `n/a` when the question was not asked.
 - **DCI₀ baseline (v0.6.4)**: when the task belongs to an active research session, the same `user_conf` value is attached to the DCI₀ (immediate) reading — recorded in the research tuple alongside `dci_immediate` as the calibration baseline; the per-plan record is the canonical store. The research tuple carries the session's `research_id`, which links the DCI₀ row and later `/recall` rows for the same task (the dataset is append-only: `/recall` adds a new row, never rewrites existing rows).
 - The calibration gap compares `user_conf` against the normalised DCI: `gap = user_conf − round(5 × dci_score / dci_available)`.
@@ -157,7 +163,7 @@ The `/recall` command re-activates a past comprehension session for a plan. It i
 6. **Code inspection** (v0.3.1 token-aware comprehension): if needed, show the relevant diff with `maxDiffLines=300` and correlated symbols capped at `maxRelatedSymbols=3` — diff lines ONLY, NEVER full files, NEVER repo-wide scans.
 7. **Evaluation** delegated to `comprehension-coach` using the v0.4.0 DCI rubric with the identical whitelist input (goal, changed file list, focused diff, minimal surrounding symbols). The coach's rubric score is the DCI verdict.
 8. **Retry/skip** (v0.3.0 verbatim): maximum 1 retry; `skip comprehension` is always available; no reveal of expected answers during retry.
-9. **Outcome**: append dci1-format row to `.context/comprehension-log.md` AND note in `.context/progress.md`; update the per-plan record's `outcome`, `dci` and `user_conf` fields. Format:
+9. **Outcome**: append dci1-format row to `.context/comprehension-log.md` AND full-overwrite `.context/progress.md` (snapshot of the CURRENT state — pointer removal on completion, never a per-task history line); update the per-plan record's `outcome`, `dci` and `user_conf` fields. Format:
 
 ```
 <date> | plan=<NNNN> | type=dci1 | src=stored|reconstructed | retry=<0|1> | user_conf=<1-5> | evaluator_conf=<1-5> | DCI=<score>/<available_score> | outcome=PASS|FAIL|RETRY|SKIPPED
