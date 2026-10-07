@@ -54,7 +54,7 @@ After the developer responds, assess whether the answer demonstrates real unders
 
 ### DCI scoring
 
-Score each dimension 0-2 — every evaluation assigns a score of 0 (wrong/absent), 1 (partial), or 2 (accurate) to each of the four dimensions: FLOW, RATIONALE, PREDICTION, LOCALIZATION. In LIGHT mode, any dimension not covered by the questions is marked N/A and the denominator becomes available_score (sum of the maximum scores of the scored dimensions). In DEEP mode all four dimensions are scored — DCI=<score>/8. The emission format is the literal string DCI=<score>/<available_score> (in DEEP available_score is always 8). The DCI does NOT influence the verdict: PASS/RETRY/FAIL/SKIPPED are governed by the existing rules. On SKIPPED the coach does NOT emit DCI (the telemetry line is composed by the orchestrator).
+Score each dimension 0-2 — every evaluation assigns a score of 0 (wrong/absent), 1 (partial), or 2 (accurate) to each of the four dimensions: FLOW, RATIONALE, PREDICTION, LOCALIZATION. In LIGHT mode, any dimension not covered by the questions is marked N/A and the denominator becomes available_score (sum of the maximum scores of the scored dimensions). In DEEP mode all four dimensions are scored — DCI=<score>/8. On SKIPPED the block carries `DCI: n/a` and the coach does NOT emit a numeric DCI (the telemetry line is composed by the orchestrator). The DCI does NOT influence the verdict: PASS/RETRY/FAIL/SKIPPED are governed by the existing rules. The emission format is the block line `DCI: <score>/<available_score>` (`DCI: <score>/8` in DEEP, where available_score is always 8); the coach never extracts or parses its own emitted block.
 
 EVALUATE consumes the Q→symbol map produced by CHALLENGE and re-reads ONLY the symbols referenced in its own questions (example format: Q1 → `PaymentService.process()`). Any whole-file re-read in EVALUATE is FORBIDDEN. CHALLENGE context may extend up to the slice provided by the Slicer when one is present.
 
@@ -89,9 +89,10 @@ After EVALUATE, emit exactly this block, and nothing else:
 ```
 Comprehension: <PASS | RETRY | FAIL | SKIPPED>
 evaluator_confidence: <1-5>
+DCI: <score>/<available_score>
 ```
 
-- `evaluator_confidence` — the coach's confidence in its own verdict (integer 1-5). On SKIPPED (no evaluation performed) emit `evaluator_confidence: n/a`; the orchestrator normalises it in telemetry.
-- The DCI value, when produced, is the last line of the EVALUATE response in the rubric's format (see DCI scoring); on SKIPPED the coach does NOT emit DCI — the telemetry line is composed by the orchestrator.
+- `evaluator_confidence` — the coach's confidence in its own verdict (integer 1-5). On SKIPPED (no evaluation performed) emit `evaluator_confidence: n/a`.
+- `DCI` (v0.6.2) — the rubric score is emitted INSIDE this block, as its last line, in the `DCI: <score>/<available_score>` form from DCI scoring: a single atomic emission (verdict + confidence + DCI together). On SKIPPED (no evaluation performed) emit `DCI: n/a` — the coach does NOT emit a numeric DCI. Guard confinement: the block is coach-emittable as-is — `evaluator_confidence` and DCI are coach-owned values, never orchestrator-computed tokens. The DCI does NOT influence the verdict.
 - Never include the developer's `user_confidence` — the calibration self-rating is the orchestrator's to record, not the coach's to rate or repeat.
 - No additional commentary required.

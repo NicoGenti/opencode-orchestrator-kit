@@ -65,12 +65,14 @@ After **every** `comprehension-coach` evaluation reaches a final verdict — `PA
 Line format (single space-separated fields, no user-answer content):
 
 ```
-<ISO 8601 timestamp> mode=<LIGHT|DEEP> DCI=<score>/<available_score>|skipped evaluator_conf=<1-5>|n/a outcome=<PASS|FAIL|RETRY|SKIPPED>
+`<ISO 8601 timestamp> mode=<LIGHT|DEEP> DCI=<score>/<available_score>|skipped evaluator_conf=<1-5>|n/a outcome=<PASS|FAIL|RETRY|SKIPPED> user_conf=<1-5>|n/a`
 ```
+
+**Hard boundary (v0.6.2)**: `.context/comprehension-log.md` and `.context/research-dataset.jsonl` are append-only telemetry artifacts — the orchestrator may append rows and nothing else, and may read them ONLY under explicit user invocation (`/recall` for the log; the research lifecycle for the dataset). No writes from other steps. Neither is ever read during bootstrap.
 
 **Normalised confidence contract (v0.6.1)** — exactly two integer 1-5 confidence values exist in the whole workflow, never overloaded:
 
-- `user_confidence` — the developer's self-assessment (the calibration question). Asked only in slot-B LIGHT/DEEP evaluations (never in research Slot-A control tasks, never in NONE-classified sessions); recorded in per-plan records and /recall rows, never in telemetry.
+- `user_confidence` — the developer's self-assessment (the calibration question). Asked only in slot-B LIGHT/DEEP evaluations (never in research Slot-A control tasks, never in NONE-classified sessions); recorded in per-plan records, /recall rows and telemetry rows (`user_conf=`), never rated by the coach.
 - `evaluator_confidence` — the coach's self-rated confidence in its own verdict (integer 1-5). In telemetry rows it appears as `evaluator_conf=`; `n/a` only when no score was produced.
 
 A live telemetry row therefore never contains the bare `conf=` field — that name is retired (it previously designated three different things).
@@ -117,6 +119,7 @@ src: stored
 
 - Questions are stored verbatim from the CHALLENGE step, one per line with `- ?` prefix. NO user answers, NO prose.
 - `user_conf` is the developer's `user_confidence` (calibration question, 1-5); `n/a` when the question was not asked.
+- **DCI₀ baseline (v0.6.2)**: when the task belongs to an active research session, the same `user_conf` value is attached to the DCI₀ (immediate) reading — recorded in the research tuple alongside `dci_immediate` as the calibration baseline; the per-plan record is the canonical store.
 - The calibration gap compares `user_conf` against the normalised DCI: `gap = user_conf − round(5 × dci_score / dci_available)`.
 - Unplanned tasks → no record. NONE classification → no record, no file.
 - `src=stored` means the record was written from the CHALLENGE dialogue; `src=reconstructed` is used only during /recall reconstruction (see below).

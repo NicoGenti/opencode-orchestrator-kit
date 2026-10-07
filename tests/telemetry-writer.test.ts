@@ -6,6 +6,8 @@ const REPO_ROOT = join(import.meta.dir, "..");
 const ORCHESTRATOR_PATH = join(REPO_ROOT, "agents/orchestrator.md");
 const START_SESSION_PATH = join(REPO_ROOT, "command/start-session.md");
 const CONFIG_DOC_PATH = join(REPO_ROOT, "docs/CONFIGURATION.md");
+const RESEARCH_DATASET_PATH = ".context/research-dataset.jsonl";
+const RAW_ORCHESTRATOR = readFileSync(ORCHESTRATOR_PATH, "utf-8");
 
 function sectionBetween(raw: string, startMarker: string, endMarker: string): string {
   const start = raw.indexOf(startMarker);
@@ -116,5 +118,14 @@ describe("telemetry isolation — start-session + docs policy (v0.4.0)", () => {
       ".context/issues.md",
       ".context/progress.md",
     ]);
+  });
+});
+
+describe("telemetry-writer — P0 research dataset sink (v0.6.2)", () => {
+  test("research dataset is listed as an orchestrator metric sink with append-only handling", () => {
+    expect(RAW_ORCHESTRATOR).toContain(".context/research-dataset.jsonl");
+    const hard = RAW_ORCHESTRATOR.indexOf("Hard boundary");
+    expect(hard).toBeGreaterThan(-1);
+    expect(RAW_ORCHESTRATOR.slice(hard, hard + 600)).toContain("append-only");
   });
 });

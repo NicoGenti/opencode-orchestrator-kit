@@ -176,3 +176,122 @@ describe("workflow-hardening — W7 privacy & isolation (regression)", () => {
     expect(ORCH).toContain(INVARIANT);
   });
 });
+/**
+ * v0.6.2 — Safety & Measurement Corrections:
+ *   W8  P0: frontend permissions cover both metric sinks
+ *   W9  hard boundary: append-only sinks, single tuple, research-scoped reads
+ *   W10 coach atomic block carries DCI (SKIPPED stays numeric-free)
+ *   W11 /recall whitelist: plan + record + bounded inspection only
+ *   W12 DCI0 telemetry row carries user_conf (parity with DCI1)
+ *   W13 research tuple stores user_conf on dci_immediate (DCI0 baseline)
+ *   W14 behavioral A/B: research command drives a TDD gate flow, not prose
+ */
+describe("workflow-hardening — W8 P0 frontend permissions (v0.6.2)", () => {
+  test("orchestrator write permission includes both metric sinks", () => {
+    const fm = ORCH.slice(0, ORCH.indexOf("\n---", 4));
+    expect(fm).toContain('".context/comprehension-log.md":"allow"');
+    expect(fm).toContain('".context/research-dataset.jsonl":"allow"');
+  });
+});
+
+describe("workflow-hardening — W9 hard boundary (v0.6.2)", () => {
+  test("both sinks are append-only; reads are lifecycle-scoped", () => {
+    expect(ORCH).toMatch(/append-only[^.]*rows only|rows only/);
+    expect(ORCH).toMatch(/dataset only inside the research lifecycle|only inside the research lifecycle/);
+    expect(RESEARCH).toMatch(/no intermediate or diagnostic rows/);
+    expect(RESEARCH).toMatch(/exactly one JSON object as one line/);
+  });
+
+  test("research command keeps the zero-overhead inactive rule", () => {
+    expect(RESEARCH).toMatch(/zero overhead/);
+    expect(RESEARCH).toMatch(/never read, never written/);
+  });
+});
+
+describe("workflow-hardening — W10 coach atomic output includes DCI (v0.6.2)", () => {
+  test("Output Format block contains all four lines including DCI", () => {
+    const out = COACH.slice(COACH.indexOf("After EVALUATE, emit exactly this block"));
+    const closing = out.indexOf("```", out.indexOf("```") + 3);
+    const block = out.slice(0, closing);
+    expect(block).toContain("Comprehension: <PASS | RETRY | FAIL | SKIPPED>");
+    expect(block).toContain("evaluator_confidence: <1-5>");
+    expect(block).toContain("DCI: <score>/<available_score>");
+  });
+
+  test("SKIPPED still carries no numeric DCI (n/a placeholder)", () => {
+    expect(COACH).toMatch(/On SKIPPED the block carries `DCI: n\/a`/);
+  });
+
+  test("coach file keeps a single Output block (no second DCI-bearing block elsewhere)", () => {
+    const fenceCount = COACH.split("```")
+      .filter((b) => b.includes("Comprehension: <PASS | RETRY | FAIL | SKIPPED>")).length;
+    expect(fenceCount).toBe(1);
+  });
+});
+
+describe("workflow-hardening — W11 /recall whitelist (v0.6.2)", () => {
+  test("whitelist covers plan + per-plan record + bounded inspection", () => {
+    expect(RECALL).toMatch(/ONLY the plan document in `plan\/complete\/`, the per-plan record in `\.context\/comprehension\/`, and the bounded post-answer inspection/);
+    expect(RECALL).toMatch(/maxDiffLines=300/);
+    expect(RECALL).toContain("maxRelatedSymbols=3");
+  });
+
+  test("recall steps state the whitelist and the record update", () => {
+    expect(RECALL).toMatch(/only through step 5's whitelist/);
+    expect(RECALL).toMatch(/update the per-plan record's `outcome`, `dci` and `user_conf` fields/);
+  });
+});
+
+describe("workflow-hardening — W12 DCI0 telemetry user_conf (v0.6.2)", () => {
+  test("telemetry template carries user_conf on the immediate row", () => {
+    expect(ORCH).toMatch(/user_conf=<1-5>\|n\/a/);
+    expect(SKILL).toMatch(/user_conf=<1-5>\|n\/a/);
+  });
+
+  test("user_conf semantics: calibration answer, n/a when not asked", () => {
+    expect(ORCH).toMatch(/calibration answer accompanies/);
+    expect(ORCH).toMatch(/On SKIPPED: `user_conf=n\/a`/);
+  });
+});
+
+describe("workflow-hardening — W13 research tuple DCI0 baseline (v0.6.2)", () => {
+  test("tuple contract anchors user_conf to the immediate (DCI0) reading", () => {
+    expect(RESEARCH).toMatch(/dci_immediate[\s\S]{0,400}user_conf/);
+    expect(RESEARCH).toMatch(/DCI0 baseline/);
+  });
+
+  test("per-plan record stores user_conf canonically (skill contract)", () => {
+    expect(SKILL).toMatch(/the per-plan record is the canonical store/);
+  });
+});
+
+describe("workflow-hardening — W14 behavioral A/B flow (v0.6.2)", () => {
+  test("research command carries a TDD behavioral flow with a simulated turn transcript", () => {
+    expect(RESEARCH).toContain("Behavioral A/B flow (normative example)");
+    expect(RESEARCH).toContain("SIMULATED-USER");
+    expect(RESEARCH).toContain("SIMULATED-COACH");
+  });
+
+  test("flow shows a real pass and a real fail of the comprehension gate", () => {
+    expect(RESEARCH).toContain("PASS");
+    expect(RESEARCH).toContain("FAIL");
+    expect(RESEARCH).toContain("RETRY");
+    expect(RESEARCH).toMatch(/available_score/);
+    expect(RESEARCH).toContain("dci_immediate");
+    expect(RESEARCH).toContain("user_conf");
+    expect(RESEARCH).toContain("gate_type=light");
+    expect(RESEARCH).toContain("alternation=abab");
+    expect(RESEARCH).toContain("user_conf=4");
+    expect(RESEARCH).toContain("user_conf=2");
+  });
+
+  test("the tuple emitted in the flow matches the 17-field contract exactly", () => {
+    const fields = ["ts", "session_id", "task_id", "slot", "gate_type", "plan",
+      "dci_immediate", "user_conf", "dci1", "gap", "src", "confidence_delta",
+      "escalations", "questions_count", "bugfix_ref", "tokens_source", "alternation"];
+    const flow = RESEARCH.slice(RESEARCH.indexOf("Behavioral A/B flow (normative example)"));
+    for (const key of fields) {
+      expect(flow).toContain(`"${key}"`);
+    }
+  });
+});

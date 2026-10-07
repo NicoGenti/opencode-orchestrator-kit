@@ -266,14 +266,14 @@ describe("comprehension-coach — v0.4.0 DCI + calibration", () => {
     expect(raw).toMatch(/LOCALIZATION/);
   });
 
-  test("DCI emission format: DCI=<score>/<available_score>", () => {
+  test("DCI emission format: DCI: <score>/<available_score> (v0.6.2 block line)", () => {
     const raw = readFileSync(COACH_PATH, "utf-8");
-    expect(raw).toMatch(/DCI=<score>\/<available_score>/);
+    expect(raw).toMatch(/DCI:\s?<score>\/<available_score>/);
   });
 
-  test("DCI emission format: DEEP variant DCI=<score>/8", () => {
+  test("DCI emission format: DEEP variant DCI: <score>/8", () => {
     const raw = readFileSync(COACH_PATH, "utf-8");
-    expect(raw).toMatch(/DCI=<score>\/8/);
+    expect(raw).toMatch(/DCI:\s?<score>\/8/);
   });
 
   test("calibration question is inside CHALLENGE section (before EVALUATE)", () => {
@@ -339,11 +339,12 @@ describe("comprehension-coach — v0.4.0 DCI + calibration", () => {
     expect(dciSection).toMatch(/does NOT influence the verdict/);
   });
 
-  test("SKIPPED: coach does NOT emit DCI — mention in rubric", () => {
+  test("SKIPPED: coach does NOT emit numeric DCI — mention in rubric", () => {
     const raw = readFileSync(COACH_PATH, "utf-8");
     const idxDciScoring = raw.indexOf("### DCI scoring");
     const idxRetryProtocol = raw.indexOf("## Retry Protocol");
     const dciSection = raw.substring(idxDciScoring, idxRetryProtocol);
-    expect(dciSection).toMatch(/SKIPPED.*does NOT emit DCI|On SKIPPED.*does NOT emit DCI/);
+    expect(dciSection).toMatch(/On SKIPPED.*does NOT emit a numeric DCI/);
+    expect(dciSection).toMatch(/DCI:\s?n\/a/);
   });
 });

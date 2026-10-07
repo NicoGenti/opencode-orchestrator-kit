@@ -246,6 +246,10 @@ exactly one JSON object — a 17-field metric tuple with normalised
 `user_confidence` and `evaluator_confidence` — to
 `.context/research-dataset.jsonl` (metrics only, untracked by design, never
 loaded by `/start-session`; full contract in `command/research-mode.md`).
+Since v0.6.2 the dataset sits behind a **hard boundary** (append-only rows,
+read only inside an active research lifecycle, never at bootstrap) and a
+user-facing **Behavioral A/B flow** example shows the simulated turn
+transcript — gate pass and gate fail with their 17-field tuples.
 
 The headline metric is the **Cognitive Overhead Ratio (COR)**: comprehension
 tokens over total task tokens, compared across A/B pairs (e.g. `bugfix_ref`

@@ -173,8 +173,16 @@ describe("research-mode — v0.6.0 Cognitive Research Mode", () => {
 
   // ── Group RM5: mode-off regression ───────────────────────────────────────────
 
-  test("normal-path sections declare no research artifacts", () => {
-    const preResearch = orchestrator.slice(0, orchestrator.indexOf(SECTION));
-    expect(preResearch).not.toContain("research-dataset");
+  test("normal-path sections stay research-neutral: dataset referenced only inside the hard-boundary clause", () => {
+    const fmEnd = orchestrator.indexOf("---", orchestrator.indexOf("---") + 3) + 3;
+    const preResearch = orchestrator.slice(fmEnd, orchestrator.indexOf(SECTION));
+    // v0.6.2: the telemetry hard-boundary clause may reference the dataset path;
+    // activation and behavioral research content must live in the research section only.
+    const sentences = preResearch.split(/(?<=\.)\s+/).filter(s => s.includes("research-dataset"));
+    for (const s of sentences) {
+      expect(s).toContain("Hard boundary");
+    }
+    expect(preResearch).not.toContain("research.enabled");
+    expect(preResearch).not.toContain("/research-mode");
   });
 });

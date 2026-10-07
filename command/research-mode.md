@@ -45,7 +45,7 @@ input_tokens    estimated input tokens consumed (integer; tokens_source=estimate
 output_tokens   estimated output tokens produced (integer; tokens_source=estimated)
 user_confidence developer self-rated confidence 1-5 (calibration question; slot B LIGHT/DEEP only; n/a in slot A and NONE-classified; was "confidence" pre-v0.6.1)
 evaluator_confidence coach's confidence in its verdict 1-5 (only when the evaluation was useful; n/a otherwise)
-dci_immediate   DCI score from immediate comprehension gate (n/a if none)
+dci_immediate   DCI score from immediate comprehension gate (n/a if none). Calibration baseline (v0.6.2): the `user_conf` of the task is attached to the DCI₀ (immediate) reading — the per-plan record is the canonical store, and the tuple confidence contract normalises both fields The DCI₀ reading uses the same `DCI=<score>/<available_score>` block form as the coach emission (even 2-8 denominators).
 dci_delayed     DCI score from delayed comprehension gate or /recall (n/a if not applicable)
 retries         number of comprehension-coach retries (integer)
 skipped         whether comprehension was skipped (boolean)
@@ -62,4 +62,53 @@ Bugfix reference convention: when a bugfix plan is created and the defect traces
 
 **What never enters the dataset**: source code excerpts, file diffs, symbol names, user answers, or any content that could identify a specific user response. Only the metric tuple fields listed above are written.
 
-**When inactive — zero overhead when inactive**: no research lifecycle is entered, the dataset file is never read, never written, and no token cost is incurred.
+**When inactive — zero overhead**: no research lifecycle is entered, the dataset file is never read, never written, and no token cost is incurred.
+
+**Hard boundary** (v0.6.2): while this mode is active, the dataset is the ONLY sink for research metrics; the tuple is appended exactly once at task end — no intermediate or diagnostic rows, no other file receives research metrics, and the dataset is read only inside this lifecycle (never during bootstrap).
+
+## Behavioral A/B flow (normative example)
+
+A minimal behavioral reference for a plan-scoped LIGHT task: how slot alternation,
+the comprehension gate, the coach block, telemetry and the research tuple interlock.
+`SIMULATED-USER` lines mark the recorded user turn; `SIMULATED-COACH` lines mark the
+coach verdict block. The task: add a missing `user_conf` field to a telemetry writer test.
+
+```
+ orchestrator → classify(mode=LIGHT, tier=TIER_FAST)          [slot A: gate suppressed]
+ SIMULATED-USER: "procedi"
+ → implement, self-verify (npx -y bun test), handoff           [no coach call, 0 questions]
+ → at task end append ONE tuple line to .context/research-dataset.jsonl:
+ {"ts":"2026-10-07T15:04:05Z","session_id":"20261006_165213_58705188","task_id":"0007",
+  "slot":"A","gate_type":"n/a","plan":"0007","dci_immediate":"n/a","user_conf":"n/a",
+  "dci1":"n/a","gap":"n/a","src":"n/a","confidence_delta":"n/a","escalations":0,
+  "questions_count":0,"bugfix_ref":"","tokens_source":"estimate","alternation":"abab"}
+```
+
+```
+ orchestrator → classify(mode=LIGHT, tier=TIER_FAST)   [slot B: gate active, gate_type=light]
+ SIMULATED-USER: "user_conf=2 — the failing assertion is allowed.length === hits.length"
+ → calibration + 2 questions (max 2 in LIGHT) before any code or explanation
+ SIMULATED-COACH block after EVALUATE:
+   Comprehension: RETRY
+   evaluator_confidence: 2
+   DCI: 2/4
+ → one focused hint, user retries, second check:
+   Comprehension: PASS
+   evaluator_confidence: 4
+   DCI: 4/4
+ → implement, self-verify, /recall delayed reading (DCI1). A wrong answer here would instead
+   yield Comprehension: FAIL — a terminal outcome, never retried a second time.
+ → telemetry row: <ts> mode=LIGHT DCI=4/4 evaluator_conf=4 outcome=PASS user_conf=4
+ → at task end append ONE tuple line to .context/research-dataset.jsonl:
+ {"ts":"2026-10-07T15:22:41Z","session_id":"20261006_165213_58705188","task_id":"0007",
+  "slot":"B","gate_type":"light","plan":"0007","dci_immediate":"4/4","user_conf":"4",
+  "dci1":"3/4","gap":1,"src":"stored","confidence_delta":0,"escalations":0,
+  "questions_count":2,"bugfix_ref":"plan=0006","tokens_source":"actual","alternation":"abab"}
+```
+
+What the flow pins (and tests assert): slot A produces ZERO coach calls and a
+`gate_type="n/a"` tuple; slot B runs the LIGHT gate (max 2 questions, calibration
+included), emits the atomic four-line coach block, records `user_conf` on DCI0 and
+DCI1 alike, and appends exactly one tuple at task end. Alternation is `abab` across
+the two tasks in chronological order of activation (alternation=abab). Note user_conf=2
+vs the calibration answer of a confident user (user_conf=4) — the DCI0 baseline carries it.

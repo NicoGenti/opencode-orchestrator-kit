@@ -2,6 +2,16 @@
 
 All notable changes to this project are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Starting from v0.3.0, this project follows [Semantic Versioning](https://semver.org/) (SemVer): PATCH = fixes and tuning; MINOR = new backward-compatible capabilities; MAJOR = breaking changes to orchestration or configuration.
 
+## [0.6.2] — 2026-10-07
+
+### Changed
+
+- **Corrected permissions (P0)**: `agents/orchestrator.md` frontmatter write permissions now include the two metric sinks (`.context/comprehension-log.md`, `.context/research-dataset.jsonl`) so telemetry/research writes are permitted exactly where the contract writes them.
+- **Hard boundary on telemetry/research artifacts**: both sinks are append-only — rows only; the comprehension log is read only under explicit `/recall`, the research dataset only inside an active research lifecycle; neither is read at bootstrap.
+- **Coach atomic output includes DCI (v0.6.2 correction over v0.6.1)**: the coach's emission block is again fully atomic — `Comprehension:` verdict + `evaluator_confidence` + `DCI: <score>/<available_score>` in one block; guard-confinement wording added so the block stays coach-emittable as-is.
+- **/recall whitelist made definitive**: step 5 now states the post-answer whitelist in full (plan document, per-plan record, bounded inspection) and step 9 states the record update — no wording that conflicts with the bounded code inspection.
+- **user_conf on DCI₀ + behavioral A/B test**: the calibration answer is recorded on the immediate (DCI₀) reading (telemetry template, per-plan record, research tuple); research-mode carries a normative behavioral A/B flow (simulated turn transcript, real gate pass/fail, 17-field tuple check) and the telemetry/test suite pins the dataset as an orchestrator sink.
+
 ## [0.6.1] — 2026-10-07
 
 ### Changed
