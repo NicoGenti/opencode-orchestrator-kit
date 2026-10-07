@@ -9,6 +9,8 @@
  *   - Slot alternation (A/B) and per-slot behavior
  *   - research_id: v0.6.6 `res-<YYYYMMDD>-<HHMMSS>-<32hex>` — readable task-start
  *     timestamp + 128-bit random suffix, generated once and reused verbatim
+ *   - evaluation_id: v0.6.7 `ev-<YYYYMMDD>-<HHMMSS>-<32hex>` — per-evaluation
+ *     comprehension record identity (file name), never a dataset field
  *
  * `plan` is descriptive metadata, never an identifier. `dci_delayed` is not a
  * task field: the v0.6.3 single-row backfill edit is retired — the delayed
@@ -37,6 +39,15 @@ export const SCHEMA_VERSION = 1 as const;
 const RESEARCH_ID_RE = /^res-\d{8}-\d{6}-[0-9a-f]{32}$/;
 /** Legacy formats (v0.6.0–v0.6.5): timestamp-only, or timestamp + 8-hex counter suffix. */
 const LEGACY_RESEARCH_ID_RE = /^res-\d{8}-\d{6}(-[0-9a-fA-F]{8})?$/;
+/**
+ * evaluation_id (v0.6.7): identity of ONE comprehension evaluation (LIGHT/DEEP),
+ * same 128-bit shape as the research_id with an `ev-` prefix. One evaluation_id
+ * per evaluation, generated once and never regenerated — it names the record
+ * file (`.context/comprehension/<evaluation-id>.md`) so multiple
+ * evaluations of the same plan stay append-safe. NOT a dataset field: dataset
+ * correlation stays on research_id (Research Mode only; `n/a` otherwise).
+ */
+const EVALUATION_ID_RE = /^ev-\d{8}-\d{6}-[0-9a-f]{32}$/;
 const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const DCI_RE = /^DCI=(\d+)\/(\d+)$/;
 
@@ -72,6 +83,27 @@ export const MAKE_RESEARCH_ID_NOTE =
   "CSPRNG suffix: 128 bits of platform-cryptographic randomness appended to the " +
   "readable task-start timestamp; generated once at task start and reused " +
   "verbatim by the recall event and the comprehension record (never regenerated).";
+
+/** Validator for the comprehension record's `evaluation_id` field / file name. */
+export function isValidEvaluationId(v: unknown): boolean {
+  return typeof v === "string" && EVALUATION_ID_RE.test(v);
+}
+
+/**
+ * One evaluation_id per evaluation: generated once per evaluation, then reused
+ * verbatim as the record file name. Never derived back from (timestamp, index);
+ * never a dataset key — dataset correlation stays on research_id.
+ */
+export function makeEvaluationId(seed: { timestamp: string }): string {
+  return `ev-${seed.timestamp}-${makeResearchIdSuffix()}`;
+}
+
+export const MAKE_EVALUATION_ID_NOTE =
+  "CSPRNG suffix: 128 bits of platform-cryptographic randomness appended to the " +
+  "readable evaluation timestamp; generated once per evaluation and reused " +
+  "verbatim as the comprehension record file name (never regenerated). " +
+  "evaluation_id is the evaluation's identity; research_id (Research Mode only) " +
+  "remains the dataset correlation key.";
 
 export const GATE_TYPES = ["n/a", "NONE", "LIGHT", "DEEP"] as const;
 export type GateType = (typeof GATE_TYPES)[number];

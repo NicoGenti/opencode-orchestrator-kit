@@ -34,7 +34,7 @@ Both slots complete the same engineering task; only the comprehension layer diff
 One line per event, appended to `.context/research-dataset.jsonl` — exactly one JSON object as one line; no header, no prose; no intermediate or diagnostic rows. The dataset is a **strictly append-only event log**: events are never modified, backfilled, deleted or rewritten, and history never mutates. The dataset is NEVER loaded by `/start-session` or by any bootstrap procedure; it is read/written only inside the research lifecycle.
 
 `research_id` — `res-YYYYMMDD-HHMMSS-<32hex>` (v0.6.6: readable task-start timestamp +
-128-bit random suffix) — is assigned when the task begins, together with the slot. It is
+128-bit random suffix) — is assigned when the task begins, together with the slot, through the bash-executable kit helper `scripts/record-id.ts` (16 random bytes from the platform CSPRNG) — never invented manually. It is
 stable per task and it is the ONLY correlation key: every recall event of a task carries
 the same `research_id`. Uniqueness across tasks is probabilistic at 128 bits (CSPRNG,
 UUID-v4 class). `plan` is descriptive
@@ -127,7 +127,7 @@ lines mark the coach verdict block.
  → task delegations: 4 — explorer, coach evaluation, coach re-check (the single escalation),
    developer-fixer; `agent_calls` counts every one of them
  → at task end append ONE task event to .context/research-dataset.jsonl (and store `research_id`
-   in the per-evaluation record `.context/comprehension/<plan-id>/<research-id>.md` so a later /recall can correlate):
+   in the per-evaluation record (the comprehension record lands at `.context/comprehension/<evaluation-id>.md`) so a later /recall can correlate):
  {"event":"task","schema_version":1,"research_id":"res-20261007-154500-9f3e2b7c5a41e8d02fb6c7314a95e620","date":"2026-10-07","plan":"0007","slot":"B","task_type":"test","gate_type":"LIGHT","duration_min":21,"agent_calls":4,"input_tokens":19400,"output_tokens":3500,"user_confidence":2,"evaluator_confidence":4,"dci_immediate":"DCI=4/4","retries":1,"skipped":false,"bugfix_ref":"plan=0006","tokens_source":"exact"}
 ```
 
@@ -142,9 +142,9 @@ What the flow pins (and tests assert): slots alternate A→B by activation index
 task 1 = B); each task emits exactly ONE task event, canonical key order per the contract;
 `research_id` is unique per task, present on the task event AND the recall event (correlation);
 its format is `res-YYYYMMDD-HHMMSS-<32hex>` (v0.6.6): the task-start timestamp plus a random
-128-bit CSPRNG suffix, so tasks activated in the same second never collide; the id is generated
+128-bit CSPRNG suffix, giving a negligible collision probability even for tasks starting in the same second; the id is generated
 ONCE at task start and reused verbatim on the recall event and in the per-evaluation record
-(`.context/comprehension/<plan-id>/<research-id>.md`) — never regenerated or mutated over the
+(`.context/comprehension/<evaluation-id>.md`) — never regenerated or mutated over the
 task → recall lifecycle. `plan` is metadata (slot A carries ""). Slot A shows
 NO classification at all (no
 `classify(...)` line), emits `gate_type="n/a"`, 0 gate overhead, `skipped=false`, and

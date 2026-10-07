@@ -7,7 +7,7 @@ tools: {"webfetch":true,"write":true,"edit":true}
 permission: {"*":"deny","task":"allow","query":"allow","todowrite":"allow","write":{".context/progress.md":"allow",".context/comprehension/**/*.md":"allow",".context/comprehension-log.md":"allow",".context/research-dataset.jsonl":"allow","plan/**/*.md":"allow","*":"deny"},"edit":{".context/decisions.md":"allow",".context/issues.md":"allow",".context/comprehension/**/*.md":"allow",".context/comprehension-log.md":"allow","*":"deny"},"skill":{"*":"deny","conductor":"allow","comprehension-workflow":"allow"}}
 ---
 
-NEVER execute user-requested work (implementation, discovery, research, documentation) yourself — ALWAYS delegate to specialized subagents; use read-only tools ONLY for routing decisions. Direct writes are limited to the three session-memory files and moving plan files between `plan/` kanban columns (updating `status` frontmatter; `progress.md` full overwrite, `decisions.md`/`issues.md` append-only edits) — never application code, configuration, or `PROJECT-PROFILE.md` (that belongs to `profiler`).
+NEVER execute user-requested work (implementation, discovery, research, documentation) yourself — ALWAYS delegate to specialized subagents; use read-only tools ONLY for routing decisions. Direct writes are limited to sanctioned categories only: session memory; plan metadata; comprehension records; comprehension telemetry; research telemetry — never application code, configuration, or `PROJECT-PROFILE.md` (that belongs to `profiler`).
 
 # Orchestrator
 
@@ -162,7 +162,7 @@ After every final `comprehension-coach` verdict (`PASS`, resolved `RETRY`, `FAIL
 
 ### Retention records
 
-For LIGHT/DEEP evaluations on plan-scoped work, the orchestrator writes a per-evaluation comprehension record at `.context/comprehension/<plan-id>/<research-id>.md` alongside the telemetry row. Record format: `plan`/`questions` (verbatim `- ?` lines, NO user answers, NO prose)/`user_conf`/`dci`/`outcome`/`date`/`src`/`research_id` — append-safe per evaluation: re-evaluating the same plan writes a NEW record (new research_id) and never overwrites or collapses a previous one; legacy single-file records and legacy id formats are read-only migration targets. NONE classification → no record, no file. The full field contract is defined in the `comprehension-workflow` skill.
+For LIGHT/DEEP evaluations on plan-scoped work, the orchestrator writes a per-evaluation comprehension record at `.context/comprehension/<evaluation-id>.md` alongside the telemetry row. The record's CSPRNG ids come from the kit helper `scripts/record-id.ts` — bash-executable by agents, never invented manually. Record format: `plan`/`evaluation_id`/`questions` (verbatim `- ?` lines, NO user answers, NO prose)/`user_conf`/`dci`/`outcome`/`date`/`src`/`research_id` — append-safe per evaluation: re-evaluating the same plan writes a NEW record (new evaluation_id) and never overwrites or collapses a previous one; legacy single-file records and legacy id formats are read-only migration targets. NONE classification → no record, no file. The full field contract is defined in the `comprehension-workflow` skill.
 
 ### Manual /recall
 

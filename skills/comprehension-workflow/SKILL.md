@@ -101,12 +101,13 @@ The write happens AFTER the verdict is final — never during bootstrap, never d
 
 ## Retention records
 
-For LIGHT/DEEP evaluations on task plan-scoped work, the orchestrator MUST write/update a per-evaluation comprehension record at `.context/comprehension/<plan-id>/<research-id>.md` alongside the telemetry row. This is a local comprehension artifact, NOT a new subagent or tier.
+For LIGHT/DEEP evaluations on task plan-scoped work, the orchestrator MUST write/update a per-evaluation comprehension record at `.context/comprehension/<evaluation-id>.md` alongside the telemetry row (CSPRNG ids via the kit helper `scripts/record-id.ts`, never invented manually). This is a local comprehension artifact, NOT a new subagent or tier.
 
 Comprehension record format (one record per evaluation; each field on its own line, no user answer text, no prose):
 
 ```
 plan: <plan-id>
+evaluation_id: ev-YYYYMMDD-HHMMSS-<32hex>
 research_id: res-YYYYMMDD-HHMMSS-<32hex>|n/a
 questions:
 - ? <question-1 verbatim>
@@ -119,19 +120,25 @@ src: stored
 ```
 
 - Questions are stored verbatim from the CHALLENGE step, one per line with `- ?` prefix. NO user answers, NO prose.
-- **research_id correlation (v0.6.6)**: when Research Mode is active, the record carries the
+- **evaluation_id identity (v0.6.7)**: every LIGHT/DEEP evaluation gets an `evaluation_id`
+  (format `ev-YYYYMMDD-HHMMSS-<32hex>`, readable evaluation timestamp + 128-bit random CSPRNG
+  suffix), generated once per evaluation and NEVER regenerated or mutated — independent of
+  the Research Mode. It names the record file, so multiple evaluations of the same plan always
+  produce distinct records.
+- **research_id correlation (v0.6.6)**: when Research Mode is active, the record additionally carries the
   task's `research_id` (format `res-YYYYMMDD-HHMMSS-<32hex>`, 128-bit random CSPRNG suffix); it is
-  written once at task end and NEVER regenerated or mutated. `/recall` recovers the correlation
+  written once at task end and NEVER regenerated or mutated; with Research Mode OFF the field is
+  `n/a` and the record stays valid, keyed by its `evaluation_id`. `/recall` recovers the correlation
   id from this field and copies it verbatim into the recall event — one plan may hold several
-  evaluation records (one per research_id): the plan id is metadata for humans, never the
+  evaluation records (one per evaluation_id): the plan id is metadata for humans, never the
   dataset's primary key, and never a sufficient lookup key on its own — the id in the dataset is
-  always the specific evaluation's `research_id`.
+  always the task's `research_id`.
 - `user_conf` is the developer's `user_confidence` (calibration question, 1-5); `n/a` when the question was not asked.
 - **DCI₀ baseline (v0.6.4)**: when the task belongs to an active research session, the same `user_conf` value is attached to the DCI₀ (immediate) reading — recorded in the research tuple alongside `dci_immediate` as the calibration baseline; the comprehension record is the canonical store. The research tuple carries the session's `research_id`, which links the DCI₀ row and later `/recall` rows for the same task (the dataset is append-only: `/recall` adds a new row, never rewrites existing rows).
 - The calibration gap compares `user_conf` against the normalised DCI: `gap = user_conf − round(5 × dci_score / dci_available)`.
 - Unplanned tasks → no record. NONE classification → no record, no file.
 - `src=stored` means the record was written from the CHALLENGE dialogue; `src=reconstructed` is used only during /recall reconstruction (see below).
-- Records are append-safe: one record per evaluation, path-keyed by `research_id` under the plan's directory (`.context/comprehension/<plan-id>/<research-id>.md`); re-evaluating the same plan writes a NEW record (new research_id) and never overwrites or collapses a previous one (no edit, no delete).
+- Records are append-safe: one record per evaluation, path-keyed by `evaluation_id` (`.context/comprehension/<evaluation-id>.md`); re-evaluating the same plan writes a NEW record (new evaluation_id) and never overwrites or collapses a previous one (no edit, no delete).
 
 ## Escalation routing (TIER_REVIEW)
 
@@ -157,15 +164,15 @@ The `/recall` command re-activates a past comprehension session for a plan. It i
 
 **Flow (9 steps)**:
 
-1. **List candidates**: scan `plan/complete/*.md` and existing `.context/comprehension/**/*.md` records; present to user as a numbered list (plan-id + research_id + last outcome + date).
-2. **User selects** the plan to recall (number or plan-id).
-3. **Load questions**: read the selected record at `.context/comprehension/<plan-id>/<research-id>.md` if it exists (`src=stored`; the selection pins one specific `research_id`); otherwise reconstruct from the plan's Goal/Scope section in `plan/complete/<plan-id>.md` (`src=reconstructed`), inferring questions that map to the plan's stated acceptance criteria.
+1. **List candidates**: scan `plan/complete/*.md` and existing `.context/comprehension/**/*.md` records; present to user as a numbered list (plan-id + evaluation_id + research_id + last outcome + date). Each numbered entry is ONE evaluation — selecting it targets exactly one `evaluation_id` and its stored `research_id`; the completed recall appends a recall event, it never rewrites history.
+2. **User selects** the evaluation to recall (number or evaluation_id); the plan-id is used only if that plan has exactly ONE evaluation.
+3. **Load questions**: read the selected record at `.context/comprehension/<evaluation-id>.md` if it exists (`src=stored`; the selection pins one specific `research_id`); otherwise reconstruct from the plan's Goal/Scope section in `plan/complete/<plan-id>.md` (`src=reconstructed`), inferring questions that map to the plan's stated acceptance criteria.
 4. **Show ALL questions** (with `- ?` prefix), one per line. No code, no diffs, no explanations yet.
 5. **User answers from memory** (no tooling, no file access during this step).
 6. **Code inspection** (v0.3.1 token-aware comprehension): if needed, show the relevant diff with `maxDiffLines=300` and correlated symbols capped at `maxRelatedSymbols=3` — diff lines ONLY, NEVER full files, NEVER repo-wide scans.
 7. **Evaluation** delegated to `comprehension-coach` using the v0.4.0 DCI rubric with the identical whitelist input (goal, changed file list, focused diff, minimal surrounding symbols). The coach's rubric score is the DCI verdict.
 8. **Retry/skip** (v0.3.0 verbatim): maximum 1 retry; `skip comprehension` is always available; no reveal of expected answers during retry.
-9. **Outcome**: append dci1-format row to `.context/comprehension-log.md` AND full-overwrite `.context/progress.md` (snapshot of the CURRENT state — pointer removal on completion, never a per-task history line); update the selected record's `outcome`, `dci` and `user_conf` fields. Format:
+9. **Outcome**: append dci1-format row to `.context/comprehension-log.md` AND full-overwrite `.context/progress.md` (snapshot of the CURRENT state — pointer removal on completion, never a per-task history line); the immediate baseline (dci_immediate, user_confidence_immediate, outcome_immediate) is immutable — never rewritten; a new recall event is a NEW line — no in-place rewrite. Format:
 
 ```
 <date> | plan=<NNNN> | type=dci1 | src=stored|reconstructed | retry=<0|1> | user_conf=<1-5> | evaluator_conf=<1-5> | DCI=<score>/<available_score> | outcome=PASS|FAIL|RETRY|SKIPPED
@@ -175,6 +182,6 @@ The `/recall` command re-activates a past comprehension session for a plan. It i
 - Same header-once rule as the telemetry writer; same append-only discipline.
 - The log file `.context/comprehension-log.md` is the single sink for all dci1 rows.
 
-**Whitelist of sources**: ONLY the plan document in `plan/complete/` and the selected record in `.context/comprehension/<plan-id>/<research-id>.md` may be consulted during /recall. NO repo-wide scans, NO scanning of other plans, NO ad-hoc file reads beyond the selected plan's document.
+**Whitelist of sources**: ONLY the plan document in `plan/complete/` and the selected record in `.context/comprehension/<evaluation-id>.md` may be consulted during /recall. NO repo-wide scans, NO scanning of other plans, NO ad-hoc file reads beyond the selected plan's document.
 
 **Isolation**: Manual invocation only. Nothing in this profile may trigger `/recall` automatically. `.context/comprehension-log.md` is read exclusively during `/recall` invocation, never at session start, never during bootstrap.

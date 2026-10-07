@@ -8,6 +8,8 @@
  *   - research_id uniqueness + task↔recall correlation
  *   - append-only dataset: recall is a NEW event with the SAME research_id,
  *     no row rewriting anywhere (dci_delayed is retired as a task field)
+ *   - evaluation_id (v0.6.7): per-evaluation record identity (ev- prefix),
+ *     never a dataset field — correlation stays on research_id
  *   - slot A = control: no classification, no gate, no calibration,
  *     never a user skip, agent_calls still faithful
  *   - slot B = treatment: NONE/LIGHT/DEEP classification + gate + coach
@@ -24,6 +26,7 @@ import {
   validateTaskEvent, validateRecallEvent, validateEventLine, sameResearchId,
   slotForTaskIndex, nextSlot, SLOT_BEHAVIOR, gateRequiresCoach,
   isValidResearchId, isLegacyResearchId, makeResearchId,
+  isValidEvaluationId, makeEvaluationId, MAKE_EVALUATION_ID_NOTE,
   MAKE_RESEARCH_ID_NOTE, validDCI, GATE_TYPES,
   TASK_FIELDS, RECALL_FIELDS, SCHEMA_VERSION, FORBIDDEN,
 } from "./contract-fields.ts";
@@ -137,6 +140,23 @@ describe("research-mode — research_id uniqueness + correlation", () => {
     expect(sameResearchId(TASK_EXAMPLES[1], RECALL_EXAMPLES[0])).toBe(true);
     expect(sameResearchId(TASK_EXAMPLES[0], RECALL_EXAMPLES[0])).toBe(false);
     expect(sameResearchId({ ...TASK_EXAMPLES[1], research_id: makeResearchId({ timestamp: "20261007-000000" }) }, RECALL_EXAMPLES[0])).toBe(false);
+  });
+});
+
+describe("research-mode — evaluation_id identity (v0.6.7)", () => {
+  test("format ev-YYYYMMDD-HHMMSS-32hex: the res- twin, never a dataset key", () => {
+    const a = makeEvaluationId({ timestamp: "20261007-150000" });
+    const b = makeEvaluationId({ timestamp: "20261007-150000" });
+    expect(a).not.toBe(b); // CSPRNG: two draws never repeat (probabilistic 128-bit uniqueness)
+    expect(a.startsWith("ev-20261007-150000-")).toBe(true); // readable evaluation timestamp preserved
+    expect(isValidEvaluationId(a)).toBe(true);
+    expect(isValidEvaluationId(b)).toBe(true);
+    expect(isValidResearchId(a)).toBe(false); // evaluation_id ≠ research_id: never a dataset key
+    expect(isValidEvaluationId("res-20261007-150000-3f9a7c2e1b08d54fa6e3c70b92d1846a")).toBe(false);
+    expect(isValidEvaluationId("ev-20261007-150000")).toBe(false); // bare timestamp: rejected
+    expect(MAKE_EVALUATION_ID_NOTE).toMatch(/128 ?bits/i);
+    expect(MAKE_EVALUATION_ID_NOTE).toMatch(/CSPRNG|crypto/i);
+    expect(MAKE_EVALUATION_ID_NOTE).toMatch(/research_id/); // identity vs correlation split is documented
   });
 });
 
@@ -399,37 +419,39 @@ describe("research-mode — the real sink is a valid append-only event log", () 
   });
 });
 
-describe("research-mode — v0.6.6 correlation finalization pins (E)", () => {
-  test("append-safe records: multiple evaluations of the same plan never collide or overwrite (path-keyed by research_id)", () => {
-    const planId = "0007";
-    const recordPathFor = (id: string) => join(".context", "comprehension", planId, `${id}.md`);
-    const ids = [makeResearchId({ timestamp: "20261007-150000" }), makeResearchId({ timestamp: "20261007-150000" }), makeResearchId({ timestamp: "20261007-150100" })];
+describe("research-mode — v0.6.7 correlation finalization pins (E)", () => {
+  test("append-safe records: multiple evaluations of the same plan have negligible collision probability and never overwrite each other (path-keyed by evaluation_id)", () => {
+    const planId = "0007"; // v0.6.7: kept for prose only — record paths went flat below
+    const recordPathFor = (id: string) => join(".context", "comprehension", `${id}.md`);
+    const ids = [makeEvaluationId({ timestamp: "20261007-150000" }), makeEvaluationId({ timestamp: "20261007-150000" }), makeEvaluationId({ timestamp: "20261007-150100" })];
     expect(ids[0]).not.toBe(ids[1]); // same second, two evaluations → distinct paths
     expect(ids[1]).not.toBe(ids[2]);
     const paths = new Set(ids.map(recordPathFor));
     expect(paths.size).toBe(ids.length); // one path per evaluation, never overwritten
     for (const id of ids) {
-      expect(isValidResearchId(id)).toBe(true);
-      expect(recordPathFor(id)).toBe(join(".context", "comprehension", planId, `${id}.md`));
+      expect(isValidEvaluationId(id)).toBe(true);
+      expect(recordPathFor(id)).toBe(join(".context", "comprehension", `${id}.md`));
     }
   });
 
   test("recall selects the CORRECT evaluation: the record's stored research_id pins the recall event", () => {
     const planId = "0007";
-    const first = makeResearchId({ timestamp: "20261007-150000" });
-    const second = makeResearchId({ timestamp: "20261007-150100" });
-    // record store keyed by research_id (append-safe): both records coexist for plan 0007
+    const firstEval = makeEvaluationId({ timestamp: "20261007-150000" });
+    const secondEval = makeEvaluationId({ timestamp: "20261007-150100" });
+    const firstTask = makeResearchId({ timestamp: "20261007-150000" });
+    const secondTask = makeResearchId({ timestamp: "20261007-150100" });
+    // record store keyed by evaluation_id (append-safe): both records coexist for plan 0007
     const records: Record<string, string> = {
-      [first]: `plan: ${planId}\nresearch_id: ${first}\n`,
-      [second]: `plan: ${planId}\nresearch_id: ${second}\n`,
+      [firstEval]: `plan: ${planId}\nevaluation_id: ${firstEval}\nresearch_id: ${firstTask}\n`,
+      [secondEval]: `plan: ${planId}\nevaluation_id: ${secondEval}\nresearch_id: ${secondTask}\n`,
     };
-    const selectedRecord = records[second]; // the user's selection pins one specific research_id
+    const selectedRecord = records[secondEval]; // the user's selection pins one specific evaluation_id
     const storedId = selectedRecord.split("research_id: ")[1]!.trim();
     const recallEvent = makeRecallEvent({ research_id: storedId, plan: planId });
-    expect(recallEvent.research_id).toBe(second); // copied verbatim from the selected record
-    expect(recallEvent.research_id).not.toBe(first);
-    expect(sameResearchId({ research_id: second } as never, recallEvent)).toBe(true);
-    expect(storedId).not.toBe(first); // no ambiguous plan-only lookup: ids differ though plan is identical
+    expect(recallEvent.research_id).toBe(secondTask); // copied verbatim from the SELECTED record
+    expect(recallEvent.research_id).not.toBe(firstTask);
+    expect(sameResearchId({ research_id: secondTask } as never, recallEvent)).toBe(true);
+    expect(storedId).not.toBe(firstTask); // no ambiguous plan-only lookup: each record carries its own task's research_id
   });
 
   test("canonical docs ↔ validator consistency: doc template placeholders match the validator's format", () => {
@@ -449,5 +471,24 @@ describe("research-mode — v0.6.6 correlation finalization pins (E)", () => {
     // and the validator is exactly the documented format
     expect(isValidResearchId("res-20261007-143000-3f9a7c2e1b08d54fa6e3c70b92d1846a")).toBe(true);
     expect(isValidResearchId("res-20261007-143000-3f9a7c2e1b08d54fa6e3c70b92d1846")).toBe(false);
+  });
+
+  test("evaluation_id: bare timestamp forms are rejected; the CSPRNG suffix stays valid (v0.6.7)", () => {
+    expect(isValidEvaluationId("ev-20261007-150000")).toBe(false);
+    expect(isValidEvaluationId("ev-20261007-150000-3f9a7c2e")).toBe(false);
+    const id = makeEvaluationId({ timestamp: "20261007-150000" });
+    expect(isValidEvaluationId(id)).toBe(true);
+    expect(id.startsWith("ev-20261007-150000-")).toBe(true);
+  });
+
+  test("evaluation_id: suffix mechanics match the research_id contract (32 hex, never derived)", () => {
+    const rid = makeResearchId({ timestamp: "20261007-150000" });
+    expect(rid.slice(-32)).toMatch(/^[0-9a-f]{32}$/); // CSPRNG suffix, 128 bits
+    expect(isValidResearchId(rid)).toBe(true);
+    const tampered = rid.slice(0, -1) + (rid.at(-1) === "a" ? "b" : "a");
+    expect(isValidResearchId(tampered)).toBe(true); // same format — only the value differs
+    expect(tampered).not.toBe(rid);
+    expect(MAKE_EVALUATION_ID_NOTE).toContain("record file name");
+    expect(MAKE_EVALUATION_ID_NOTE).toContain("never regenerated");
   });
 });

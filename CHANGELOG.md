@@ -2,6 +2,18 @@
 
 All notable changes to this project are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Starting from v0.3.0, this project follows [Semantic Versioning](https://semver.org/) (SemVer): PATCH = fixes and tuning; MINOR = new backward-compatible capabilities; MAJOR = breaking changes to orchestration or configuration.
 
+## [0.6.7] — 2026-10-07
+
+### Changed
+
+- **Flat per-evaluation record paths (`<evaluation-id>.md`)**: the per-evaluation comprehension record home becomes `.context/comprehension/<evaluation-id>.md` — the record file is named by the evaluation's `evaluation_id` (v0.6.7 identity, `ev-YYYYMMDD-HHMMSS-<32hex>`), no longer nested under the plan directory; enumeration globs stay `**/*.md` and `/recall` selection pins one specific evaluation. Research Mode correlation is unchanged: the record still archives the task's `research_id` (`res-YYYYMMDD-HHMMSS-<32hex>`), the only dataset key.
+- **Kit-side id helper `scripts/record-id.ts`**: agents generate task/research ids via `crypto.getRandomValues` (16 bytes, CSPRNG) instead of inventing the suffix manually; `command/research-mode.md` and `agents/orchestrator.md` declare its use (bash-executable).
+- **Immutable immediate baseline in /recall (step 9)**: `dci_immediate`, `user_confidence_immediate` and `outcome_immediate` are never rewritten by a recall; every recall appends a NEW event line on the record and the dataset — no in-place rewrite anywhere (W11 pins updated to guard the negative).
+- **/recall selection by evaluation (steps 1–2)**: candidates are enumerated per evaluation (plan-id + evaluation_id + research_id + last outcome + date); selection by number or `evaluation_id`; the plan-id is used only when that plan has exactly ONE evaluation; the whitelist follows the flat record path.
+- **Collision wording**: "tasks activated in the same second never collide" → "negligible collision probability" — uniqueness is probabilistic at 128 CSPRNG bits; the append-safe-records pin follows the flat path.
+- **New pins (8)**: contract-fields (validator rejects bare evaluation-id forms; suffix contract via makeResearchId), recall-command (per-evaluation selection, flat record path, immutable baseline, append-only recall), workflow-hardening (flat record paths across live docs, helper declaration). W1 prompt budget (≤ 24,000 chars) re-verified on the extended prose.
+- **DatasetEventV1 invariance preserved**: schema_version stays 1, the dataset stays append-only; the record path change does not touch the event model.
+
 ## [0.6.6] — 2026-10-07
 
 ### Fixed

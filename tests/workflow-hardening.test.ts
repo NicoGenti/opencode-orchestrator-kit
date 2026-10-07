@@ -220,6 +220,7 @@ describe("workflow-hardening — W9 hard boundary (v0.6.2)", () => {
   test("both sinks are append-only; reads are lifecycle-scoped", () => {
     expect(ORCH).toMatch(/\*\*Hard boundary\*\*: both sinks \(this log, `\.context\/research-dataset\.jsonl`\) are append-only/);
     expect(ORCH).toMatch(/Sanctioned writes: session memory; plan metadata; comprehension records; comprehension telemetry; research telemetry/);
+    expect(ORCH).toMatch(/Direct writes are limited to sanctioned categories only/);
     expect(RESEARCH).toMatch(/no intermediate or diagnostic rows/);
     expect(RESEARCH).toMatch(/exactly one JSON object as one line/);
   });
@@ -253,14 +254,16 @@ describe("workflow-hardening — W10 coach atomic output includes DCI (v0.6.2)",
 
 describe("workflow-hardening — W11 /recall whitelist (v0.6.2)", () => {
   test("whitelist covers plan + selected per-evaluation record + bounded inspection", () => {
-    expect(RECALL).toMatch(/ONLY the plan document in `plan\/complete\/`, the per-evaluation record in `\.context\/comprehension\/<plan-id>\/<research-id>\.md`, and the bounded post-answer inspection/);
+    expect(RECALL).toMatch(/ONLY the plan document in `plan\/complete\/`, the per-evaluation record in `\.context\/comprehension\/<evaluation-id>\.md`, and the bounded post-answer inspection/);
     expect(RECALL).toMatch(/maxDiffLines=300/);
     expect(RECALL).toContain("maxRelatedSymbols=3");
   });
 
-  test("recall steps state the whitelist and the record update", () => {
+  test("recall steps state the whitelist and the immutable-baseline record update (appends only)", () => {
     expect(RECALL).toMatch(/only through step 5's whitelist/);
-    expect(RECALL).toMatch(/update the selected record's `outcome`, `dci` and `user_conf` fields/);
+    expect(RECALL).not.toMatch(/update the selected record's `outcome`, `dci` and `user_conf` fields/);
+    expect(RECALL).toMatch(/dci_immediate, user_confidence_immediate, outcome_immediate/);
+    expect(RECALL).toMatch(/every recall is a NEW line/);
   });
 });
 
@@ -320,3 +323,19 @@ describe("workflow-hardening — W14 behavioral A/B flow (v0.6.2)", () => {
     }
   });
 });
+
+describe("workflow-hardening — v0.6.7 flat record paths + helper declaration", () => {
+  test("every live doc uses the flat <evaluation-id>.md record path (no plan-nested path remains)", () => {
+    for (const doc of [ORCH, SKILL, RECALL, RESEARCH]) {
+      expect(doc).not.toMatch(/<plan-id>\/<evaluation-id>\.md/);
+      expect(doc).not.toMatch(/<plan-id>\/<research-id>\.md/);
+    }
+    expect(RECALL).toMatch(/\.context\/comprehension\/<evaluation-id>\.md/);
+  });
+
+  test("orchestrator + research-mode declare the kit helper scripts/record-id.ts", () => {
+    expect(ORCH).toMatch(/record-id\.ts/);
+    expect(RESEARCH).toMatch(/record-id\.ts/);
+  });
+});
+

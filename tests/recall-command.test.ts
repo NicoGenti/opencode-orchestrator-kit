@@ -124,4 +124,25 @@ describe("recall-command — v0.5.0 Comprehension Retention", () => {
     expect(enumeration).toContain(".context/issues.md");
     expect(enumeration).not.toContain(".context/comprehension/");
   });
+
+  test("v0.6.7 selection is per evaluation: number or evaluation_id; plan-id only for single-evaluation plans", () => {
+    expect(recall).toContain("the evaluation to recall (number or evaluation_id)");
+    expect(recall).toContain("plan-id is used only if that plan has exactly ONE evaluation");
+  });
+
+  test("v0.6.7 the record path is flat: comprehension/<evaluation-id>.md", () => {
+    expect(recall).toMatch(/\.context\/comprehension\/<evaluation-id>\.md/);
+    expect(recall).not.toMatch(/<plan-id>\/<evaluation-id>\.md/);
+  });
+
+  test("v0.6.7 step 9 keeps the immediate baseline immutable (no in-place record rewrite)", () => {
+    expect(recall).not.toContain("update the selected record's `outcome`");
+    expect(recall).toContain("dci_immediate, user_confidence_immediate, outcome_immediate");
+    expect(recall).toContain("every recall is a NEW line");
+  });
+
+  test("v0.6.7 recall appends; it never rewrites history", () => {
+    expect(recall).toContain("the completed recall appends a recall event");
+    expect(recall).toContain("every recall is a NEW line");
+  });
 });
