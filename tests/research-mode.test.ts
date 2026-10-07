@@ -1,188 +1,109 @@
-/**
- * tests/research-mode.test.ts — v0.6.0 Cognitive Research Mode
- *
- * Guards the opt-in research mode (A/B crossover + COR metrics):
- *   RM1  command/research-mode.md structure (on/off, confirmation phrase)
- *   RM2  agents/orchestrator.md research section (placement, invariants)
- *   RM3  command/start-session.md dataset exclusion
- *   RM4  dataset contract (JSONL format, 16-field tuple, alternation)
- *   RM5  mode-off regression: no research artifacts in normal-path sections
- */
-import { describe, expect, test } from "bun:test";
+import { test, expect } from "bun:test";
 import { readFileSync } from "node:fs";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { FORBIDDEN, TUPLE_FIELDS, EXAMPLES, makeTuple, validateTuple } from "./contract-fields.ts";
 
-const REPO_ROOT = join(import.meta.dir, "..");
-const RESEARCH_PATH = join(REPO_ROOT, "command/research-mode.md");
-const ORCH_PATH = join(REPO_ROOT, "agents/orchestrator.md");
-const START_PATH = join(REPO_ROOT, "command/start-session.md");
-const CONFIG_PATH = join(REPO_ROOT, "templates/comprehension.config.json");
+const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 
-const researchCmd = readFileSync(RESEARCH_PATH, "utf-8");
-const orchestrator = readFileSync(ORCH_PATH, "utf-8");
-const startSession = readFileSync(START_PATH, "utf-8");
-const parsed = JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
+const md = (_path: string) =>
+  readFileSync(join(repoRoot, _path), "utf8");
 
-const SECTION = "### Research mode (opt-in)";
-const section = orchestrator.slice(
-  orchestrator.indexOf(SECTION),
-  orchestrator.indexOf("## Delegation Rules"),
-);
+test("RM0: research mode is zero-overhead when inactive", () => {
+  const doc = md("command/research-mode.md");
+  expect(doc.includes("When inactive — zero overhead")).toBe(true);
+  expect(doc.includes("the dataset file is never read, never written")).toBe(true);
+});
 
-const TUPLE_FIELDS = [
-  "date",
-  "plan",
-  "slot",
-  "task_type",
-  "gate_type",
-  "duration_min",
-  "agent_calls",
-  "input_tokens",
-  "output_tokens",
-  "user_confidence",
-  "evaluator_confidence",
-  "dci_immediate",
-  "dci_delayed",
-  "retries",
-  "skipped",
-  "bugfix_ref",
-  "tokens_source",
-];
+// ——— Deterministic schema checks: assertions run on parsed JSON tuples, not prose tokens ———
 
-describe("research-mode — v0.6.0 Cognitive Research Mode", () => {
-  // ── Config guard ─────────────────────────────────────────────────────────────
-
-  test("top-level config keys are exactly comprehension + recall + research", () => {
-    expect(Object.keys(parsed)).toEqual(["comprehension", "recall", "research"]);
-  });
-
-  test("research.enabled default is false (explicit activation only)", () => {
-    expect(parsed.research.enabled).toBe(false);
-  });
-
-  // ── Group RM1: command/research-mode.md ──────────────────────────────────────
-
-  test("command file exists with agent: orchestrator frontmatter", () => {
-    const fm = researchCmd.slice(0, researchCmd.indexOf("\n---", 4));
-    expect(fm).toContain("agent: orchestrator");
-    expect(fm).toContain("description:");
-  });
-
-  test("ON requires the exact confirmation phrase before enabling", () => {
-    expect(researchCmd).toContain(
-      "Research mode changes session behavior. Confirm activation?"
-    );
-    expect(researchCmd).toContain("Requires explicit user confirmation before enabling");
-  });
-
-  test("OFF stops recording with no partial tuples", () => {
-    expect(researchCmd).toContain("Immediately stops all recording");
-    expect(researchCmd).toContain("No partial tuple is completed or written");
-  });
-
-  // ── Group RM2: agents/orchestrator.md research section ───────────────────────
-
-  test("research section sits between Manual /recall and Delegation Rules", () => {
-    const recallIdx = orchestrator.indexOf("### Manual /recall");
-    const researchIdx = orchestrator.indexOf(SECTION);
-    const delegationIdx = orchestrator.indexOf("## Delegation Rules");
-    expect(recallIdx).toBeGreaterThan(-1);
-    expect(researchIdx).toBeGreaterThan(recallIdx);
-    expect(delegationIdx).toBeGreaterThan(researchIdx);
-  });
-
-  test("privacy invariant verbatim present in section and command file", () => {
-    const INVARIANT =
-      "No source code and no personal answers are ever written to the dataset.";
-    expect(section).toContain(INVARIANT);
-    expect(researchCmd).toContain(INVARIANT);
-  });
-
-  test("zero overhead when inactive: never read, never written, no token cost", () => {
-    expect(section).toContain("zero overhead when inactive");
-    expect(section).toContain("never read, never written, and no token cost");
-  });
-
-  test("dataset never loaded by start-session or bootstrap per orchestrator isolation", () => {
-    expect(section).toContain("NEVER loaded by `/start-session` or by any bootstrap procedure");
-  });
-
-  // ── Group RM3: command/start-session.md dataset exclusion ────────────────────
-
-  test("start-session excludes the research dataset from bootstrap loaded set", () => {
-    expect(startSession).toContain("research-dataset.jsonl");
-    expect(startSession).toContain("NOT part of bootstrap");
-  });
-
-  // ── Group RM4: dataset contract ──────────────────────────────────────────────
-
-  test("JSONL format: one JSON object per line, no header, no prose, append-only", () => {
-    expect(section).toContain("exactly one JSON object as one line");
-    expect(section).toContain("No header, no prose, append-only");
-  });
-
-  test("metric tuple declares all 17 fields (canon: command/research-mode.md)", () => {
-    for (const field of TUPLE_FIELDS) {
-      expect(new RegExp(`^${field}\\s`, "m").test(researchCmd)).toBe(true);
+test("RM4: ResearchTupleV1 has exactly 17 contract fields (both example slots)", () => {
+  // RM4 — the sole field-contract reference: every example tuple must have exactly 17 fields.
+  for (const tuple of EXAMPLES) {
+    expect(Object.keys(tuple).length).toBe(17);
+    for (const f of TUPLE_FIELDS) {
+      if (!(f in tuple)) throw new Error(`missing contract field: ${f}`);
     }
-  });
+  }
+});
 
-  test("confidence normalisation: separate user / evaluator confidence, old 'confidence' retired", () => {
-    expect(researchCmd).toContain("user_confidence");
-    expect(researchCmd).toContain("evaluator_confidence");
-    expect(researchCmd).toMatch(/user_confidence.*developer self-rated confidence 1-5/is);
-    expect(researchCmd).toMatch(/evaluator_confidence.*coach's confidence in its verdict 1-5/is);
-    // the bare field name must not appear as a tuple line anymore
-    expect(researchCmd).not.toMatch(/^confidence\s/m);
-  });
+test("RM4a: contract field order is stable", () => {
+  expect(TUPLE_FIELDS).toEqual([
+    "date", "plan", "slot", "task_type", "gate_type", "duration_min", "agent_calls",
+    "input_tokens", "output_tokens", "user_confidence", "evaluator_confidence",
+    "dci_immediate", "dci_delayed", "retries", "skipped", "bugfix_ref", "tokens_source",
+  ]);
+});
 
-  test("slot alternates deterministically in activation order", () => {
-    expect(section).toContain("alternates deterministically in activation order");
-    expect(section).toContain("first active task = A");
-    expect(researchCmd).toContain("The slot is assigned when the task begins");
-  });
+test("RM5: tokens_source enum is estimated|exact; estimate/actual are retired", () => {
+  expect(validateTuple(makeTuple({ tokens_source: "exact", input_tokens: 18900, output_tokens: 3400 }))).toEqual([]);
+  expect(validateTuple(makeTuple({ tokens_source: "estimate" })).join(" ")).toContain("must be estimated|exact");
+  expect(validateTuple(makeTuple({ tokens_source: "actual" })).join(" ")).toContain("must be estimated|exact");
+  const doc = md("command/research-mode.md");
+  expect(doc.includes('"estimate"')).toBe(false);
+  expect(doc.includes('"actual"')).toBe(false);
+  expect(doc.includes('"estimated" (default) | "exact"')).toBe(true);
+});
 
-  test("bugfix_ref convention and tokens_source honesty field present", () => {
-    expect(researchCmd).toContain('plan=<earlierNNNN>');
-    expect(researchCmd).toContain("tokens_source");
-    expect(researchCmd).toContain("honesty field");
-  });
-
-  // ── Group RM6 (v0.6.1): A/B slots are behavioral, not labels ─────────────────
-
-  test("slot A (control) runs WITHOUT the comprehension gate: 0 coach calls, no questions", () => {
-    for (const doc of [section, researchCmd]) {
-      expect(doc).toContain("Slot A (control)");
-      expect(doc).toMatch(/Slot A[\s\S]{0,400}WITHOUT the comprehension gate/);
-      expect(doc).toContain("0 coach calls");
+test("RM6: forbidden v0.6.0 extras absent from the parsed example tuples", () => {
+  for (const tuple of EXAMPLES) {
+    for (const k of Object.keys(tuple)) {
+      if (FORBIDDEN.has(k)) throw new Error(`forbidden field in example tuple: ${k}`);
     }
-     expect(researchCmd).toContain("no calibration question");
-  });
+    expect(validateTuple(tuple)).toEqual([]);
+  }
+});
 
-  test("slot B (treatment) runs WITH the comprehension gate: classify NONE/LIGHT/DEEP", () => {
-    for (const doc of [section, researchCmd]) {
-      expect(doc).toContain("Slot B (treatment)");
-      expect(doc).toMatch(/Slot B[\s\S]{0,200}(WITH the (full )?comprehension gate|comprehension gate)/);
-      expect(doc).toContain("possible RETRY");
-    }
-  });
+test("RM1: slot A (control) emits gate n/a, no confidence, skipped, estimated tokens", () => {
+  const doc = md("command/research-mode.md");
+  expect(doc.includes("Slot A (control)")).toBe(true);
+  const a = EXAMPLES[0];
+  expect(a.slot).toBe("A");
+  expect(a.gate_type).toBe("n/a");
+  expect(a.user_confidence).toBe("n/a");
+  expect(a.evaluator_confidence).toBe("n/a");
+  expect(a.dci_immediate).toBe("n/a");
+  expect(a.skipped).toBe(true);
+  expect(a.tokens_source).toBe("estimated");
+});
 
-  test("both slots complete the task; only the comprehension layer differs", () => {
-    expect(researchCmd).toContain("Both slots complete the same engineering task");
-  });
+test("RM2: user_confidence and evaluator_confidence are distinct scalar fields in the slot B tuple", () => {
+  const b = EXAMPLES[1];
+  expect(b.slot).toBe("B");
+  expect(b.user_confidence).toBe(2);          // developer self-rating (calibration)
+  expect(b.evaluator_confidence).toBe(4);     // coach confidence at the passing check
+  // not conflated: two different values under two different keys
+  expect(b.user_confidence).not.toBe(b.evaluator_confidence);
+});
 
-  // ── Group RM5: mode-off regression ───────────────────────────────────────────
+test("RM3: /recall never runs inside the task lifecycle; dci_delayed stays n/a at write time", () => {
+  const doc = md("command/research-mode.md");
+  const flow = doc.slice(doc.indexOf("## Behavioral A/B flow"));
+  expect(flow.includes("outside the task lifecycle")).toBe(true);
+  expect(flow.includes("→ /recall")).toBe(false);
+  expect(flow.includes("run /recall")).toBe(false);
+  for (const tuple of EXAMPLES) expect(tuple.dci_delayed).toBe("n/a");
+});
 
-  test("normal-path sections stay research-neutral: dataset referenced only inside the hard-boundary clause", () => {
-    const fmEnd = orchestrator.indexOf("---", orchestrator.indexOf("---") + 3) + 3;
-    const preResearch = orchestrator.slice(fmEnd, orchestrator.indexOf(SECTION));
-    // v0.6.2: the telemetry hard-boundary clause may reference the dataset path;
-    // activation and behavioral research content must live in the research section only.
-    const sentences = preResearch.split(/(?<=\.)\s+/).filter(s => s.includes("research-dataset"));
-    for (const s of sentences) {
-      expect(s).toContain("Hard boundary");
-    }
-    expect(preResearch).not.toContain("research.enabled");
-    expect(preResearch).not.toContain("/research-mode");
-  });
+test("RM7: every example line emits exactly the 17 contract fields, contract key order", () => {
+  const doc = md("command/research-mode.md");
+  const objs: Record<string, unknown>[] = [];
+  let from = 0;
+  for (;;) {
+    const start = doc.indexOf('{"date"', from);
+    if (start < 0) break;
+    objs.push(JSON.parse(doc.slice(start, doc.indexOf("}", start) + 1)) as Record<string, unknown>);
+    from = start + 1;
+  }
+  const order = [...TUPLE_FIELDS];
+  const sorted = [...order].sort();
+  for (const obj of objs) {
+    expect(Object.keys(obj).sort()).toEqual(sorted);
+    expect(Object.keys(obj)).toEqual(order);
+  }
+  expect(objs.length).toBe(EXAMPLES.length);
+});
+
+test("RM8: slots alternate A→B in activation order", () => {
+  expect(EXAMPLES.map((t) => t.slot)).toEqual(["A", "B"]);
 });

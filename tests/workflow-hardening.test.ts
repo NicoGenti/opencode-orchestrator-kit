@@ -14,6 +14,7 @@
 import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { EXAMPLES, TUPLE_FIELDS, validateTuple } from "./contract-fields.ts";
 
 const REPO_ROOT = join(import.meta.dir, "..");
 const ORCH = readFileSync(join(REPO_ROOT, "agents/orchestrator.md"), "utf-8");
@@ -153,7 +154,7 @@ describe("workflow-hardening — W6 token efficiency (v0.6.1)", () => {
 
   test("research slot A costs zero comprehension overhead (0 coach calls)", () => {
     expect(RESEARCH).toMatch(/Slot A \(control\)[\s\S]{0,400}0 coach calls/);
-    expect(RESEARCH).toMatch(/gate_type=n\/a/);
+    expect(EXAMPLES[0].gate_type).toBe("n/a");
   });
 });
 
@@ -185,6 +186,12 @@ describe("workflow-hardening — W7 privacy & isolation (regression)", () => {
  *   W12 DCI0 telemetry row carries user_conf (parity with DCI1)
  *   W13 research tuple stores user_conf on dci_immediate (DCI0 baseline)
  *   W14 behavioral A/B: research command drives a TDD gate flow, not prose
+ *
+ * v0.6.3 — Research Schema Fixes (rewrite):
+ *   W8b edit-map pin: edit permission covers BOTH metric sinks (not just write)
+ *   W14 rewritten deterministic: parsed example tuples + typed contract
+ *      (contract-fields.ts); prose-token pins (gate_type=light,
+ *      alternation=abab, user_conf=N) retired with the v0.6.0 flow fields.
  */
 describe("workflow-hardening — W8 P0 frontend permissions (v0.6.2)", () => {
   test("orchestrator write permission includes both metric sinks", () => {
@@ -192,12 +199,20 @@ describe("workflow-hardening — W8 P0 frontend permissions (v0.6.2)", () => {
     expect(fm).toContain('".context/comprehension-log.md":"allow"');
     expect(fm).toContain('".context/research-dataset.jsonl":"allow"');
   });
+
+  test("W8b: orchestrator edit permission covers BOTH metric sinks (v0.6.3)", () => {
+    const fm = ORCH.slice(0, ORCH.indexOf("\n---", 4));
+    const em = fm.match(/"edit":\s*\{([\s\S]*?)\}/);
+    expect(em).not.toBeNull();
+    expect(em[1]).toContain('".context/comprehension-log.md":"allow"');
+    expect(em[1]).toContain('".context/research-dataset.jsonl":"allow"');
+  });
 });
 
 describe("workflow-hardening — W9 hard boundary (v0.6.2)", () => {
   test("both sinks are append-only; reads are lifecycle-scoped", () => {
-    expect(ORCH).toMatch(/append-only[^.]*rows only|rows only/);
-    expect(ORCH).toMatch(/dataset only inside the research lifecycle|only inside the research lifecycle/);
+    expect(ORCH).toMatch(/\*\*Hard boundary\*\* \(v0\.6\.3\): both sinks \(this log, `\.context\/research-dataset\.jsonl`\) are append-only/);
+    expect(ORCH).toMatch(/Sanctioned edits: log-row normalisation; dataset `dci_delayed` backfill \(via `\/recall`, between tasks\)/);
     expect(RESEARCH).toMatch(/no intermediate or diagnostic rows/);
     expect(RESEARCH).toMatch(/exactly one JSON object as one line/);
   });
@@ -267,31 +282,30 @@ describe("workflow-hardening — W13 research tuple DCI0 baseline (v0.6.2)", () 
 
 describe("workflow-hardening — W14 behavioral A/B flow (v0.6.2)", () => {
   test("research command carries a TDD behavioral flow with a simulated turn transcript", () => {
-    expect(RESEARCH).toContain("Behavioral A/B flow (normative example)");
-    expect(RESEARCH).toContain("SIMULATED-USER");
-    expect(RESEARCH).toContain("SIMULATED-COACH");
-  });
+      const flow = RESEARCH.slice(RESEARCH.indexOf("Behavioral A/B flow (normative example)"));
+      const simUser = (flow.match(/SIM-U:/g) || []).length;
+      const simCoach = (flow.match(/SIM-C:/g) || []).length;
+      expect(RESEARCH).toContain("Behavioral A/B flow (normative example)");
+      expect(simUser).toBe(2);   // one recorded turn per slot
+      expect(simCoach).toBe(2);  // coach verdict blocks for both slots
+    });
+
 
   test("flow shows a real pass and a real fail of the comprehension gate", () => {
-    expect(RESEARCH).toContain("PASS");
-    expect(RESEARCH).toContain("FAIL");
-    expect(RESEARCH).toContain("RETRY");
-    expect(RESEARCH).toMatch(/available_score/);
-    expect(RESEARCH).toContain("dci_immediate");
-    expect(RESEARCH).toContain("user_conf");
-    expect(RESEARCH).toContain("gate_type=light");
-    expect(RESEARCH).toContain("alternation=abab");
-    expect(RESEARCH).toContain("user_conf=4");
-    expect(RESEARCH).toContain("user_conf=2");
+    // gate outcomes read from parsed example tuples and normalized coach verdicts
+    expect(EXAMPLES[0].gate_type).toBe("n/a");
+    expect(EXAMPLES[1].gate_type).toBe("LIGHT");
+    expect(EXAMPLES[1].retries).toBe(1);
+    expect((RESEARCH.match(/Comprehension: PASS/g) || []).length).toBe(1);
+    expect((RESEARCH.match(/Comprehension: RETRY/g) || []).length).toBe(1);
+    expect((RESEARCH.match(/Comprehension: FAIL/g) || []).length).toBe(1);
   });
 
   test("the tuple emitted in the flow matches the 17-field contract exactly", () => {
-    const fields = ["ts", "session_id", "task_id", "slot", "gate_type", "plan",
-      "dci_immediate", "user_conf", "dci1", "gap", "src", "confidence_delta",
-      "escalations", "questions_count", "bugfix_ref", "tokens_source", "alternation"];
-    const flow = RESEARCH.slice(RESEARCH.indexOf("Behavioral A/B flow (normative example)"));
-    for (const key of fields) {
-      expect(flow).toContain(`"${key}"`);
+    // parsed from the markdown flow, then validated against the typed contract
+    for (const tuple of EXAMPLES) {
+      expect(Object.keys(tuple).sort()).toEqual([...TUPLE_FIELDS].sort());
+      expect(validateTuple(tuple)).toEqual([]);
     }
   });
 });

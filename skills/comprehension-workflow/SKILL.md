@@ -68,7 +68,7 @@ Line format (single space-separated fields, no user-answer content):
 `<ISO 8601 timestamp> mode=<LIGHT|DEEP> DCI=<score>/<available_score>|skipped evaluator_conf=<1-5>|n/a outcome=<PASS|FAIL|RETRY|SKIPPED> user_conf=<1-5>|n/a`
 ```
 
-**Hard boundary (v0.6.2)**: `.context/comprehension-log.md` and `.context/research-dataset.jsonl` are append-only telemetry artifacts — the orchestrator may append rows and nothing else, and may read them ONLY under explicit user invocation (`/recall` for the log; the research lifecycle for the dataset). No writes from other steps. Neither is ever read during bootstrap.
+**Hard boundary (v0.6.3)**: `.context/comprehension-log.md` and `.context/research-dataset.jsonl` are append-only telemetry artifacts — the orchestrator appends rows and performs only two sanctioned bounded edits, and may read them ONLY under explicit user invocation (`/recall` for the log; the research lifecycle for the dataset). Sanctioned dataset edit: backfill `dci_delayed` on the matching row (via `/recall`, between tasks, never inside a task lifecycle). Sanctioned log edit: normalise a malformed row to the canonical format. No other edits, no deletes, no history rewrites, no writes from other steps. Neither is ever read during bootstrap.
 
 **Normalised confidence contract (v0.6.1)** — exactly two integer 1-5 confidence values exist in the whole workflow, never overloaded:
 

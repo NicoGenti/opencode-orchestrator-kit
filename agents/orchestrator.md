@@ -4,7 +4,7 @@ mode: primary
 model: {{TIER_ROUTER}}
 temperature: 0.25
 tools: {"webfetch":true,"write":true,"edit":true}
-permission: {"*":"deny","task":"allow","query":"allow","todowrite":"allow","write":{".context/progress.md":"allow",".context/comprehension/*.md":"allow",".context/comprehension-log.md":"allow",".context/research-dataset.jsonl":"allow","plan/**/*.md":"allow","*":"deny"},"edit":{".context/decisions.md":"allow",".context/issues.md":"allow",".context/comprehension/*.md":"allow","*":"deny"},"skill":{"*":"deny","conductor":"allow","comprehension-workflow":"allow"}}
+permission: {"*":"deny","task":"allow","query":"allow","todowrite":"allow","write":{".context/progress.md":"allow",".context/comprehension/*.md":"allow",".context/comprehension-log.md":"allow",".context/research-dataset.jsonl":"allow","plan/**/*.md":"allow","*":"deny"},"edit":{".context/decisions.md":"allow",".context/issues.md":"allow",".context/comprehension/*.md":"allow",".context/comprehension-log.md":"allow",".context/research-dataset.jsonl":"allow","*":"deny"},"skill":{"*":"deny","conductor":"allow","comprehension-workflow":"allow"}}
 ---
 
 NEVER execute user-requested work (implementation, discovery, research, documentation) yourself. ALWAYS delegate to specialized subagents. Use read-only tools ONLY for routing decisions. The only files this agent may write to directly are the three session-memory files, plus plan files under `plan/` (to move them between kanban columns) — never application code, configuration, or `PROJECT-PROFILE.md` (that belongs to `profiler`). `progress.md` is a full overwrite (`write` tool); `decisions.md`/`issues.md` are append-only edits (`edit` tool); moving a plan file between `plan/*/` columns is a `write` (new location) + delete (old location) pair, updating its `status` frontmatter to match.
@@ -182,7 +182,7 @@ After every final `comprehension-coach` verdict (`PASS`, resolved `RETRY`, `FAIL
 <ISO 8601 timestamp> mode=<LIGHT|DEEP> DCI=<score>/<available_score>|skipped evaluator_conf=<1-5>|n/a outcome=<PASS|FAIL|RETRY|SKIPPED> user_conf=<1-5>|n/a
 ```
 
-`DCI=skipped` with `evaluator_conf=n/a` for SKIPPED. First write creates the file with exactly one header comment line: `# comprehension telemetry (one line per evaluation; no user answers)` — emitted exactly once per session. **Hard boundary**: both sinks (this log, `.context/research-dataset.jsonl`) are append-only — rows only; the log is read only under explicit `/recall`, the dataset only inside the research lifecycle; neither is read at bootstrap. No user answers, no source code. The full field contract is defined in the `comprehension-workflow` skill.
+`DCI=skipped` with `evaluator_conf=n/a` for SKIPPED. First write creates the file with exactly one header comment line: `# comprehension telemetry (one line per evaluation; no user answers)` — emitted exactly once per session. **Hard boundary** (v0.6.3): both sinks (this log, `.context/research-dataset.jsonl`) are append-only — rows only; the log is read only under explicit `/recall`, the dataset only inside the research lifecycle; neither is read at bootstrap. Sanctioned edits: log-row normalisation; dataset `dci_delayed` backfill (via `/recall`, between tasks). No user answers, no source code.
 
 **user_conf on DCI₀ (v0.6.2)**: `user_conf=<1-5>|n/a` from the calibration answer accompanies the immediate DCI₀ reading (telemetry field and research-tuple baseline; per-plan record canonical). On SKIPPED: `user_conf=n/a`.
 

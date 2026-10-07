@@ -2,6 +2,16 @@
 
 All notable changes to this project are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Starting from v0.3.0, this project follows [Semantic Versioning](https://semver.org/) (SemVer): PATCH = fixes and tuning; MINOR = new backward-compatible capabilities; MAJOR = breaking changes to orchestration or configuration.
 
+## [0.6.3] — 2026-10-07
+
+### Fixed
+
+- **Unique research tuple schema (P0)**: schema divergence between the behavioral A/B flow and the documented contract resolved — flow and tests now emit **`ResearchTupleV1`** (the 17 documented fields, canonical order; the v0.6.0 flow tuple shared only ~6 fields with the contract and used enum values `"estimate"`/`"actual"`, now retired in favour of `estimated`/`exact`).
+- **Edit allow on both metric sinks (P0)**: the orchestrator frontmatter edit map now includes `.context/comprehension-log.md` and `.context/research-dataset.jsonl` (v0.6.2 covered write only) so sanctioned maintenance edits — log-row normalisation (malformed-row → canonical format) and dataset `dci_delayed` backfill via `/recall` — are permitted exactly where the contract writes.
+- **Aligned boundary wording (v0.6.3)**: `/research-mode`, the orchestrator's Hard boundary clause, the `comprehension-workflow` skill and `/recall` now describe the same single sanctioned edit per sink: append-only rows, no deletes, no history rewrites, reads lifecycle-scoped, never at bootstrap; the `dci_delayed` backfill runs only between tasks, on explicit user invocation.
+- **/recall out of the task lifecycle**: the normative A/B example no longer places `/recall` inside a research task; `command/recall.md` gains an explicit isolation sentence plus the bounded dataset-backfill clause (single-row locate, `dci_delayed` only).
+- **Deterministic contract tests**: new `tests/contract-fields.ts` exports the canonical field order, a pure slot-routing function and a `JSON.parse`-based fence parser; `research-mode` and `workflow-hardening` tests validate both example tuples by key set, order, enums and slot routing (A then B, one per task) instead of counting prose tokens.
+
 ## [0.6.2] — 2026-10-07
 
 ### Changed

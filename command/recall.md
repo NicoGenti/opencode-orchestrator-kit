@@ -27,6 +27,11 @@ Comando `/recall`. Flusso di ri-attivazione di una sessione di comprensione pass
 
 - `outcome=SKIPPED` row format: `user_conf=n/a | evaluator_conf=n/a | DCI=skipped | outcome=SKIPPED` (no numeric confidence fields).
 - v0.6.1: the two confidence fields are distinct normalised values — `user_conf` is the developer's calibration self-rating, `evaluator_conf` the coach's confidence in its verdict; the old overloaded single `conf=` field is retired.
+
+- **Dataset backfill (v0.6.3)**: after the dci1 evaluation, `/recall` may perform ONE bounded edit
+  on `.context/research-dataset.jsonl`: locate the row whose `plan` field matches (single-row read),
+  then backfill its `dci_delayed` field only — no other field, no other row, no deletes. This is the
+  ONLY sanctioned edit to the research dataset. Never inside a task lifecycle.
 - Same header-once rule as the telemetry writer; same append-only discipline.
 - The log file `.context/comprehension-log.md` is the single sink for all dci1 rows.
 
@@ -36,4 +41,5 @@ Comando `/recall`. Flusso di ri-attivazione di una sessione di comprensione pass
 
 **Whitelist of sources**: ONLY the plan document in `plan/complete/`, the per-plan record in `.context/comprehension/`, and the bounded post-answer inspection — the relevant diff (`maxDiffLines=300`) and correlated symbols (`maxRelatedSymbols=3`) of the files listed in the per-plan record — may be consulted after the user has answered; step 9 appends the dci1 row and updates the per-plan record (`outcome`, `dci`, `user_conf`). NO repo-wide scans, NO scanning of other plans, NO ad-hoc file reads beyond the selected plan's document and its record-listed files.
 
-**Isolation**: Manual invocation only. Nothing in this profile may trigger `/recall` automatically. `.context/comprehension-log.md` is read exclusively during `/recall` invocation.
+**Isolation**: Manual invocation only. Nothing in this profile may trigger `/recall` automatically.
+/recall never runs inside a task lifecycle — it is invoked only between tasks or sessions, on explicit user request. `.context/comprehension-log.md` is read exclusively during `/recall` invocation.
