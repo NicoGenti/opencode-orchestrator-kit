@@ -294,7 +294,7 @@ Both slicing behaviour and escalation routing are configured through the same co
 - `context.unifiedContextLines` (default 3) — lines of context around each changed symbol.
 - `context.maxRelatedSymbols` (default 3) — maximum related symbols included in the slice.
 - `deep.escalationTier` (default `TIER_REVIEW`) — tier used for the escalation agent, resolved through the tier→roster mapping.
-- `recall.enabled` (default `true`) — enables the manual `/recall` command (per-plan comprehension records + delayed DCI₁ evaluation).
+- `recall.enabled` (default `true`) — enables the manual `/recall` command (per-evaluation comprehension records + delayed DCI₁ evaluation).
 - `recall.automatic` (default `false`, hard limit) — automatic recall is a non-goal: no scheduler, no trigger; `/recall` runs only on explicit user invocation.
 - `research.enabled` (default `false`) — enables the opt-in research mode (behavioral A/B crossover slots: slot A runs without the comprehension gate, slot B with it; Cognitive Overhead Ratio metrics) for a session. Explicit activation only: `/research-mode on` (with confirmation) or this flag. When off, the research dataset (`.context/research-dataset.jsonl`) is never read and never written — zero overhead. Full tuple contract: `command/research-mode.md`.
 
@@ -304,7 +304,7 @@ Every gated evaluation appends exactly one line to `.context/comprehension-log.m
 
 The file is untracked by design: `.gitignore` covers `.context/` with an explicit negation list for the three memory files (`progress.md`, `decisions.md`, `issues.md`) only — never add the comprehension log to that negation list. Lines carry metrics only (timestamp, mode, DCI, distinct `user_confidence` and `evaluator_confidence` since v0.6.1 — the old overloaded single `conf` field is retired — the calibration `user_conf` on the immediate DCI₀ reading since v0.6.2, and outcome); user answers, questions, diffs, and paths are never logged. Since v0.6.2 both metric sinks (this log and `.context/research-dataset.jsonl`) sit behind a hard boundary: append-only rows, reads lifecycle-scoped (log: `/recall` only; dataset: active research only), never at bootstrap. Since v0.6.1 the full operational protocol (configuration precedence, Slicer pipeline, row formats, retention records, /recall flow) lives in the `comprehension-workflow` skill, loaded on demand.
 
-Since v0.5.0, `/recall` appends delayed-evaluation rows of type `dci1` to the same log, using the same append-only and metrics-only rules; the asked knowledge questions live in the per-plan records at `.context/comprehension/<plan-id>.md` (same directory, also untracked), never in the log itself.
+Since v0.5.0, `/recall` appends delayed-evaluation rows of type `dci1` to the same log, using the same append-only and metrics-only rules; the asked knowledge questions live in the per-evaluation records at `.context/comprehension/<plan-id>/<research-id>.md` (the record name carries the evaluation's `research_id`, format `res-YYYYMMDD-HHMMSS-<32hex>`; research_id-keyed + append-safe since v0.6.6 — re-evaluations never overwrite earlier records), never in the log itself.
 
 ### `enabled: false` re-enables v0.2.2 behaviour
 

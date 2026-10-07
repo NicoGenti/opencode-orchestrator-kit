@@ -1,5 +1,5 @@
 /**
- * tests/research-mode.test.ts — Research Mode behavioral tests (v0.6.4)
+ * tests/research-mode.test.ts — Research Mode behavioral tests (v0.6.6)
  *
  * These tests invoke the pure source of truth in contract-fields.ts
  * (DatasetEventV1 event model, deterministic A/B slot routing, validators) —
@@ -23,7 +23,7 @@ import {
   EXAMPLES, TASK_EXAMPLES, RECALL_EXAMPLES, makeTaskEvent, makeRecallEvent,
   validateTaskEvent, validateRecallEvent, validateEventLine, sameResearchId,
   slotForTaskIndex, nextSlot, SLOT_BEHAVIOR, gateRequiresCoach,
-  isValidResearchId, isLegacyResearchId, makeResearchId, makeResearchIdSuffix,
+  isValidResearchId, isLegacyResearchId, makeResearchId,
   MAKE_RESEARCH_ID_NOTE, validDCI, GATE_TYPES,
   TASK_FIELDS, RECALL_FIELDS, SCHEMA_VERSION, FORBIDDEN,
 } from "./contract-fields.ts";
@@ -86,57 +86,57 @@ describe("research-mode — DatasetEventV1 schema (v0.6.4)", () => {
 });
 
 describe("research-mode — research_id uniqueness + correlation", () => {
-  test("format res-YYYYMMDD-HHMMSS-8hex is validated deterministically (v0.6.5)", () => {
-    expect(isValidResearchId("res-20261007-143000-a1b2c3d4")).toBe(true);
-    expect(isValidResearchId("res-20261007-143000-A1B2C3D4")).toBe(true); // hex case-insensitive
-    expect(isValidResearchId("res-2026100-143000-a1b2c3d4")).toBe(false);
-    expect(isValidResearchId("res-20261007-1430001-a1b2c3d4")).toBe(false);
-    expect(isValidResearchId("res-20261007-143000")).toBe(false); // legacy: no suffix
-    expect(isValidResearchId("res-20261007-143000-g1b2c3d4")).toBe(false); // not hex
-    expect(isValidResearchId("res-20261007-143000-a1b2c3d")).toBe(false);  // 7 chars
-    expect(isValidResearchId("res-20261007-143000-a1b2c3d45")).toBe(false); // 9 chars
-    expect(isValidResearchId("task-20261007-143000-a1b2c3d4")).toBe(false);
+  test("format res-YYYYMMDD-HHMMSS-32hex is validated deterministically (v0.6.6)", () => {
+    expect(isValidResearchId("res-20261007-143000-3f9a7c2e1b08d54fa6e3c70b92d1846a")).toBe(true);
+    expect(isValidResearchId("res-20261007-143000-3F9A7C2E1B08D54FA6E3C70B92D1846A")).toBe(false); // uppercase not canonical (lowercase only)
+    expect(isValidResearchId("res-2026100-143000-3f9a7c2e1b08d54fa6e3c70b92d1846a")).toBe(false); // wrong date length
+    expect(isValidResearchId("res-20261007-1430001-3f9a7c2e1b08d54fa6e3c70b92d1846a")).toBe(false); // wrong time length
+    expect(isValidResearchId("res-20261007-143000")).toBe(false); // legacy format: rejected
+    expect(isValidResearchId("res-20261007-143000-g1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6")).toBe(false); // not hex
+    expect(isValidResearchId("res-20261007-143000-3f9a7c2e1b08d54fa6e3c70b92d1846")).toBe(false); // 31 hex chars
+    expect(isValidResearchId("res-20261007-143000-3f9a7c2e1b08d54fa6e3c70b92d1846aa")).toBe(false); // 33 hex chars
+    expect(isValidResearchId("task-20261007-143000-3f9a7c2e1b08d54fa6e3c70b92d1846a")).toBe(false); // wrong prefix
     expect(isValidResearchId(20261007)).toBe(false);
   });
 
-  test("makeResearchId is deterministic and stable for the task → recall lifecycle", () => {
-    const a = makeResearchId({ timestamp: "20261007-143000", index: 0 });
-    const b = makeResearchId({ timestamp: "20261007-143000", index: 0 });
-    expect(a).toBe(b); // deterministic: same seed → same id (recall reuses it verbatim)
+  test("makeResearchId generates fresh random ids; readable timestamp preserved", () => {
+    const a = makeResearchId({ timestamp: "20261007-143000" });
+    const b = makeResearchId({ timestamp: "20261007-143000" });
+    expect(a).not.toBe(b); // CSPRNG: two draws never repeat (probabilistic 128-bit uniqueness)
+    expect(a.startsWith("res-20261007-143000-")).toBe(true); // timestamp part preserved
     expect(isValidResearchId(a)).toBe(true);
-  });
-
-  test("collision test: N tasks in the SAME timestamp get distinct research_ids", () => {
-    const N = 50;
-    const timestamp = "20261007-143000";
-    const ids = [];
-    for (let i = 0; i < N; i++) ids.push(makeResearchId({ timestamp, index: i }));
-    expect(new Set(ids).size).toBe(N); // no collisions, same second
-    for (const id of ids) {
-      expect(isValidResearchId(id)).toBe(true);
-      expect(id.startsWith(`res-${timestamp}-`)).toBe(true); // timestamp part preserved
-    }
-    // extreme index values stay inside the 8-hex format
-    expect(isValidResearchId(makeResearchId({ timestamp, index: 0x7fffffff }))).toBe(true);
-    expect(isValidResearchId(makeResearchId({ timestamp, index: 2 ** 31 }))).toBe(true);
-    // a legacy timestamp-only id must never pass the v0.6.5 validator
-    expect(isLegacyResearchId("res-20261007-143000")).toBe(true);
-    expect(isLegacyResearchId("res-20261007-143000-a1b2c3d4")).toBe(false);
+    expect(isValidResearchId(b)).toBe(true);
   });
 
   test("every task gets its own research_id; plan is metadata, never the identifier", () => {
-    for (const t of TASK_EXAMPLES) expect(isValidResearchId(t.research_id)).toBe(true);
-    const ids = new Set(TASK_EXAMPLES.map((t) => t.research_id));
-    expect(ids.size).toBe(TASK_EXAMPLES.length); // unique per task
-    // two events with the SAME plan but distinct research_ids both validate:
-    expect(validateTaskEvent(makeTaskEvent({ research_id: makeResearchId({ timestamp: "20261007-150000", index: 0 }), plan: "0007" }))).toEqual([]);
-    expect(validateTaskEvent(makeTaskEvent({ research_id: makeResearchId({ timestamp: "20261007-150000", index: 1 }), plan: "0007" }))).toEqual([]); // same second, same plan, distinct id
+    const N = 50;
+    const timestamp = "20261007-143000";
+    const ids = [];
+    for (let i = 0; i < N; i++) ids.push(makeResearchId({ timestamp }));
+    expect(new Set(ids).size).toBe(N); // distinct suffixes even within the same second
+    for (const id of ids) {
+      expect(isValidResearchId(id)).toBe(true);
+      expect(id.startsWith(`res-${timestamp}-`)).toBe(true); // readable timestamp preserved
+    }
+    // two sessions started in the same second still get distinct research_ids
+    const s1 = makeResearchId({ timestamp });
+    const s2 = makeResearchId({ timestamp });
+    expect(s1).not.toBe(s2);
+    // legacy v0.6.5 formats are recognisable and rejected by the current validator
+    expect(isLegacyResearchId("res-20261007-143000")).toBe(true);
+    expect(isLegacyResearchId("res-20261007-143000-a1b2c3d4")).toBe(true);
+    expect(isValidResearchId("res-20261007-143000-a1b2c3d4")).toBe(false);
+  });
+
+  test("two events with the SAME plan but distinct research_ids both validate (multi-evaluation)", () => {
+    expect(validateTaskEvent(makeTaskEvent({ research_id: makeResearchId({ timestamp: "20261007-150000" }), plan: "0007" }))).toEqual([]);
+    expect(validateTaskEvent(makeTaskEvent({ research_id: makeResearchId({ timestamp: "20261007-150000" }), plan: "0007" }))).toEqual([]); // same second, same plan, distinct id
   });
 
   test("a recall event ties to its task through the SAME research_id", () => {
     expect(sameResearchId(TASK_EXAMPLES[1], RECALL_EXAMPLES[0])).toBe(true);
     expect(sameResearchId(TASK_EXAMPLES[0], RECALL_EXAMPLES[0])).toBe(false);
-    expect(sameResearchId({ ...TASK_EXAMPLES[1], research_id: makeResearchId({ timestamp: "20261007-000000", index: 0 }) }, RECALL_EXAMPLES[0])).toBe(false);
+    expect(sameResearchId({ ...TASK_EXAMPLES[1], research_id: makeResearchId({ timestamp: "20261007-000000" }) }, RECALL_EXAMPLES[0])).toBe(false);
   });
 });
 
@@ -341,19 +341,26 @@ describe("research-mode — recall: a NEW append-only event (no row rewriting)",
   });
 });
 
-describe("research-mode — research_id lifecycle stability (v0.6.5)", () => {
-  test("MAKE_RESEARCH_ID_NOTE documents the activation-index source of the suffix", () => {
-    expect(MAKE_RESEARCH_ID_NOTE).toMatch(/activation index/i);
+describe("research-mode — research_id lifecycle stability (v0.6.6)", () => {
+  test("MAKE_RESEARCH_ID_NOTE documents the 128-bit CSPRNG suffix", () => {
+    expect(MAKE_RESEARCH_ID_NOTE).toMatch(/128 ?bits/i);
+    expect(MAKE_RESEARCH_ID_NOTE).toMatch(/CSPRNG|crypto/i);
     expect(MAKE_RESEARCH_ID_NOTE).toMatch(/recall event|comprehension record/);
   });
 
-  test("suffix derived from (timestamp, activation index) is stable across re-derivation", () => {
-    // Same (timestamp, index) recomputed later — e.g. by /recall reading the
-    // assignment from the per-plan record — yields the SAME id: the id is
-    // written once at task start and reused verbatim, never regenerated.
-    const seed = { timestamp: "20261007-143000", index: 3 };
-    expect(makeResearchId(seed)).toBe(makeResearchId({ timestamp: seed.timestamp, index: 3 }));
-    expect(makeResearchIdSuffix(seed)).toBe("7b5ce7f3"); // FNV-1a reference value, pinned
+  test("the id is written once and reused verbatim, never re-derived", () => {
+    // Correlation works by copying the stored id; there is no deterministic
+    // re-derivation to stay compatible with — a fresh draw is a DIFFERENT id.
+    const a = makeResearchId({ timestamp: "20261007-143000" });
+    const b = makeResearchId({ timestamp: "20261007-143000" });
+    expect(a).not.toBe(b);
+    for (const id of [a, b]) {
+      expect(isValidResearchId(id)).toBe(true);
+      expect(isLegacyResearchId(id)).toBe(false);
+    }
+    // legacy v0.6.5 formats are rejected by the current validator
+    expect(isValidResearchId("res-20261007-143000")).toBe(false);
+    expect(isValidResearchId("res-20261007-143000-a1b2c3d4")).toBe(false);
   });
 });
 
@@ -373,7 +380,7 @@ describe("research-mode — dispatch + contract-doc examples", () => {
 });
 
 describe("research-mode — the real sink is a valid append-only event log", () => {
-  test(".context/research-dataset.jsonl (when present) holds only valid v0.6.5 events", () => {
+  test(".context/research-dataset.jsonl (when present) holds only valid v0.6.6 events", () => {
     if (!existsSync(SINK)) return; // fresh install: sink is created on first research session
     const lines = readFileSync(SINK, "utf8").split("\n").filter((l) => l.trim() !== "");
     const taskIds = new Set<string>();
@@ -389,5 +396,58 @@ describe("research-mode — the real sink is a valid append-only event log", () 
         expect(taskIds.has(ev.research_id as string)).toBe(true);
       }
     }
+  });
+});
+
+describe("research-mode — v0.6.6 correlation finalization pins (E)", () => {
+  test("append-safe records: multiple evaluations of the same plan never collide or overwrite (path-keyed by research_id)", () => {
+    const planId = "0007";
+    const recordPathFor = (id: string) => join(".context", "comprehension", planId, `${id}.md`);
+    const ids = [makeResearchId({ timestamp: "20261007-150000" }), makeResearchId({ timestamp: "20261007-150000" }), makeResearchId({ timestamp: "20261007-150100" })];
+    expect(ids[0]).not.toBe(ids[1]); // same second, two evaluations → distinct paths
+    expect(ids[1]).not.toBe(ids[2]);
+    const paths = new Set(ids.map(recordPathFor));
+    expect(paths.size).toBe(ids.length); // one path per evaluation, never overwritten
+    for (const id of ids) {
+      expect(isValidResearchId(id)).toBe(true);
+      expect(recordPathFor(id)).toBe(join(".context", "comprehension", planId, `${id}.md`));
+    }
+  });
+
+  test("recall selects the CORRECT evaluation: the record's stored research_id pins the recall event", () => {
+    const planId = "0007";
+    const first = makeResearchId({ timestamp: "20261007-150000" });
+    const second = makeResearchId({ timestamp: "20261007-150100" });
+    // record store keyed by research_id (append-safe): both records coexist for plan 0007
+    const records: Record<string, string> = {
+      [first]: `plan: ${planId}\nresearch_id: ${first}\n`,
+      [second]: `plan: ${planId}\nresearch_id: ${second}\n`,
+    };
+    const selectedRecord = records[second]; // the user's selection pins one specific research_id
+    const storedId = selectedRecord.split("research_id: ")[1]!.trim();
+    const recallEvent = makeRecallEvent({ research_id: storedId, plan: planId });
+    expect(recallEvent.research_id).toBe(second); // copied verbatim from the selected record
+    expect(recallEvent.research_id).not.toBe(first);
+    expect(sameResearchId({ research_id: second } as never, recallEvent)).toBe(true);
+    expect(storedId).not.toBe(first); // no ambiguous plan-only lookup: ids differ though plan is identical
+  });
+
+  test("canonical docs ↔ validator consistency: doc template placeholders match the validator's format", () => {
+    const docs = [
+      "command/research-mode.md",
+      "command/recall.md",
+      "skills/comprehension-workflow/SKILL.md",
+      "agents/orchestrator.md",
+      "docs/CONFIGURATION.md",
+    ];
+    for (const d of docs) {
+      const text = readFileSync(join(process.cwd(), d), "utf8");
+      expect(text.includes("res-YYYYMMDD-HHMMSS-<32hex>")).toBe(true); // doc carries the canonical placeholder
+      const legacyRefs = text.match(/res-YYYYMMDD-HHMMSS(?!-<32hex>)/);
+      expect(legacyRefs).toBeNull(); // no bare legacy timestamp format remains in live docs
+    }
+    // and the validator is exactly the documented format
+    expect(isValidResearchId("res-20261007-143000-3f9a7c2e1b08d54fa6e3c70b92d1846a")).toBe(true);
+    expect(isValidResearchId("res-20261007-143000-3f9a7c2e1b08d54fa6e3c70b92d1846")).toBe(false);
   });
 });

@@ -33,14 +33,19 @@ Both slots complete the same engineering task; only the comprehension layer diff
 
 One line per event, appended to `.context/research-dataset.jsonl` — exactly one JSON object as one line; no header, no prose; no intermediate or diagnostic rows. The dataset is a **strictly append-only event log**: events are never modified, backfilled, deleted or rewritten, and history never mutates. The dataset is NEVER loaded by `/start-session` or by any bootstrap procedure; it is read/written only inside the research lifecycle.
 
-`research_id` — `res-YYYYMMDD-HHMMSS` from the task's start time (24h clock) — is assigned when the task begins, together with the slot. It is unique and stable per task and it is the ONLY correlation key: every recall event of a task carries the same `research_id`. `plan` is descriptive metadata only: never an identifier, never a lookup key on its own.
+`research_id` — `res-YYYYMMDD-HHMMSS-<32hex>` (v0.6.6: readable task-start timestamp +
+128-bit random suffix) — is assigned when the task begins, together with the slot. It is
+stable per task and it is the ONLY correlation key: every recall event of a task carries
+the same `research_id`. Uniqueness across tasks is probabilistic at 128 bits (CSPRNG,
+UUID-v4 class). `plan` is descriptive
+metadata only: never an identifier, never a lookup key on its own.
 
 **Task event — `ResearchTupleV1` (19 fields, canonical order, all required):**
 
 ```
 event           "task"
 schema_version  integer 1 — DatasetEventV1 contract version
-research_id     string "res-YYYYMMDD-HHMMSS" — unique per task, stable; correlation key to any recall event
+research_id     string "res-YYYYMMDD-HHMMSS-<32hex>" — stable; the ONLY correlation key to any recall event
 date            string — ISO 8601 date (YYYY-MM-DD) of task completion
 plan            string — bare plan id ("0007"); empty string "" when unplanned; metadata, not an id
 slot            enum "A" | "B" — assigned when the task begins; alternating deterministically in activation order
@@ -74,7 +79,7 @@ retries         integer 0 | 1
 skipped         boolean — true when the recall comprehension was skipped
 ```
 
-`/recall` appends the recall event only when the per-plan record carries the task's `research_id` (stored in the record at task end); if the id is not recorded (task predates research mode), nothing is written to the dataset.
+`/recall` appends the recall event only when the selected per-evaluation record carries the task's `research_id` (stored in the record at task end); if the id is not recorded (task predates research mode), nothing is written to the dataset.
 
 Bugfix reference convention: when a bugfix plan is created and the defect traces back to a specific earlier plan, write `bugfix_ref: "plan=<earlierNNNN>"`; otherwise write `bugfix_ref: ""`.
 
@@ -97,15 +102,15 @@ writer test. The backtick-free markers `SIM-U` and `SIM-C` mark the recorded use
 lines mark the coach verdict block.
 
 ```
- orchestrator → assign research_id=res-20261007-143000-a1b2c3d4 + slot A   [control: no classification, no gate]
+ orchestrator → assign research_id=res-20261007-143000-3f9a7c2e1b08d54fa6e3c70b92d1846a + slot A   [control: no classification, no gate]
  → run the normal workflow — delegate explorer (bounded repo survey),
    delegate developer-fixer (implement + self-verify)             [task delegations: 2]
  → at task end append ONE task event to .context/research-dataset.jsonl:
- {"event":"task","schema_version":1,"research_id":"res-20261007-143000-a1b2c3d4","date":"2026-10-07","plan":"","slot":"A","task_type":"bugfix","gate_type":"n/a","duration_min":12,"agent_calls":2,"input_tokens":14300,"output_tokens":2100,"user_confidence":"n/a","evaluator_confidence":"n/a","dci_immediate":"n/a","retries":0,"skipped":false,"bugfix_ref":"","tokens_source":"estimated"}
+ {"event":"task","schema_version":1,"research_id":"res-20261007-143000-3f9a7c2e1b08d54fa6e3c70b92d1846a","date":"2026-10-07","plan":"","slot":"A","task_type":"bugfix","gate_type":"n/a","duration_min":12,"agent_calls":2,"input_tokens":14300,"output_tokens":2100,"user_confidence":"n/a","evaluator_confidence":"n/a","dci_immediate":"n/a","retries":0,"skipped":false,"bugfix_ref":"","tokens_source":"estimated"}
 ```
 
 ```
- orchestrator → assign research_id=res-20261007-154500-9f3e2b7c + slot B; classify(mode=LIGHT, tier=TIER_FAST)   [slot B: gate active, gate_type=LIGHT]
+ orchestrator → assign research_id=res-20261007-154500-9f3e2b7c5a41e8d02fb6c7314a95e620 + slot B; classify(mode=LIGHT, tier=TIER_FAST)   [slot B: gate active, gate_type=LIGHT]
  SIM-U: "user_conf=2 — the failing assertion is allowed.length === hits.length"
  → calibration + 2 questions (max 2 in LIGHT) before any code or explanation
  SIM-C: RETRY
@@ -122,13 +127,13 @@ lines mark the coach verdict block.
  → task delegations: 4 — explorer, coach evaluation, coach re-check (the single escalation),
    developer-fixer; `agent_calls` counts every one of them
  → at task end append ONE task event to .context/research-dataset.jsonl (and store `research_id`
-   in the per-plan record so a later /recall can correlate):
- {"event":"task","schema_version":1,"research_id":"res-20261007-154500-9f3e2b7c","date":"2026-10-07","plan":"0007","slot":"B","task_type":"test","gate_type":"LIGHT","duration_min":21,"agent_calls":4,"input_tokens":19400,"output_tokens":3500,"user_confidence":2,"evaluator_confidence":4,"dci_immediate":"DCI=4/4","retries":1,"skipped":false,"bugfix_ref":"plan=0006","tokens_source":"exact"}
+   in the per-evaluation record `.context/comprehension/<plan-id>/<research-id>.md` so a later /recall can correlate):
+ {"event":"task","schema_version":1,"research_id":"res-20261007-154500-9f3e2b7c5a41e8d02fb6c7314a95e620","date":"2026-10-07","plan":"0007","slot":"B","task_type":"test","gate_type":"LIGHT","duration_min":21,"agent_calls":4,"input_tokens":19400,"output_tokens":3500,"user_confidence":2,"evaluator_confidence":4,"dci_immediate":"DCI=4/4","retries":1,"skipped":false,"bugfix_ref":"plan=0006","tokens_source":"exact"}
 ```
 
 ```
  /recall (plan 0007, days later) — after the dci1 evaluation, append ONE recall event:
- {"event":"recall","schema_version":1,"research_id":"res-20261007-154500-9f3e2b7c","date":"2026-10-09","dci_delayed":"DCI=3/4","evaluator_confidence":3,"retries":0,"skipped":false}
+ {"event":"recall","schema_version":1,"research_id":"res-20261007-154500-9f3e2b7c5a41e8d02fb6c7314a95e620","date":"2026-10-09","dci_delayed":"DCI=3/4","evaluator_confidence":3,"retries":0,"skipped":false}
  The task event above is untouched — same line, same values: the dataset is an append-only event
  log and no dataset edit is ever sanctioned (no backfill, no rewrite, no delete).
 ```
@@ -136,11 +141,11 @@ lines mark the coach verdict block.
 What the flow pins (and tests assert): slots alternate A→B by activation index (task 0 = A,
 task 1 = B); each task emits exactly ONE task event, canonical key order per the contract;
 `research_id` is unique per task, present on the task event AND the recall event (correlation);
-its format is `res-YYYYMMDD-HHMMSS-8hex` (v0.6.5): the task-start timestamp plus a
-deterministic uniqueness suffix (8 hex chars, e.g. derived from the task's activation index),
-so tasks activated in the same second never collide; the id is generated ONCE at task start
-and reused verbatim on the recall event and in the per-plan record — never regenerated or
-mutated over the task → recall lifecycle. `plan` is metadata (slot A carries ""). Slot A shows
+its format is `res-YYYYMMDD-HHMMSS-<32hex>` (v0.6.6): the task-start timestamp plus a random
+128-bit CSPRNG suffix, so tasks activated in the same second never collide; the id is generated
+ONCE at task start and reused verbatim on the recall event and in the per-evaluation record
+(`.context/comprehension/<plan-id>/<research-id>.md`) — never regenerated or mutated over the
+task → recall lifecycle. `plan` is metadata (slot A carries ""). Slot A shows
 NO classification at all (no
 `classify(...)` line), emits `gate_type="n/a"`, 0 gate overhead, `skipped=false`, and
 `agent_calls=2` — exactly the two delegations its flow shows. Slot B runs the LIGHT gate

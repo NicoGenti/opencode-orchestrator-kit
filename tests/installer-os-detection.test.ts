@@ -53,15 +53,22 @@ function bashAvailable(): boolean {
 /**
  * Run `bash <scriptPath>` with optional export lines on stdin.
  * Each export line is `KEY=value` or `export KEY=value`; the script runs
- * after the exports so the variables are visible to it.
+ * after the exports so the variables are visible to it. The path is
+ * single-quoted POSIX-style so repo checkouts with spaces in their path
+ * (e.g. ".../File 4 - Programmare/...") still resolve to one command word.
  */
+function shq(s: string): string {
+  return `'` + s.replaceAll(`'`, `'\\''`) + `'`;
+}
+
 function runWithExports(
   scriptPath: string,
   exportLines: string[],
 ): SpawnSyncReturns<string> {
+  const cmd = shq(scriptPath);
   const body = exportLines.length > 0
-    ? `${exportLines.join("\n")}\n${scriptPath}\nexit\n`
-    : `${scriptPath}\nexit\n`;
+    ? `${exportLines.join("\n")}\n${cmd}\nexit\n`
+    : `${cmd}\nexit\n`;
   return spawnSync("bash", [], {
     encoding: "utf-8",
     input: body,

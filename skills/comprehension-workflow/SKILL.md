@@ -12,7 +12,7 @@ description: >-
 
 Detailed operational protocol for the comprehension gate. The orchestrator
 loads this skill when it must run a LIGHT or DEEP evaluation, write gate
-telemetry, maintain a per-plan record, or execute `/recall`. Classification
+telemetry, maintain a per-evaluation record, or execute `/recall`. Classification
 (NONE/LIGHT/DEEP), the closing rule, and escalation routing stay in
 `agents/orchestrator.md`.
 
@@ -72,7 +72,7 @@ Line format (single space-separated fields, no user-answer content):
 
 **Normalised confidence contract (v0.6.1)** — exactly two integer 1-5 confidence values exist in the whole workflow, never overloaded:
 
-- `user_confidence` — the developer's self-assessment (the calibration question). Asked only in slot-B LIGHT/DEEP evaluations (never in research Slot-A control tasks, never in NONE-classified sessions); recorded in per-plan records, /recall rows and telemetry rows (`user_conf=`), never rated by the coach.
+- `user_confidence` — the developer's self-assessment (the calibration question). Asked only in slot-B LIGHT/DEEP evaluations (never in research Slot-A control tasks, never in NONE-classified sessions); recorded in per-evaluation records, /recall rows and telemetry rows (`user_conf=`), never rated by the coach.
 - `evaluator_confidence` — the coach's self-rated confidence in its own verdict (integer 1-5). In telemetry rows it appears as `evaluator_conf=`; `n/a` only when no score was produced.
 
 A live telemetry row therefore never contains the bare `conf=` field — that name is retired (it previously designated three different things).
@@ -101,13 +101,13 @@ The write happens AFTER the verdict is final — never during bootstrap, never d
 
 ## Retention records
 
-For LIGHT/DEEP evaluations on task plan-scoped work, the orchestrator MUST write/update a per-plan comprehension record at `.context/comprehension/<plan-id>.md` alongside the telemetry row. This is a local comprehension artifact, NOT a new subagent or tier.
+For LIGHT/DEEP evaluations on task plan-scoped work, the orchestrator MUST write/update a per-evaluation comprehension record at `.context/comprehension/<plan-id>/<research-id>.md` alongside the telemetry row. This is a local comprehension artifact, NOT a new subagent or tier.
 
-Per-plan record format (each field on its own line, no user answer text, no prose):
+Comprehension record format (one record per evaluation; each field on its own line, no user answer text, no prose):
 
 ```
 plan: <plan-id>
-research_id: <res-YYYYMMDD-HHMMSS-8hex>|n/a
+research_id: res-YYYYMMDD-HHMMSS-<32hex>|n/a
 questions:
 - ? <question-1 verbatim>
 - ? <question-N verbatim>
@@ -119,17 +119,19 @@ src: stored
 ```
 
 - Questions are stored verbatim from the CHALLENGE step, one per line with `- ?` prefix. NO user answers, NO prose.
-- **research_id correlation (v0.6.5)**: when Research Mode is active, the record carries the
-  task's `research_id` (format `res-YYYYMMDD-HHMMSS-8hex`); it is written once at task end and
-  NEVER regenerated or mutated. `/recall` recovers the correlation id from this field and
-  copies it verbatim into the recall event — the plan id is metadata for humans, never the
-  dataset's primary key: the id in the dataset is always the `research_id`.
+- **research_id correlation (v0.6.6)**: when Research Mode is active, the record carries the
+  task's `research_id` (format `res-YYYYMMDD-HHMMSS-<32hex>`, 128-bit random CSPRNG suffix); it is
+  written once at task end and NEVER regenerated or mutated. `/recall` recovers the correlation
+  id from this field and copies it verbatim into the recall event — one plan may hold several
+  evaluation records (one per research_id): the plan id is metadata for humans, never the
+  dataset's primary key, and never a sufficient lookup key on its own — the id in the dataset is
+  always the specific evaluation's `research_id`.
 - `user_conf` is the developer's `user_confidence` (calibration question, 1-5); `n/a` when the question was not asked.
-- **DCI₀ baseline (v0.6.4)**: when the task belongs to an active research session, the same `user_conf` value is attached to the DCI₀ (immediate) reading — recorded in the research tuple alongside `dci_immediate` as the calibration baseline; the per-plan record is the canonical store. The research tuple carries the session's `research_id`, which links the DCI₀ row and later `/recall` rows for the same task (the dataset is append-only: `/recall` adds a new row, never rewrites existing rows).
+- **DCI₀ baseline (v0.6.4)**: when the task belongs to an active research session, the same `user_conf` value is attached to the DCI₀ (immediate) reading — recorded in the research tuple alongside `dci_immediate` as the calibration baseline; the comprehension record is the canonical store. The research tuple carries the session's `research_id`, which links the DCI₀ row and later `/recall` rows for the same task (the dataset is append-only: `/recall` adds a new row, never rewrites existing rows).
 - The calibration gap compares `user_conf` against the normalised DCI: `gap = user_conf − round(5 × dci_score / dci_available)`.
 - Unplanned tasks → no record. NONE classification → no record, no file.
 - `src=stored` means the record was written from the CHALLENGE dialogue; `src=reconstructed` is used only during /recall reconstruction (see below).
-- Records are write-once per plan (update only the `outcome`, `dci` and `user_conf` fields if the same plan is re-evaluated).
+- Records are append-safe: one record per evaluation, path-keyed by `research_id` under the plan's directory (`.context/comprehension/<plan-id>/<research-id>.md`); re-evaluating the same plan writes a NEW record (new research_id) and never overwrites or collapses a previous one (no edit, no delete).
 
 ## Escalation routing (TIER_REVIEW)
 
@@ -150,20 +152,20 @@ The `/recall` command re-activates a past comprehension session for a plan. It i
 **Pre-condition**: `.context/comprehension-log.md` is read ONLY during explicit `/recall` invocation — never at session start, never during bootstrap.
 
 **Retrieval phases** (v0.6.1 normalisation):
-- BEFORE the user answers: the agent may consult ONLY the selected plan document and the per-plan record's saved questions (plan + questions, nothing else).
+- BEFORE the user answers: the agent may consult ONLY the selected plan document and the selected record's saved questions (plan + questions, nothing else).
 - AFTER the user answers: code inspection may read exclusively diff/file/symbol matter pertinent to the selected plan, respecting the caps `maxDiffLines=300` and `maxRelatedSymbols=3`. NEVER a whole-repo scan; NEVER a whole-file read when a bounded slice suffices.
 
 **Flow (9 steps)**:
 
-1. **List candidates**: scan `plan/complete/*.md` and existing `.context/comprehension/*.md` records; present to user as a numbered list (plan-id + last outcome + date).
+1. **List candidates**: scan `plan/complete/*.md` and existing `.context/comprehension/**/*.md` records; present to user as a numbered list (plan-id + research_id + last outcome + date).
 2. **User selects** the plan to recall (number or plan-id).
-3. **Load questions**: read the per-plan record at `.context/comprehension/<plan-id>.md` if it exists (`src=stored`); otherwise reconstruct from the plan's Goal/Scope section in `plan/complete/<plan-id>.md` (`src=reconstructed`), inferring questions that map to the plan's stated acceptance criteria.
+3. **Load questions**: read the selected record at `.context/comprehension/<plan-id>/<research-id>.md` if it exists (`src=stored`; the selection pins one specific `research_id`); otherwise reconstruct from the plan's Goal/Scope section in `plan/complete/<plan-id>.md` (`src=reconstructed`), inferring questions that map to the plan's stated acceptance criteria.
 4. **Show ALL questions** (with `- ?` prefix), one per line. No code, no diffs, no explanations yet.
 5. **User answers from memory** (no tooling, no file access during this step).
 6. **Code inspection** (v0.3.1 token-aware comprehension): if needed, show the relevant diff with `maxDiffLines=300` and correlated symbols capped at `maxRelatedSymbols=3` — diff lines ONLY, NEVER full files, NEVER repo-wide scans.
 7. **Evaluation** delegated to `comprehension-coach` using the v0.4.0 DCI rubric with the identical whitelist input (goal, changed file list, focused diff, minimal surrounding symbols). The coach's rubric score is the DCI verdict.
 8. **Retry/skip** (v0.3.0 verbatim): maximum 1 retry; `skip comprehension` is always available; no reveal of expected answers during retry.
-9. **Outcome**: append dci1-format row to `.context/comprehension-log.md` AND full-overwrite `.context/progress.md` (snapshot of the CURRENT state — pointer removal on completion, never a per-task history line); update the per-plan record's `outcome`, `dci` and `user_conf` fields. Format:
+9. **Outcome**: append dci1-format row to `.context/comprehension-log.md` AND full-overwrite `.context/progress.md` (snapshot of the CURRENT state — pointer removal on completion, never a per-task history line); update the selected record's `outcome`, `dci` and `user_conf` fields. Format:
 
 ```
 <date> | plan=<NNNN> | type=dci1 | src=stored|reconstructed | retry=<0|1> | user_conf=<1-5> | evaluator_conf=<1-5> | DCI=<score>/<available_score> | outcome=PASS|FAIL|RETRY|SKIPPED
@@ -173,6 +175,6 @@ The `/recall` command re-activates a past comprehension session for a plan. It i
 - Same header-once rule as the telemetry writer; same append-only discipline.
 - The log file `.context/comprehension-log.md` is the single sink for all dci1 rows.
 
-**Whitelist of sources**: ONLY the plan document in `plan/complete/` and the per-plan record in `.context/comprehension/` may be consulted during /recall. NO repo-wide scans, NO scanning of other plans, NO ad-hoc file reads beyond the selected plan's document.
+**Whitelist of sources**: ONLY the plan document in `plan/complete/` and the selected record in `.context/comprehension/<plan-id>/<research-id>.md` may be consulted during /recall. NO repo-wide scans, NO scanning of other plans, NO ad-hoc file reads beyond the selected plan's document.
 
 **Isolation**: Manual invocation only. Nothing in this profile may trigger `/recall` automatically. `.context/comprehension-log.md` is read exclusively during `/recall` invocation, never at session start, never during bootstrap.

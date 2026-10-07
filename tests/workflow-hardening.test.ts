@@ -116,7 +116,7 @@ describe("workflow-hardening — W4 DCI contract (v0.6.1)", () => {
 
 describe("workflow-hardening — W5 recall budget (v0.6.1)", () => {
   test("pre-answer: plan + saved questions only; post-answer: capped plan-scoped reads", () => {
-    expect(ORCH).toMatch(/before the user answers, only the plan document \+ the per-plan record are consulted/i);
+    expect(ORCH).toMatch(/before the user answers, only the plan document \+ the selected record are consulted/i);
     expect(ORCH).toContain("maxDiffLines=300");
     expect(ORCH).toContain("maxRelatedSymbols=3");
     expect(RECALL).toMatch(/maxDiffLines=300/);
@@ -252,15 +252,15 @@ describe("workflow-hardening — W10 coach atomic output includes DCI (v0.6.2)",
 });
 
 describe("workflow-hardening — W11 /recall whitelist (v0.6.2)", () => {
-  test("whitelist covers plan + per-plan record + bounded inspection", () => {
-    expect(RECALL).toMatch(/ONLY the plan document in `plan\/complete\/`, the per-plan record in `\.context\/comprehension\/`, and the bounded post-answer inspection/);
+  test("whitelist covers plan + selected per-evaluation record + bounded inspection", () => {
+    expect(RECALL).toMatch(/ONLY the plan document in `plan\/complete\/`, the per-evaluation record in `\.context\/comprehension\/<plan-id>\/<research-id>\.md`, and the bounded post-answer inspection/);
     expect(RECALL).toMatch(/maxDiffLines=300/);
     expect(RECALL).toContain("maxRelatedSymbols=3");
   });
 
   test("recall steps state the whitelist and the record update", () => {
     expect(RECALL).toMatch(/only through step 5's whitelist/);
-    expect(RECALL).toMatch(/update the per-plan record's `outcome`, `dci` and `user_conf` fields/);
+    expect(RECALL).toMatch(/update the selected record's `outcome`, `dci` and `user_conf` fields/);
   });
 });
 
@@ -282,8 +282,8 @@ describe("workflow-hardening — W13 research tuple DCI0 baseline (v0.6.2)", () 
     expect(RESEARCH).toMatch(/DCI0 baseline/);
   });
 
-  test("per-plan record stores user_conf canonically (skill contract)", () => {
-    expect(SKILL).toMatch(/the per-plan record is the canonical store/);
+  test("comprehension record stores user_conf canonically (skill contract)", () => {
+    expect(SKILL).toMatch(/the comprehension record is the canonical store/);
   });
 });
 

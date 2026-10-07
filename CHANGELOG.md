@@ -2,6 +2,18 @@
 
 All notable changes to this project are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Starting from v0.3.0, this project follows [Semantic Versioning](https://semver.org/) (SemVer): PATCH = fixes and tuning; MINOR = new backward-compatible capabilities; MAJOR = breaking changes to orchestration or configuration.
 
+## [0.6.6] — 2026-10-07
+
+### Fixed
+
+- **Robust `research_id` format v0.6.6 (`res-YYYYMMDD-HHMMSS-<32hex>`)**: the v0.6.5 8-hex `FNV-1a` suffix is retired — the id is now the task-start timestamp plus 16 random bytes (128-bit CSPRNG, UUID-v4 class). Uniqueness is probabilistic at 128 bits and no longer claimed as a deterministic guarantee. Legacy ids from v0.6.0–v0.6.5 (timestamp-only or `+8hex`) are rejected on write and recognised only by `isLegacyResearchId` in tests.
+- **Per-evaluation comprehension records (append-safe)**: the record home moves from the single per-plan file `.context/comprehension/<plan-id>.md` (overwritten on re-evaluation) to one record per evaluation at `.context/comprehension/<plan-id>/<research-id>.md` — plan re-evaluations never overwrite or collapse earlier sessions; `plan` stays human metadata, `research_id` is the correlation key.
+- **/recall selects a specific evaluation**: candidates are enumerated with plan-id + research_id + last outcome + date (glob `**/*.md`); the user's selection pins one specific `research_id`; the delayed DCI₁ always references a specific research_id — no ambiguous plan-only lookups; the recall whitelist is the plan document + the selected record + bounded post-answer inspection.
+- **Routing prose test no longer pre-filters fabricated runtime ids**: every backtick token in `agents/orchestrator.md` prose must resolve (agent file / real skill / pinned non-agent vocabulary) — an invented runtime fails the suite instead of being masked by an existence check applied before validation.
+- **DatasetEventV1 invariance preserved (schema_version stays 1)**: task/recall remain append-only with no backfill/edit/delete; only the research_id value format changes (declared here explicitly).
+- **Canonical docs ↔ validator alignment**: one research_id format across `command/research-mode.md`, `tests/contract-fields.ts`, skill, docs and this changelog; validator, examples and documentation coincide; wording that implied deterministic uniqueness (e.g. references to the retired hash) is removed from live docs while this entry records the history.
+- **Installer test helper: paths with spaces no longer break the stdin-driven bash spawn**: `runWithExports` in `tests/installer-os-detection.test.ts` embedded the script path unquoted into the stdin body — on repo checkouts whose path contains spaces (e.g. `.../File 4 - Programmare/...`) bash split the path at the space and every OS-gate test failed with exit 127 ("No such file or directory"), indistinguishable from a real regression. The path is now single-quoted POSIX-style (POSIX `shq` escaping) before it enters the command body; all 9 installer OS-gate tests pass on space-containing paths.
+
 ## [0.6.5] — 2026-10-07
 
 ### Fixed

@@ -82,9 +82,9 @@ describe("recall-command — v0.5.0 Comprehension Retention", () => {
     expect(iDelegation).toBeGreaterThan(iRecall);
   });
 
-  test("frontmatter allows .context/comprehension/*.md in BOTH write and edit", () => {
+  test("frontmatter allows .context/comprehension/**/*.md in BOTH write and edit", () => {
     const fm = orchestrator.slice(0, orchestrator.indexOf("\n---", 4));
-    const count = fm.split(".context/comprehension/*.md").length - 1;
+    const count = fm.split(".context/comprehension/**/*.md").length - 1;
     expect(count).toBeGreaterThanOrEqual(2);
     expect(fm).toContain("allow");
   });

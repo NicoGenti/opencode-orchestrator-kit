@@ -115,22 +115,62 @@ describe("routing consistency — negative case (proves the check has teeth)", (
 });
 
 // ---------------------------------------------------------------------------
-// v0.6.5 — prose-level routing consistency + anti-tier pin (B6)
+// v0.6.6 — prose-level routing consistency + anti-tier pin (B6)
 // ---------------------------------------------------------------------------
 
 const orchBody = orchestratorMd.slice(orchestratorMd.indexOf("\n---", 4) + 4);
 
-describe("routing consistency — orchestrator.md prose (v0.6.5)", () => {
-  // Every runtime id the prose instructs to route to must be a real runtime
-  // file — catches drift in sections the table-only scan misses.
-  test("every `backticked` runtime id in prose resolves to agents/ or extras/", () => {
-    const proseIds = Array.from(orchBody.matchAll(/`([a-z0-9-]+)`/g))
-      .map((m) => m[1])
-      .filter((id) => agentFileExists(id) && id !== "orchestrator");
-    expect(proseIds.length).toBeGreaterThan(0);
-    for (const id of new Set(proseIds)) {
-      expect(agentFileExists(id)).toBe(true);
+describe("routing consistency — orchestrator.md prose (v0.6.6)", () => {
+  // NO pre-filtering: every backtick token in the prose body is a candidate.
+  // A candidate resolves only if it is (a) a real runtime agent file in
+  // agents/ or extras/, (b) the orchestrator self-reference, or (c) an
+  // explicitly whitelisted non-agent token. Any invented runtime id fails.
+  // The whitelist itself is verified: skill-like tokens must exist on disk.
+  const NON_AGENT_TOKENS = new Map<string, "tool" | "skill" | "vocab">([
+    // built-in tools exposed to the orchestrator (not runtime agents)
+    ...["bash", "date", "glob", "grep", "list", "read", "edit", "todowrite", "src"].map(
+      (t) => [t, "tool"] as const,
+    ),
+    // skill names referenced from prose (must exist as skills/<name>/SKILL.md)
+    ["comprehension-workflow", "skill"] as const,
+    // prose vocabulary / workflow-state words (not identifiers)
+    ...["allow", "ask", "complete", "draft", "in-progress", "outcome", "plan", "qa", "questions", "status", "task", "dci"].map(
+      (t) => [t, "vocab"] as const,
+    ),
+  ]);
+
+  const proseCandidates = Array.from(orchBody.matchAll(/`([a-z0-9-]+)`/g)).map((m) => m[1]);
+  const candidateSet = new Set(proseCandidates);
+
+  test("prose contains at least one runtime id candidate", () => {
+    expect(proseCandidates.length).toBeGreaterThan(0);
+  });
+
+  test("whitelisted skill-like prose tokens exist as real skills", () => {
+    for (const [token, kind] of NON_AGENT_TOKENS) {
+      if (kind === "skill") {
+        expect(existsSync(join(REPO_ROOT, "skills", token, "SKILL.md"))).toBe(true);
+      }
     }
+  });
+
+  test("every prose backtick token resolves to a real agent file, a real skill, or the whitelist", () => {
+    const unresolved: string[] = [];
+    for (const token of candidateSet) {
+      if (token === "orchestrator") continue; // self-reference: agents/orchestrator.md
+      if (NON_AGENT_TOKENS.has(token)) continue;
+      if (agentFileExists(token)) continue;
+      unresolved.push(token);
+    }
+    expect(unresolved).toEqual([]); // any invented runtime id fails here
+  });
+
+  test("runtime ids referenced by prose all exist (no pre-filter)", () => {
+    const agentTokens = Array.from(candidateSet).filter(
+      (t) => !NON_AGENT_TOKENS.has(t) && t !== "orchestrator",
+    );
+    expect(agentTokens.length).toBeGreaterThan(0);
+    for (const t of agentTokens) expect(agentFileExists(t)).toBe(true);
   });
 
   test("no prose token names a retired runtime that is not an agent file", () => {
