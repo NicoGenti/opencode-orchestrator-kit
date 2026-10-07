@@ -2,6 +2,16 @@
 
 All notable changes to this project are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Starting from v0.3.0, this project follows [Semantic Versioning](https://semver.org/) (SemVer): PATCH = fixes and tuning; MINOR = new backward-compatible capabilities; MAJOR = breaking changes to orchestration or configuration.
 
+## [0.6.4] — 2026-10-07
+
+### Fixed
+
+- **Unique `research_id` (ResearchTupleV1)**: every task event now carries a unique, stable `research_id` used as the correlation key between the DCI₀ baseline and later `/recall` rows; `plan` is no longer used as an identifier (plan re-evaluations now produce genuinely distinct rows).
+- **Dataset is truly append-only**: the `/recall` backfill of `dci_delayed` is removed — `/recall` appends a NEW delayed-DCI event linked by `research_id`; no delete, no row rewrite, no history mutation on `.context/research-dataset.jsonl`.
+- **Hard boundary made explicit & consistent**: the orchestrator now declares its sanctioned writes ("session memory; plan metadata; comprehension records; comprehension telemetry; research telemetry") with no contradiction to the frontmatter permissions; the Hard boundary clause drops the v0.6.3 qualifier and keeps both sinks append-only. Application code/config remains off-limits to the orchestrator.
+- **A/B semantics cleaned**: slot A (control) performs no comprehension classification and no coaching — every `classify(...)` reference removed from its example; slot B (treatment) is the only side with NONE/LIGHT/DEEP classification and potential gate escalation. Metrics stay honest: `agent_calls` counts every delegation actually made, slot-A `skipped` is `false` (the control task runs fully).
+- **Versioned event model**: tasks and recalls validate against `DatasetEventV1` (`SCHEMA_VERSION = 1`) with explicit `TASK_FIELDS` (19, incl. `research_id`, no `dci_delayed`) and `RECALL_FIELDS` (8) contracts in `tests/contract-fields.ts`; flow examples parsed from `command/research-mode.md` validate against them exactly.
+
 ## [0.6.3] — 2026-10-07
 
 ### Fixed

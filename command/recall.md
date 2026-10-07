@@ -28,10 +28,13 @@ Comando `/recall`. Flusso di ri-attivazione di una sessione di comprensione pass
 - `outcome=SKIPPED` row format: `user_conf=n/a | evaluator_conf=n/a | DCI=skipped | outcome=SKIPPED` (no numeric confidence fields).
 - v0.6.1: the two confidence fields are distinct normalised values — `user_conf` is the developer's calibration self-rating, `evaluator_conf` the coach's confidence in its verdict; the old overloaded single `conf=` field is retired.
 
-- **Dataset backfill (v0.6.3)**: after the dci1 evaluation, `/recall` may perform ONE bounded edit
-  on `.context/research-dataset.jsonl`: locate the row whose `plan` field matches (single-row read),
-  then backfill its `dci_delayed` field only — no other field, no other row, no deletes. This is the
-  ONLY sanctioned edit to the research dataset. Never inside a task lifecycle.
+- **Research dataset event (v0.6.4)**: after the dci1 evaluation, `/recall` APPENDS one recall
+  event — a NEW line — to `.context/research-dataset.jsonl`, carrying the SAME `research_id`
+  recorded by the task event (stored in the per-plan record at task end; the record supplies the
+  id — the dataset itself is never edited or rewritten to find it). If the record carries no
+  `research_id` (task predates research mode), nothing is written to the dataset. No modify, no
+  backfill, no delete, no rewrite of existing rows — the dataset is a strictly append-only event
+  log. Never inside a task lifecycle.
 - Same header-once rule as the telemetry writer; same append-only discipline.
 - The log file `.context/comprehension-log.md` is the single sink for all dci1 rows.
 

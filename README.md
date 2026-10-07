@@ -242,14 +242,17 @@ slots are **behavioral, not labels**: slot A (control) runs the normal
 workflow with no comprehension gate (no questions, 0 coach calls), slot B
 (treatment) runs the same task with the full comprehension gate; the slot
 alternates deterministically in activation order. Each completed task appends
-exactly one JSON object — a 17-field metric tuple with normalised
-`user_confidence` and `evaluator_confidence` — to
+exactly one JSON object — a 19-field metric tuple (`ResearchTupleV1`, tagged
+with a stable `research_id` that links the baseline and any later `/recall`
+rows) with normalised `user_confidence` and `evaluator_confidence` — to
 `.context/research-dataset.jsonl` (metrics only, untracked by design, never
 loaded by `/start-session`; full contract in `command/research-mode.md`).
-Since v0.6.2 the dataset sits behind a **hard boundary** (append-only rows,
-read only inside an active research lifecycle, never at bootstrap) and a
-user-facing **Behavioral A/B flow** example shows the simulated turn
-transcript — gate pass and gate fail with their 17-field tuples.
+Since v0.6.4 the dataset sits behind a **hard boundary**: it is truly
+append-only (a `/recall` row is a NEW event linked by `research_id` — no
+backfill, no rewrite of existing rows), read only inside an active research
+lifecycle, never at bootstrap; a user-facing **Behavioral A/B flow** example
+shows the simulated turn transcript — gate pass and gate fail with their
+19-field tuples.
 
 The headline metric is the **Cognitive Overhead Ratio (COR)**: comprehension
 tokens over total task tokens, compared across A/B pairs (e.g. `bugfix_ref`

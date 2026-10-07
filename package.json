@@ -1,6 +1,6 @@
 {
   "name": "opencode-orchestrator-kit-site",
-  "version": "0.6.3",
+  "version": "0.6.4",
   "private": true,
   "type": "module",
   "packageManager": "bun@1.2.21",

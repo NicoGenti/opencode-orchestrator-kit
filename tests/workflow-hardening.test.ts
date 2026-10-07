@@ -14,7 +14,14 @@
 import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { EXAMPLES, TUPLE_FIELDS, validateTuple } from "./contract-fields.ts";
+import {
+  TASK_EXAMPLES,
+  RECALL_EXAMPLES,
+  RECALL_FIELDS,
+  TASK_FIELDS,
+  validateTaskEvent,
+  validateRecallEvent,
+} from "./contract-fields.ts";
 
 const REPO_ROOT = join(import.meta.dir, "..");
 const ORCH = readFileSync(join(REPO_ROOT, "agents/orchestrator.md"), "utf-8");
@@ -25,8 +32,8 @@ const RESEARCH = readFileSync(join(REPO_ROOT, "command/research-mode.md"), "utf-
 const START = readFileSync(join(REPO_ROOT, "command/start-session.md"), "utf-8");
 
 describe("workflow-hardening — W1 prompt budget (v0.6.1)", () => {
-  test("agents/orchestrator.md stays within the 27,000-char prompt budget", () => {
-    expect(ORCH.length).toBeLessThanOrEqual(27_000);
+  test("agents/orchestrator.md stays within the 24,000-char prompt budget (v0.6.4)", () => {
+    expect(ORCH.length).toBeLessThanOrEqual(24_000);
   });
 
   test("orchestrator keeps routing + classification, delegates operational details", () => {
@@ -154,7 +161,7 @@ describe("workflow-hardening — W6 token efficiency (v0.6.1)", () => {
 
   test("research slot A costs zero comprehension overhead (0 coach calls)", () => {
     expect(RESEARCH).toMatch(/Slot A \(control\)[\s\S]{0,400}0 coach calls/);
-    expect(EXAMPLES[0].gate_type).toBe("n/a");
+    expect(TASK_EXAMPLES[0].gate_type).toBe("n/a");
   });
 });
 
@@ -200,7 +207,7 @@ describe("workflow-hardening — W8 P0 frontend permissions (v0.6.2)", () => {
     expect(fm).toContain('".context/research-dataset.jsonl":"allow"');
   });
 
-  test("W8b: orchestrator edit permission covers BOTH metric sinks (v0.6.3)", () => {
+  test("W8b: orchestrator edit permission covers BOTH metric sinks (v0.6.4)", () => {
     const fm = ORCH.slice(0, ORCH.indexOf("\n---", 4));
     const em = fm.match(/"edit":\s*\{([\s\S]*?)\}/);
     expect(em).not.toBeNull();
@@ -211,8 +218,8 @@ describe("workflow-hardening — W8 P0 frontend permissions (v0.6.2)", () => {
 
 describe("workflow-hardening — W9 hard boundary (v0.6.2)", () => {
   test("both sinks are append-only; reads are lifecycle-scoped", () => {
-    expect(ORCH).toMatch(/\*\*Hard boundary\*\* \(v0\.6\.3\): both sinks \(this log, `\.context\/research-dataset\.jsonl`\) are append-only/);
-    expect(ORCH).toMatch(/Sanctioned edits: log-row normalisation; dataset `dci_delayed` backfill \(via `\/recall`, between tasks\)/);
+    expect(ORCH).toMatch(/\*\*Hard boundary\*\*: both sinks \(this log, `\.context\/research-dataset\.jsonl`\) are append-only/);
+    expect(ORCH).toMatch(/Sanctioned writes: session memory; plan metadata; comprehension records; comprehension telemetry; research telemetry/);
     expect(RESEARCH).toMatch(/no intermediate or diagnostic rows/);
     expect(RESEARCH).toMatch(/exactly one JSON object as one line/);
   });
@@ -286,26 +293,30 @@ describe("workflow-hardening — W14 behavioral A/B flow (v0.6.2)", () => {
       const simUser = (flow.match(/SIM-U:/g) || []).length;
       const simCoach = (flow.match(/SIM-C:/g) || []).length;
       expect(RESEARCH).toContain("Behavioral A/B flow (normative example)");
-      expect(simUser).toBe(2);   // one recorded turn per slot
+      expect(simUser).toBe(1);   // the only calibration turn is slot B's — slot A (control) has no gate
       expect(simCoach).toBe(2);  // coach verdict blocks for both slots
     });
 
 
   test("flow shows a real pass and a real fail of the comprehension gate", () => {
     // gate outcomes read from parsed example tuples and normalized coach verdicts
-    expect(EXAMPLES[0].gate_type).toBe("n/a");
-    expect(EXAMPLES[1].gate_type).toBe("LIGHT");
-    expect(EXAMPLES[1].retries).toBe(1);
+    expect(TASK_EXAMPLES[0].gate_type).toBe("n/a");   // slot A control: no gate
+    expect(TASK_EXAMPLES[1].gate_type).toBe("LIGHT"); // slot B
+    expect(TASK_EXAMPLES[1].retries).toBe(1);
     expect((RESEARCH.match(/Comprehension: PASS/g) || []).length).toBe(1);
     expect((RESEARCH.match(/Comprehension: RETRY/g) || []).length).toBe(1);
     expect((RESEARCH.match(/Comprehension: FAIL/g) || []).length).toBe(1);
   });
 
-  test("the tuple emitted in the flow matches the 17-field contract exactly", () => {
+  test("the task/recall tuples emitted in the flow match the typed contracts exactly", () => {
     // parsed from the markdown flow, then validated against the typed contract
-    for (const tuple of EXAMPLES) {
-      expect(Object.keys(tuple).sort()).toEqual([...TUPLE_FIELDS].sort());
-      expect(validateTuple(tuple)).toEqual([]);
+    for (const tuple of TASK_EXAMPLES) {
+      expect(Object.keys(tuple).sort()).toEqual([...TASK_FIELDS].sort());
+      expect(validateTaskEvent(tuple)).toEqual([]);
+    }
+    for (const tuple of RECALL_EXAMPLES) {
+      expect(Object.keys(tuple).sort()).toEqual([...RECALL_FIELDS].sort());
+      expect(validateRecallEvent(tuple)).toEqual([]);
     }
   });
 });

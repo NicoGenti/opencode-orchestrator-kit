@@ -68,7 +68,7 @@ Line format (single space-separated fields, no user-answer content):
 `<ISO 8601 timestamp> mode=<LIGHT|DEEP> DCI=<score>/<available_score>|skipped evaluator_conf=<1-5>|n/a outcome=<PASS|FAIL|RETRY|SKIPPED> user_conf=<1-5>|n/a`
 ```
 
-**Hard boundary (v0.6.3)**: `.context/comprehension-log.md` and `.context/research-dataset.jsonl` are append-only telemetry artifacts — the orchestrator appends rows and performs only two sanctioned bounded edits, and may read them ONLY under explicit user invocation (`/recall` for the log; the research lifecycle for the dataset). Sanctioned dataset edit: backfill `dci_delayed` on the matching row (via `/recall`, between tasks, never inside a task lifecycle). Sanctioned log edit: normalise a malformed row to the canonical format. No other edits, no deletes, no history rewrites, no writes from other steps. Neither is ever read during bootstrap.
+**Hard boundary (v0.6.4)**: `.context/comprehension-log.md` and `.context/research-dataset.jsonl` are append-only telemetry artifacts — the orchestrator appends rows and performs only one sanctioned bounded edit, and may read them ONLY under explicit user invocation (`/recall` for the log; the research lifecycle for the dataset). Sanctioned dataset flow: `/recall` APPENDS a new row linked by `research_id` (no backfill, no modification of existing rows). Sanctioned log edit: normalise a malformed row to the canonical format. No other edits, no deletes, no history rewrites, no writes from other steps. Neither is ever read during bootstrap.
 
 **Normalised confidence contract (v0.6.1)** — exactly two integer 1-5 confidence values exist in the whole workflow, never overloaded:
 
@@ -119,7 +119,7 @@ src: stored
 
 - Questions are stored verbatim from the CHALLENGE step, one per line with `- ?` prefix. NO user answers, NO prose.
 - `user_conf` is the developer's `user_confidence` (calibration question, 1-5); `n/a` when the question was not asked.
-- **DCI₀ baseline (v0.6.2)**: when the task belongs to an active research session, the same `user_conf` value is attached to the DCI₀ (immediate) reading — recorded in the research tuple alongside `dci_immediate` as the calibration baseline; the per-plan record is the canonical store.
+- **DCI₀ baseline (v0.6.4)**: when the task belongs to an active research session, the same `user_conf` value is attached to the DCI₀ (immediate) reading — recorded in the research tuple alongside `dci_immediate` as the calibration baseline; the per-plan record is the canonical store. The research tuple carries the session's `research_id`, which links the DCI₀ row and later `/recall` rows for the same task (the dataset is append-only: `/recall` adds a new row, never rewrites existing rows).
 - The calibration gap compares `user_conf` against the normalised DCI: `gap = user_conf − round(5 × dci_score / dci_available)`.
 - Unplanned tasks → no record. NONE classification → no record, no file.
 - `src=stored` means the record was written from the CHALLENGE dialogue; `src=reconstructed` is used only during /recall reconstruction (see below).
