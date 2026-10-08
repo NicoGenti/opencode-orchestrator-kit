@@ -14,6 +14,11 @@
 #   when no local config exists yet, then runs scripts/validate-models.sh against
 #   the active preset. Validation failure aborts the install before any files are
 #   written to the target directory.
+#   After copying, the installer runs scripts/apply-model-preset.py against the
+#   target's models.config.json and agents/ (and extras/ with --with-extras) to
+#   resolve every {{TIER_*}} token in agent frontmatter to a concrete
+#   provider/model ID. Without this step OpenCode rejects the config at startup
+#   ("Configuration is invalid ... model").
 #
 # Phase 3 OS allowlist:
 #   The installer refuses to run on environments outside the supported set:
@@ -163,7 +168,7 @@ install_model_profile() {
     if [[ -f "${KIT_DIR}/templates/models.config.json" ]]; then
       cp "${KIT_DIR}/templates/models.config.json" "$target_config"
       echo "  + seeded ${target_config} from templates/models.config.json"
-      echo "    Edit it to point tiers at your provider/model IDs, or keep the `default` preset."
+      echo "    Edit it to point tiers at your provider/model IDs, or keep the 'default' preset."
     else
       echo "  ! WARNING: templates/models.config.json not found in ${KIT_DIR};"
       echo "    skipping model-profile seed. Run scripts/validate-models.sh manually later."
@@ -206,12 +211,65 @@ install_into() {
   link_or_copy "$KIT_DIR/command"         "$base/command"
 }
 
+# Phase 1 model-token resolution.
+#
+# Agent frontmatter ships with logical tier tokens (model: {{TIER_FAST}}).
+# OpenCode rejects those literals at startup:
+#   "Configuration is invalid ... Expected string | undefined, got {...} model"
+# so every token must be rewritten to the concrete provider/model ID from the
+# active preset in <base>/models.config.json before the user runs `opencode`.
+# Idempotent: files whose model line is already concrete are left untouched.
+# kit_native_path converts an MSYS-style path (/e/repo/...) to the native
+# forward-slash form a Windows python.exe can open (E:/repo/...). No-op on
+# Linux/macOS; on Git Bash / MSYS / Cygwin it uses cygpath when available.
+kit_native_path() {
+  local p="$1"
+  if command -v cygpath >/dev/null 2>&1; then
+    cygpath -m "$p"
+  else
+    printf '%s\n' "$p"
+  fi
+}
+
+resolve_model_tokens() {
+  local base="$1"
+  local config="${base}/models.config.json"
+
+  if [[ ! -f "$config" ]]; then
+    echo "  ! WARNING: ${config} not found; skipping model-token resolution."
+    echo "    Agents keep literal {{TIER_*}} model lines and OpenCode may refuse to start."
+    return 0
+  fi
+
+  local py=""
+  for _cand in python3 python; do
+    if command -v "$_cand" >/dev/null 2>&1; then py="$_cand"; break; fi
+  done
+  if [[ -z "$py" ]]; then
+    echo "  ! WARNING: no python3/python on PATH; cannot resolve {{TIER_*}} model tokens."
+    echo "    Agents keep literal {{TIER_*}} model lines and OpenCode may refuse to start."
+    return 0
+  fi
+
+  if [[ -d "${base}/agents" ]]; then
+    echo "  > Resolving model tiers in ${base}/agents/*.md from ${config}..."
+    "$py" "$(kit_native_path "${KIT_DIR}/scripts/apply-model-preset.py")" \
+      --config "$config" --agents-dir "${base}/agents"
+  fi
+  if [[ "$WITH_EXTRAS" == "true" && -d "${base}/extras" ]]; then
+    echo "  > Resolving model tiers in ${base}/extras/*.md from ${config}..."
+    "$py" "$(kit_native_path "${KIT_DIR}/scripts/apply-model-preset.py")" \
+      --config "$config" --agents-dir "${base}/extras"
+  fi
+}
+
 case "$TARGET" in
   project)
     # Validate the Phase 1 model-profile before copying anything else so a
     # bad config aborts the install cleanly.
     install_model_profile "$(pwd)/.opencode" || exit 1
     install_into "$(pwd)/.opencode"
+    resolve_model_tokens "$(pwd)/.opencode"
     # AGENTS.md and CONTRIBUTING.md live at project root, not inside .opencode/
     link_or_copy "$KIT_DIR/AGENTS.md"       "$(pwd)/AGENTS.md"
     link_or_copy "$KIT_DIR/CONTRIBUTING.md" "$(pwd)/CONTRIBUTING.md"
@@ -220,6 +278,7 @@ case "$TARGET" in
   global)
     install_model_profile "$HOME/.config/opencode" || exit 1
     install_into "$HOME/.config/opencode"
+    resolve_model_tokens "$HOME/.config/opencode"
     echo "Done. This kit is now available in every OpenCode project on this machine."
     echo "Run /start-session at the start of every new session to bootstrap the orchestrator."
     ;;
@@ -236,6 +295,7 @@ case "$TARGET" in
     fi
     install_model_profile "$PROFILE_DIR" || exit 1
     install_into "$PROFILE_DIR"
+    resolve_model_tokens "$PROFILE_DIR"
     echo "Done. Known issue: if a global ~/.config/opencode/AGENTS.md also exists,"
     echo "it currently takes precedence over the profile's AGENTS.md in some OpenCode"
     echo "versions. If routing rules seem ignored, temporarily rename/remove the"
