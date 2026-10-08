@@ -150,6 +150,7 @@ tier-resolution rules and fallback chains.
   installed into the same `.opencode/command/` (or global) directory as
   `agents/` and `skills/` — commands are loaded from that folder exactly like
   agents and skills.
-- **`pc-doctor` / `writer` / `librarian` are missing**: that is by design — they
-  are explicit opt-in. Pass `--with-extras` to install `pc-doctor` and `writer`;
-  copy `agents/librarian.md` manually if you want it everywhere.
+- **`pc-doctor` / `writer` are missing**: that is by design — they
+  are explicit opt-in. Pass `--with-extras` to install `pc-doctor` and `writer`.
+  `librarian` ships in `agents/` and is installed by default; if it's missing,
+  re-run the installer (it's copied with the rest of the roster).

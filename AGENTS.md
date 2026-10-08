@@ -66,7 +66,7 @@ The roster is partitioned into four tiers. Tiers differ in **when** the orchestr
 | `deploy-helper` | Conditional operations | CI/CD pipeline and deploy platform failures. Invoked ONLY on a matching CI/CD or deploy-platform failure. | Scoped fixes |
 | `pc-doctor` | Explicit opt-in extra | Windows/local environment, PATH, services. Defined in `extras/pc-doctor.md`. Load only on explicit opt-in or when the failure is clearly Windows-local. | Scoped fixes |
 | `writer` | Explicit opt-in extra | Technical documentation generation. Defined in `extras/writer.md`. Load only on explicit opt-in. | Docs only, never executable code |
-| `librarian` | Explicit opt-in extra | Documentation lookups, remote examples, repository history. Load only on explicit opt-in; not part of the standard `oracle`-led workflow. | Read-only |
+| `librarian` | Routing-limited (installed by default) | Documentation lookups, remote examples, repository history. Delegated only for remote doc lookups; never part of the standard implementation flow. | Read-only |
 
 Model assignment (primary/fallback per agent) lives in each `agents/<name>.md` (or `extras/<name>.md` for `pc-doctor` and `writer`) frontmatter, not in this file — this keeps model choice editable per deployment without touching the orchestration contract.
 

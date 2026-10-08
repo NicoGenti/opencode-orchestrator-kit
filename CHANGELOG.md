@@ -2,6 +2,14 @@
 
 All notable changes to this project are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Starting from v0.3.0, this project follows [Semantic Versioning](https://semver.org/) (SemVer): PATCH = fixes and tuning; MINOR = new backward-compatible capabilities; MAJOR = breaking changes to orchestration or configuration.
 
+## [0.6.8] — 2026-10-08
+
+### Fixed
+
+- **Docs alignment to the v0.2.2 → v0.6.7 flow (docs-only release)**: full documentation audit against the version timeline. README roster prose says 15 specialists (matching the `agents-15` badge and the AGENTS.md roster); the Measurement paragraph describes the current flow (per-evaluation `/recall` selection, flat `<evaluation-id>.md` records, immutable immediate baseline, append-only recalls); the `librarian` install story is aligned everywhere — it ships in `agents/` and is installed by default (the installer copies `agents/` unconditionally), routed only for remote documentation lookups: README, QUICKSTART, SETUP-NATIVE troubleshooting, AGENTS.md and the `agents/orchestrator.md` routing table all say so (no more "copy it manually" instructions).
+- **README English-only**: the two Italian sentences left in the Measurement/Research paragraphs are translated to English.
+- **CONTEXT-ANALYSIS**: research tuple field-count note updated (16 at v0.6.0 → 17 at v0.6.3 → 19 at v0.6.4, `ResearchTupleV1` / `DatasetEventV1` `TASK_FIELDS`); the file remains a point-in-time v0.6.0 snapshot.
+
 ## [0.6.7] — 2026-10-07
 
 ### Changed

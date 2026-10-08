@@ -8,7 +8,7 @@
 
 ## 🧠 What this is
 
-Most "AI does everything" setups burn tokens because one powerful model handles research, planning, coding, and review inside a single long-lived context. **OpenCode Orchestrator Kit** splits that into a routing layer and 14 specialists, so every step runs in the cheapest model capable of it — and the expensive model only ever sees the slice of work it actually needs.
+Most "AI does everything" setups burn tokens because one powerful model handles research, planning, coding, and review inside a single long-lived context. **OpenCode Orchestrator Kit** splits that into a routing layer and 15 specialists, so every step runs in the cheapest model capable of it — and the expensive model only ever sees the slice of work it actually needs.
 
 It **self-bootstraps on any repository**, known or unknown: the `profiler` agent detects the stack (or interviews you for an empty repo), scaffolds a lightweight memory system (`.context/`) and a plan kanban (`plan/`), and reports back so the orchestrator can route correctly from the very first session.
 
@@ -74,13 +74,14 @@ summarized in `AGENTS.md`. The roster is partitioned by tier:
 | Core delivery (always installed) | `developer-fixer`, `test-engineer`, `code-reviewer`, `security`, `comprehension-coach` | ✅ Yes |
 | Operations helpers (always installed, routed only on matching failure) | `build-helper`, `npm-helper`, `deploy-helper` | ✅ Yes |
 | Explicit opt-in extras | `pc-doctor` (Windows-local only), `writer` (docs generation) | ❌ `--with-extras` only |
-| Optional, explicitly opt-in | `librarian` (docs lookups, remote examples) | ❌ Installed only if you add it yourself |
+| Routing-limited (always installed) | `librarian` (docs lookups, remote examples) | ✅ Yes — routed only for remote doc lookups |
 
-`librarian`, `pc-doctor`, and `writer` are explicit opt-in by design: most users do not
-need a Windows-only `pc-doctor`, a docs-generation `writer`, or an internet-fetching
-`librarian` on every project. Pass `--with-extras` to install `pc-doctor` and `writer`
-when you want them. See [Customizing](#customizing) for the exact flag and how to add
-`librarian` if you want it.
+`pc-doctor` (Windows-local only) and `writer` (docs generation) are the
+explicit opt-in extras: most users don't need a Windows-only `pc-doctor` or a
+docs-generation `writer` on every project. Pass `--with-extras` to install
+them. `librarian` ships in `agents/` and is installed by default with the rest
+of the roster; the orchestrator delegates to it only for remote documentation
+lookups. See [Customizing](#customizing) for the exact flag.
 
 ## 🚀 Quickstart — native OpenCode (no plugin)
 
@@ -203,9 +204,9 @@ If you manage OpenCode via [opencode-studio](https://github.com/Microck/opencode
   values. Do **not** edit the `model:` field in any agent's frontmatter — that
   path bypasses the tier system and breaks on the next kit update.
 - **Opt into extras** with `./install.sh --with-extras` to also install
-  `pc-doctor` and `writer`. `librarian` ships in `agents/` but is treated as
-  opt-in by the orchestrator's routing rules; copy it manually if you want it
-  available everywhere. Operations helpers (`build-helper`, `npm-helper`,
+  `pc-doctor` and `writer`. `librarian` ships in `agents/` and is installed by
+  default with the rest of the roster; the orchestrator routes to it only for
+  remote documentation lookups. Operations helpers (`build-helper`, `npm-helper`,
   `deploy-helper`) are installed by default and only routed on a matching
   toolchain failure.
 - **Add project-specific skills** under `skills/<name>/SKILL.md`; the orchestrator
@@ -222,19 +223,21 @@ telemetry log (`.context/comprehension-log.md`, metrics-only, untracked by
 design) that `/start-session` never loads. Calibrate the prompt tiers in
 `docs/CONFIGURATION.md`.
 
-Since v0.5.0, the manual `/recall` command re-tests a completed plan's
-comprehension from memory (questions first, code after) and appends delayed
-`type=dci1` rows to the same log. **Retention = DCI₁/DCI₀**: è una nostra
-metrica operativa, non una metrica scientificamente validata. Slot labels
-land with the v0.6.0 research mode; pairing stays ad-hoc — v0.5.0 only
-accumulates data.
+Since v0.5.0, the manual `/recall` command re-tests comprehension from memory
+(questions first, code after) and appends delayed `type=dci1` rows to the same
+log. Since v0.6.7 each `/recall` targets **one evaluation**: pick it from the
+numbered candidate list and the flow loads its stored questions from the flat
+per-evaluation record `.context/comprehension/<evaluation-id>.md` (falling back
+to reconstructing them from the plan document). The immediate baseline is
+immutable — every recall is a NEW row, never a rewrite. **Retention =
+DCI₁/DCI₀**: an operational engineering metric, not a scientifically validated
+one.
 
 ## 🔬 Research (since v0.6.0)
 
 An opt-in experiment layer answering the framing question of the whole
-measurement effort: "Quanta comprensione umana riusciamo a preservare per
-unità di inferenza aggiuntiva?" — how much human comprehension is preserved
-per unit of additional inference.
+measurement effort: how much human comprehension is preserved per unit of
+additional inference.
 
 `/research-mode on` (explicit confirmation required, or `research.enabled` in
 the configuration as the same explicit opt-in) starts an A/B crossover whose

@@ -20,7 +20,7 @@
    - Read/write scope: read-only; input limited to task goal, changed file list, focused diff, minimal surrounding symbols
 3. **profiler.md** — `{{TIER_FAST}}` — repo bootstrap: tech stack, CI/CD, scaffolds PROJECT-PROFILE (write scope: `.opencode/PROJECT-PROFILE.md`, `.context/*.md`, `plan/README.md`)
 4. **explorer.md** — `{{TIER_FAST}}` — fast codebase exploration, symbol tracing, structure questions (read-only)
-5. **librarian.md** — `{{TIER_FAST}}` — research-focused, official-docs citations; opt-in via orchestrator routing rules (read-only)
+5. **librarian.md** — `{{TIER_FAST}}` — research-focused, official-docs citations; ships in `agents/`, installed by default; delegated only for remote doc lookups (read-only)
 6. **oracle.md** — `{{TIER_REASONING}}` — one well-reasoned architecture/design/strategy recommendation (read-only)
 7. **planner.md** — `{{TIER_REASONING}}` — phased development plans (writes `plan/draft/*.md`, `plan/in-progress/*.md`)
 8. **security.md** — `{{TIER_REASONING}}` — vulnerability detection, threat modeling, secure coding practices (read-only)
@@ -66,7 +66,7 @@
 ### Measurement stack (since v0.4.0, in `.context/`)
 - Comprehension gate: NONE (0 calls) / LIGHT / DEEP → `comprehension-coach`; DCI scoring + confidence calibration
 - Retention: `DCI₁/DCI₀` per plan via `/recall` (since v0.5.0)
-- Research mode: deterministic A/B slot alternation, 16-field JSONL tuple in `.context/research-dataset.jsonl`, COR (Cognitive Overhead Ratio) computable per pair (since v0.6.0)
+- Research mode: deterministic A/B slot alternation, 19-field JSONL task tuple (`ResearchTupleV1` / `DatasetEventV1` `TASK_FIELDS` — 16 fields at v0.6.0, 17 since v0.6.3, 19 since v0.6.4) in `.context/research-dataset.jsonl`, COR (Cognitive Overhead Ratio) computable per pair (since v0.6.0; tuple evolution documented in CHANGELOG v0.6.3/v0.6.4)
 - Privacy invariant: no source code and no personal answers are ever written to the comprehension log or the research dataset; both remain untracked
 
 ## 3. Skills Breakdown

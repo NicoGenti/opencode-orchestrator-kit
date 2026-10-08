@@ -60,15 +60,15 @@ directly — that bypasses the tier system and regresses on the next kit update.
 
 ## How it works
 
-A single "router" agent dispatches requests to 14 specialized subagents (planner,
-builder, explorer, ...) without ever touching application code, reducing token usage
-while keeping responsibilities cleanly separated.
+A single "router" agent dispatches requests to 15 specialized subagents (planner,
+developer-fixer, explorer, ...) without ever touching application code, reducing
+token usage while keeping responsibilities cleanly separated.
 
 Operations helpers (`build-helper`, `npm-helper`, `deploy-helper`) are installed by
 default and only routed on matching failures. Extras (`pc-doctor`, `writer`) require
-`--with-extras`; the docs-lookup `librarian` is opt-in by orchestrator routing rules
-even though it ships in `agents/`. See the README's "Agent roster" section for the
-full responsibility map.
+`--with-extras`; the docs-lookup `librarian` ships in `agents/` and is installed by
+default, but the orchestrator routes to it only for remote documentation lookups.
+See the README's "Agent roster" section for the full responsibility map.
 
 ## Project structure
 

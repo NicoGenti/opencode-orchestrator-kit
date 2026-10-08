@@ -68,7 +68,7 @@ model-size tiers (fast/balanced/deep) stay a runtime concern and must not leak i
 | `deploy-helper` | CI/CD pipeline and deploy-platform failures. |
 | `pc-doctor` | Windows-local environment/PATH/service issues (`extras/`). |
 | `writer` | Documentation generation (`extras/`). |
-| `librarian` | Remote documentation lookups (`extras/`). |
+| `librarian` | Remote documentation lookups (ships in `agents/`, installed by default). |
 
 Prefer the most specific runtime ID above. Fall back to a higher-capability agent only when the primary match is unavailable or clearly insufficient.
 
