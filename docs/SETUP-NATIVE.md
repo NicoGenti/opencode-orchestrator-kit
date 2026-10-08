@@ -103,8 +103,8 @@ to re-explain the project state each time.
 
 The five-tier abstraction lets you swap providers without editing any agent file.
 Tier tokens (`{{TIER_ROUTER}}`, `{{TIER_REASONING}}`, `{{TIER_CODE}}`, `{{TIER_FAST}}`,
-`{{TIER_REVIEW}}`) live in agent frontmatter; they are resolved by the active
-profile in `.opencode/models.config.json`.
+`{{TIER_REVIEW}}`) live in agent frontmatter; the installer resolves them to concrete
+IDs from the active profile in `.opencode/models.config.json` at install time.
 
 The bundled `default` profile is the kit's known-good starting point (it is
 *not* your setup). To actually run agents you must:

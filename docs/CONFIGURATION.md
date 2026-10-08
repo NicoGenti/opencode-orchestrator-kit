@@ -177,6 +177,13 @@ Exit codes:
   aborts before any other file is written to the target directory.
 - Pass `--skip-validation` to bypass the check (not recommended).
 
+After copying, `install.sh` runs `scripts/apply-model-preset.py` against the
+target's `models.config.json` and `agents/` (plus `extras/` when
+`--with-extras` is set) to rewrite every `{{TIER_*}}` model line to the active
+preset's concrete ID. This step is required: OpenCode rejects literal tier
+tokens at startup (`Configuration is invalid ... Expected string | undefined,
+got {...} model`).
+
 This closes the installation-time leakage gap: a profile with unresolved
 placeholders or unknown preset names is no longer silently installed.
 

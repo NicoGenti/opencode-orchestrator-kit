@@ -106,8 +106,11 @@ lookups. See [Customizing](#customizing) for the exact flag.
 ### 2. Install the kit
 
 From the repo root, run the scripted installer. The installer seeds
-`.opencode/models.config.json` from the bundled template and runs the Phase 1
-model-profile validator before any file is written to the target directory.
+`.opencode/models.config.json` from the bundled template, runs the Phase 1
+model-profile validator before any file is written to the target directory, then
+resolves every `{{TIER_*}}` token in the installed agent frontmatter to the
+active preset's concrete model ID. (Without that last step OpenCode rejects the
+config at startup — see step 3.)
 
 ```bash
 # Project-only — installs into ./.opencode/ and ./AGENTS.md in the current repo
@@ -136,8 +139,9 @@ opt-in specialists.
 
 The kit abstracts hardcoded model IDs into five **logical tier tokens** so you can
 swap providers without editing any agent file. Tier tokens are written into agent
-`model:` lines as `{{TIER_*}}`; the active profile resolves them at install/load
-time. Edit the user-local copy, never agent frontmatter.
+`model:` lines as `{{TIER_*}}`; the installer resolves them to concrete IDs at
+install time (and `scripts/apply-model-preset.py` re-resolves them on demand).
+Edit the user-local copy, never agent frontmatter.
 
 The five tiers, in canonical order:
 

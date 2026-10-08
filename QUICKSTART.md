@@ -27,8 +27,10 @@ cd opencode-orchestrator-kit
 
 The installer refuses to run on unsupported shells (non-bash, non-Linux/non-macOS,
 non-Windows-Git-Bash). On a supported environment it seeds
-`.opencode/models.config.json` from `templates/models.config.json` and runs the
-Phase 1 model-profile validator before any file is written to the target.
+`.opencode/models.config.json` from `templates/models.config.json`, runs the
+Phase 1 model-profile validator before any file is written to the target, then
+resolves every `{{TIER_*}}` token in the installed agent frontmatter to the active
+preset's concrete model ID.
 
 Useful flags:
 
@@ -57,6 +59,8 @@ bash scripts/validate-models.sh
 
 Do not edit the `model:` line of any agent under `agents/*.md` or `extras/*.md`
 directly — that bypasses the tier system and regresses on the next kit update.
+The installer resolves the tokens for you; to switch presets afterwards, re-run
+`python3 scripts/apply-model-preset.py` (see `docs/CONFIGURATION.md`).
 
 ## How it works
 
