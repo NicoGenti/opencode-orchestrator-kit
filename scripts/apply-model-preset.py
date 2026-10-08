@@ -237,10 +237,17 @@ def main():
             print(f"{path.name}: {result}")
         return
 
-    if not args.preset:
-        sys.exit("error: --preset is required (use --list to see options)")
-    if args.preset not in presets:
-        sys.exit(f"error: unknown preset '{args.preset}'. Available: {', '.join(presets)}")
+    preset_name = args.preset or config.get("default_preset")
+    if not preset_name:
+        sys.exit(
+            "error: --preset is required (no 'default_preset' in "
+            f"{args.config} to fall back to)"
+        )
+    if preset_name not in presets:
+        sys.exit(
+            f"error: unknown preset '{preset_name}'. Available: {', '.join(presets)}"
+        )
+    args.preset = preset_name
 
     raw_tier_map = presets[args.preset]["models"]
     missing = [t for t in REQUIRED_TOKENS if t not in raw_tier_map]
