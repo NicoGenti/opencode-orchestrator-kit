@@ -203,10 +203,11 @@ cd "$(native "$HOME")"
 if [[ "$START_SERVICE" == true ]]; then
   echo "--- debug paths"; sh "$OC2_FM" debug paths 2>&1 | head -8
   # Il servizio appena avviato risponde anche con roster vuoto/non-JSON (race misurata):
-  # ritenta fino a 4 volte con attesa crescente prima di dichiarare il FAIL.
+  # ritenta fino a 8 volte con attesa crescente prima di dichiarare il FAIL (cold start
+  # misurato: il roster puo' restare vuoto oltre 20s dopo "service start").
   OC2_EXE="$OC2_HOME/node_modules/@opencode/cli/bin/opencode.exe"
   FM_OK=0
-  for _try in 1 2 3 4; do
+  for _try in 1 2 3 4 5 6 7 8; do
     OUT_A="$(env -u PWD \
       XDG_DATA_HOME="$OC2_HOME/data-fm" XDG_CONFIG_HOME="$OC2_HOME/config-fm" \
       XDG_STATE_HOME="$OC2_HOME/state-fm" XDG_CACHE_HOME="$OC2_HOME/cache-fm" \
@@ -226,7 +227,7 @@ print("  %d agenti enumerati" % len(agents))
 print("  + tutti gli agenti del profilo risolvono providerID=freellmapi")
 raise SystemExit(0)
 PYEOF
-    then FM_OK=1; break; else sleep 3; fi
+    then FM_OK=1; echo "  + roster verificato (tentativo $_try)"; break; else sleep 6; fi
   done
   if [[ "$FM_OK" != 1 ]]; then
     echo "  FAIL: roster del profilo non verificato dopo i retry (vedi output sopra)"; exit 1
