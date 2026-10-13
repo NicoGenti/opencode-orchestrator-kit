@@ -219,7 +219,18 @@ PYEOF
 fi
 if [[ "$SMOKE" == true ]]; then
   echo "--- smoke"
-  sh "$OC2_FM" run -m freellmapi/auto:smart "Respond with exactly: FREELMAPI_KIT_OK" 2>&1 | tail -3
+  # NB: qui NON si passa dallo shim: da MSYS la sh re-esporta una $PWD POSIX e il
+  # comando `run` muore con "Failed to change directory" (pitfall documentato).
+  # Eseguire direttamente l'exe con env -u PWD e i root XDG del profilo fm.
+  OC2_EXE="$OC2_HOME/node_modules/@opencode/cli/bin/opencode.exe"
+  if [[ -f "$OC2_EXE" ]]; then
+    env -u PWD \
+      XDG_DATA_HOME="$OC2_HOME/data-fm" XDG_CONFIG_HOME="$OC2_HOME/config-fm" \
+      XDG_STATE_HOME="$OC2_HOME/state-fm" XDG_CACHE_HOME="$OC2_HOME/cache-fm" \
+      "$OC2_EXE" run -m freellmapi/auto:smart "Respond with exactly: FREELMAPI_KIT_OK" 2>&1 | tail -3
+  else
+    sh "$OC2_FM" run -m freellmapi/auto:smart "Respond with exactly: FREELMAPI_KIT_OK" 2>&1 | tail -3
+  fi
 fi
 echo
 echo "Profilo fm pronto. Uso:  cd <progetto> && oc2-fm"
