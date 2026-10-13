@@ -261,12 +261,18 @@ PYEOF
   rm -f "$TMP_AG"
 fi
 
-# 3) Verdetto
+# 3) Verdetto: lo smoke e' la prova funzionale decisiva (contesto, provider,
+#    default_agent e modello REALI). Il roster da `debug agents` dipende
+#    dall'indicizzazione per-cwd di V2 e puo' restare [] per il cwd corrente pur
+#    esistendo l'indice altrove (misurato): segnalato come WARN, non fatale.
 FAIL=0
 [[ "$SMOKE_OK" == "fail" ]] && FAIL=1
-[[ "$START_SERVICE" == true && "$ROSTER_OK" != 0 ]] && FAIL=1
+if [[ "$START_SERVICE" == true && "$ROSTER_OK" != 0 ]]; then
+  echo "  WARN: roster da 'debug agents' non ancora popolato per questo cwd (indicizzazione per-cwd di V2)."
+  echo "        Prova: un primo 'oc2-fm run ...' (che fa il bootstrap) e poi 'oc2-fm debug agents'."
+fi
 if [[ "$FAIL" == 1 ]]; then
-  echo "  FAIL: profilo fm incompleto (smoke o roster)"
+  echo "  FAIL: profilo fm incompleto (smoke)"
   exit 1
 fi
 echo
