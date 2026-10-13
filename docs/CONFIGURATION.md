@@ -63,11 +63,12 @@ cheaper model for `code-reviewer` than for `developer-fixer`.
 
 ## Profile selection
 
-Two profiles ship with the kit in `templates/models.config.json`:
+Three profiles ship with the kit in `templates/models.config.json`:
 
 | Profile     | Status at install | Use when                                                  |
 | ----------- | ---------------- | --------------------------------------------------------- |
 | `default`   | Ready to use     | You want the kit's known-good OpenCode Go + Ollama Cloud mix out of the box. |
+| freellmapi | Ready to use (app locale) | Vuoi il kit sull'app FreeLLMAPI installata sul PC |
 | `generic`   | Editable         | You want to point the kit at your own providers; the values are `placeholder/*` sentinels and the validator rejects them until you edit them. |
 
 The profile name is the value of `default_preset` in
@@ -316,3 +317,18 @@ Since v0.5.0, `/recall` appends delayed-evaluation rows of type `dci1` to the sa
 ### `enabled: false` re-enables v0.2.2 behaviour
 
 Setting `enabled: false` short-circuits the entire comprehension gate. The orchestrator proceeds straight to close and records `comprehension=DISABLED` in the progress notes — effectively restoring the v0.2.2 behaviour without downgrading.
+
+## FreeLLMAPI profile (local app)
+
+The `freellmapi` preset routes every tier to the FreeLLMAPI app installed on the PC
+(`http://127.0.0.1:31415/v1`), with preset routing aliases that stay valid when the concrete
+catalog changes. Install it with either path below:
+
+```bash
+# profilo separato (comando dedicato, non tocca la config globale)
+bash scripts/setup-oc2-fm-profile.sh --with-extras
+oc2-fm                     # TUI nel progetto corrente
+
+# oppure profilo dentro un progetto (usa opencode2)
+bash scripts/install-freellmapi.sh --with-extras D:/Work/MyProject
+```

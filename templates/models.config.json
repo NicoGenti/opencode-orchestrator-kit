@@ -24,7 +24,19 @@
         "TIER_REASONING": "opencode-go/kimi-k3",
         "TIER_CODE": "opencode-go/minimax-m3",
         "TIER_REVIEW": "opencode-go/minimax-m3",
-        "TIER_FAST": "ollama/deepseek-v4-flash:cloud"
+        "TIER_FAST": "ollama/deepseek-v4.1-flash:cloud"
+      }
+    },
+    "freellmapi": {
+      "label": "FreeLLMAPI (app locale su http://127.0.0.1:31415/v1)",
+      "description": "Instrada ogni tier sull'app FreeLLMAPI installata sul PC. Usa gli alias di routing (auto:smart / auto:fast) perche' restano validi quando il catalogo concreto cambia; i singoli tier restano sovrascrivibili con id concreti presenti in /v1/models.",
+      "requires": ["freellmapi"],
+      "models": {
+        "TIER_ROUTER": "freellmapi/auto:smart",
+        "TIER_REASONING": "freellmapi/auto:smart",
+        "TIER_CODE": "freellmapi/auto:smart",
+        "TIER_REVIEW": "freellmapi/auto:smart",
+        "TIER_FAST": "freellmapi/auto:fast"
       }
     },
     "generic": {

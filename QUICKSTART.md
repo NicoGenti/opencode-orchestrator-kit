@@ -90,3 +90,9 @@ See `README.md` for the responsibility map and customization notes,
 `docs/CONFIGURATION.md` for the full tier-resolution rules,
 `AGENTS.md` for details on each subagent's role and responsibilities, and
 `CONTRIBUTING.md` to contribute to the project.
+
+## Running the kit on the local FreeLLMAPI app
+
+A ready-to-use `freellmapi` preset ships with the kit for the local FreeLLMAPI app
+(127.0.0.1:31415): see `docs/CONFIGURATION.md`, section "FreeLLMAPI profile (local app)",
+for the one-command setup (`bash scripts/setup-oc2-fm-profile.sh --with-extras`, then `oc2-fm`).
