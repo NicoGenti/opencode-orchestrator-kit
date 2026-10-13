@@ -230,7 +230,14 @@ print("  %d agenti enumerati" % len(agents))
 print("  + tutti gli agenti del profilo risolvono providerID=freellmapi")
 raise SystemExit(0)
 PYEOF
-    then FM_OK=1; echo "  + roster verificato (tentativo $_try)"; break; else sleep 6; fi
+    then FM_OK=1; echo "  + roster verificato (tentativo $_try)"; break
+    else
+      # Il servizio fm indicizza gli agenti REATTIVAMENTE agli eventi di file: dopo
+      # una ricreazione del config l'indice puo' restare vuoto finche' un file non
+      # cambia (misurato: un touch ripopola il roster). Forza l'evento e ritenta.
+      touch "$CONFIG_DIR/agents/"*.md 2>/dev/null || true
+      sleep 6
+    fi
   done
   rm -f "$TMP_AG"
   if [[ "$FM_OK" != 1 ]]; then
