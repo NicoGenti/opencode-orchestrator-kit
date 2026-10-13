@@ -200,21 +200,43 @@ if [[ "$START_SERVICE" == true ]]; then
   echo "--- service start"; sh "$OC2_FM" service start 2>&1 | tail -3
 fi
 cd "$(native "$HOME")"
+OC2_EXE="$OC2_HOME/node_modules/@opencode/cli/bin/opencode.exe"
+fm_exe() {
+  # NB: senza shim quando executa comandi che chdir: da MSYS la sh dello shim
+  # re-esporta una $PWD POSIX e `run` muore con "Failed to change directory".
+  env -u PWD \
+    XDG_DATA_HOME="$OC2_HOME/data-fm" XDG_CONFIG_HOME="$OC2_HOME/config-fm" \
+    XDG_STATE_HOME="$OC2_HOME/state-fm" XDG_CACHE_HOME="$OC2_HOME/cache-fm" \
+    "$OC2_EXE" "$@"
+}
+
+# 1) SMOKE PRIMA: il primo `run` fa il bootstrap del contesto del profilo e
+#    innesca l'indicizzazione degli agenti (misurato: prima del run `debug agents`
+#    puo' tornare [] per progetti non ancora indicizzati; dopo il run e' popolato).
+SMOKE_OK=""
+if [[ "$SMOKE" == true ]]; then
+  echo "--- smoke"
+  if [[ -f "$OC2_EXE" ]]; then
+    TMP_SM="$(mktemp)"
+    fm_exe run -m freellmapi/auto:smart "Respond with exactly: FREELMAPI_KIT_OK" > "$TMP_SM" 2>&1 || true
+    tail -3 "$TMP_SM"
+    if grep -q 'FREELMAPI_KIT_OK' "$TMP_SM"; then SMOKE_OK="ok"; else SMOKE_OK="fail"; echo "  ! smoke senza conferma FREELMAPI_KIT_OK"; fi
+    rm -f "$TMP_SM"
+  else
+    sh "$OC2_FM" run -m freellmapi/auto:smart "Respond with exactly: FREELMAPI_KIT_OK" 2>&1 | tail -3
+  fi
+fi
+
+# 2) ROSTER: dopo lo smoke l'indice e' caldo; resta il retry con touch come
+#    sostegno (il servizio fm indicizza gli agenti reattivamente ai file-events).
+ROSTER_OK=1
 if [[ "$START_SERVICE" == true ]]; then
   echo "--- debug paths"; sh "$OC2_FM" debug paths 2>&1 | head -8
-  # Il servizio appena avviato risponde anche con roster vuoto/non-JSON (race misurata):
-  # ritenta fino a 8 volte con attesa crescente prima di dichiarare il FAIL (cold start
-  # misurato: il roster puo' restare vuoto oltre 20s dopo "service start").
-  OC2_EXE="$OC2_HOME/node_modules/@opencode/cli/bin/opencode.exe"
-  FM_OK=0
   TMP_AG="$(mktemp)"
   for _try in 1 2 3 4 5 6 7 8; do
-    # NB: il JSON va a un FILE, non a stdin: "$PY - arg <<EOF" usa l'heredoc per lo
+    # NB: il JSON va a FILE, non a stdin: "$PY - arg <<EOF" usa l'heredoc per lo
     # script, quindi una pipe andrebbe persa (bug misurato: stdin = 0 byte).
-    env -u PWD \
-      XDG_DATA_HOME="$OC2_HOME/data-fm" XDG_CONFIG_HOME="$OC2_HOME/config-fm" \
-      XDG_STATE_HOME="$OC2_HOME/state-fm" XDG_CACHE_HOME="$OC2_HOME/cache-fm" \
-      "$OC2_EXE" debug agents 2>/dev/null > "$TMP_AG" || true
+    fm_exe debug agents 2>/dev/null > "$TMP_AG" || true
     if "$PY" - "$CONFIG_DIR/opencode.jsonc" "$TMP_AG" <<'PYEOF'
 import json, sys
 try: agents = json.loads(open(sys.argv[2], encoding="utf-8", errors="replace").read())
@@ -230,34 +252,22 @@ print("  %d agenti enumerati" % len(agents))
 print("  + tutti gli agenti del profilo risolvono providerID=freellmapi")
 raise SystemExit(0)
 PYEOF
-    then FM_OK=1; echo "  + roster verificato (tentativo $_try)"; break
+    then ROSTER_OK=0; echo "  + roster verificato (tentativo $_try)"; break
     else
-      # Il servizio fm indicizza gli agenti REATTIVAMENTE agli eventi di file: dopo
-      # una ricreazione del config l'indice puo' restare vuoto finche' un file non
-      # cambia (misurato: un touch ripopola il roster). Forza l'evento e ritenta.
       touch "$CONFIG_DIR/agents/"*.md 2>/dev/null || true
       sleep 6
     fi
   done
   rm -f "$TMP_AG"
-  if [[ "$FM_OK" != 1 ]]; then
-    echo "  FAIL: roster del profilo non verificato dopo i retry (vedi output sopra)"; exit 1
-  fi
 fi
-if [[ "$SMOKE" == true ]]; then
-  echo "--- smoke"
-  # NB: qui NON si passa dallo shim: da MSYS la sh re-esporta una $PWD POSIX e il
-  # comando `run` muore con "Failed to change directory" (pitfall documentato).
-  # Eseguire direttamente l'exe con env -u PWD e i root XDG del profilo fm.
-  OC2_EXE="$OC2_HOME/node_modules/@opencode/cli/bin/opencode.exe"
-  if [[ -f "$OC2_EXE" ]]; then
-    env -u PWD \
-      XDG_DATA_HOME="$OC2_HOME/data-fm" XDG_CONFIG_HOME="$OC2_HOME/config-fm" \
-      XDG_STATE_HOME="$OC2_HOME/state-fm" XDG_CACHE_HOME="$OC2_HOME/cache-fm" \
-      "$OC2_EXE" run -m freellmapi/auto:smart "Respond with exactly: FREELMAPI_KIT_OK" 2>&1 | tail -3
-  else
-    sh "$OC2_FM" run -m freellmapi/auto:smart "Respond with exactly: FREELMAPI_KIT_OK" 2>&1 | tail -3
-  fi
+
+# 3) Verdetto
+FAIL=0
+[[ "$SMOKE_OK" == "fail" ]] && FAIL=1
+[[ "$START_SERVICE" == true && "$ROSTER_OK" != 0 ]] && FAIL=1
+if [[ "$FAIL" == 1 ]]; then
+  echo "  FAIL: profilo fm incompleto (smoke o roster)"
+  exit 1
 fi
 echo
 echo "Profilo fm pronto. Uso:  cd <progetto> && oc2-fm"
