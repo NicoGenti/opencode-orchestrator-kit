@@ -207,14 +207,17 @@ if [[ "$START_SERVICE" == true ]]; then
   # misurato: il roster puo' restare vuoto oltre 20s dopo "service start").
   OC2_EXE="$OC2_HOME/node_modules/@opencode/cli/bin/opencode.exe"
   FM_OK=0
+  TMP_AG="$(mktemp)"
   for _try in 1 2 3 4 5 6 7 8; do
-    OUT_A="$(env -u PWD \
+    # NB: il JSON va a un FILE, non a stdin: "$PY - arg <<EOF" usa l'heredoc per lo
+    # script, quindi una pipe andrebbe persa (bug misurato: stdin = 0 byte).
+    env -u PWD \
       XDG_DATA_HOME="$OC2_HOME/data-fm" XDG_CONFIG_HOME="$OC2_HOME/config-fm" \
       XDG_STATE_HOME="$OC2_HOME/state-fm" XDG_CACHE_HOME="$OC2_HOME/cache-fm" \
-      "$OC2_EXE" debug agents 2>/dev/null || true)"
-    if printf '%s' "$OUT_A" | "$PY" - "$CONFIG_DIR/opencode.jsonc" <<'PYEOF'
+      "$OC2_EXE" debug agents 2>/dev/null > "$TMP_AG" || true
+    if "$PY" - "$CONFIG_DIR/opencode.jsonc" "$TMP_AG" <<'PYEOF'
 import json, sys
-try: agents = json.loads(sys.stdin.read())
+try: agents = json.loads(open(sys.argv[2], encoding="utf-8", errors="replace").read())
 except Exception:
     raise SystemExit(2)
 cfg = json.load(open(sys.argv[1], encoding="utf-8"))
@@ -229,6 +232,7 @@ raise SystemExit(0)
 PYEOF
     then FM_OK=1; echo "  + roster verificato (tentativo $_try)"; break; else sleep 6; fi
   done
+  rm -f "$TMP_AG"
   if [[ "$FM_OK" != 1 ]]; then
     echo "  FAIL: roster del profilo non verificato dopo i retry (vedi output sopra)"; exit 1
   fi
