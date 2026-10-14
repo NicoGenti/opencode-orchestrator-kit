@@ -125,7 +125,8 @@ After the memory template step, check whether `plan/` exists with all four subfo
 - If `plan/README.md` is missing: create it with the kanban conventions (columns, file naming
   `<id>-<slug>.md`, frontmatter fields `id/title/status/created/updated/owner/executor`, and the 9-section plan
   body template: Goal, Success Criteria, Scope, Safety, Inputs Available, Outputs Required, Test Plan,
-  Verification, Notes/Edge Cases).
+  Verification, Notes/Edge Cases). It MUST also state that the board is owned by `plan-writer` and
+  that every board mutation goes through the deterministic tool `scripts/plan-board.py`.
 - This step MUST run even if `PROJECT-PROFILE.md` and `.context/` already existed before this run (retrofit
   case: a repo profiled before the planner/plan workflow was introduced).
 

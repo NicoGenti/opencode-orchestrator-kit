@@ -139,6 +139,7 @@ describe("assembly order (Phase 2) — repository enumeration", () => {
         "agents/npm-helper.md",
         "agents/oracle.md",
         "agents/orchestrator.md",
+        "agents/plan-writer.md",
         "agents/planner.md",
         "agents/profiler.md",
         "agents/security.md",

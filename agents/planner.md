@@ -18,8 +18,7 @@ permission:
   edit: deny
   webfetch: deny
   write:
-    plan/draft/*.md: allow
-    plan/in-progress/*.md: allow
+    .context/plan-body-*.md: allow
     "*": deny
   task:
     "*": deny
@@ -43,8 +42,8 @@ execution by a cheaper implementation agent, one phase at a time.
 
 ## Hard Boundary
 
-You MUST NOT write application code, configuration, or tests. You MUST NOT edit files outside `plan/draft/` and
-`plan/in-progress/`. You MUST NOT bypass `developer-fixer` by attempting implementation yourself.
+You MUST NOT write application code, configuration, or tests. You MUST NOT create, move or normalise a plan file — the board belongs to `plan-writer`: your only write target is
+`.context/plan-body-<id>.md`. You MUST NOT bypass `developer-fixer` by attempting implementation yourself.
 
 ## Workflow
 
@@ -56,7 +55,7 @@ You MUST NOT write application code, configuration, or tests. You MUST NOT edit 
      instead of speculating.
 3. **Plan**: break the goal into ordered phases/steps. For each step, size effort using the oracle's convention
    (XS = <1h, S = 1-2h; anything M/L/XL MUST be split further).
-4. **Write the plan** to `plan/draft/<id>-<slug>.md` using the template in `plan/README.md`. The plan body MUST use
+4. **Write the plan body** to `.context/plan-body-<id>.md` using the template in `plan/README.md`, then report the body path plus the proposed `id`, `title`, `owner` and `executor` to the orchestrator, which dispatches `plan-writer` to create the board file. The plan body MUST use
    the orchestrator's 9-section spec format (Goal, Success Criteria, Scope, Safety, Inputs Available, Outputs
    Required, Test Plan, Verification, Notes/Edge Cases) so `developer-fixer` can execute it directly in Fixer Mode.
    - **If the plan has more than one phase**, add a **Phase Checklist** section immediately after the frontmatter,

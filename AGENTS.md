@@ -56,6 +56,7 @@ The roster is partitioned into four tiers. Tiers differ in **when** the orchestr
 | `explorer` | Core routing | Codebase, file, or symbol exploration. | Read-only |
 | `oracle` | Core routing | Architecture, design, or strategy advice. The standard non-trivial workflow is `explorer` → `oracle` → `planner` → `developer-fixer`. | Read-only |
 | `planner` | Core routing | Turns exploration into a phased development plan. | Writes to `plan/draft/` only |
+| `plan-writer` | Core delivery | Plan board lifecycle owner: create/move/check/adopt on the active board root through the deterministic tool `scripts/plan-board.py`. | Writes only the board's plan files (`plan/**/*.md`) |
 | `developer-fixer` | Core delivery | Implementation, TDD, single-phase execution against a precise spec. | Writes application code/tests per scope |
 | `test-engineer` | Core delivery | Tests, coverage, reproduction. | Writes tests only unless explicitly delegated otherwise |
 | `code-reviewer` | Core delivery | General correctness/design/quality review. | Read-only |
@@ -97,6 +98,21 @@ Model assignment (primary/fallback per agent) lives in each `agents/<name>.md` (
 3. `orchestrator` verifies the resolution and appends an entry to `.context/issues.md`.
 
 ---
+
+## Plan Board Lifecycle & Owner Contract
+
+`plan/` (four columns: `draft`, `in-progress`, `qa`, `complete`) is owned by exactly one agent: `plan-writer`. No other agent — the orchestrator, `planner`, `profiler`, `developer-fixer`, `test-engineer`, `code-reviewer` — creates, moves, renames or deletes a plan file. Content authorship stays with `planner` (which writes the plan body under `.context/`, never a board file); lifecycle ownership stays with `plan-writer`.
+
+- **Tool** — every board mutation goes through
+  `python scripts/plan-board.py <check|new|move|adopt> ... --root <board root> --json`
+  (`plan-writer` falls back to `.opencode/scripts/plan-board.py` when the repository carries the tool there). Standard-library only, JSON on every path, exit `0` = ok (warnings do not fail), exit `1` = blocking error. Hand-crafted `mv`/`cp`/direct writes under the board root are a contract violation and are refused.
+- **Conforming file** — `<id>-<slug>.md` (or `<id>.md`) with frontmatter
+  `id/title/status/created/updated/owner/executor`, the `id` equal to the leading segment of the filename stem, `status` equal to the containing column, and the nine sections of `plan/README.md` in the body.
+- **Standing authorization (user-granted, limited to the board root)** — covered without a fresh approval: `check` runs, and `move` of an already-conforming file between columns (including the `status`/`updated` refresh), cited as
+  `## Approved Mutation Summary — plan-board-standing-v1`. NOT covered: `new` (creating a plan file), `adopt` (normalising an existing file), any body edit, deletion and rename — each needs its own per-dispatch approved Mutation Summary.
+- **Scaffolding exception** — `profiler` may create the missing `plan/<column>/.gitkeep` folders and `plan/README.md` on first run; it never creates or moves a plan file.
+- **Never** — deletion, renaming, writes outside the board root, and edits to `plan/README.md` or `scripts/plan-board.py` are user-only decisions.
+
 
 ## Enforcement
 

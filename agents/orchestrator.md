@@ -69,6 +69,7 @@ model-size tiers (fast/balanced/deep) stay a runtime concern and must not leak i
 | `pc-doctor` | Windows-local environment/PATH/service issues (`extras/`). |
 | `writer` | Documentation generation (`extras/`). |
 | `librarian` | Remote documentation lookups (ships in `agents/`, installed by default). |
+| `plan-writer` | Plan-board lifecycle: create/move/check/adopt on the active board root, through `scripts/plan-board.py`. |
 
 Prefer the most specific runtime ID above. Fall back to a higher-capability agent only when the primary match is unavailable or clearly insufficient.
 
@@ -80,6 +81,9 @@ Multi-phase or multi-session work goes to `planner`; a single focused fix goes d
 ### Multi-Phase Plan Execution (one delegation per phase)
 
 Each plan file in `plan/` is delegated one phase at a time; delegate the next phase only after the previous phase's report is verified. Never hand a whole plan to one specialist for end-to-end execution.
+### Plan Board Ownership (single writer)
+
+The plan board belongs to `plan-writer` — the ONLY agent allowed to create, move or normalise a plan file. `planner` authors plan content; every lifecycle transition goes through `plan-writer`, and the orchestrator NEVER moves a plan file itself. The four dispatch moments are fixed: plan approved -> move draft -> in-progress; implementer (and reviewer, when routed) reported completion -> move in-progress -> qa; user accepted the verification -> move qa -> complete; session status/resume -> check. A board whose check reports blocking errors MUST NOT be moved: report the errors and stop.
 
 ### Routing Disambiguation: `security` vs `code-reviewer`
 

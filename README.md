@@ -2,13 +2,13 @@
 
 **A strict-orchestrator, multi-agent workflow for [OpenCode](https://opencode.ai) — one router agent that never writes code, and a roster of specialists each pinned to the cheapest model that can do the job.**
 
-[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE.txt) [![OpenCode](https://img.shields.io/badge/works%20with-OpenCode%20CLI-blue)](https://opencode.ai) [![OpenCode Studio](https://img.shields.io/badge/optional-OpenCode%20Studio-lightgrey)](https://github.com/Microck/opencode-studio) [![Agents](https://img.shields.io/badge/agents-15-orange)](agents) [![Tests](https://github.com/NicoGenti/opencode-orchestrator-kit/actions/workflows/test.yml/badge.svg)](https://github.com/NicoGenti/opencode-orchestrator-kit/actions/workflows/test.yml) [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE.txt) [![OpenCode](https://img.shields.io/badge/works%20with-OpenCode%20CLI-blue)](https://opencode.ai) [![OpenCode Studio](https://img.shields.io/badge/optional-OpenCode%20Studio-lightgrey)](https://github.com/Microck/opencode-studio) [![Agents](https://img.shields.io/badge/agents-16-orange)](agents) [![Tests](https://github.com/NicoGenti/opencode-orchestrator-kit/actions/workflows/test.yml/badge.svg)](https://github.com/NicoGenti/opencode-orchestrator-kit/actions/workflows/test.yml) [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
 ---
 
 ## 🧠 What this is
 
-Most "AI does everything" setups burn tokens because one powerful model handles research, planning, coding, and review inside a single long-lived context. **OpenCode Orchestrator Kit** splits that into a routing layer and 15 specialists, so every step runs in the cheapest model capable of it — and the expensive model only ever sees the slice of work it actually needs.
+Most "AI does everything" setups burn tokens because one powerful model handles research, planning, coding, and review inside a single long-lived context. **OpenCode Orchestrator Kit** splits that into a routing layer and 16 specialists, so every step runs in the cheapest model capable of it — and the expensive model only ever sees the slice of work it actually needs.
 
 It **self-bootstraps on any repository**, known or unknown: the `profiler` agent detects the stack (or interviews you for an empty repo), scaffolds a lightweight memory system (`.context/`) and a plan kanban (`plan/`), and reports back so the orchestrator can route correctly from the very first session.
 
@@ -31,6 +31,7 @@ The orchestrator never touches application code. It only classifies, delegates, 
 |---|---|---|
 | 1 | `explorer` | Reads the current auth flow, read-only. |
 | 2 | `planner` | Turns findings into a phased plan in `plan/draft/`. |
+| 2b | `plan-writer` | Materialises and moves the plan file across the board columns (`plan/draft/` -> `plan/in-progress/` -> `plan/qa/` -> `plan/complete/`); never writes plan content. |
 | 3 | `developer-fixer` | Implements **one phase at a time**, fresh context each time — no compounding drift across a long session. |
 | 4 | `test-engineer` | Writes and runs tests for the new rotation logic. |
 | 5 | `security` | Reviews the auth-sensitive change before it reaches `plan/complete/`. |
@@ -58,6 +59,7 @@ helpers that exist for completeness:
 | **Orchestration** (routing, checkpointing) | `orchestrator` | Sole entry point — only `mode: primary` agent. Never writes application code. |
 | **Exploration** (codebase, file, symbol research) | `explorer` | Read-only. |
 | **Planning** (turns exploration into phased plans) | `planner` | Writes to `plan/draft/` only. |
+| **Plan board** (plan-file lifecycle: create, move, check, adopt) | `plan-writer` | Sole owner of the board; never writes application code. |
 | **Implementation** (one phase at a time, TDD) | `developer-fixer` | Follows the 9-section task spec. |
 | **Testing** (test authoring, coverage, reproduction) | `test-engineer` | |
 | **Review** (general correctness / quality) | `code-reviewer` | Optional distinct from security review. |
@@ -71,7 +73,7 @@ summarized in `AGENTS.md`. The roster is partitioned by tier:
 | Tier | Agents | Installed by default? |
 | --- | --- | --- |
 | Core routing (always installed) | `orchestrator`, `profiler`, `explorer`, `oracle`, `planner` | ✅ Yes |
-| Core delivery (always installed) | `developer-fixer`, `test-engineer`, `code-reviewer`, `security`, `comprehension-coach` | ✅ Yes |
+| Core delivery (always installed) | `developer-fixer`, `test-engineer`, `code-reviewer`, `security`, `comprehension-coach`, `plan-writer` | ✅ Yes |
 | Operations helpers (always installed, routed only on matching failure) | `build-helper`, `npm-helper`, `deploy-helper` | ✅ Yes |
 | Explicit opt-in extras | `pc-doctor` (Windows-local only), `writer` (docs generation) | ❌ `--with-extras` only |
 | Routing-limited (always installed) | `librarian` (docs lookups, remote examples) | ✅ Yes — routed only for remote doc lookups |

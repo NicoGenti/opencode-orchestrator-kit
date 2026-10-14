@@ -64,7 +64,8 @@ The installer resolves the tokens for you; to switch presets afterwards, re-run
 
 ## How it works
 
-A single "router" agent dispatches requests to 15 specialized subagents (planner,
+A single "router" agent dispatches requests to 16 specialized subagents (planner,
+plan-writer,
 developer-fixer, explorer, ...) without ever touching application code, reducing
 token usage while keeping responsibilities cleanly separated.
 
