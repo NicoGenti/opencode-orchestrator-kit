@@ -212,10 +212,14 @@ if [[ -x "$OC2_SHIM" ]]; then
   AGENTS_JSON="$(mktemp 2>/dev/null || mktemp)"
   CFG_JSON="$(mktemp 2>/dev/null || mktemp)"
   ( cd "$PROJECT_NATIVE" && env -u PWD "$OC2_SHIM" debug agents ) > "$AGENTS_JSON" 2>/dev/null || true
+  MODELS_TXT="$(mktemp 2>/dev/null || mktemp)"
+  ( cd "$PROJECT_NATIVE" && env -u PWD "$OC2_SHIM" models ) > "$MODELS_TXT" 2>/dev/null || true
+
   ( cd "$PROJECT_NATIVE" && env -u PWD "$OC2_SHIM" debug config ) > "$CFG_JSON"  2>/dev/null || true
 
   # guardia: `freellmapi` deve risultare fra gli enabled_providers visti da V2
-  "$PY" - "$(native "$CFG_JSON")" <<'PYEOF' || warn=1
+  "$PY" - "$(native "$CFG_JSON")" "$(native "$MODELS_TXT")" <<'PYEOF' || warn=1
+
 import json, sys
 warn = 0
 try:
@@ -249,9 +253,20 @@ declared = any("freellmapi" in json.dumps(i.get("agents") or {})
 if ep_any:
     print("  + guardia: freellmapi fra gli enabled_providers visti da opencode2")
 elif declared:
-    print("  + guardia: provider freellmapi e mappa agent presenti nella sorgente di progetto")
-    print("            (.opencode/opencode.jsonc); opencode2 non riporta il campo")
-    print("            `enabled_providers` nel debug config: la prova effettiva e' `debug agents`.")
+    n_cat = 0
+    try:
+        with open(sys.argv[2], encoding="utf-8", errors="replace") as fh:
+            n_cat = sum(1 for ln in fh if ln.startswith("freellmapi/"))
+    except Exception:
+        n_cat = -1
+    if n_cat > 0:
+        print("  + guardia: freellmapi nel catalogo runtime (%d righe `freellmapi/`)" % n_cat)
+    else:
+        print("  WARNING: `freellmapi` e' nel config di progetto e risolve gli agenti, ma NON entra")
+        print("           nel catalogo runtime: `opencode2 models` non ha righe `freellmapi/`, quindi")
+        print("           la TUI non offre il provider e i run danno `Model unavailable`.")
+        print("           Per lavorare in questo progetto usa il profilo dedicato: comando `oc2-fm`.")
+        warn = 1
 else:
     print("  WARNING: `freellmapi` non risulta abilitato nel config di progetto visto da opencode2.")
     print("           NON modifico il profilo globale: per un profilo dedicato usa")

@@ -1,5 +1,5 @@
 import { describe, expect, test, beforeAll, afterAll } from "bun:test";
-import { mkdtempSync, mkdirSync, readdirSync, readFileSync, existsSync, rmSync } from "node:fs";
+import { mkdtempSync, mkdirSync, readdirSync, readFileSync, writeFileSync, existsSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { spawnSync } from "node:child_process";
@@ -64,4 +64,27 @@ maybe("install-freellmapi.sh", () => {
     expect(r.status).toBe(1);
     expect(r.stderr).toContain("FreeLLMAPI non raggiungibile");
   });
+  test("la guardia avverte che senza catalogo runtime serve oc2-fm", () => {
+    const stubDir = mkdtempSync(join(tmpdir(), "oc2-stub-")).replaceAll("\\", "/");
+    const stub = join(stubDir, "oc2-stub").replaceAll("\\", "/");
+    writeFileSync(stub, [
+      "#!/bin/sh",
+      'case "$1" in',
+      "  models) exit 0 ;;",
+      "  *) printf '%s' '[{\"path\":\"<proj>/.opencode/opencode.jsonc\",\"type\":\"project\",\"info\":{\"providers\":{\"freellmapi\":{}},\"agents\":{\"orchestrator\":{\"model\":\"freellmapi/auto:smart\"}}}}]' ;;",
+      "esac",
+      "",
+    ].join("\n"), "utf-8");
+    spawnSync("chmod", ["+x", stub]);
+
+    const proj = mkdtempSync(join(tmpdir(), "fm-guard-")).replaceAll("\\", "/");
+    const r = spawnSync("bash", [SH.replaceAll("\\", "/"), "--with-extras", "--no-preflight",
+      "--no-smoke", "--no-gitignore", "--key", "k-test", proj],
+      { encoding: "utf-8", env: { ...process.env, OC2_SHIM: stub } });
+    expect(r.stdout).toMatch(/catalogo runtime/i);
+    expect(r.stdout).toContain("oc2-fm");
+    rmSync(stubDir, { recursive: true, force: true });
+    rmSync(proj, { recursive: true, force: true });
+  });
+
 });
