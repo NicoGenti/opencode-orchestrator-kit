@@ -96,3 +96,10 @@ See `README.md` for the responsibility map and customization notes,
 A ready-to-use `freellmapi` preset ships with the kit for the local FreeLLMAPI app
 (127.0.0.1:31415): see `docs/CONFIGURATION.md`, section "FreeLLMAPI profile (local app)",
 for the one-command setup (`bash scripts/setup-oc2-fm-profile.sh --with-extras`, then `oc2-fm`).
+
+> **In this repo the entry point is `oc2-fm`, not `opencode2`.** A provider declared only in
+> `<project>/.opencode/opencode.jsonc` is merged and resolves agents, but never enters the runtime
+> model catalog: from the project directory `opencode2 models` shows no `freellmapi/` row, the TUI
+> offers no such provider and a run answers `Model unavailable` (measured 2026-10-14, V2 2.0.28).
+> Headless from bash: `OC2_HOME=C:/Users/<you>/.opencode2 bash scripts/oc2-fm-run.sh run -m
+> freellmapi/auto:smart "say OK"`.

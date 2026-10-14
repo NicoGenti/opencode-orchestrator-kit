@@ -36,4 +36,12 @@ maybe("scripts/oc2-fm-run.sh (profilo fm, headless)", () => {
     expect(r.stderr).toContain("no V2 binary");
     rmSync(home, { recursive: true, force: true });
   });
+  test("i doc dicono oc2-fm e non 'usa opencode2'", () => {
+    const cfg = readFileSync(join(REPO, "docs", "CONFIGURATION.md"), "utf-8");
+    const qs = readFileSync(join(REPO, "QUICKSTART.md"), "utf-8");
+    expect(cfg).toContain("oc2-fm");
+    expect(cfg).not.toMatch(/usa opencode2/);
+    expect(qs).toContain("oc2-fm-run.sh");
+  });
+
 });
