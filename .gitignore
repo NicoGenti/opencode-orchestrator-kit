@@ -46,18 +46,27 @@ coverage/
 # Bun runtime caches
 .bun/
 
-# Internal orchestration state (session memory + drafts)
-.context/
-!.context/
-!.context/progress.md
+# Internal orchestration state (session memory + drafts).
+# Only the three session-memory files are versioned: anything else the framework
+# writes under .context/ at runtime (comprehension records, research datasets)
+# stays local.
+.context/*
 !.context/decisions.md
 !.context/issues.md
-plan/
-!plan/
-!plan/README.md
-.opencode/
-!.opencode/
-!.opencode/PROJECT-PROFILE.md
+!.context/progress.md
 
-# Output files
-output*.txt
+# Kanban board. Plan files are local working notes: the rules that keep them out
+# of git live in plan/.gitignore, while the board documentation, its own ignore
+# file and the four column placeholders stay versioned.
+plan/*
+!plan/.gitignore
+!plan/README.md
+!plan/*/
+
+# Local install output of `./install.sh project` — the opencode2 development tree
+# (agent/command/skill copies, context, local model profile, node_modules).
+# Regenerated locally; never committed. Holds a local API key in opencode.jsonc.
+.opencode/
+
+# Hermes agent local state (plan-mode drafts, scratch notes).
+.hermes/
