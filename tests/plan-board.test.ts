@@ -386,3 +386,18 @@ maybe("plan-board.py — contratto adopt", () => {
     expect(readFileSync(p, "utf-8")).toBe(before);
   });
 });
+
+maybe("plan-board.py — root predefinito", () => {
+  test("--root omesso: la board e' 'plan' relativa alla cwd, non un path del manutentore", () => {
+    const work = mkdtempSync(join(tmpdir(), "pb-cwd-"));
+    boards.push(work);
+    const root = join(work, "plan");
+    for (const col of COLUMNS) mkdirSync(join(root, col), { recursive: true });
+    seedPlan(root, "draft", "9100-default");
+
+    const r = spawnSync(PY, [SCRIPT, "check", "--json"], { cwd: work, encoding: "utf-8" });
+    const json = JSON.parse(r.stdout ?? "{}");
+    expect(r.status).toBe(0);
+    expect(json.plans?.draft?.map((p: any) => p.id)).toEqual(["9100-default"]);
+  });
+});

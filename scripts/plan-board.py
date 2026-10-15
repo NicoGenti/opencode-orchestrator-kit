@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""plan-board.py — Kanban dei piani O4A (D:/Work/O4A/plan).
+"""plan-board.py — Kanban dei piani (board draft/in-progress/qa/complete).
 
 Sottocomandi:
   check  [--root DIR] [--json]
@@ -270,11 +270,11 @@ def cmd_adopt(root: Path, name: str, owner: str, executor: str, dry_run: bool, a
 
 
 def main(argv=None) -> int:
-    ap = argparse.ArgumentParser(prog="plan-board.py", description="Kanban dei piani O4A")
+    ap = argparse.ArgumentParser(prog="plan-board.py", description="Kanban dei piani (draft/in-progress/qa/complete)")
     sub = ap.add_subparsers(dest="cmd", required=True)
 
     def add_common(p):
-        p.add_argument("--root", default="D:/Work/O4A/plan")
+        p.add_argument("--root", default="plan")
         p.add_argument("--json", action="store_true")
 
     p = sub.add_parser("check"); add_common(p)
