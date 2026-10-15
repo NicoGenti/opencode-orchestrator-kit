@@ -61,12 +61,25 @@ describe("plan-writer — definizione dell'agente", () => {
     expect(raw).toMatch(/^\s+"\*": deny$/m);
   });
 
+  test("abilita `execute` come via di materializzazione e non il tool `write` inesistente", () => {
+    const raw = read(AGENT_PATH);
+    expect(raw).toMatch(/^ {2}execute: true\s*$/m);
+    expect(raw).not.toMatch(/^ {2}write: true\s*$/m);
+  });
+
   test("il corpo nomina il tool, le quattro colonne e i quattro stati", () => {
     const b = body(read(AGENT_PATH));
     expect(b).toContain("scripts/plan-board.py");
     expect(b).toContain(".opencode/scripts/plan-board.py");
     for (const col of COLUMNS) expect(b).toContain(`${col}/`);
     for (const state of STATES) expect(b).toContain(`**${state}**`);
+  });
+
+  test("descrive il percorso di creazione con body-file e vieta `question`", () => {
+    const b = body(read(AGENT_PATH));
+    expect(b).toContain("--body-file");
+    expect(b).toContain(".opencode/tmp/plan-body-");
+    expect(b).toMatch(/Never call `question`/);
   });
 
   test("dichiara l'unicita' dell'owner e il divieto di spostamenti a mano", () => {

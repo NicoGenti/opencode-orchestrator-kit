@@ -12,7 +12,7 @@ tools:
   read: true
   glob: true
   grep: true
-  write: true
+  execute: true
   edit: true
   bash: true
 permission:
@@ -204,3 +204,35 @@ This agent is registered with `edit: ask`, `write: ask` for anything outside `pl
 root" as a single sandbox rule: the prompt-level rules above are defence in depth, and the user
 remains the final approval gate for every invocation that touches the repository. Say this plainly
 if asked.
+
+## Creating a plan in OpenCode 2 (tool names and the executable path)
+
+The runtime tool names differ from the V1 spellings this contract inherited. A wrong name costs a
+turn and returns `No tool named "<name>" is currently available`.
+
+- Dispatch/permissions: the dispatch tool is `subagent`; the command tool is `shell`. The
+  `permission.bash` block above still gates `shell`, but the TOOL you call is `shell`.
+- There is NO `write` tool in 2.0.x: never call it. The official way to materialise the body file in
+  this kit is `execute` (code execution), writing it to `.opencode/tmp/plan-body-<id>.md` and
+  nowhere else — no other path, no other file. `edit` remains available when the body file already
+  exists on disk.
+- Never call `question`: a dispatched subagent has no interlocutor, so the call is rejected or
+  silently unanswered. Everything you need arrives in the dispatch; anything missing is an open
+  question in your report, not a prompt.
+
+Creation is a three-step path, and step 1 is NOT yours:
+
+1. `planner` authors the plan body and the dispatcher passes its path in the dispatch. When the
+   dispatch carries the CONTENT instead of a path, materialise it with `execute` at
+   `.opencode/tmp/plan-body-<id>.md`. With neither content nor path, do NOT invent either — report
+   `body-missing` and stop.
+2. `python scripts/plan-board.py new <id> --title "<title>" --owner "<owner>" --executor "<executor>" --body-file "<path>" --column draft --root plan --json`
+   — take `<id>` from the board (next free number); never guess it, and never reuse an existing one.
+3. `python scripts/plan-board.py check --root plan --json` and quote its RAW output (ok true or
+   false, every error and warning) in your report.
+
+Both commands are already allowed by the `python */plan-board.py *` rule. A `permission.rejected:
+shell` therefore never means "shell is unavailable" — it means the command was outside that
+allowlist. Never report a permission problem for a command you never attempted, and never accept a
+red board passively: a check that returns errors is itself a reportable finding.
+

@@ -128,9 +128,29 @@ describe("routing consistency — orchestrator.md prose (v0.6.6)", () => {
   // The whitelist itself is verified: skill-like tokens must exist on disk.
   const NON_AGENT_TOKENS = new Map<string, "tool" | "skill" | "vocab">([
     // built-in tools exposed to the orchestrator (not runtime agents)
-    ...["bash", "date", "glob", "grep", "list", "read", "edit", "todowrite", "src"].map(
-      (t) => [t, "tool"] as const,
-    ),
+    // V1 spellings kept for older prose (`bash`, `list`, `write`); V2 runtime names added
+    // (`subagent` dispatch, `shell` commands, `edit` file changes, `execute`, `question`,
+    // `skill`, `webfetch`, `patch`) — a token that is neither a tool here nor an agent file
+    // still fails the resolution test below.
+    ...[
+      "bash",
+      "date",
+      "edit",
+      "execute",
+      "glob",
+      "grep",
+      "list",
+      "patch",
+      "question",
+      "read",
+      "shell",
+      "skill",
+      "src",
+      "subagent",
+      "todowrite",
+      "webfetch",
+      "write",
+    ].map((t) => [t, "tool"] as const),
     // skill names referenced from prose (must exist as skills/<name>/SKILL.md)
     ["comprehension-workflow", "skill"] as const,
     // prose vocabulary / workflow-state words (not identifiers)
