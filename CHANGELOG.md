@@ -2,6 +2,25 @@
 
 All notable changes to this project are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Starting from v0.3.0, this project follows [Semantic Versioning](https://semver.org/) (SemVer): PATCH = fixes and tuning; MINOR = new backward-compatible capabilities; MAJOR = breaking changes to orchestration or configuration.
 
+## [Unreleased]
+
+### Changed
+
+- **Repository hygiene**: `.opencode/` (the `./install.sh project` self-install used for local opencode2 development) and `.hermes/` (agent-local plan-mode state) are now fully gitignored; `.opencode/PROJECT-PROFILE.md` and `.opencode/models.config.json` left the index via `git rm --cached` (they stay on disk, they leave the published repo). The `.gitignore` negations for `.context/` and `plan/` were rewritten into rules that actually hold: only `.context/{decisions,issues,progress}.md`, `plan/README.md`, `plan/.gitignore` and the four `plan/<column>/.gitkeep` placeholders are versioned.
+- **`scripts/plan-board.py`**: the `--root` default is now `plan` relative to the working directory (it used to be a maintainer-local path) and the tool description no longer names a private repository; covered by a regression test.
+- **`tests/setup-oc2-fm-profile.test.ts`**: the private-profile gate derives `~/.opencode2` from `os.homedir()` instead of a hardcoded user path.
+- **`.github/workflows/test.yml`**: `bun-version` pinned to `1.2.21`, matching `deploy.yml` and `packageManager` in `package.json`.
+
+### Added
+
+- `docs/FEEDBACK-WINDOW-{SURVEY,WALKTHROUGH,RUN-GUIDE,RESULTS}.md` and `command/close-session.md`, previously present in the working tree only, are now versioned.
+- `plan/<column>/.gitkeep` placeholders: a fresh clone now carries the four board columns, so `scripts/plan-board.py check` no longer fails with `missing-root`.
+
+### Removed
+
+- `CONTEXT-ANALYSIS.md` (point-in-time v0.6.0 scratch snapshot; recoverable from git history), `scripts/verify-assembly.ts` (unreferenced — `bun test` covers the same ground; recoverable from git history), and the local-only dumps `output.txt`, `output2.txt`, `plan/draft/test_write.txt`.
+- The stray empty `## [Unreleased]` heading left mid-file: the changelog now carries a single Unreleased section, at the top.
+
 ## [0.6.8] — 2026-10-08
 
 ### Fixed
@@ -145,8 +164,6 @@ All notable changes to this project are documented in this file. The format foll
 ### Changed
 
 - No routing changes to existing agents. Comprehension gate remains opt-out (enabled true by default). Test suite grows from 414 to 455 pass.
-
-## [Unreleased]
 
 ## [0.3.0] — 2026-10-06
 
