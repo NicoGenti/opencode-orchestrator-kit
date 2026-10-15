@@ -42,6 +42,14 @@ permission:
     deno *: allow
     make *: allow
     cmake *: allow
+    git checkout *: allow
+    git add *: allow
+    git commit *: allow
+    git branch *: allow
+    git push *: allow
+    git rm *: allow
+    git merge *: allow
+    git ls-tree *: allow
     git *: deny
     git status *: allow
     git diff *: allow
