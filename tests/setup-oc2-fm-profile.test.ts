@@ -1,12 +1,14 @@
 import { describe, expect, test } from "bun:test";
 import { mkdtempSync, mkdirSync, readdirSync, readFileSync, existsSync, rmSync } from "node:fs";
 import { join } from "node:path";
-import { tmpdir } from "node:os";
+import { homedir, tmpdir } from "node:os";
 import { spawnSync } from "node:child_process";
 
 const REPO = join(import.meta.dir, "..");
 const SH = join(REPO, "scripts", "setup-oc2-fm-profile.sh");
-const OC2_REAL = "C:/Users/NicolasGentilucci/.opencode2";
+// Profilo privato V2 dell'utente, se presente su questo host (gate host-agnostico:
+// nessun path personale nel repository).
+const OC2_REAL = join(homedir(), ".opencode2").replaceAll("\\", "/");
 const hasBash = spawnSync("bash", ["--version"], { stdio: "ignore" }).status === 0;
 const maybe = hasBash && existsSync(join(OC2_REAL, "node_modules", "@opencode", "cli")) ? describe : describe.skip;
 
