@@ -5,30 +5,41 @@ import { join } from "node:path";
 const REPO_ROOT = join(import.meta.dir, "..");
 const ORCH = readFileSync(join(REPO_ROOT, "agents", "orchestrator.md"), "utf8");
 
-function frontmatter(raw: string): string {
-  const m = raw.match(/^---\r?\n([\s\S]*?)\r?\n---/);
-  if (!m) throw new Error("frontmatter mancante in agents/orchestrator.md");
-  return m[1];
+function frontmatterValue(raw: string, key: string): unknown {
+  const fm = raw.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+  if (!fm) throw new Error("frontmatter mancante in agents/orchestrator.md");
+  const line = fm[1].split(/\r?\n/).find((l) => l.startsWith(`${key}:`));
+  if (!line) throw new Error(`chiave ${key} assente nel frontmatter`);
+  return JSON.parse(line.slice(key.length + 1).trim());
 }
 
 describe("orchestrator frontmatter — harness contract del free tier", () => {
-  // Il free tier (provider Console) risponde 403 FreeTierError
-  // ("free tier can only be used from within OpenCode") a ogni richiesta il cui
-  // elenco di tool non contenga i tool standard della harness. agents/orchestrator.md
-  // è il default_agent del container: se qui manca un tool, ogni sessione
-  // free-tier dell'orchestrator fallisce (issue anomalyco/opencode#55435, #50627, #51241).
+  // Misurato il 2026-10-16 dal container (opencode v2.0.30, modello
+  // opencode/glm-5.3-flash-free): con un deny catch-all `"*": "deny"` al primo
+  // livello di `permission` la richiesta parte SENZA i tool standard della
+  // harness e il gate server-side del free tier risponde 403 FreeTierError
+  // («OpenCode's free tier can only be used from within OpenCode») — anche
+  // quando quei tool sono elencati in `tools`. Gli agenti che passano il gate
+  // (planner, code-reviewer, comprehension-coach) non hanno alcun catch-all;
+  // l'orchestrator è il `default_agent`, quindi il difetto bloccava ogni
+  // sessione free-tier aperta dal container.
+  // Issue correlate: anomalyco/opencode#55435, #50627, #51241.
   const REQUIRED = ["read", "glob", "grep", "bash"] as const;
+  const tools = frontmatterValue(ORCH, "tools") as Record<string, boolean>;
+  const permission = frontmatterValue(ORCH, "permission") as Record<string, unknown>;
 
-  test("tools dichiara i tool che il corpo (routing read-only) promette", () => {
-    const toolsLine = frontmatter(ORCH).split(/\r?\n/).find((l) => l.startsWith("tools:"));
-    expect(toolsLine).toBeDefined();
-    const missing = REQUIRED.filter((t) => !new RegExp(`"${t}"\\s*:\\s*true`).test(toolsLine!));
+  test('permission non ha un deny catch-all al primo livello (nessuna chiave "*")', () => {
+    expect(Object.keys(permission)).not.toContain("*");
+  });
+
+  test("tools dichiara i tool del routing read-only", () => {
+    const missing = REQUIRED.filter((t) => tools[t] !== true);
     expect(missing).toEqual([]);
   });
 
-  test("permission cita esplicitamente i quattro tool (nessun deny totale)", () => {
-    const permLine = frontmatter(ORCH).split(/\r?\n/).find((l) => l.startsWith("permission:"));
-    expect(permLine).toBeDefined();
-    for (const t of REQUIRED) expect(permLine!).toContain(`"${t}"`);
+  test("permission concede esplicitamente read/glob/grep", () => {
+    for (const t of ["read", "glob", "grep"] as const) {
+      expect(permission[t]).toBe("allow");
+    }
   });
 });
