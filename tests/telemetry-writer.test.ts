@@ -71,7 +71,7 @@ describe("telemetry writer — orchestrator contract (v0.4.0)", () => {
 //
 // The comprehension log is telemetry, NOT session memory:
 // - /start-session loads only progress.md, decisions.md, issues.md
-// - the log file is untracked by design via .gitignore (.context/* whitelist + 3 negations)
+// - the log file is untracked by design via .gitignore (.context/ and plan/ ignored as a whole)
 // - docs/CONFIGURATION.md documents the telemetry policy
 
 describe("telemetry isolation — start-session + docs policy (v0.4.0)", () => {
@@ -96,15 +96,15 @@ describe("telemetry isolation — start-session + docs policy (v0.4.0)", () => {
   test("docs CONFIGURATION.md: telemetry policy present (untracked by design)", () => {
     expect(docs).toMatch(/### Telemetry log/);
     expect(docs).toMatch(/untracked by design/);
-    expect(docs).toMatch(/never add the comprehension log to that negation list/i);
+    expect(docs).toMatch(/never add an exception for the comprehension log/i);
   });
 
-  test(".gitignore: .context/* ignored via whitelist; the 3 memory files explicitly negated", () => {
-    expect(gitignore).toMatch(/^\.context\/\*$/m);
-    for (const f of ["progress", "decisions", "issues"]) {
-      expect(gitignore).toMatch(new RegExp(`^!\\.context/${f}\\.md$`, "m"));
-    }
-    expect(gitignore).not.toMatch(/^!\.context\/comprehension-log\.md$/m);
+  test(".gitignore: .context/ and plan/ ignored as a whole — the state lives outside the repo", () => {
+    expect(gitignore).toMatch(/^\.context\/$/m);
+    expect(gitignore).toMatch(/^plan\/$/m);
+    // Nessuna negazione: la memoria non è più versionata (vive fuori dal repo, dietro una junction).
+    expect(gitignore).not.toMatch(/^!\.context\//m);
+    expect(gitignore).not.toMatch(/^!plan\//m);
   });
 
   test("start-session: step 2 lists only the three memory files (log never loaded in steps)", () => {

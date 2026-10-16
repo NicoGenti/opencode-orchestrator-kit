@@ -1,9 +1,0 @@
-# Kanban plan files (draft/in-progress/qa/complete) are local working notes only.
-# They are intentionally not committed to git.
-# The four columns' .gitkeep placeholders ARE committed: a fresh clone needs the
-# column folders for scripts/plan-board.py to run (see plan/README.md).
-*
-!*/
-!.gitkeep
-!.gitignore
-!README.md
