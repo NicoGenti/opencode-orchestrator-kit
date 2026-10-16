@@ -79,8 +79,8 @@ describe("telemetry isolation — start-session + docs policy (v0.4.0)", () => {
   const docs = readFileSync(CONFIG_DOC_PATH, "utf-8");
   const gitignore = readFileSync(join(REPO_ROOT, ".gitignore"), "utf-8");
 
-  test("loaded set unchanged: progress, decisions, issues — no comprehension log in step 2", () => {
-    const step2 = sess.split(/\r?\n/).find(l => l.trim().startsWith("2."));
+  test("loaded set unchanged: progress, decisions, issues — no comprehension log in the memory-load step", () => {
+    const step2 = sess.split(/\r?\n/).find(l => /Session memory load/i.test(l));
     expect(step2).toBeDefined();
     expect(step2).toMatch(/\.context\/progress\.md/);
     expect(step2).toMatch(/\.context\/decisions\.md/);

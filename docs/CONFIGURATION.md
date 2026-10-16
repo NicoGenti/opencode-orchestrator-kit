@@ -322,14 +322,10 @@ Setting `enabled: false` short-circuits the entire comprehension gate. The orche
 
 The `freellmapi` preset routes every tier to the FreeLLMAPI app installed on the PC
 (`http://127.0.0.1:31415/v1`), with preset routing aliases that stay valid when the concrete
-catalog changes. Install it with either path below:
+catalog changes. Install it into a project with:
 
 ```bash
-# profilo separato (comando dedicato, non tocca la config globale)
-bash scripts/setup-oc2-fm-profile.sh --with-extras
-oc2-fm                     # TUI nel progetto corrente
-
-# oppure profilo dentro un progetto (comando opencode2 - vedi il limite sotto)
+# profilo dentro un progetto (comando opencode2 - vedi il limite sotto)
 bash scripts/install-freellmapi.sh --with-extras D:/Work/MyProject
 ```
 
@@ -342,12 +338,4 @@ a non avere freellmapi nel proprio catalogo. Non sporcare la config globale per 
 
 | Dove lavori | Comando | freellmapi in `models` / nella TUI |
 | --- | --- | --- |
-| questo progetto | `oc2-fm` (profilo dedicato) | si', 3 righe `freellmapi/auto*` |
 | questo progetto | `opencode2` | no (0 righe, `Model unavailable`) |
-
-Headless da bash (il `run` su path POSIX muore senza `env -u PWD`):
-
-```bash
-cd <progetto>
-OC2_HOME=C:/Users/<tu>/.opencode2 bash scripts/oc2-fm-run.sh run -m freellmapi/auto:smart "say OK"
-```

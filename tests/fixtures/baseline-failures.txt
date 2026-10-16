@@ -1,6 +1,6 @@
 # Baseline dei fallimenti di `bun test` su questo host Windows/MSYS (misurata il 2026-10-14, prima di toccare gli agenti).
 # Un test rosso il cui nome NON e' in questo elenco e' una regressione. Rigenerazione: bun test 2>&1 | grep -E '^\(fail\)' | sed 's/ \[[0-9.]*ms\]$//' | sed 's/^(fail) //' | sort -u
-# NB: i nomi delle suite installer/oc2 (install.sh global, install-freellmapi.sh x2, setup-oc2-fm-profile.sh)
+# NB: i nomi delle suite installer/oc2 (install.sh global, install-freellmapi.sh x2)
 # sono flaky da contesa: sotto carico pieno vanno in timeout a 5 s e compaiono qui, in isolamento passano.
 # Un elenco piu' corto non e' una regressione; conta solo un nome NUOVO.
 comprehension-config — Group D: unknown-tier sweep > no unknown comprehension tier token appears in shipped files
@@ -15,7 +15,6 @@ install.sh — OS gate runs before argument parsing > no-args invocation on a su
 install.sh global — resolves {{TIER_*}} model tokens > installed agents contain no literal tier tokens
 install-freellmapi.sh > installa il kit e cabla il profilo freellmapi (offline)
 install-freellmapi.sh > la guardia avverte che senza catalogo runtime serve oc2-fm
-setup-oc2-fm-profile.sh (oc2-home usa-e-getta) > crea il profilo, la mappa completa e gli shim
 telemetry isolation — start-session + docs policy (v0.4.0) > loaded set unchanged: progress, decisions, issues — no comprehension log in step 2
 validate-models.sh — agent files contain unresolved {{TIER_*}} literals > exit non-zero when an agent uses an unrecognised {{TIER_*}} token
 validate-models.sh — generic preset with unresolved placeholders > exit non-zero when --preset is unknown
