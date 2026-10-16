@@ -49,11 +49,13 @@ coverage/
 # Agentic state of this project: session memory (.context/) and the plan kanban (plan/).
 # It lives OUTSIDE the repository, in ../.context and ../plan, reached through two local
 # Windows junctions created by hand (see the workspace README). The kanban columns are not
-# versioned; the rules below keep a stray copy out of git. Exception: plan/README.md is
-# re-included because CI reads it, though its content stays a user-only decision.
+# versioned; the rule below keeps a stray copy out of git.
+# Exception: plan/README.md is tracked by force-add (`git add -f plan/README.md`), not by a
+# gitignore negation. CI reads it as the plan-board contract, yet its content stays a
+# user-only decision. Force-add is required because this rule deliberately ignores all of
+# plan/ — including that single board doc.
 .context/
-plan/*
-!plan/README.md
+plan/
 
 # Local install output of `./install.sh project` — the opencode2 development tree
 # (agent/command/skill copies, context, local model profile, node_modules).
