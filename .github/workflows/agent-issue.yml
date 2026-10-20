@@ -132,6 +132,14 @@ jobs:
           test -n "$PLAN"
       - name: Install dependencies (frozen)
         run: bun install --frozen-lockfile
+      - name: Refuse to reuse an existing agent branch
+        run: |
+          set -euo pipefail
+          if git ls-remote --exit-code origin "refs/heads/agent/issue-${ISSUE}" >/dev/null 2>&1; then
+            echo "ERROR: branch agent/issue-${ISSUE} already exists on origin." >&2
+            echo "Delete it first, or use a new issue for this run." >&2
+            exit 1
+          fi
       - name: Run the agent
         run: |
           set -euo pipefail
@@ -190,7 +198,7 @@ jobs:
           git add -A
           git commit -m "feat(issue-${ISSUE}): agent execution of $(basename "${{ steps.after.outputs.file }}")" \
             || echo "no changes to commit"
-          git push --force-with-lease -u origin "agent/issue-${ISSUE}"
+          git push -u origin "agent/issue-${ISSUE}"
       - name: Open or reuse the pull request
         run: |
           set -euo pipefail
@@ -198,8 +206,8 @@ jobs:
           if [[ -z "$PR" ]]; then
             gh pr create --draft --base "$BASE" --head "agent/issue-${ISSUE}" \
               --title "agent: issue #${ISSUE}" \
-              --body "$(printf 'Automated execution of plan %s (issue #%s).\n\n```\n%s\n```\n' \
-                        "${{ steps.after.outputs.file }}" "${ISSUE}" "$(tail -60 /tmp/agent-redacted.log)")"
+              --body "$(printf 'Automated execution of plan %s (issue #%s).\n\nAgent log: see the workflow run logs for this execution.\n' \
+                        "${{ steps.after.outputs.file }}" "${ISSUE}")"
           else
             echo "PR already exists: $PR"
           fi
@@ -207,6 +215,7 @@ jobs:
         if: always()
         run: |
           set -euo pipefail
+          RUN_URL="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
           if [[ "${{ job.status }}" == "success" ]]; then MSG="execution completed"; else MSG="execution failed"; fi
-          printf '%s\n\n```\n%s\n```\n' "$MSG" "$(tail -40 /tmp/agent-redacted.log 2>/dev/null)" > /tmp/report.md
+          printf '%s\n\nAgent log: see the [workflow run logs](%s).\n' "$MSG" "$RUN_URL" > /tmp/report.md
           gh issue comment "${ISSUE}" -R "$GITHUB_REPOSITORY" --body-file /tmp/report.md
