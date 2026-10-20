@@ -243,9 +243,10 @@ pattern the kit uses for `.opencode/context/` and `.opencode/PROJECT-PROFILE.md`
 
 ## Comprehension configuration
 
-Comprehension gate limits are read from a user-local config file you copy manually
-from `templates/comprehension.config.json` into `.opencode/comprehension.config.json`.
-`install.sh` does not install `templates/`.
+Comprehension gate limits are read from a user-local config file,
+`.opencode/comprehension.config.json`. `install.sh` seeds it on first install from
+`templates/comprehension.config.json` (leave-if-exists) and leaves it alone afterwards;
+without the installer, copy it manually (see below).
 
 ### Schema
 
@@ -261,6 +262,8 @@ from `templates/comprehension.config.json` into `.opencode/comprehension.config.
   }
 }
 ```
+
+`mode` is `"adaptive"` — the only supported value. The gate derives its limits from the announced classification: the `light.*` bucket governs a LIGHT gate and the `deep.*` bucket governs a DEEP gate (a NONE classification runs no gate), so question counts and model tiers scale with the classification bucket.
 
 ### Default limits
 
@@ -285,9 +288,10 @@ File value > built-in defaults. If the file is absent, empty, or not valid JSON 
 
 > **Warning**: malformed config never causes a hard failure — the orchestrator always falls back to safe defaults and logs a warning.
 
-### Manual copy
+### Manual copy (without the installer)
 
-Because `install.sh` does not copy `templates/`, create the config yourself:
+`install.sh` seeds `.opencode/comprehension.config.json` automatically. When you are
+running the kit without the installer, create the config yourself:
 
 ```bash
 cp templates/comprehension.config.json .opencode/comprehension.config.json

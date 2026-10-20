@@ -21,6 +21,8 @@
 #   provider/model ID. Without this step OpenCode rejects the config at startup
 #   ("Configuration is invalid ... model").
 #
+# Comprehension gate config: seeded leave-if-exists from templates/comprehension.config.json.
+#
 # Phase 1 (this draft) prerequisite checkpoint:
 #   A `require_python_prereq` helper hard-fails the install before any write to
 #   the target directory if a Python >=3.6 interpreter is not on PATH. The
@@ -262,6 +264,38 @@ install_model_profile() {
   fi
 }
 
+# Phase D comprehension-gate config seeding.
+#
+# Behavior:
+#   - If a comprehension.config.json already exists in the target, leave it alone.
+#   - Otherwise copy templates/comprehension.config.json to the target so the user
+#     has a known-good starting point.
+#   - A missing template is a WARNING only: the install continues. This is
+#     deliberately NOT the abort-on-failure behavior of install_model_profile's
+#     validation step — the comprehension gate falls back to built-in defaults.
+#
+# Idempotent: re-running install.sh after editing the config is a no-op here.
+seed_comprehension_config() {
+  local base="$1"
+  local target_config="${base}/comprehension.config.json"
+
+  if [[ ! -e "$target_config" ]]; then
+    if [[ -f "${KIT_DIR}/templates/comprehension.config.json" ]]; then
+      if cp "${KIT_DIR}/templates/comprehension.config.json" "$target_config"; then
+        echo "  + seeded ${target_config} from templates/comprehension.config.json"
+      else
+        echo "  ! WARNING: failed to seed ${target_config} from templates/comprehension.config.json;"
+        echo "    built-in defaults will apply."
+        return 0
+      fi
+    else
+      echo "  ! WARNING: templates/comprehension.config.json not found in ${KIT_DIR};"
+      echo "    skipping comprehension-gate config seed (built-in defaults will apply)."
+      return 0
+    fi
+  fi
+}
+
 install_into() {
   local base="$1"
   echo "Installing OpenCode Orchestrator Kit into: $base"
@@ -480,6 +514,7 @@ case "$TARGET" in
     # Validate the Phase 1 model-profile before copying anything else so a
     # bad config aborts the install cleanly.
     install_model_profile "$(pwd)/.opencode" || exit 1
+    seed_comprehension_config "$(pwd)/.opencode" || exit 1
     install_into "$(pwd)/.opencode"
     resolve_model_tokens "$(pwd)/.opencode"
     # AGENTS.md and CONTRIBUTING.md live at project root, not inside .opencode/
@@ -490,6 +525,7 @@ case "$TARGET" in
   global)
     require_python_prereq || exit 1
     install_model_profile "$HOME/.config/opencode" || exit 1
+    seed_comprehension_config "$HOME/.config/opencode" || exit 1
     install_into "$HOME/.config/opencode"
     resolve_model_tokens "$HOME/.config/opencode"
     echo "Done. This kit is now available in every OpenCode project on this machine."
@@ -508,6 +544,7 @@ case "$TARGET" in
     fi
     require_python_prereq || exit 1
     install_model_profile "$PROFILE_DIR" || exit 1
+    seed_comprehension_config "$PROFILE_DIR" || exit 1
     install_into "$PROFILE_DIR"
     resolve_model_tokens "$PROFILE_DIR"
     echo "Done. Known issue: if a global ~/.config/opencode/AGENTS.md also exists,"

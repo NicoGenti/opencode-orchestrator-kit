@@ -18,7 +18,7 @@ telemetry, maintain a per-evaluation record, or execute `/recall`. Classificatio
 
 ## Configuration and precedence
 
-The comprehension gate reads its limits from a user-local config file: `.opencode/comprehension.config.json` (user copies it manually from `templates/comprehension.config.json`; `install.sh` does not install `templates/`).
+The comprehension gate reads its limits from a user-local config file: `.opencode/comprehension.config.json` (seeded by `install.sh` from `templates/comprehension.config.json`, leave-if-exists; copy manually only when running the kit without the installer).
 
 **Precedence**: file value > built-in defaults. If the file is absent, empty, or not valid JSON → all limits fall back to the built-in defaults listed below, and the user receives ONE warning line in the progress notes (never a hard failure).
 

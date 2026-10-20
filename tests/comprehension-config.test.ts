@@ -373,8 +373,8 @@ describe("comprehension-config — Group F: escalation routing & docs", () => {
     expect(configDocContent).toMatch(/\|\s*`deep\.escalationTier`\s*\|\s*`TIER_REVIEW`\s*\|/);
   });
 
-  test("docs/CONFIGURATION.md contains the manual copy note", () => {
-    expect(configDocContent).toMatch(/`install\.sh` does not copy/);
+  test("docs/CONFIGURATION.md states install.sh seeds the config", () => {
+    expect(configDocContent).toMatch(/install\.sh.*seed/i);
     expect(configDocContent).toMatch(/cp templates\/comprehension\.config\.json/);
   });
 });
