@@ -44,5 +44,8 @@ jobs:
             echo "nessun file da committare"
           else
             git commit -m "plan($ISSUE): adozione automatica da issue GitHub"
-            git push origin "${{ github.event.repository.default_branch }}"
+            # main e' protetto da un ruleset (pull_request obbligatoria): GITHUB_TOKEN non puo'
+            # pushare. Il piano viaggia con la PR aperta da agent-issue; qui non si fallisce.
+            git push origin "${{ github.event.repository.default_branch }}" || \
+              echo "push su main rifiutato dal ruleset: piano non persistito (usa agent:run)"
           fi

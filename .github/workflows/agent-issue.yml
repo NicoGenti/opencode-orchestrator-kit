@@ -115,15 +115,13 @@ jobs:
           echo "nessun piano per #$ISSUE: adozione automatica"
           gh issue edit "$ISSUE" -R "$GITHUB_REPOSITORY" --add-label "plan:mirror" --add-label "plan:draft" || true
           python scripts/issue_bridge.py pull --repo . --board plan             --remote "$GITHUB_REPOSITORY" --board-tool scripts/plan-board.py --json
+          # main e' protetto da un ruleset (pull_request obbligatoria) e il GITHUB_TOKEN non puo'
+          # bypassarlo. Il piano adottato resta nel worktree e viaggia con il branch
+          # agent/issue-N: arriva su main al merge della PR, insieme al codice.
           git config user.name  "issue-bridge"
           git config user.email "issue-bridge@users.noreply.github.com"
           git add plan
-          if git diff --cached --quiet; then
-            echo "nessun file da committare"
-          else
-            git commit -m "plan($ISSUE): adozione automatica da issue GitHub"
-            git push origin "$BASE"
-          fi
+          echo "piano adottato nel worktree (nessun push diretto su $BASE)"
       - name: Resolve the plan file bound to the issue (pre-run, per il prompt)
         id: plan
         run: |
