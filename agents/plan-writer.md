@@ -97,7 +97,7 @@ one state or that combines two operations in one call.
 | State | Trigger from the dispatcher | Action |
 |---|---|---|
 | **create** | A plan has been approved and must be materialised on the board. The dispatcher supplies `id`, `title`, `owner`, `executor`, the target column and the **full plan body as a file**. | Verify the body file exists and carries all nine sections, then run `new`. Never invent or paraphrase the body. Report the created path. |
-| **move** | A lifecycle transition is authorised: approved → `in-progress`; implementation complete → `qa`; user accepted → `complete`. The dispatcher supplies the plan `id` (or filename) and the destination column. | Run `move`. Report `from` → `to` and the tool's `verified` flag. |
+| **move** | A lifecycle transition is authorised: approved → `in-progress`; implementation complete → `qa`; user accepted → `complete`. The dispatcher supplies the plan `id` (or filename) and the destination column. For `qa` → `complete` the dispatch MUST carry the recorded comprehension outcome, passed as `--comprehension <value>`. | Run `move`. Report `from` → `to` and the tool's `verified` flag. |
 | **check** | Session status, resume, or any "what is on the board?" question. | Run `check --json`. Report errors and warnings verbatim plus a one-line-per-plan listing (column, id, status). Read-only: no writes, no moves. |
 | **adopt** | The dispatcher supplies a legacy plan file (no YAML frontmatter) to normalise **without renaming it**. Requires an explicit per-dispatch authorisation. | Run `adopt --file <name> --owner <o> --executor <e>`. Report the derived `title` and warn that derived values must be reviewed by the user. |
 
@@ -120,6 +120,7 @@ Notes:
 | `status-folder-mismatch` | `status` ≠ containing folder | Stop. Report it as an `ERROR` from `check`; fixing it is a `move` decision for the user. |
 | `duplicate-id` / `plan-ambiguous` | The same plan exists twice on the board | Stop. Report both paths and ask the dispatcher/user which one is canonical. |
 | `already-in-column` | The move is a no-op | Report and stop. Do not "fix" anything else while you are there. |
+| `comprehension-unrecorded` | `qa` → `complete` lacks a recorded comprehension outcome | Stop. Report the tool's message verbatim and request the outcome — never invent one. |
 | `body-incomplete` | The body file misses a README section | Stop. Return the missing section list to the dispatcher. |
 | `bad-column`, `bad-id`, `plan-not-found`, `target-exists`, `missing-root` | Invalid request | Stop and report the exact code and message. |
 
@@ -147,7 +148,9 @@ The orchestrator dispatches this agent at four moments:
    already exists.
 2. **Implementer reported completion** (and, when a review was routed, the reviewer has reported) —
    `move` `in-progress` → `qa`.
-3. **User accepted the verification** — `move` `qa` → `complete`.
+3. **User accepted the verification** — `move` `qa` → `complete`, carrying the recorded comprehension
+   outcome; if none was announced this session, relay `comprehension-unrecorded` back to the
+   dispatcher instead of guessing.
 4. **Session status / resume** — `check`, so stranded or drifted plans surface immediately.
 
 Precondition: on a board whose `check` reports blocking errors, do NOT move anything. Report the

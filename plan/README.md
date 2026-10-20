@@ -35,7 +35,7 @@ exit `0` on success and `1` on a blocking error):
 
 ```
 python scripts/plan-board.py check  [--root <board root>] [--json]
-python scripts/plan-board.py move   --id <id> --to <column> [--root <board root>] [--dry-run] [--json]
+python scripts/plan-board.py move   --id <id> --to <column> [--comprehension <none|pass|skipped|fail|disabled|n/a>] [--root <board root>] [--dry-run] [--json]
 python scripts/plan-board.py new    --id <id> --title <t> --owner <o> --executor <e> --body <file> [--column draft] [--root <board root>] [--json]
 python scripts/plan-board.py adopt  --file <name> --owner <o> --executor <e> [--root <board root>] [--json]
 ```
@@ -52,7 +52,8 @@ invariants below. Its regression suite is `tests/plan-board.test.ts`.
   not the leading segment of the filename; the same `id` in more than one column; an `id` that is
   not slug-safe; a board root that does not exist.
 - **WARN** (exit 0): legacy file without YAML frontmatter; a missing body section; a missing
-  frontmatter key; a non-`.md` file sitting in a column; a missing column folder.
+  frontmatter key; a non-`.md` file sitting in a column; a missing column folder; a missing
+  `comprehension:` key on qa/complete files.
 
 ## File naming
 
@@ -92,6 +93,7 @@ created: 2026-10-14
 updated: 2026-10-14
 owner: <human or agent that owns the plan>
 executor: <agent or human that will execute it>
+# comprehension: pass  # recorded outcome for qa→complete moves
 ---
 ```
 
@@ -134,8 +136,10 @@ moved, or renamed without the user's explicit approval.
 The user grants `plan-writer` a narrow standing authorization, limited to the board root: `check`
 runs, and `move` of an already-conforming plan file between columns (including the `status` /
 `updated` refresh), are covered without a fresh per-file approval, cited as
-`## Approved Mutation Summary — plan-board-standing-v1`. `new`, `adopt`, plan-body edits, and any
-deletion or rename are **not** covered and require their own approved Mutation Summary.
+`## Approved Mutation Summary — plan-board-standing-v1`. The outcome-carrying `qa` → `complete` move
+— including the `comprehension:` frontmatter refresh written atomically with it — is covered by the
+same standing authorization. `new`, `adopt`, plan-body edits, and any deletion or rename are
+**not** covered and require their own approved Mutation Summary.
 
 ## Minimal template
 

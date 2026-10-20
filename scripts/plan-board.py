@@ -3,7 +3,7 @@
 
 Sottocomandi:
   check  [--root DIR] [--json]
-  move   --id <id> --to <column> [--root DIR] [--dry-run] [--json]
+  move   --id <id> --to <column> [--comprehension V] [--root DIR] [--dry-run] [--json]
   new    --id <id> --title T --owner O --executor E --body FILE [--column draft] [--root DIR] [--dry-run] [--json]
   adopt  --file NAME --owner O --executor E [--root DIR] [--dry-run] [--json]
 
@@ -32,6 +32,7 @@ SECTIONS = (
     "## Notes / Edge Cases",
 )
 FM_KEYS = ("id", "title", "status", "created", "updated", "owner", "executor")
+COMPREHENSION_VALUES = ("none", "pass", "skipped", "fail", "disabled", "n/a")
 ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 FM_RE = re.compile(r"^---\r?\n(.*?)\r?\n---\r?\n?", re.DOTALL)
 
@@ -106,6 +107,9 @@ def inspect_file(path: Path, column: str):
     for k in ("title", "created", "updated", "owner", "executor"):
         if not fm.get(k):
             findings.append(("WARN", "missing-frontmatter-key", f"chiave frontmatter mancante: {k}"))
+    if column in ("qa", "complete") and "comprehension" not in fm:
+        findings.append(("WARN", "missing-comprehension",
+                         "nessun esito di comprensione registrato (chiave `comprehension` assente)"))
     return findings, fm
 
 
@@ -144,7 +148,8 @@ def cmd_check(root: Path, as_json: bool) -> int:
             findings, fm = inspect_file(p, col)
             payload["plans"][col].append({"file": p.name,
                                           "id": (fm or {}).get("id", ""),
-                                          "status": (fm or {}).get("status", "")})
+                                          "status": (fm or {}).get("status", ""),
+                                          "comprehension": (fm or {}).get("comprehension", "")})
             if fm and fm.get("id"):
                 seen.setdefault(fm["id"], []).append(str(p))
             for sev, code, msg in findings:
@@ -166,17 +171,20 @@ def find_plan(root: Path, ident: str):
             if p.stem == ident or p.stem.startswith(ident + "-")]
 
 
-def update_status(path: Path, fm: dict, status: str) -> str:
+def update_status(path: Path, fm: dict, status: str, comprehension: str | None = None) -> str:
     text = path.read_text(encoding="utf-8")
     nl = "\r\n" if "\r\n" in text else "\n"
     _, body = split_frontmatter(text)
     fm = dict(fm)
     fm["status"] = status
     fm["updated"] = today()
+    if comprehension is not None:
+        fm["comprehension"] = comprehension
     return render_frontmatter(fm, nl) + body
 
 
-def cmd_move(root: Path, ident: str, to: str, dry_run: bool, as_json: bool) -> int:
+def cmd_move(root: Path, ident: str, to: str, dry_run: bool, as_json: bool,
+             comprehension: str | None = None) -> int:
     if to not in COLUMNS:
         return fail("bad-column", f"colonna '{to}' non valida (usare: {', '.join(COLUMNS)})", as_json)
     hits = find_plan(root, ident)
@@ -199,10 +207,14 @@ def cmd_move(root: Path, ident: str, to: str, dry_run: bool, as_json: bool) -> i
     dst = root / to / path.name
     if dst.exists():
         return fail("target-exists", f"{dst} esiste gia'", as_json)
+    if to == "complete" and comprehension is None:
+        return fail("comprehension-unrecorded",
+                    "move to complete requires --comprehension <none|pass|skipped|fail|disabled|n/a>: "
+                    "record the announced comprehension outcome", as_json)
     payload = {"ok": True, "action": "move", "id": path.stem, "from": col, "to": to,
                "path": str(dst), "dry_run": dry_run}
     if not dry_run:
-        path.write_text(update_status(path, fm, to), encoding="utf-8", newline="")
+        path.write_text(update_status(path, fm, to, comprehension), encoding="utf-8", newline="")
         path.replace(dst)
         payload["verified"] = dst.is_file() and not path.exists()
     emit(payload, as_json)
@@ -282,6 +294,7 @@ def main(argv=None) -> int:
     p = sub.add_parser("move")
     p.add_argument("--id", required=True)
     p.add_argument("--to", required=True)
+    p.add_argument("--comprehension", choices=COMPREHENSION_VALUES, default=None)
     p.add_argument("--dry-run", action="store_true")
     add_common(p)
 
@@ -307,7 +320,7 @@ def main(argv=None) -> int:
     if a.cmd == "check":
         return cmd_check(root, a.json)
     if a.cmd == "move":
-        return cmd_move(root, a.id, a.to, a.dry_run, a.json)
+        return cmd_move(root, a.id, a.to, a.dry_run, a.json, a.comprehension)
     if a.cmd == "new":
         return cmd_new(root, a.id, a.title, a.owner, a.executor, Path(a.body), a.column, a.dry_run, a.json)
     if a.cmd == "adopt":
