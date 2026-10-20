@@ -46,16 +46,14 @@ coverage/
 # Bun runtime caches
 .bun/
 
-# Agentic state of this project: session memory (.context/) and the plan kanban (plan/).
-# It lives OUTSIDE the repository, in ../.context and ../plan, reached through two local
-# Windows junctions created by hand (see the workspace README). The kanban columns are not
-# versioned; the rule below keeps a stray copy out of git.
-# Exception: plan/README.md is tracked by force-add (`git add -f plan/README.md`), not by a
-# gitignore negation. CI reads it as the plan-board contract, yet its content stays a
-# user-only decision. Force-add is required because this rule deliberately ignores all of
-# plan/ — including that single board doc.
-.context/
-plan/
+# Agentic state of this project: session memory (.context/) and the plan kanban (plan/) are
+# versioned ON PURPOSE. The cloud agent (GitHub Actions, label `agent:run`) checks the repo out
+# on a runner, reads the memory files, adopts the issue into plan/draft, moves it to plan/qa and
+# commits it: anything outside the checkout is invisible to it. The old local-junction layout
+# (state in ../.context and ../plan) was retired on 2026-10-20. Only the telemetry sinks stay
+# untracked, and nothing may add an exception for them.
+.context/comprehension-log.md
+.context/research-dataset.jsonl
 
 # Local install output of `./install.sh project` — the opencode2 development tree
 # (agent/command/skill copies, context, local model profile, node_modules).

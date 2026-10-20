@@ -71,7 +71,7 @@ describe("telemetry writer — orchestrator contract (v0.4.0)", () => {
 //
 // The comprehension log is telemetry, NOT session memory:
 // - /start-session loads only progress.md, decisions.md, issues.md
-// - the log file is untracked by design via .gitignore (.context/ and plan/ ignored as a whole)
+// - the three memory files and the plan board are versioned; the telemetry sinks are not
 // - docs/CONFIGURATION.md documents the telemetry policy
 
 describe("telemetry isolation — start-session + docs policy (v0.4.0)", () => {
@@ -99,12 +99,13 @@ describe("telemetry isolation — start-session + docs policy (v0.4.0)", () => {
     expect(docs).toMatch(/never add an exception for the comprehension log/i);
   });
 
-  test(".gitignore: .context/ and plan/ ignored as a whole — the state lives outside the repo", () => {
-    expect(gitignore).toMatch(/^\.context\/$/m);
-    expect(gitignore).toMatch(/^plan\/$/m);
-    // Nessuna negazione: la memoria non è più versionata (vive fuori dal repo, dietro una junction).
-    expect(gitignore).not.toMatch(/^!\.context\//m);
-    expect(gitignore).not.toMatch(/^!plan\//m);
+  test(".gitignore: session memory and board are versioned, only telemetry stays untracked", () => {
+    // The cloud runner (label `agent:run`) reads and commits .context/ and plan/: they must not be
+    // ignored as whole directories, or the agent would work on files git cannot commit.
+    expect(gitignore).not.toMatch(/^\.context\/$/m);
+    expect(gitignore).not.toMatch(/^plan\/$/m);
+    expect(gitignore).toMatch(/^\.context\/comprehension-log\.md$/m);
+    expect(gitignore).toMatch(/^\.context\/research-dataset\.jsonl$/m);
   });
 
   test("start-session: step 2 lists only the three memory files (log never loaded in steps)", () => {

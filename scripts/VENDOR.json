@@ -1,0 +1,10 @@
+{
+  "issue_bridge.py": {
+    "source": ".hermes/scripts/issue_bridge.py",
+    "sha256": "ac102b128d27bd06b8bf769be98d5eed5a7d34558f625bdd1e926e990e2d695b"
+  },
+  "plan-board.py": {
+    "source": ".hermes/scripts/plan-board.py",
+    "sha256": "a96a541bd947d3ca6d37d83169de62f2f5acf7c675e45cd0f2583bce99c31aed"
+  }
+}

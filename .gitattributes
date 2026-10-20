@@ -1,0 +1,3 @@
+# GitHub Actions parses workflow files as YAML; a literal CR inside a `run: |` block scalar
+# breaks the file. Force LF in the checkout regardless of the host's core.autocrlf.
+.github/workflows/*.yml text eol=lf

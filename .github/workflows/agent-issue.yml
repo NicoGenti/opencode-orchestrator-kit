@@ -1,0 +1,187 @@
+name: agent-issue
+on:
+  issues:
+    types: [labeled]
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+concurrency:
+  group: agent-issue-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    outputs:
+      run: ${{ steps.gate.outputs.run }}
+    steps:
+      - id: gate
+        env:
+          ACTOR: ${{ github.event.sender.login }}
+          ASSOC: ${{ github.event.comment.author_association || '' }}
+          LABEL: ${{ github.event.label.name || '' }}
+          BODY: ${{ github.event.comment.body || '' }}
+          IS_PR: ${{ github.event.issue.pull_request && 'yes' || 'no' }}
+          LABELS: ${{ toJSON(github.event.issue.labels) }}
+        run: |
+          set -euo pipefail
+          allow=false; want=false; mirror=false
+          if [[ "$ACTOR" == "NicoGenti" || "$ASSOC" == "OWNER" || "$ASSOC" == "MEMBER" ]]; then allow=true; fi
+          if [[ "$LABEL" == "agent:run" ]] || [[ "$BODY" == /agent* ]]; then want=true; fi
+          if printf '%s' "$LABELS" | grep -q 'plan:mirror'; then mirror=true; fi
+          if [[ "$allow" == true && "$want" == true && "$IS_PR" == "no" ]]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "gate: allow=$allow want=$want is_pr=$IS_PR mirror=$mirror -> skip"
+          fi
+
+  run-agent:
+    needs: guard
+    if: needs.guard.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      ISSUE: ${{ github.event.issue.number }}
+      MODEL: opencode/mimo-v2.6-flash-free
+      KIT_SHA: dbd41c7cd9eb411c31203530b0e5fbea800c03ff
+      BASE: ${{ github.event.repository.default_branch }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Install OpenCode 2 (pinned)
+        run: |
+          set -euo pipefail
+          npm i -g @opencode/cli@2.0.32
+          opencode --version
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.2.21
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Fetch the kit at the pinned commit
+        run: |
+          set -euo pipefail
+          git init -q /tmp/kit
+          git -C /tmp/kit remote add origin https://github.com/NicoGenti/opencode-orchestrator-kit
+          git -C /tmp/kit fetch -q --depth 1 origin "$KIT_SHA"
+          git -C /tmp/kit checkout -q FETCH_HEAD
+          test "$(git -C /tmp/kit rev-parse HEAD)" = "$KIT_SHA"
+          echo "kit HEAD verificato: $KIT_SHA"
+      - name: Build the CI model profile (install.sh seeds it only if missing)
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json, os, pathlib
+          tpl = json.loads(pathlib.Path("/tmp/kit/templates/models.config.json").read_text(encoding="utf-8"))
+          ci = json.loads(pathlib.Path(".github/agent/ci-free.json").read_text(encoding="utf-8"))
+          tpl.setdefault("presets", {}).update(ci)
+          tpl["default_preset"] = "ci-free"
+          out = pathlib.Path(os.path.expanduser("~/.config/opencode/models.config.json"))
+          out.parent.mkdir(parents=True, exist_ok=True)
+          out.write_text(json.dumps(tpl, indent=2), encoding="utf-8")
+          print("default_preset:", tpl["default_preset"], "->", out)
+          PY
+      - name: Install the kit globally (ephemeral, validation skipped)
+        run: |
+          set -euo pipefail
+          bash /tmp/kit/install.sh --skip-validation global
+          test -f "$HOME/.config/opencode/AGENTS.md"
+          test -f "$HOME/.config/opencode/agents/orchestrator.md"
+          if grep -rq "{{TIER_" "$HOME/.config/opencode/agents"; then
+            echo "ERRORE: token {{TIER_ non risolti in alcuni agenti" >&2; exit 1
+          fi
+          grep -m1 "^model:" "$HOME/.config/opencode/agents/orchestrator.md"
+      - name: Adopt the issue into the board if needed (PC-independent)
+        run: |
+          set -euo pipefail
+          PLAN=$(grep -rlE $'^gh_issue: '"${ISSUE}"$'\r?$' plan/draft plan/in-progress plan/qa 2>/dev/null | head -1 || true)
+          if [ -n "$PLAN" ]; then
+            echo "piano gia' presente: $PLAN"
+            exit 0
+          fi
+          echo "nessun piano per #$ISSUE: adozione automatica"
+          gh issue edit "$ISSUE" -R "$GITHUB_REPOSITORY" --add-label "plan:mirror" --add-label "plan:draft" || true
+          python scripts/issue_bridge.py pull --repo . --board plan             --remote "$GITHUB_REPOSITORY" --board-tool scripts/plan-board.py --json
+          git config user.name  "issue-bridge"
+          git config user.email "issue-bridge@users.noreply.github.com"
+          git add plan
+          if git diff --cached --quiet; then
+            echo "nessun file da committare"
+          else
+            git commit -m "plan($ISSUE): adozione automatica da issue GitHub"
+            git push origin "$BASE"
+          fi
+      - name: Resolve the plan file bound to the issue (pre-run, per il prompt)
+        id: plan
+        run: |
+          set -euo pipefail
+          PLAN=$(grep -rlE $'^gh_issue: '"${ISSUE}"$'\r?$' plan/draft plan/in-progress plan/qa | head -1)
+          echo "file=$PLAN" >> "$GITHUB_OUTPUT"
+          test -n "$PLAN"
+      - name: Install dependencies (frozen)
+        run: bun install --frozen-lockfile
+      - name: Run the agent
+        run: |
+          set -euo pipefail
+          git config user.name  "issue-bridge"
+          git config user.email "issue-bridge@users.noreply.github.com"
+          git checkout -b "agent/issue-${ISSUE}"
+          opencode run --agent build -m "$MODEL" \
+            "$(cat .github/agent/agent-issue.md)
+
+          Lavora sul piano: ${{ steps.plan.outputs.file }}
+          Issue GitHub: #${ISSUE}" | tee /tmp/agent.log
+      - name: Re-resolve the plan (l'agente l'ha spostato in qa/) and verify it
+        id: after
+        run: |
+          set -euo pipefail
+          PLAN=$(grep -rlE $'^gh_issue: '"${ISSUE}"$'\r?$' plan/qa | head -1)
+          echo "file=$PLAN" >> "$GITHUB_OUTPUT"
+          test -n "$PLAN"
+          echo -n "status nel file spostato: "; grep -m1 "^status:" "$PLAN"
+          bun install --frozen-lockfile
+          bun test
+      - name: Mirror the board into the issue BEFORE committing (machine keys travel with the branch)
+        run: |
+          set -euo pipefail
+          python scripts/issue_bridge.py push --repo . --board plan \
+            --remote "$GITHUB_REPOSITORY" --board-tool scripts/plan-board.py --json
+      - name: Commit and push the branch
+        run: |
+          set -euo pipefail
+          git add -A
+          git commit -m "feat(issue-${ISSUE}): esecuzione agentica di $(basename "${{ steps.after.outputs.file }}")" \
+            || echo "nessuna modifica da committare"
+          git push --force-with-lease -u origin "agent/issue-${ISSUE}"
+      - name: Open or reuse the pull request
+        run: |
+          set -euo pipefail
+          PR=$(gh pr list -R "$GITHUB_REPOSITORY" --head "agent/issue-${ISSUE}" --json url --jq '.[0].url')
+          if [[ -z "$PR" ]]; then
+            gh pr create --draft --base "$BASE" --head "agent/issue-${ISSUE}" \
+              --title "agent: issue #${ISSUE}" \
+              --body "$(printf 'Esecuzione automatica del piano %s (issue #%s).\n\n```\n%s\n```\n' \
+                        "${{ steps.after.outputs.file }}" "${ISSUE}" "$(tail -60 /tmp/agent.log)")"
+          else
+            echo "PR gia' esistente: $PR"
+          fi
+      - name: Comment the outcome on the issue
+        if: always()
+        run: |
+          set -euo pipefail
+          if [[ "${{ job.status }}" == "success" ]]; then MSG="esecuzione completata"; else MSG="esecuzione fallita"; fi
+          printf '%s\n\n```\n%s\n```\n' "$MSG" "$(tail -40 /tmp/agent.log 2>/dev/null)" > /tmp/report.md
+          gh issue comment "${ISSUE}" -R "$GITHUB_REPOSITORY" --body-file /tmp/report.md

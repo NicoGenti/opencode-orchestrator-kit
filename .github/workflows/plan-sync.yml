@@ -1,0 +1,32 @@
+name: plan-sync
+on:
+  pull_request:
+    types: [closed]
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: plan-sync-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.ref }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Push the default-branch board into the issues
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          test -f scripts/issue_bridge.py
+          test -f scripts/plan-board.py
+          python scripts/issue_bridge.py push --repo . --board plan \
+            --remote "$GITHUB_REPOSITORY" --board-tool scripts/plan-board.py --json

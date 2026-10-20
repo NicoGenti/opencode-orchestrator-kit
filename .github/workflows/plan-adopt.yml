@@ -1,0 +1,48 @@
+name: plan-adopt
+on:
+  issues:
+    types: [labeled]
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: plan-adopt-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  adopt:
+    if: github.event.label.name == 'plan:mirror'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      ISSUE: ${{ github.event.issue.number }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Ensure plan file exists (adopt if missing)
+        run: |
+          set -euo pipefail
+          PLAN=$(grep -rlE $'^gh_issue: '"${ISSUE}"$'\r?$' plan/draft plan/in-progress plan/qa 2>/dev/null | head -1 || true)
+          if [ -n "$PLAN" ]; then
+            echo "piano gia' presente: $PLAN — nessuna azione"
+            exit 0
+          fi
+          echo "nessun piano per #$ISSUE: adozione"
+          python scripts/issue_bridge.py pull --repo . --board plan \
+            --remote "$GITHUB_REPOSITORY" --board-tool scripts/plan-board.py --json
+          git config user.name  "issue-bridge"
+          git config user.email "issue-bridge@users.noreply.github.com"
+          git add plan
+          if git diff --cached --quiet; then
+            echo "nessun file da committare"
+          else
+            git commit -m "plan($ISSUE): adozione automatica da issue GitHub"
+            git push origin "${{ github.event.repository.default_branch }}"
+          fi
