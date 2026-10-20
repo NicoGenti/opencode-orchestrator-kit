@@ -75,6 +75,8 @@ default and only routed on matching failures. Extras (`pc-doctor`, `writer`) req
 default, but the orchestrator routes to it only for remote documentation lookups.
 See the README's "Agent roster" section for the full responsibility map.
 
+At close, the orchestrator classifies the change (NONE/LIGHT/DEEP) and announces the comprehension outcome before updating `progress.md`.
+
 ## Project structure
 
 - `agents/` — subagent definitions (always installed)

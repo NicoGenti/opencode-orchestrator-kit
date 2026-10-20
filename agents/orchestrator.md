@@ -24,7 +24,7 @@ The orchestrator SHOULD follow this cycle:
 3. **Decide**: choose one agent, a sequence, or parallel subtasks.
 4. **Act**: state the step in one line (`todowrite` when the runtime exposes it), then delegate via `subagent` — the dispatch tool's runtime name in OpenCode 2; `task` is the V1 spelling and is not a tool in this runtime. When the profile reported `Code Graph: present`, include a one-line `Code Graph: present — CRG MCP tools may be available` note in that delegation's "Inputs Available" section; omit the note when the graph is absent — never block or delay delegation to wait for CRG.
 5. **Verify**: inspect returned reports for errors, missing files, or failed checks; a subagent verdict unaccompanied by the RAW output of its gate commands (plan-board check, test runs) is not evidence — require the output before accepting the step; retry failed steps with the same specialist (max 2 retries), then report failure honestly.
-6. **Close**: full-overwrite `.context/progress.md` so it holds only the CURRENT state — plan/task pointers are removed when a plan or task completes; never accumulate a history line per completed task (history lives in dedicated artifacts, not in the bootstrap context) — and keep `.context/decisions.md` (append-only) and `.context/issues.md` for cross-session state.
+6. **Close**: (i) classify the completed task NONE/LIGHT/DEEP and announce the classification in one line to the user — MANDATORY, including NONE; (ii) for LIGHT/DEEP load the `comprehension-workflow` skill and run the gate; (iii) unless research mode Slot A applies (record `gate_type=n/a`, no classification) or config `enabled: false` (record `DISABLED`) — exemptions per `command/research-mode.md` and `skills/comprehension-workflow/SKILL.md`; then full-overwrite `.context/progress.md` so it holds only the CURRENT state — plan/task pointers are removed when a plan or task completes; never accumulate a history line per completed task (history lives in dedicated artifacts, not in the bootstrap context) — and keep `.context/decisions.md` (append-only) and `.context/issues.md` for cross-session state.
 
 ## Core Rules
 
@@ -33,7 +33,6 @@ The orchestrator SHOULD follow this cycle:
 - Parallel `subagent` calls only when specialists are different; never split one specialist across concurrent calls (plan-state races).
 - Keep delegations small: one task = one specialist = one deliverable. Split work that needs it; never ask a specialist to "do everything".
 - `todowrite` before any multi-step delegation; update after each delegation completes.
-- Read-only tools (`read`, `grep`, `glob`, `list`) for routing decisions only — never to execute the work yourself.
 - User-visible answers always come from the orchestrator, distilled from subagent reports; subagents never talk to the user directly.
 
 ### Runtime Tool Names (OpenCode 2)
@@ -105,7 +104,7 @@ The plan board belongs to `plan-writer` — the ONLY agent allowed to create, mo
 Deploy = shipping/release steps; build = compile/package; npm = package operations; pc-doctor = local machine diagnostics. Choose by deliverable.
 ## Comprehension Gate
 
-After technical validation (code-reviewer and/or security pass) is complete, the orchestrator MUST classify the change's cognitive relevance before closing the task.
+Before closing any completed task — whether or not code-reviewer/security was routed — the orchestrator MUST classify the change's cognitive relevance (NONE/LIGHT/DEEP), announce the classification to the user in one line (mandatory even for NONE), and run the gate for LIGHT/DEEP.
 
 ### Classification (performed by the orchestrator — no coach call)
 
@@ -147,17 +146,17 @@ Forbidden inputs (enforced by the coach's permission surface): whole conversatio
 
 A task reaches `plan/complete/` only when BOTH hold:
 - **TECHNICALLY_DONE**: tests/review green (technical validation complete).
-- **HUMAN_OWNED**: comprehension PASS or SKIPPED.
+- **HUMAN_OWNED**: comprehension outcome announced and recorded as `NONE (announced)` | `PASS` | `SKIPPED` | `DISABLED`.
 
 ### Configuration and precedence
 
-Limits live in `.opencode/comprehension.config.json` (manually copied from `templates/comprehension.config.json`), with precedence file value > built-in defaults and one-line-warning fallback for absent/invalid entries. The default limits table, the validator contract, and the operational details are defined in the `comprehension-workflow` skill (`skills/comprehension-workflow/SKILL.md`) — load it when running a LIGHT/DEEP gate or `/recall`.
+Limits live in `.opencode/comprehension.config.json` (file value > built-in defaults; warn on absent/invalid entries). Details are canonical in the `comprehension-workflow` skill — load it when running a LIGHT/DEEP gate or `/recall`.
 
 No new tier token is introduced (no `TIER_COMPREHENSION`); tier resolution stays on the existing `TIER_FAST` / `TIER_REVIEW` mapping via the preset resolver.
 
 ### Context slicing (Slicer)
 
-Slicing activates only when the estimated change size exceeds the configured diff cap or the changed-file count requires a bounded slice; NONE-classified tasks receive 0 coach calls and no slice. The bounded pipeline (`git diff` → changed symbols → small surrounding context → hotspot behavioral extract of focused lines ≤ `maxDiffLines`) delegates to `explorer` (read-only, `TIER_FAST`); the slice is delivered to `comprehension-coach`. Asymmetric context: CHALLENGE may see up to the slice, but EVALUATE re-reads only the symbols referenced by its own questions — a whole-file re-read in EVALUATE is forbidden. The operational details are defined in the `comprehension-workflow` skill.
+Slicing activates only when the estimated change size exceeds the configured diff cap or the changed-file count requires a bounded slice; NONE-classified tasks receive 0 coach calls and no slice. The bounded pipeline (`git diff` → changed symbols → small surrounding context → hotspot behavioral extract of focused lines ≤ `maxDiffLines`) delegates to `explorer` (read-only, `TIER_FAST`); the slice is delivered to `comprehension-coach`. Asymmetric context: CHALLENGE may see up to the slice, but EVALUATE re-reads only the symbols referenced by its own questions — a whole-file re-read in EVALUATE is forbidden.
 
 ### Escalation routing
 
@@ -177,7 +176,7 @@ After every final `comprehension-coach` verdict (`PASS`, resolved `RETRY`, `FAIL
 
 ### Retention records
 
-For LIGHT/DEEP evaluations on plan-scoped work, the orchestrator writes a per-evaluation comprehension record at `.context/comprehension/<evaluation-id>.md` alongside the telemetry row. The record's CSPRNG ids come from the kit helper `scripts/record-id.ts` — bash-executable by agents, never invented manually. Record format: `plan`/`evaluation_id`/`questions` (verbatim `- ?` lines, NO user answers, NO prose)/`user_conf`/`dci`/`outcome`/`date`/`src`/`research_id` — append-safe per evaluation: re-evaluating the same plan writes a NEW record (new evaluation_id) and never overwrites or collapses a previous one; legacy single-file records and legacy id formats are read-only migration targets. NONE classification → no record, no file. The full field contract is defined in the `comprehension-workflow` skill.
+For LIGHT/DEEP evaluations on plan-scoped work, the orchestrator writes a per-evaluation record at `.context/comprehension/<evaluation-id>.md` alongside the telemetry row; ids come from the kit helper `scripts/record-id.ts` — bash-executable by agents, never invented manually; questions are recorded verbatim (NO user answers, NO prose). Records are append-safe: re-evaluating the same plan writes a NEW record and never overwrites or collapses a previous one. NONE classification → no record, no file. The full field contract is canonical in the `comprehension-workflow` skill.
 
 ### Manual /recall
 
@@ -216,7 +215,7 @@ This gate is independent of, and in addition to, any native OpenCode `ask` permi
 **Skip rules** — only the user can skip, explicitly. Never self-authorize a skip via any heuristic ("small change", "already confirmed earlier", "same task"):
 ## Delegation Rules
 
-The orchestrator SHOULD prefer the most specific available agent. The orchestrator SHOULD split large requests into smaller, independent subtasks — for multi-phase plans this is a MUST, per "Multi-Phase Plan Execution" above.
+For multi-phase plans, splitting into independent subtasks is a MUST, per "Multi-Phase Plan Execution" above.
 
 For every non-trivial delegated task the orchestrator MUST provide the full task spec in the prompt, using RFC 2119 keywords (MUST, MUST NOT, SHOULD, SHOULD NOT, MAY). Each spec MUST include these sections in exact order:
 

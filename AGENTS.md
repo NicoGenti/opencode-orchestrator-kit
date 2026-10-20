@@ -85,7 +85,8 @@ Model assignment (primary/fallback per agent) lives in each `agents/<name>.md` (
    - Write tests (`test-engineer`).
    - Document the feature (`writer`).
 2. `orchestrator` delegates each subtask to the appropriate subagent.
-3. `orchestrator` validates and integrates the outputs, updating `.context/progress.md`.
+3. Classify the completed change (NONE/LIGHT/DEEP), announce the outcome in one line, run the gate if LIGHT/DEEP — then update `.context/progress.md`.
+4. `orchestrator` validates and integrates the outputs, updating `.context/progress.md`.
 
 ### Example 2: Debugging an Issue
 
@@ -95,7 +96,8 @@ Model assignment (primary/fallback per agent) lives in each `agents/<name>.md` (
    - Fix the code (`developer-fixer`).
    - Validate the fix (`test-engineer`).
 2. `orchestrator` delegates each subtask to the appropriate subagent.
-3. `orchestrator` verifies the resolution and appends an entry to `.context/issues.md`.
+3. Classify the completed change (NONE/LIGHT/DEEP), announce the outcome in one line, run the gate if LIGHT/DEEP — then update session memory (progress.md / issues.md).
+4. `orchestrator` verifies the resolution and appends an entry to `.context/issues.md`.
 
 ---
 

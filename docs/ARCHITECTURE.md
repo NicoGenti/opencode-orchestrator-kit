@@ -61,7 +61,7 @@ This exists as a second, independent layer on top of OpenCode's native `permissi
 
 ## Comprehension gate
 
-After technical validation is complete (tests green, code-review and/or security pass), the orchestrator classifies the change's cognitive relevance:
+Before closing any completed task — whether or not code-reviewer/security was routed — the orchestrator MUST classify the change's cognitive relevance (NONE/LIGHT/DEEP), announce the classification to the user in one line (mandatory even for NONE), and run the gate for LIGHT/DEEP:
 
 | Class | When | Coach calls |
 | --- | --- | --- |
@@ -71,7 +71,7 @@ After technical validation is complete (tests green, code-review and/or security
 
 NONE costs zero additional agent calls — `comprehension-coach` is never invoked. LIGHT and DEEP delegate to `comprehension-coach` (read-only: CHALLENGE then EVALUATE, never explains before the developer's attempt). `comprehension-coach` is exempt from the Pre-Delegation Confirmation Gate (read-only agent).
 
-The task closes as **HUMAN_OWNED** only after comprehension is PASS or SKIPPED — not merely TECHNICALLY_DONE. Both states must hold before moving to `plan/complete/`. Skip is always available: `skip comprehension` (case-insensitive) yields `SKIPPED`, never `PASS`.
+The task closes as **HUMAN_OWNED** only after a recorded and announced comprehension outcome — `NONE (announced)`, `PASS`, `SKIPPED`, or `DISABLED` — not merely TECHNICALLY_DONE. Both states must hold before moving to `plan/complete/`.
 
 Input to `comprehension-coach` is strictly limited to: task goal, changed file list, focused diff, minimal surrounding symbols. Whole conversation, whole plan, whole repository, and prior agent transcripts are forbidden inputs (enforced by the coach's permission surface).
 
