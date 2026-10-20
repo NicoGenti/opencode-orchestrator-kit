@@ -12,7 +12,8 @@
     "preview": "vite preview --config vite.docs.config.ts --outDir site",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "bun:audit": "bun test && bun run lint"
   },
   "dependencies": {
     "lucide-react": "0.460.0",
