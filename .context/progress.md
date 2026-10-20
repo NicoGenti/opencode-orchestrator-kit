@@ -8,3 +8,7 @@
   (RED → GREEN), eccezione mirata in `.gitignore` per committare solo `.opencode/ci-check.md`
   (il resto di `.opencode/` resta ignored, incluso `opencode.jsonc`). Verifiche: `bun run bun:audit`
   exit 0 con 692/692 test. Gate comprensione: skipped (esecuzione headless).
+- 2026-10-20: riesecuzione headless dell'issue #19 (stato già implementato dal commit b4362f2):
+  nessuna modifica al codice (YAGNI); verifica soltanto, 7/7 PASS — `bun:audit` presente,
+  `.opencode/ci-check.md` conforme, `bun test` 692/692, lint e `bun run bun:audit` exit 0,
+  tree pulito. Piano gia' in `qa` (plan-board.py: already-in-column), comprehension: skipped.
