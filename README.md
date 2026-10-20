@@ -1,276 +1,165 @@
 # OpenCode Orchestrator Kit
 
-**A strict-orchestrator, multi-agent workflow for [OpenCode](https://opencode.ai) — one router agent that never writes code, and a roster of specialists each pinned to the cheapest model that can do the job.**
+**A cost-aware, multi-agent workflow for [OpenCode](https://opencode.ai): one router agent that never writes code, and specialists that each run on the cheapest model able to do the job.**
 
-[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE.txt) [![OpenCode](https://img.shields.io/badge/works%20with-OpenCode%20CLI-blue)](https://opencode.ai) [![OpenCode Studio](https://img.shields.io/badge/optional-OpenCode%20Studio-lightgrey)](https://github.com/Microck/opencode-studio) [![Agents](https://img.shields.io/badge/agents-16-orange)](agents) [![Tests](https://github.com/NicoGenti/opencode-orchestrator-kit/actions/workflows/test.yml/badge.svg)](https://github.com/NicoGenti/opencode-orchestrator-kit/actions/workflows/test.yml) [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+[![Tests](https://github.com/NicoGenti/opencode-orchestrator-kit/actions/workflows/test.yml/badge.svg)](https://github.com/NicoGenti/opencode-orchestrator-kit/actions/workflows/test.yml) [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE.txt) [![OpenCode](https://img.shields.io/badge/works%20with-OpenCode%20CLI-blue)](https://opencode.ai) [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
----
+<!-- DEMO: add a short terminal GIF of /start-session followed by a small task here -->
 
-## 🧠 What this is
+## The problem
 
-Most "AI does everything" setups burn tokens because one powerful model handles research, planning, coding, and review inside a single long-lived context. **OpenCode Orchestrator Kit** splits that into a routing layer and 16 specialists, so every step runs in the cheapest model capable of it — and the expensive model only ever sees the slice of work it actually needs.
+Most "AI does everything" setups burn tokens: one powerful model handles research, planning, coding and review inside a single long-lived context. Quality drifts as the context grows, and every step is billed at the most expensive rate.
 
-It **self-bootstraps on any repository**, known or unknown: the `profiler` agent detects the stack (or interviews you for an empty repo), scaffolds a lightweight memory system (`.context/`) and a plan kanban (`plan/`), and reports back so the orchestrator can route correctly from the very first session.
+## The approach
 
-Works with plain `opencode` CLI — no plugin required. Optional notes for [OpenCode Studio](https://github.com/Microck/opencode-studio) users live in `docs/SETUP-OPENCODE-STUDIO.md`.
+The kit splits the work into a routing layer and a roster of specialists:
 
-## ⚙️ How it works
+- **The orchestrator only routes.** It classifies the request, delegates and checkpoints. It cannot edit application code or run tests.
+- **Models are matched to tasks.** Cheap or local models explore and bootstrap; stronger models are reserved for design, implementation and review.
+- **Context stays small.** Session memory is bullet-only and auto-archived past ~3k tokens, and multi-phase plans advance one phase at a time with fresh context.
+- **It adapts to any repository.** On first run the `profiler` agent detects the stack (or interviews you for an empty repo) and scaffolds `.context/` (memory) and `plan/` (kanban).
 
-The orchestrator never touches application code. It only classifies, delegates, and checkpoints.
+It works with the plain `opencode` CLI, no plugin required. Optional notes for [OpenCode Studio](https://github.com/Microck/opencode-studio) users are in `docs/SETUP-OPENCODE-STUDIO.md`.
 
-1. 🔎 **Bootstrap** — `profiler` fingerprints the repo (stack, CI, structure) and scaffolds `.context/` and `plan/` on first run.
-2. 🧭 **Route** — the orchestrator reads the request and session memory, then picks the most specific specialist (or a small parallel/sequential subtask set).
-3. 🛠️ **Delegate** — each specialist gets a precise, RFC-2119-worded 9-section task spec (Goal, Success Criteria, Scope, Safety, Inputs, Outputs, Test Plan, Verification, Edge Cases) — never a vague prompt.
-4. ✅ **Verify & checkpoint** — results are validated against the spec, `.context/progress.md` is updated, and multi-phase plans advance one phase at a time with fresh context per phase.
-
-## 💡 A concrete example
+## How a request flows
 
 > "Add refresh-token rotation to the auth service."
 
 | Step | Agent | What happens |
 |---|---|---|
-| 1 | `explorer` | Reads the current auth flow, read-only. |
+| 1 | `explorer` | Reads the current auth flow (read-only). |
 | 2 | `planner` | Turns findings into a phased plan in `plan/draft/`. |
-| 2b | `plan-writer` | Materialises and moves the plan file across the board columns (`plan/draft/` -> `plan/in-progress/` -> `plan/qa/` -> `plan/complete/`); never writes plan content. |
-| 3 | `developer-fixer` | Implements **one phase at a time**, fresh context each time — no compounding drift across a long session. |
-| 4 | `test-engineer` | Writes and runs tests for the new rotation logic. |
-| 5 | `security` | Reviews the auth-sensitive change before it reaches `plan/complete/`. |
-| 6 | comprehension-coach | Orchestrator classifies cognitive relevance first (NONE/LIGHT/DEEP). NONE = done. LIGHT = up to 2 questions. DEEP = up to 4 questions. skip comprehension → SKIPPED. |
+| 3 | `plan-writer` | Owns the plan board: `plan/draft/` -> `plan/in-progress/` -> `plan/qa/` -> `plan/complete/`. |
+| 4 | `developer-fixer` | Implements one phase at a time, with fresh context each time. |
+| 5 | `test-engineer` | Writes and runs tests for the new logic. |
+| 6 | `security` | Reviews the auth-sensitive change before it reaches `plan/complete/`. |
+| 7 | `comprehension-coach` | Optional human comprehension check, scaled to the change (NONE / LIGHT / DEEP). |
 
-The orchestrator itself never edits `auth.ts` — it only routes, checkpoints, and moves the plan file across the kanban.
+Every delegation uses a 9-section task spec (Goal, Success Criteria, Scope, Safety, Inputs, Outputs, Test Plan, Verification, Edge Cases), never a free-form prompt. The orchestrator itself never edits `auth.ts`.
 
-## 🎯 Why this exists
+## Design decisions
 
-- **Routes, never executes** — `agents/orchestrator.md` can only classify and delegate; it cannot edit application code or run tests.
-- **Matches model to task** — cheap/local models for exploration and bootstrapping, stronger models reserved for design, implementation, and review.
-- **Keeps context small** — session memory (`progress.md`, `decisions.md`, `issues.md`) is bullet-point only and auto-archived past ~3k tokens.
-- **Adapts to any repo** — `profiler` runs once per repo, detects the stack via manifest globbing (with Repomix as fallback for ambiguous/monorepo cases), and never touches application code.
+- **Routing is separated from execution.** `agents/orchestrator.md` is the only `mode: primary` agent and can only classify and delegate, so orchestration mistakes cannot silently change the codebase.
+- **Logical model tiers instead of hardcoded IDs.** Agents reference `{{TIER_ROUTER}}`, `{{TIER_REASONING}}`, `{{TIER_CODE}}`, `{{TIER_FAST}}` and `{{TIER_REVIEW}}`. Switching provider means editing one config file, and a validator runs before install.
+- **Plans are files, not chat history.** The kanban in `plan/` is the source of truth, so work is resumable and reviewable in Git.
+- **Technical review is separate from human comprehension.** `code-reviewer` and `security` verify the code; `comprehension-coach` checks that the developer understood it.
 
-## 👥 Agent roster
+## Agent roster
 
-### Who does what — the responsibility map
-
-This is the single table the README uses to answer "which agent handles X?". The six
-required concerns are pinned to one specialist each, plus the orchestrator and the
-helpers that exist for completeness:
+### Who does what
 
 | Concern | Primary agent | Notes |
 | --- | --- | --- |
-| **Orchestration** (routing, checkpointing) | `orchestrator` | Sole entry point — only `mode: primary` agent. Never writes application code. |
+| **Orchestration** (routing, checkpointing) | `orchestrator` | Sole entry point. Never writes application code. |
 | **Exploration** (codebase, file, symbol research) | `explorer` | Read-only. |
 | **Planning** (turns exploration into phased plans) | `planner` | Writes to `plan/draft/` only. |
-| **Plan board** (plan-file lifecycle: create, move, check, adopt) | `plan-writer` | Sole owner of the board; never writes application code. |
+| **Plan board** (create, move, check, adopt plan files) | `plan-writer` | Sole owner of the board. |
 | **Implementation** (one phase at a time, TDD) | `developer-fixer` | Follows the 9-section task spec. |
 | **Testing** (test authoring, coverage, reproduction) | `test-engineer` | |
-| **Review** (general correctness / quality) | `code-reviewer` | Optional distinct from security review. |
-| **Security** (vulnerability, threat-model, hardening) | `security` | Routed for auth, crypto, input-handling, secrets changes. |
-| **Human Comprehension** (post-review comprehension check) | comprehension-coach | Read-only. CHALLENGE then EVALUATE. skip comprehension → SKIPPED. Technical verification (code-reviewer/security) is distinct from human comprehension verification (comprehension-coach). |
+| **Review** (general correctness and quality) | `code-reviewer` | Distinct from security review. |
+| **Security** (vulnerabilities, threat model, hardening) | `security` | Routed for auth, crypto, input handling and secrets changes. |
+| **Human comprehension** (post-review check) | `comprehension-coach` | Read-only. Distinct from technical verification. |
 
-Full contracts, permissions, and model fallbacks are defined in each `agents/*.md` file
-(with the `pc-doctor` and `writer` specialists living in `extras/*.md` instead) and
-summarized in `AGENTS.md`. The roster is partitioned by tier:
+Full contracts, permissions and model fallbacks are in each `agents/*.md` file (the `pc-doctor` and `writer` specialists live in `extras/*.md`) and are summarized in `AGENTS.md`.
+
+### Tiers and installation
 
 | Tier | Agents | Installed by default? |
 | --- | --- | --- |
-| Core routing (always installed) | `orchestrator`, `profiler`, `explorer`, `oracle`, `planner` | ✅ Yes |
-| Core delivery (always installed) | `developer-fixer`, `test-engineer`, `code-reviewer`, `security`, `comprehension-coach`, `plan-writer` | ✅ Yes |
-| Operations helpers (always installed, routed only on matching failure) | `build-helper`, `npm-helper`, `deploy-helper` | ✅ Yes |
-| Explicit opt-in extras | `pc-doctor` (Windows-local only), `writer` (docs generation) | ❌ `--with-extras` only |
-| Routing-limited (always installed) | `librarian` (docs lookups, remote examples) | ✅ Yes — routed only for remote doc lookups |
+| Core routing | `orchestrator`, `profiler`, `explorer`, `oracle`, `planner` | Yes |
+| Core delivery | `developer-fixer`, `test-engineer`, `code-reviewer`, `security`, `comprehension-coach`, `plan-writer` | Yes |
+| Operations helpers | `build-helper`, `npm-helper`, `deploy-helper` | Yes (routed only on a matching failure) |
+| Docs lookup | `librarian` | Yes (routed only for remote documentation lookups) |
+| Opt-in extras | `pc-doctor` (Windows-local only), `writer` (docs generation) | `--with-extras` only |
 
-`pc-doctor` (Windows-local only) and `writer` (docs generation) are the
-explicit opt-in extras: most users don't need a Windows-only `pc-doctor` or a
-docs-generation `writer` on every project. Pass `--with-extras` to install
-them. `librarian` ships in `agents/` and is installed by default with the rest
-of the roster; the orchestrator delegates to it only for remote documentation
-lookups. See [Customizing](#customizing) for the exact flag.
+## Quickstart
 
-## 🚀 Quickstart — native OpenCode (no plugin)
-
-> **Heads-up:** this kit ships with a known-good model profile (`default`) so it can
-> be installed and validated without any provider setup, but **to actually run
-> agents you need at least one usable provider/model mapping of your own.** The
-> default profile references provider IDs that are not yours; switch to the `generic`
-> preset and edit `.opencode/models.config.json` before your first `/start-session`
-> — see [Choose your model profile](#3-choose-your-model-profile) below.
+> **Heads-up:** the `default` model profile references provider IDs that are not yours. To actually run agents you need at least one usable provider/model mapping of your own: switch to the `generic` preset and edit `.opencode/models.config.json` before your first `/start-session` (step 3).
 
 ### 1. Prerequisites
 
 - [OpenCode](https://opencode.ai) installed and on `PATH` (`opencode --version`).
-- **Bash** available on your shell — `install.sh` is a bash script.
-  Supported: Linux, macOS, and Windows under Git Bash, MSYS, or Cygwin. Plain
-  `cmd.exe` / PowerShell are not supported.
-- A git checkout of this repo, or the files extracted locally.
-- **At least one usable provider account** you can point at least one tier to.
-  OpenCode does not bundle provider credentials. You will configure this in
-  step 3.
+- **Bash**. `install.sh` is a bash script. Supported: Linux, macOS, and Windows under Git Bash, MSYS or Cygwin. Plain `cmd.exe` and PowerShell are not supported.
+- At least one usable provider account you can point a tier to. OpenCode does not bundle provider credentials.
 
 ### 2. Install the kit
 
-From the repo root, run the scripted installer. The installer seeds
-`.opencode/models.config.json` from the bundled template, runs the Phase 1
-model-profile validator before any file is written to the target directory, then
-resolves every `{{TIER_*}}` token in the installed agent frontmatter to the
-active preset's concrete model ID. (Without that last step OpenCode rejects the
-config at startup — see step 3.)
+From the repo root:
 
 ```bash
-# Project-only — installs into ./.opencode/ and ./AGENTS.md in the current repo
+# Project-only: installs into ./.opencode/ and ./AGENTS.md of the current repo
 ./install.sh project
 
-# Global — installs into ~/.config/opencode/ for every project on this machine
+# Global: installs into ~/.config/opencode/ for every project on this machine
 ./install.sh global
 ```
 
-The installer also accepts:
+The installer seeds `.opencode/models.config.json` from `templates/models.config.json`, runs the model-profile validator before writing any file, then resolves every `{{TIER_*}}` token in the installed agents to concrete model IDs.
 
 | Flag | Effect |
 | --- | --- |
-| `--symlink` | Symlink instead of copy (so `git pull` in this repo updates every consumer). |
+| `--symlink` | Symlink instead of installing plain files, so `git pull` in this repo updates every consumer. |
 | `--with-extras` | Also install `extras/` (`pc-doctor`, `writer`). Off by default. |
 | `--with-examples` | Also install `skills/examples/` (language-specific skill examples). Off by default. |
-| `--skip-validation` | Skip the model-profile validator. Not recommended — only for emergency recovery. |
+| `--skip-validation` | Skip the model-profile validator. Not recommended, emergency recovery only. |
 
-If you cannot use the installer, the manual path is the same five items it copies:
-`AGENTS.md`, `CONTRIBUTING.md`, `agents/`, `skills/`, and `command/`. Place them where
-OpenCode looks (project root for project-only, or `~/.config/opencode/` for global).
-`extras/` is **not** part of the manual default — copy it only if you want the
-opt-in specialists.
+Without the installer, the manual path covers the same five items: `AGENTS.md`, `CONTRIBUTING.md`, `agents/`, `skills/` and `command/`. Place them where OpenCode looks (project root, or `~/.config/opencode/` for global). `extras/` is not part of the manual default.
 
 ### 3. Choose your model profile
 
-The kit abstracts hardcoded model IDs into five **logical tier tokens** so you can
-swap providers without editing any agent file. Tier tokens are written into agent
-`model:` lines as `{{TIER_*}}`; the installer resolves them to concrete IDs at
-install time (and `scripts/apply-model-preset.py` re-resolves them on demand).
-Edit the user-local copy, never agent frontmatter.
-
-The five tiers, in canonical order:
+Five logical tiers are written into agent `model:` lines as `{{TIER_*}}` tokens:
 
 | Tier token | Default agent(s) | Role | Required? |
 | --- | --- | --- | --- |
-| `TIER_ROUTER` | `orchestrator` | Routing / checkpointing. | Optional (falls back to `TIER_REASONING`). |
-| `TIER_REASONING` | `oracle`, `security`, `planner` | Deep reasoning / architecture. | Required. |
-| `TIER_CODE` | `developer-fixer`, `test-engineer` | Implementation + test writing. | Required. |
-| `TIER_FAST` | `profiler`, `explorer`, `build-helper`, `npm-helper`, `deploy-helper` | Lightweight utility / high-throughput. | Required. |
-| `TIER_REVIEW` | `code-reviewer` | Correctness / quality review. | Optional (falls back to `TIER_CODE`). |
+| `TIER_ROUTER` | `orchestrator` | Routing and checkpointing. | Optional (falls back to `TIER_REASONING`). |
+| `TIER_REASONING` | `oracle`, `security`, `planner` | Deep reasoning and architecture. | Required. |
+| `TIER_CODE` | `developer-fixer`, `test-engineer` | Implementation and test writing. | Required. |
+| `TIER_FAST` | `profiler`, `explorer`, `build-helper`, `npm-helper`, `deploy-helper` | Lightweight, high-throughput work. | Required. |
+| `TIER_REVIEW` | `code-reviewer` | Correctness and quality review. | Optional (falls back to `TIER_CODE`). |
 
-Two profiles are shipped in `templates/models.config.json`:
-
-| Profile | Status | Use when |
-| --- | --- | --- |
-| `default` | Ready to use out-of-the-box (known-good provider IDs). | You do not need to test your own setup yet. |
-| `generic` | Editable — every tier is a `placeholder/*` sentinel. | You want to point the kit at your own providers. |
+`templates/models.config.json` ships two profiles: `default` (known-good provider IDs, ready out of the box) and `generic` (editable, every tier is a `placeholder/*` sentinel).
 
 To use your own providers:
 
-1. Set `default_preset` to `"generic"` in `.opencode/models.config.json`
-   (or run `./install.sh --skip-validation` after copying
-   `templates/models.config.json`).
-2. Replace every `placeholder/*` value under `presets.generic.models` with your
-   real `<provider>/<model>` IDs (the same shape OpenCode consumes natively).
-3. Validate before installing:
-   ```bash
-   bash scripts/validate-models.sh
-   ```
-   It must exit 0 and print `OK:` for the validator to be satisfied.
+1. Set `default_preset` to `"generic"` in `.opencode/models.config.json`.
+2. Replace every `placeholder/*` value under `presets.generic.models` with a real `<provider>/<model>` ID.
+3. Validate (must exit 0 and print `OK:`):
 
-Do **not** edit the `model:` field of any agent in `agents/*.md` or `extras/*.md`
-directly. The five-tier abstraction is the supported extension point. If a tier
-value is wrong, fix it in `.opencode/models.config.json`. Direct agent-frontmatter
-edits survive `git pull` once and silently regress on the next update.
+```bash
+bash scripts/validate-models.sh
+```
 
-See `docs/CONFIGURATION.md` for the full tier-resolution rules, fallback chains,
-and placeholder policy.
+Do **not** edit the `model:` field of any agent in `agents/*.md` or `extras/*.md` directly. The tier abstraction is the supported extension point, and direct edits silently regress on the next update. See `docs/CONFIGURATION.md` for resolution rules and fallback chains.
 
 ### 4. Run the orchestrator
-
-Inside the target repo:
 
 ```bash
 opencode
 ```
 
-Invoke the **orchestrator** (`@orchestrator` or set as your default agent), then run
-**`/start-session`** at the start of every new session, before any other instruction.
-It tells the orchestrator to run its bootstrap cycle explicitly: delegate to `profiler`
-if there is no `PROJECT-PROFILE.md`/`plan/` structure yet, load
-`.context/progress.md`/`decisions.md`/`issues.md`, and reply with a 3–4 line
-Italian summary of the stack, current status, and latest issue/decision before waiting
-for your next instruction. See `command/start-session.md`.
+Select `@orchestrator` (or set it as your default agent), then run **`/start-session`** at the start of every new session. It delegates to `profiler` if there is no `PROJECT-PROFILE.md` or `plan/` structure yet, loads `.context/progress.md`, `decisions.md` and `issues.md`, and replies with a 3-4 line summary of the stack, current status and latest issue or decision, in the language you are speaking, before waiting for your next instruction. See `command/start-session.md`.
 
-## 🎛️ Quickstart — OpenCode Studio users
+## Customizing
 
-If you manage OpenCode via [opencode-studio](https://github.com/Microck/opencode-studio) profiles, point that profile's config directory at this kit (or symlink the folders into it). See `docs/SETUP-OPENCODE-STUDIO.md` for the exact steps and a known caveat around global `AGENTS.md` precedence.
+- **Swap providers per tier** by editing `.opencode/models.config.json` and setting `default_preset` to the profile you want.
+- **Opt into extras** with `./install.sh --with-extras` to also install `pc-doctor` and `writer`.
+- **Add project-specific skills** under `skills/<name>/SKILL.md`; the orchestrator loads them on demand via the `skill` tool.
+- **Engineering baseline** (secrets hygiene, git hygiene, definition of done) lives in `CONTRIBUTING.md`.
 
-## 🧩 Customizing
+## Development
 
-- **Swap providers per tier** by editing `.opencode/models.config.json`. Set
-  `default_preset` to the profile you want active, and edit its `models.*`
-  values. Do **not** edit the `model:` field in any agent's frontmatter — that
-  path bypasses the tier system and breaks on the next kit update.
-- **Opt into extras** with `./install.sh --with-extras` to also install
-  `pc-doctor` and `writer`. `librarian` ships in `agents/` and is installed by
-  default with the rest of the roster; the orchestrator routes to it only for
-  remote documentation lookups. Operations helpers (`build-helper`, `npm-helper`,
-  `deploy-helper`) are installed by default and only routed on a matching
-  toolchain failure.
-- **Add project-specific skills** under `skills/<name>/SKILL.md`; the orchestrator
-  loads them on demand via the `skill` tool.
-- **Engineering baseline** (secrets hygiene, git hygiene, definition of done)
-  lives in `CONTRIBUTING.md` and applies globally unless a project overrides it.
+```bash
+bun install
+bun test        # test suite
+bun run lint    # ESLint
+```
 
-## 📏 Measurement (v0.4.0, /recall since v0.5.0)
+Changes are tracked in `CHANGELOG.md`.
 
-The gate measures, not just gates. Each evaluation gets a **DCI score**
-(`DCI=<score>/<available_score>`, 0–2 per dimension), compared against a
-self-estimate (1–5) asked at session opening. Results land in an append-only
-telemetry log (`.context/comprehension-log.md`, metrics-only, untracked by
-design) that `/start-session` never loads. Calibrate the prompt tiers in
-`docs/CONFIGURATION.md`.
+## Experimental: comprehension metrics
 
-Since v0.5.0, the manual `/recall` command re-tests comprehension from memory
-(questions first, code after) and appends delayed `type=dci1` rows to the same
-log. Since v0.6.7 each `/recall` targets **one evaluation**: pick it from the
-numbered candidate list and the flow loads its stored questions from the flat
-per-evaluation record `.context/comprehension/<evaluation-id>.md` (falling back
-to reconstructing them from the plan document). The immediate baseline is
-immutable — every recall is a NEW row, never a rewrite. **Retention =
-DCI₁/DCI₀**: an operational engineering metric, not a scientifically validated
-one.
+The kit includes an opt-in measurement layer (DCI scores, the `/recall` command, and a research A/B mode with a Cognitive Overhead Ratio). These are operational engineering metrics, not scientifically validated ones. Details: [`docs/MEASUREMENT-AND-RESEARCH.md`](docs/MEASUREMENT-AND-RESEARCH.md).
 
-## 🔬 Research (since v0.6.0)
+## License
 
-An opt-in experiment layer answering the framing question of the whole
-measurement effort: how much human comprehension is preserved per unit of
-additional inference.
-
-`/research-mode on` (explicit confirmation required, or `research.enabled` in
-the configuration as the same explicit opt-in) starts an A/B crossover whose
-slots are **behavioral, not labels**: slot A (control) runs the normal
-workflow with no comprehension gate (no questions, 0 coach calls), slot B
-(treatment) runs the same task with the full comprehension gate; the slot
-alternates deterministically in activation order. Each completed task appends
-exactly one JSON object — a 19-field metric tuple (`ResearchTupleV1`, tagged
-with a stable `research_id` that links the baseline and any later `/recall`
-rows) with normalised `user_confidence` and `evaluator_confidence` — to
-`.context/research-dataset.jsonl` (metrics only, untracked by design, never
-loaded by `/start-session`; full contract in `command/research-mode.md`).
-Since v0.6.4 the dataset sits behind a **hard boundary**: it is truly
-append-only (a `/recall` row is a NEW event linked by `research_id` — no
-backfill, no rewrite of existing rows), read only inside an active research
-lifecycle, never at bootstrap; a user-facing **Behavioral A/B flow** example
-shows the simulated turn transcript — gate pass and gate fail with their
-19-field tuples.
-
-The headline metric is the **Cognitive Overhead Ratio (COR)**: comprehension
-tokens over total task tokens, compared across A/B pairs (e.g. `bugfix_ref`
-traces a later bugfix plan back to the plan under test). COR is an
-operational engineering metric, not a scientifically validated one — ad-hoc
-analysis only. When the mode is off, the dataset is never read and never
-written: zero overhead. Privacy invariant: No source code and no personal
-answers are ever written to the dataset.
-
-## 📄 License
-
-MIT — see [`LICENSE.txt`](LICENSE.txt). Contributions welcome — see [`CONTRIBUTING.md`](CONTRIBUTING.md).
+MIT, see [`LICENSE.txt`](LICENSE.txt). Contributions welcome, see [`CONTRIBUTING.md`](CONTRIBUTING.md).
