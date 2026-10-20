@@ -80,7 +80,7 @@ jobs:
           git -C /tmp/kit fetch -q --depth 1 origin "$KIT_SHA"
           git -C /tmp/kit checkout -q FETCH_HEAD
           test "$(git -C /tmp/kit rev-parse HEAD)" = "$KIT_SHA"
-          echo "kit HEAD verificato: $KIT_SHA"
+          echo "kit HEAD verified: $KIT_SHA"
       - name: Build the CI model profile (install.sh seeds it only if missing)
         run: |
           set -euo pipefail
@@ -102,7 +102,7 @@ jobs:
           test -f "$HOME/.config/opencode/AGENTS.md"
           test -f "$HOME/.config/opencode/agents/orchestrator.md"
           if grep -rq "{{TIER_" "$HOME/.config/opencode/agents"; then
-            echo "ERRORE: token {{TIER_ non risolti in alcuni agenti" >&2; exit 1
+            echo "ERROR: unresolved {{TIER_ tokens found in agent files" >&2; exit 1
           fi
           grep -m1 "^model:" "$HOME/.config/opencode/agents/orchestrator.md"
       - name: Adopt the issue into the board if needed (PC-independent)
@@ -110,20 +110,20 @@ jobs:
           set -euo pipefail
           PLAN=$(grep -rlE $'^gh_issue: '"${ISSUE}"$'\r?$' plan/draft plan/in-progress plan/qa 2>/dev/null | head -1 || true)
           if [ -n "$PLAN" ]; then
-            echo "piano gia' presente: $PLAN"
+            echo "plan already present: $PLAN"
             exit 0
           fi
-          echo "nessun piano per #$ISSUE: adozione automatica"
+          echo "no plan for #$ISSUE: automatic adoption"
           gh issue edit "$ISSUE" -R "$GITHUB_REPOSITORY" --add-label "plan:mirror" --add-label "plan:draft" || true
           python scripts/issue_bridge.py pull --repo . --board plan             --remote "$GITHUB_REPOSITORY" --board-tool scripts/plan-board.py --json
-          # main e' protetto da un ruleset (pull_request obbligatoria) e il GITHUB_TOKEN non puo'
-          # bypassarlo. Il piano adottato resta nel worktree e viaggia con il branch
-          # agent/issue-N: arriva su main al merge della PR, insieme al codice.
+          # main is protected by a ruleset (pull_request required) and the GITHUB_TOKEN cannot bypass it.
+          # The adopted plan stays in the worktree and travels with the agent/issue-N branch; it reaches
+          # main when the PR is merged, together with the code.
           git config user.name  "issue-bridge"
           git config user.email "issue-bridge@users.noreply.github.com"
           git add plan
-          echo "piano adottato nel worktree (nessun push diretto su $BASE)"
-      - name: Resolve the plan file bound to the issue (pre-run, per il prompt)
+          echo "plan adopted in the worktree (no direct push to $BASE)"
+      - name: Resolve the plan file bound to the issue (pre-run, for the prompt)
         id: plan
         run: |
           set -euo pipefail
@@ -141,18 +141,44 @@ jobs:
           opencode run --agent build -m "$MODEL" \
             "$(cat .github/agent/agent-issue.md)
 
-          Lavora sul piano: ${{ steps.plan.outputs.file }}
-          Issue GitHub: #${ISSUE}" | tee /tmp/agent.log
-      - name: Re-resolve the plan (l'agente l'ha spostato in qa/) and verify it
+          Work on the plan: ${{ steps.plan.outputs.file }}
+          GitHub issue: #${ISSUE}" | tee /tmp/agent.log
+      - name: Re-resolve the plan (the agent moved it to qa/) and verify it
         id: after
         run: |
           set -euo pipefail
           PLAN=$(grep -rlE $'^gh_issue: '"${ISSUE}"$'\r?$' plan/qa | head -1)
           echo "file=$PLAN" >> "$GITHUB_OUTPUT"
           test -n "$PLAN"
-          echo -n "status nel file spostato: "; grep -m1 "^status:" "$PLAN"
+          echo -n "status in the moved file: "; grep -m1 "^status:" "$PLAN"
           bun install --frozen-lockfile
           bun test
+      - name: Redact the agent log before publication
+        if: always()
+        env:
+          OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+        run: |
+          set -euo pipefail
+          test -f /tmp/agent.log
+          cp /tmp/agent.log /tmp/agent-redacted.log
+          if [ -n "${OPENCODE_API_KEY:-}" ]; then
+            python - "$OPENCODE_API_KEY" <<'PY'
+          import pathlib, sys
+          secret = sys.argv[1]
+          path = pathlib.Path("/tmp/agent-redacted.log")
+          text = path.read_text(encoding="utf-8", errors="replace")
+          text = text.replace(secret, "[REDACTED]")
+          path.write_text(text, encoding="utf-8")
+          PY
+          fi
+          # Defense in depth: mask common provider key shapes even if the
+          # exact secret value was not present verbatim.
+          sed -E -i \
+            -e 's/(sk-[A-Za-z0-9_-]{8,})/[REDACTED]/g' \
+            -e 's/(gh[pousr]_[A-Za-z0-9_]{20,})/[REDACTED]/g' \
+            -e 's/(Bearer[[:space:]]+)[A-Za-z0-9._-]{20,}/\1[REDACTED]/g' \
+            /tmp/agent-redacted.log
+          echo "redacted log ready: /tmp/agent-redacted.log"
       - name: Mirror the board into the issue BEFORE committing (machine keys travel with the branch)
         run: |
           set -euo pipefail
@@ -162,8 +188,8 @@ jobs:
         run: |
           set -euo pipefail
           git add -A
-          git commit -m "feat(issue-${ISSUE}): esecuzione agentica di $(basename "${{ steps.after.outputs.file }}")" \
-            || echo "nessuna modifica da committare"
+          git commit -m "feat(issue-${ISSUE}): agent execution of $(basename "${{ steps.after.outputs.file }}")" \
+            || echo "no changes to commit"
           git push --force-with-lease -u origin "agent/issue-${ISSUE}"
       - name: Open or reuse the pull request
         run: |
@@ -172,15 +198,15 @@ jobs:
           if [[ -z "$PR" ]]; then
             gh pr create --draft --base "$BASE" --head "agent/issue-${ISSUE}" \
               --title "agent: issue #${ISSUE}" \
-              --body "$(printf 'Esecuzione automatica del piano %s (issue #%s).\n\n```\n%s\n```\n' \
-                        "${{ steps.after.outputs.file }}" "${ISSUE}" "$(tail -60 /tmp/agent.log)")"
+              --body "$(printf 'Automated execution of plan %s (issue #%s).\n\n```\n%s\n```\n' \
+                        "${{ steps.after.outputs.file }}" "${ISSUE}" "$(tail -60 /tmp/agent-redacted.log)")"
           else
-            echo "PR gia' esistente: $PR"
+            echo "PR already exists: $PR"
           fi
       - name: Comment the outcome on the issue
         if: always()
         run: |
           set -euo pipefail
-          if [[ "${{ job.status }}" == "success" ]]; then MSG="esecuzione completata"; else MSG="esecuzione fallita"; fi
-          printf '%s\n\n```\n%s\n```\n' "$MSG" "$(tail -40 /tmp/agent.log 2>/dev/null)" > /tmp/report.md
+          if [[ "${{ job.status }}" == "success" ]]; then MSG="execution completed"; else MSG="execution failed"; fi
+          printf '%s\n\n```\n%s\n```\n' "$MSG" "$(tail -40 /tmp/agent-redacted.log 2>/dev/null)" > /tmp/report.md
           gh issue comment "${ISSUE}" -R "$GITHUB_REPOSITORY" --body-file /tmp/report.md
