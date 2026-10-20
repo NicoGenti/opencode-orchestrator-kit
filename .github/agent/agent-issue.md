@@ -11,8 +11,8 @@ globalmente. Sei l'`orchestrator`: classifichi, deleghi con `subagent`, verifich
   qualunque routing. La issue GitHub e' solo lo specchio.
 - Lavori su un branch effimero. **Non** fare `git push`, **non** aprire PR, **non** commentare la issue: lo fa
   il workflow che ti ha lanciato.
-- Non toccare `.opencode/`, `AGENTS.md`, `package.json` del progetto, né file di lock (le dipendenze sono già
-  installate dal workflow con `echo "no deps"`).
+- Non modificare file di lock (`bun.lockb`, `package-lock.json`): le dipendenze sono già installate dal workflow con
+  `bun install --frozen-lockfile`. Le modifiche a `.opencode/`, `AGENTS.md`, `package.json` sono consentite se il piano le richiede.
 - Un solo obiettivo per esecuzione: il piano indicato. Niente refactor non richiesti (YAGNI).
 - TDD: prima il test che fallisce, poi il codice minimo, poi il verde. Ogni passo con il suo comando e il
   suo output reale.

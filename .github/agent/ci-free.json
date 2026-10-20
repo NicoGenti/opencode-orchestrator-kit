@@ -7,10 +7,10 @@
     ],
     "models": {
       "TIER_ROUTER": "opencode/mimo-v2.6-flash-free",
-      "TIER_REASONING": "opencode/mimo-v2.6-flash-free",
-      "TIER_CODE": "opencode/deepseek-v4.1-flash-free",
+      "TIER_REASONING": "opencode/deepseek-v4.1-flash-free",
+      "TIER_CODE": "opencode/glm-5.3-flash-free",
       "TIER_FAST": "opencode/deepseek-v4.1-flash-free",
-      "TIER_REVIEW": "opencode/deepseek-v4.1-flash-free"
+      "TIER_REVIEW": "opencode/mimo-v2.6-flash-free"
     }
   }
 }

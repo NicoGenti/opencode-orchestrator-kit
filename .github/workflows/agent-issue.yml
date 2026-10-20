@@ -45,7 +45,7 @@ jobs:
     needs: guard
     if: needs.guard.outputs.run == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 90
     env:
       OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -53,6 +53,7 @@ jobs:
       MODEL: opencode/mimo-v2.6-flash-free
       KIT_SHA: dbd41c7cd9eb411c31203530b0e5fbea800c03ff
       BASE: ${{ github.event.repository.default_branch }}
+      OPENCODE_PERMISSION: '{"*":"allow"}'
     steps:
       - uses: actions/checkout@v4
         with:
