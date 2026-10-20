@@ -18,7 +18,7 @@ Studio organizes OpenCode into isolated **profiles**, each with its own config, 
 
 This copies `AGENTS.md`, `CONTRIBUTING.md`, `agents/`, `skills/`, and `command/` into `~/.config/opencode-profiles/<profile-name>/`. Use `./install.sh --symlink studio <profile-name>` if you want the profile to stay in sync with `git pull` on the kit.
 
-4. Activate that profile in Studio and open a session. Run **`/start-session`** first — the same first-run bootstrap described in `SETUP-NATIVE.md` (step 4) applies: the orchestrator will delegate to `profiler` automatically on any repo without a `PROJECT-PROFILE.md`, load `.context/*.md`, and give you a short Italian status summary before waiting for your next instruction. Make this your first command in every new session on this profile.
+4. Activate that profile in Studio and open a session. Run **`/start-session`** first — the same first-run bootstrap described in `SETUP-NATIVE.md` (step 4) applies: the orchestrator will delegate to `profiler` automatically on any repo without a `PROJECT-PROFILE.md`, load `.context/*.md`, and give you a short status summary in the language you are speaking before waiting for your next instruction. Make this your first command in every new session on this profile.
 
 ## Known issue: global `AGENTS.md` precedence
 
