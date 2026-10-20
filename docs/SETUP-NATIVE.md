@@ -87,9 +87,10 @@ any other task. This command (defined in `command/start-session.md`) tells the
 orchestrator to run its bootstrap cycle explicitly: check whether
 `.opencode/PROJECT-PROFILE.md` exists and delegate to `profiler` if it doesn't,
 read `.context/progress.md`, `.context/decisions.md`, and `.context/issues.md`,
-then reply with a 3–4 line summary in Italian of the detected stack, current
-status, and latest relevant issue/decision — and wait for your next instruction
-without starting any new work. On a repo with no `.opencode/PROJECT-PROFILE.md`
+then reply with a 3–4 line summary, in the language you are speaking, of the
+detected stack, current status, and latest relevant issue/decision — and wait for
+your next instruction without starting any new work. On a repo with no
+`.opencode/PROJECT-PROFILE.md`
 yet, you should see it create that file plus
 `.context/{progress,decisions,issues}.md` and the `plan/{draft,in-progress,qa,complete}/`
 folders before it does anything else. This confirms the whole chain is wired
