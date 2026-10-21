@@ -8,3 +8,8 @@
   (RED → GREEN), eccezione mirata in `.gitignore` per committare solo `.opencode/ci-check.md`
   (il resto di `.opencode/` resta ignored, incluso `opencode.jsonc`). Verifiche: `bun run bun:audit`
   exit 0 con 692/692 test. Gate comprensione: skipped (esecuzione headless).
+- 2026-10-21: riesecuzione agentica dello stesso piano 19 (issue #19, branch effimero `agent/issue-19`):
+  lavoro già fuso in `main` (commit `b4362f2`); nessuna modifica necessaria. Verifica end-to-end:
+  `bun test tests/agent-smoke-bun-audit.test.ts` 3/3 pass; `bun run bun:audit` exit 0 (692/692 test,
+  32 file, lint OK); `plan-board.py check` ok (piano già in `qa`, `comprehension: skipped`, nessun
+  move necessario). Gate comprensione: skipped (esecuzione headless).
