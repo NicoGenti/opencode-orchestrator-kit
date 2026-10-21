@@ -150,7 +150,8 @@ jobs:
             "$(cat .github/agent/agent-issue.md)
 
           Work on the plan: ${{ steps.plan.outputs.file }}
-          GitHub issue: #${ISSUE}" | tee /tmp/agent.log
+          GitHub issue: #${ISSUE}
+          Constraint: do not create or modify any file under .github/workflows/ (the runner token cannot push workflow changes)." | tee /tmp/agent.log
       - name: Re-resolve the plan (the agent moved it to qa/) and verify it
         id: after
         run: |
@@ -196,6 +197,17 @@ jobs:
         run: |
           set -euo pipefail
           git add -A
+          # GITHUB_TOKEN cannot push changes under .github/workflows/. Discard any
+          # such change made by the agent so the rest of the work is not lost.
+          git diff --cached --name-only --no-renames -- .github/workflows > /tmp/blocked-workflows.txt || true
+          if [ -s /tmp/blocked-workflows.txt ]; then
+            echo "::warning::Discarding agent changes under .github/workflows/ (not pushable with GITHUB_TOKEN)"
+            cat /tmp/blocked-workflows.txt
+            while IFS= read -r f; do
+              git reset -q HEAD -- "$f"
+              git checkout -q HEAD -- "$f" 2>/dev/null || rm -f "$f"
+            done < /tmp/blocked-workflows.txt
+          fi
           git commit -m "feat(issue-${ISSUE}): agent execution of $(basename "${{ steps.after.outputs.file }}")" \
             || echo "no changes to commit"
           git push -u origin "agent/issue-${ISSUE}"
@@ -218,4 +230,8 @@ jobs:
           RUN_URL="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
           if [[ "${{ job.status }}" == "success" ]]; then MSG="execution completed"; else MSG="execution failed"; fi
           printf '%s\n\nAgent log: see the [workflow run logs](%s).\n' "$MSG" "$RUN_URL" > /tmp/report.md
+          if [ -s /tmp/blocked-workflows.txt ]; then
+            printf '\nChanges to these workflow files were discarded because the runner token cannot push them:\n' >> /tmp/report.md
+            while IFS= read -r f; do printf -- '- `%s`\n' "$f" >> /tmp/report.md; done < /tmp/blocked-workflows.txt
+          fi
           gh issue comment "${ISSUE}" -R "$GITHUB_REPOSITORY" --body-file /tmp/report.md
