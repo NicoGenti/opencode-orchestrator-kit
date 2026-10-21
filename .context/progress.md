@@ -8,3 +8,11 @@
   (RED → GREEN), eccezione mirata in `.gitignore` per committare solo `.opencode/ci-check.md`
   (il resto di `.opencode/` resta ignored, incluso `opencode.jsonc`). Verifiche: `bun run bun:audit`
   exit 0 con 692/692 test. Gate comprensione: skipped (esecuzione headless).
+- 2026-10-21: piano 27 eseguito (issue #27): audit tool usage del runner headless `agent:run`
+  sui run 39568623813 e 39438069017 (issue #19) — 6 tool eseguiti (`read`, `edit`, `glob`, `grep`,
+  `shell`, `subagent`), `question`/`skill`/`webfetch`/`write` mai usati; rifiuti `shell` causati da
+  frontmatter subagent `bash: ask` in headless, non da `OPENCODE_PERMISSION`. Deliverable:
+  `docs/AGENT-ISSUE-PERMISSIONS.md` (128 righe) con `OPENCODE_PERMISSION` minimo consigliato +
+  fallback flat, rischio residuo reale (`GH_TOKEN`/`OPENCODE_API_KEY` a livello job) e follow-up
+  umani (PR su `.github/workflows/agent-issue.yml`, smoke test). Nessuna modifica a workflow.
+  Piano spostato in `plan/qa/`. Gate comprensione: skipped (esecuzione headless).
