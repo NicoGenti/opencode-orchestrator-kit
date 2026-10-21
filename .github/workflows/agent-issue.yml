@@ -24,21 +24,26 @@ jobs:
         env:
           ACTOR: ${{ github.event.sender.login }}
           ASSOC: ${{ github.event.comment.author_association || '' }}
+          ISSUE_AUTHOR: ${{ github.event.issue.user.login || '' }}
+          ISSUE_ASSOC: ${{ github.event.issue.author_association || '' }}
           LABEL: ${{ github.event.label.name || '' }}
           BODY: ${{ github.event.comment.body || '' }}
           IS_PR: ${{ github.event.issue.pull_request && 'yes' || 'no' }}
           LABELS: ${{ toJSON(github.event.issue.labels) }}
         run: |
           set -euo pipefail
-          allow=false; want=false; mirror=false
+          allow=false; want=false; mirror=false; issue_ok=false
           if [[ "$ACTOR" == "NicoGenti" || "$ASSOC" == "OWNER" || "$ASSOC" == "MEMBER" ]]; then allow=true; fi
+          # The issue body becomes agent input, so its author must be trusted too,
+          # not only the person who labels the issue or comments /agent.
+          if [[ "$ISSUE_AUTHOR" == "NicoGenti" || "$ISSUE_ASSOC" == "OWNER" || "$ISSUE_ASSOC" == "MEMBER" ]]; then issue_ok=true; fi
           if [[ "$LABEL" == "agent:run" ]] || [[ "$BODY" == /agent* ]]; then want=true; fi
           if printf '%s' "$LABELS" | grep -q 'plan:mirror'; then mirror=true; fi
-          if [[ "$allow" == true && "$want" == true && "$IS_PR" == "no" ]]; then
+          if [[ "$allow" == true && "$want" == true && "$IS_PR" == "no" && "$issue_ok" == true ]]; then
             echo "run=true" >> "$GITHUB_OUTPUT"
           else
             echo "run=false" >> "$GITHUB_OUTPUT"
-            echo "gate: allow=$allow want=$want is_pr=$IS_PR mirror=$mirror -> skip"
+            echo "gate: allow=$allow want=$want is_pr=$IS_PR issue_ok=$issue_ok mirror=$mirror -> skip"
           fi
 
   run-agent:
@@ -46,18 +51,19 @@ jobs:
     if: needs.guard.outputs.run == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 90
+    # Secrets are NOT defined at job level: every step gets only what it needs.
+    # The agent step receives OPENCODE_API_KEY and no GitHub token.
     env:
-      OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
-      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       ISSUE: ${{ github.event.issue.number }}
       MODEL: opencode/mimo-v2.6-flash-free
       KIT_SHA: dbd41c7cd9eb411c31203530b0e5fbea800c03ff
       BASE: ${{ github.event.repository.default_branch }}
-      OPENCODE_PERMISSION: '{"*":"allow"}'
+      OPENCODE_PERMISSION: '{"*":"allow","webfetch":"deny","question":"deny"}'
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          persist-credentials: false
       - name: Install OpenCode 2 (pinned)
         run: |
           set -euo pipefail
@@ -106,6 +112,8 @@ jobs:
           fi
           grep -m1 "^model:" "$HOME/.config/opencode/agents/orchestrator.md"
       - name: Adopt the issue into the board if needed (PC-independent)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
           PLAN=$(grep -rlE $'^gh_issue: '"${ISSUE}"$'\r?$' plan/draft plan/in-progress plan/qa 2>/dev/null | head -1 || true)
@@ -133,14 +141,20 @@ jobs:
       - name: Install dependencies (frozen)
         run: bun install --frozen-lockfile
       - name: Refuse to reuse an existing agent branch
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          if git ls-remote --exit-code origin "refs/heads/agent/issue-${ISSUE}" >/dev/null 2>&1; then
+          AUTH="$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)"
+          echo "::add-mask::$AUTH"
+          if git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $AUTH" ls-remote --exit-code origin "refs/heads/agent/issue-${ISSUE}" >/dev/null 2>&1; then
             echo "ERROR: branch agent/issue-${ISSUE} already exists on origin." >&2
             echo "Delete it first, or use a new issue for this run." >&2
             exit 1
           fi
       - name: Run the agent
+        env:
+          OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
         run: |
           set -euo pipefail
           git config user.name  "issue-bridge"
@@ -189,11 +203,15 @@ jobs:
             /tmp/agent-redacted.log
           echo "redacted log ready: /tmp/agent-redacted.log"
       - name: Mirror the board into the issue BEFORE committing (machine keys travel with the branch)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
           python scripts/issue_bridge.py push --repo . --board plan \
             --remote "$GITHUB_REPOSITORY" --board-tool scripts/plan-board.py --json
       - name: Commit and push the branch
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
           git add -A
@@ -210,8 +228,13 @@ jobs:
           fi
           git commit -m "feat(issue-${ISSUE}): agent execution of $(basename "${{ steps.after.outputs.file }}")" \
             || echo "no changes to commit"
-          git push -u origin "agent/issue-${ISSUE}"
+          # Credentials are not persisted by checkout: pass them only to this push.
+          AUTH="$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)"
+          echo "::add-mask::$AUTH"
+          git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $AUTH" push -u origin "agent/issue-${ISSUE}"
       - name: Open or reuse the pull request
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
           PR=$(gh pr list -R "$GITHUB_REPOSITORY" --head "agent/issue-${ISSUE}" --json url --jq '.[0].url')
@@ -225,6 +248,8 @@ jobs:
           fi
       - name: Comment the outcome on the issue
         if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
           RUN_URL="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
