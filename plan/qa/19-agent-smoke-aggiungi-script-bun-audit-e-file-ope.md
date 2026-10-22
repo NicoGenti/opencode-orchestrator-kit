@@ -7,10 +7,6 @@ updated: 2026-10-20
 owner: issue-bridge
 executor: orchestrator
 comprehension: skipped
-gh_body_sha: 211daacb40b8c2fc7da79e2d47fe5643f2a57d0a0769932d90013a19c4013785
-gh_issue: 19
-gh_state: OPEN
-gh_synced_at: 2026-10-20T14:35:14Z
 ---
 
 ## Goal
@@ -46,4 +42,3 @@ Riferimento: issue di smoke per validare il flusso agent:run dopo le modifiche a
 
 ## Notes / Edge Cases
 - 
-
