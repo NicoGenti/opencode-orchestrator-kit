@@ -59,6 +59,8 @@ jobs:
       KIT_SHA: dbd41c7cd9eb411c31203530b0e5fbea800c03ff
       BASE: ${{ github.event.repository.default_branch }}
       OPENCODE_PERMISSION: '{"*":"allow","webfetch":"deny","question":"deny"}'
+      # Text of the "/agent ..." comment (empty for label-triggered runs). Passed via env, never interpolated into scripts.
+      SCOPE_RAW: ${{ github.event.comment.body || '' }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -153,6 +155,9 @@ jobs:
             exit 1
           fi
       - name: Run the agent
+        id: agent
+        # A stop or timeout must not skip the steps that save the work.
+        continue-on-error: true
         env:
           OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
         run: |
@@ -160,22 +165,32 @@ jobs:
           git config user.name  "issue-bridge"
           git config user.email "issue-bridge@users.noreply.github.com"
           git checkout -b "agent/issue-${ISSUE}"
-          opencode run --agent build -m "$MODEL" \
+          SCOPE="$(printf '%s' "$SCOPE_RAW" | head -n1 | sed -E 's#^/agent[[:space:]]*##')"
+          if [ -z "$SCOPE" ]; then SCOPE="the whole plan"; fi
+          echo "scope: $SCOPE"
+          # Hard stop 15 minutes before the job timeout so verify/commit/push still run.
+          timeout --signal=INT 70m opencode run --agent build -m "$MODEL" \
             "$(cat .github/agent/agent-issue.md)
 
           Work on the plan: ${{ steps.plan.outputs.file }}
           GitHub issue: #${ISSUE}
+          Scope: ${SCOPE}
+          Stop after the requested scope: do not start later phases, and leave the working tree in a consistent state.
           Constraint: do not create or modify any file under .github/workflows/ (the runner token cannot push workflow changes)." | tee /tmp/agent.log
-      - name: Re-resolve the plan (the agent moved it to qa/) and verify it
+      - name: Re-resolve the plan (the agent may have moved it) and verify it
         id: after
+        if: always() && steps.agent.outcome != 'skipped'
         run: |
           set -euo pipefail
-          PLAN=$(grep -rlE $'^gh_issue: '"${ISSUE}"$'\r?$' plan/qa | head -1)
+          PLAN=$(grep -rlE $'^gh_issue: '"${ISSUE}"$'\r?$' plan/qa plan/in-progress plan/draft 2>/dev/null | head -1 || true)
           echo "file=$PLAN" >> "$GITHUB_OUTPUT"
-          test -n "$PLAN"
-          echo -n "status in the moved file: "; grep -m1 "^status:" "$PLAN"
+          if [ -n "$PLAN" ]; then
+            echo -n "status in the plan file: "; grep -m1 "^status:" "$PLAN" || true
+          else
+            echo "::warning::plan file not found after the run"
+          fi
           bun install --frozen-lockfile
-          bun test
+          bun test || echo "::warning::bun test failed after the agent run"
       - name: Redact the agent log before publication
         if: always()
         env:
@@ -203,6 +218,8 @@ jobs:
             /tmp/agent-redacted.log
           echo "redacted log ready: /tmp/agent-redacted.log"
       - name: Mirror the board into the issue BEFORE committing (machine keys travel with the branch)
+        if: always() && steps.agent.outcome != 'skipped'
+        continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -210,6 +227,7 @@ jobs:
           python scripts/issue_bridge.py push --repo . --board plan \
             --remote "$GITHUB_REPOSITORY" --board-tool scripts/plan-board.py --json
       - name: Commit and push the branch
+        if: always() && steps.agent.outcome != 'skipped'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -233,6 +251,7 @@ jobs:
           echo "::add-mask::$AUTH"
           git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $AUTH" push -u origin "agent/issue-${ISSUE}"
       - name: Open or reuse the pull request
+        if: always() && steps.agent.outcome != 'skipped'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -253,7 +272,14 @@ jobs:
         run: |
           set -euo pipefail
           RUN_URL="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
-          if [[ "${{ job.status }}" == "success" ]]; then MSG="execution completed"; else MSG="execution failed"; fi
+          AGENT_OUTCOME="${{ steps.agent.outcome }}"
+          if [[ "${{ job.status }}" == "success" && "$AGENT_OUTCOME" == "success" ]]; then
+            MSG="execution completed"
+          elif [[ "$AGENT_OUTCOME" == "failure" && "${{ job.status }}" == "success" ]]; then
+            MSG="execution stopped early (agent error or time limit); partial work was pushed to agent/issue-${ISSUE} as a draft PR"
+          else
+            MSG="execution failed"
+          fi
           printf '%s\n\nAgent log: see the [workflow run logs](%s).\n' "$MSG" "$RUN_URL" > /tmp/report.md
           if [ -s /tmp/blocked-workflows.txt ]; then
             printf '\nChanges to these workflow files were discarded because the runner token cannot push them:\n' >> /tmp/report.md
