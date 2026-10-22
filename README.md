@@ -17,6 +17,7 @@ The kit splits the work into a routing layer and a roster of specialists:
 - **The orchestrator only routes.** It classifies the request, delegates and checkpoints. It cannot edit application code or run tests.
 - **Models are matched to tasks.** Cheap or local models explore and bootstrap; stronger models are reserved for design, implementation and review.
 - **Context stays small.** Session memory is bullet-only and auto-archived past ~3k tokens, and multi-phase plans advance one phase at a time with fresh context.
+- **Exploration starts from a repo map.** The `profiler` generates a compact `.context/repo-map.md` (hard 300-line budget) that the `explorer` reads before broad searches, reducing whole-file reads and token waste.
 - **It adapts to any repository.** On first run the `profiler` agent detects the stack (or interviews you for an empty repo) and scaffolds `.context/` (memory) and `plan/` (kanban).
 
 It works with the plain `opencode` CLI, no plugin required. Optional notes for [OpenCode Studio](https://github.com/Microck/opencode-studio) users are in `docs/SETUP-OPENCODE-STUDIO.md`.
