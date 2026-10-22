@@ -22,6 +22,6 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["docs-src", "src", "vite.docs.config.ts"],
+  "include": ["docs-src", "src", "vite.docs.config.ts", "plugin"],
   "exclude": ["node_modules", "site", "dist", ".opencode"]
 }
