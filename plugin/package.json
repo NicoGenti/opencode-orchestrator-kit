@@ -1,0 +1,16 @@
+{
+  "name": "opencode-orchestrator-kit",
+  "version": "0.7.0-alpha.1",
+  "description": "OpenCode 2 plugin that ships the opencode-orchestrator-kit: kit agents/commands materialised into .opencode/, skills registered in-memory, and {{TIER_*}} model tiers resolved at runtime.",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "files": [
+    "src"
+  ],
+  "dependencies": {
+    "@opencode/plugin": "2.0.32"
+  }
+}
