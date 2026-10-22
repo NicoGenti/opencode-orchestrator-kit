@@ -23,6 +23,8 @@ permission:
     find *: allow
     grep *: deny
     rg *: allow
+    sg *: allow
+    ast-grep *: allow
     ls *: allow
     cat *: ask
     head *: allow
@@ -44,6 +46,7 @@ permission:
     find * | *: allow
   skill:
     "*": deny
+    structural-search: allow
 ---
 
 # Explorer
@@ -60,8 +63,9 @@ Use the least expensive level that can answer the request. Stop at the first lev
 
 0. **Repo map.** If `.context/repo-map.md` exists, read it first to identify likely files, modules, and symbols. Treat it as a navigation aid, not as evidence.
 1. **Lexical search.** Use `rg` before `find`. Prefer `rg -l` to identify candidate files, then `rg -n --max-count` to locate relevant lines. Use `find` only for filename or path discovery.
-2. **Structural / relationship search.** For questions about callers, dependencies, symbol relationships, or architecture, use the optional Code Review Graph tools before broad file sweeps.
-3. **Targeted reading.** Read only the files and line ranges identified by the previous levels.
+2. **Structural search (optional).** If the `sg` (ast-grep) binary is available and the question is about code structure (function definitions, call sites, class usage), use `sg run` with a targeted pattern before falling back to CRG or broad `rg` sweeps. If `sg` is unavailable, skip this level silently.
+3. **Structural / relationship search.** For questions about callers, dependencies, symbol relationships, or architecture, use the optional Code Review Graph tools before broad file sweeps.
+4. **Targeted reading.** Read only the files and line ranges identified by the previous levels.
 
 ## Bounded Reads
 

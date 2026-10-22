@@ -145,6 +145,8 @@ Select `@orchestrator` (or set it as your default agent), then run **`/start-ses
 - **Swap providers per tier** by editing `.opencode/models.config.json` and setting `default_preset` to the profile you want.
 - **Opt into extras** with `./install.sh --with-extras` to also install `pc-doctor` and `writer`.
 - **Add project-specific skills** under `skills/<name>/SKILL.md`; the orchestrator loads them on demand via the `skill` tool.
+- **Optional structural search:** if `ast-grep` (`sg`) is installed, the `explorer` can use it for structural queries; see `skills/structural-search/SKILL.md`.
+- **Measure token impact:** follow the A/B protocol in [`docs/BENCHMARK-TOKEN-USAGE.md`](docs/BENCHMARK-TOKEN-USAGE.md) to compare exploration with and without the repo map.
 - **Engineering baseline** (secrets hygiene, git hygiene, definition of done) lives in `CONTRIBUTING.md`.
 
 ## Development
