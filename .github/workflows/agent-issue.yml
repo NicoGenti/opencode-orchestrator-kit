@@ -58,7 +58,7 @@ jobs:
       MODEL: opencode/mimo-v2.6-flash-free
       KIT_SHA: dbd41c7cd9eb411c31203530b0e5fbea800c03ff
       BASE: ${{ github.event.repository.default_branch }}
-      OPENCODE_PERMISSION: '{"*":"allow","webfetch":"deny","question":"deny"}'
+      OPENCODE_PERMISSION: '{"*":"allow","shell":"allow","webfetch":"deny","question":"deny"}'
       # Text of the "/agent ..." comment (empty for label-triggered runs). Passed via env, never interpolated into scripts.
       SCOPE_RAW: ${{ github.event.comment.body || '' }}
     steps:
@@ -169,15 +169,23 @@ jobs:
           if [ -z "$SCOPE" ]; then SCOPE="the whole plan"; fi
           echo "scope: $SCOPE"
           # Hard stop 15 minutes before the job timeout so verify/commit/push still run.
-          timeout --signal=INT 70m opencode run --agent build -m "$MODEL" \
+          timeout --signal=INT 75m opencode run --agent build -m "$MODEL" \
             "$(cat .github/agent/agent-issue.md)
 
           Work on the plan: ${{ steps.plan.outputs.file }}
           GitHub issue: #${ISSUE}
           Scope: ${SCOPE}
           Stop after the requested scope: do not start later phases, and leave the working tree in a consistent state.
+
+          Execution rules:
+          - Execute the requested phases sequentially.
+          - Do not dispatch parallel implementation agents when they can modify shared integration surfaces.
+          - After each phase, run: bun run typecheck && bun test && bun run lint.
+          - Fix only failures caused by the current phase before continuing.
+          - Do not mark a phase complete unless its checks pass.
+
           Constraint: do not create or modify any file under .github/workflows/ (the runner token cannot push workflow changes)." | tee /tmp/agent.log
-      - name: Re-resolve the plan (the agent may have moved it) and verify it
+      - name: Re-resolve the plan and run quality gates
         id: after
         if: always() && steps.agent.outcome != 'skipped'
         run: |
@@ -190,7 +198,9 @@ jobs:
             echo "::warning::plan file not found after the run"
           fi
           bun install --frozen-lockfile
-          bun test || echo "::warning::bun test failed after the agent run"
+          bun run typecheck
+          bun test
+          bun run lint
       - name: Redact the agent log before publication
         if: always()
         env:
