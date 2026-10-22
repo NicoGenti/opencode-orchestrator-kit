@@ -1,15 +1,16 @@
 ---
 id: 13-migrare-il-kit-al-plugin-opencode-2
 title: Migrare il kit al plugin OpenCode 2
-status: draft
+status: qa
 created: 2026-10-20
-updated: 2026-10-20
+updated: 2026-10-22
 owner: issue-bridge
 executor: orchestrator
+comprehension: skipped
 gh_body_sha: 5e3db9c16b0e6f458a90d44d76a3d4f822146330c2434f4acf6cce6b570e577d
 gh_issue: 13
 gh_state: OPEN
-gh_synced_at: 2026-10-20T14:35:11Z
+gh_synced_at: 2026-10-22T21:31:58Z
 ---
 
 ## Goal
