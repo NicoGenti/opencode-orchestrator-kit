@@ -5,10 +5,10 @@ import { join } from "node:path";
 const REPO_ROOT = join(import.meta.dir, "..");
 const PROFILER = readFileSync(join(REPO_ROOT, "agents/profiler.md"), "utf-8");
 
- describe("profiler repo map contract", () => {
+describe("profiler repo map contract", () => {
   test("frontmatter grants write permission for .context/repo-map.md", () => {
     const fm = PROFILER.slice(0, PROFILER.indexOf("\n---", 4));
-    expect(fm).toContain('".context/repo-map.md": "allow"');
+    expect(fm).toContain('".context/repo-map.md": allow');
   });
 
   test("repo map is a derived artifact refreshed on every run", () => {
