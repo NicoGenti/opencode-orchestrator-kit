@@ -8,7 +8,7 @@ User request
      ▼
 Orchestrator  ──(step 0: no PROJECT-PROFILE.md yet?)──▶  profiler
      │                                                       │
-     │◀──────────────── stack, CI, plan/, .context/ ─────────┘
+     │◀──────── stack, CI, plan/, .context/, repo map ───────┘
      │
      ▼
 Observe → Orient → Decide
@@ -78,6 +78,7 @@ Input to `comprehension-coach` is strictly limited to: task goal, changed file l
 ## Why this saves tokens and cost
 
 - **Cheap models do discovery.** `explorer` and `profiler` run on lightweight/local models (e.g. a fast cloud or local model), since their job is pattern-matching and reporting, not reasoning.
+- **The repo map narrows exploration.** The profiler-generated `.context/repo-map.md` gives the explorer a compact starting point, so it can skip broad `find`/`rg` sweeps and go straight to targeted reads (see the explorer's search ladder).
 - **Expensive models are scoped narrowly.** `oracle` (design trade-offs) and `developer-fixer` (implementation) get stronger models, but only ever see one task spec or one plan phase at a time — never the whole project history.
 - **Context never grows unbounded.** `.context/progress.md` is a snapshot (full overwrite, not an append-only log), and it's archived once it passes roughly 3,000 tokens. Multi-phase plans are executed one phase per delegation with fresh context each time, instead of one agent holding 10+ phases in memory.
 - **No redundant re-exploration.** Session memory and `PROJECT-PROFILE.md` are read once at the start of routing and their relevant excerpts are forwarded into each delegation's "Inputs Available" section, so subagents don't each re-discover the same facts about the repo.
@@ -88,9 +89,9 @@ Input to `comprehension-coach` is strictly limited to: task goal, changed file l
 
 1. **Existing repo**: glob known manifests (`package.json`, `*.csproj`, `angular.json`, `requirements.txt`/`pyproject.toml`, `go.mod`, CI config, `Dockerfile`) to detect stack, build tool, test framework, and CI/CD platform. Falls back to a compressed Repomix dump (with Secretlint enabled) only when the manifest signal is ambiguous or the repo is a monorepo.
 2. **Empty/new repo**: asks up to 3 targeted questions (stack, framework, CI/CD target) and records the answers as "user-declared, not yet verified."
-3. Writes `.opencode/PROJECT-PROFILE.md`, initializes `.context/*.md` templates if missing, and scaffolds the `plan/{draft,in-progress,qa,complete}/` kanban if missing. All three steps are idempotent — re-running on an already-profiled repo is a no-op that only fills in gaps (e.g. retrofitting `plan/` onto a repo profiled before that convention existed).
+3. Writes `.opencode/PROJECT-PROFILE.md`, initializes `.context/*.md` templates if missing, scaffolds the `plan/{draft,in-progress,qa,complete}/` kanban if missing, and generates/refreshes the token-budgeted `.context/repo-map.md`. The memory/plan steps are idempotent (only gaps are filled); the repo map is a derived artifact refreshed on every run.
 
-This is also why the kit ships without any hard-coded assumption about language, framework, or package manager: everything project-specific lives in the generated `PROJECT-PROFILE.md`, not in the agent definitions themselves.
+This is also why the kit ships without any hard-coded assumption about language, framework, or package manager: everything project-specific lives in the generated `PROJECT-PROFILE.md` and `.context/repo-map.md`, not in the agent definitions themselves.
 
 ## Extending the roster
 
