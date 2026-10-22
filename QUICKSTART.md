@@ -69,6 +69,12 @@ plan-writer,
 developer-fixer, explorer, ...) without ever touching application code, reducing
 token usage while keeping responsibilities cleanly separated.
 
+On first run, the `profiler` generates a compact `.context/repo-map.md` (hard
+300-line budget) that the `explorer` reads before broad searches. The explorer
+follows a token-aware search ladder — repo map → `rg` → optional ast-grep →
+optional Code Review Graph → targeted reads — and returns bounded, evidence-based
+findings instead of whole-file dumps.
+
 Operations helpers (`build-helper`, `npm-helper`, `deploy-helper`) are installed by
 default and only routed on matching failures. Extras (`pc-doctor`, `writer`) require
 `--with-extras`; the docs-lookup `librarian` ships in `agents/` and is installed by
@@ -91,6 +97,7 @@ At close, the orchestrator classifies the change (NONE/LIGHT/DEEP) and announces
 See `README.md` for the responsibility map and customization notes,
 `docs/SETUP-NATIVE.md` for the manual install path,
 `docs/CONFIGURATION.md` for the full tier-resolution rules,
+`docs/BENCHMARK-TOKEN-USAGE.md` to measure the token impact of the repo map,
 `AGENTS.md` for details on each subagent's role and responsibilities, and
 `CONTRIBUTING.md` to contribute to the project.
 
