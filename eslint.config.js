@@ -37,4 +37,15 @@ export default tseslint.config(
       globals: { ...globals.node },
     },
   },
+  {
+    // Plugin sources run under Bun and Node (no DOM): Node/Bun builtins only.
+    // globals@15.11 does not ship a bun environment, so Node globals cover the
+    // surface the plugin actually uses.
+    files: ["plugin/**/*.{ts,tsx}"],
+    extends: [js.configs.recommended, ...tseslint.configs.recommended],
+    languageOptions: {
+      ecmaVersion: 2022,
+      globals: { ...globals.node },
+    },
+  },
 );

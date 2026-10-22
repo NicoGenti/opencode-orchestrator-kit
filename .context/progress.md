@@ -19,3 +19,19 @@
   `bun run typecheck` exit 0, `bun test` 702/702, `bun run lint` exit 0. Piano spostato
   draft → qa con `plan-board.py move --comprehension skipped`. Gate comprensione: skipped
   (esecuzione headless).
+- 2026-10-22: piano 13 fase 1 eseguita (issue #13, scheletro del plugin OpenCode 2): nuovo
+  pacchetto dedicato `plugin/` (`opencode-orchestrator-kit@0.7.0-alpha.1`, `type: module`,
+  zero dipendenze installate) con `plugin/src/index.ts` → `Plugin.define` id stabile
+  `opencode-orchestrator-kit` che in `setup(ctx)` registra il comando `start-session`
+  (specchio di `command/start-session.md`) e le 9 skill da `plugin/assets/skills/`
+  (parità byte con `command/` e `skills/`, garantita da `tests/plugin-assets-parity.test.ts`).
+  Shim temporaneo `@opencode/plugin` (`plugin/types/opencode-plugin-shim.d.ts` + stand-in
+  runtime `plugin/src/runtime/opencode-plugin.ts`): nessuna nuova dipendenza perché il
+  vincolo runner vieta modifiche ai lockfile; sostituito con il peer dep reale in fase 6.
+  `tsconfig.json` include `plugin/`; blocco eslint dedicato in `eslint.config.js`.
+  Test: `tests/plugin-skeleton.test.ts` + `tests/plugin-assets-parity.test.ts` (8 asserzioni
+  nuove, RED osservato sulla parity). Verifiche: `bun run typecheck` exit 0, `bun test`
+  710/710, `bun run lint` exit 0; `git status` mostra solo `eslint.config.js`, `tsconfig.json`,
+  `plugin/`, 2 nuovi test. Board: `plan-board.py move --to qa` rifiutato `already-in-column`
+  (il piano era gia' in qa, `comprehension: skipped`), `check` ok. Gate comprensione: skipped
+  (esecuzione headless). Fasi 2+ non avviate (scope limitato alla fase 1).
