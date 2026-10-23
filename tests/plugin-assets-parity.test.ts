@@ -3,7 +3,8 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join, relative, sep } from "node:path";
 
 const ROOT = join(import.meta.dir, "..");
-const SOURCE_COMMAND = join(ROOT, "command", "start-session.md");
+/** All packaged commands, in registration order. */
+const COMMAND_NAMES = ["start-session", "recall", "research-mode"] as const;
 const SOURCE_SKILLS = join(ROOT, "skills");
 const SOURCE_AGENTS = join(ROOT, "agents");
 const SOURCE_EXTRAS = join(ROOT, "extras");
@@ -50,7 +51,10 @@ function collectAllFiles(dir: string, out: string[] = []): string[] {
 }
 
 const bindings: AssetBinding[] = [
-  { source: SOURCE_COMMAND, assetRel: "commands/start-session.md" },
+  ...COMMAND_NAMES.map((name) => ({
+    source: join(ROOT, "command", `${name}.md`),
+    assetRel: `commands/${name}.md`,
+  })),
   ...collectSkillSources(SOURCE_SKILLS).map((source) => ({
     source,
     assetRel: `skills/${relative(SOURCE_SKILLS, source).split(sep).join("/")}`,
@@ -59,6 +63,9 @@ const bindings: AssetBinding[] = [
   ...collectFlatSources(SOURCE_EXTRAS, "extras"),
 ];
 
+const commandBindings = bindings.filter((binding) =>
+  binding.assetRel.startsWith("commands/"),
+);
 const agentBindings = bindings.filter((binding) =>
   binding.assetRel.startsWith("agents/"),
 );
@@ -71,7 +78,12 @@ const packagedFiles = collectAllFiles(ASSETS_DIR)
   .sort();
 
 describe("plugin/assets packaging parity", () => {
-  test("the addressable sources cover 15 agents and 2 extras", () => {
+  test("the addressable sources cover 3 commands, 15 agents and 2 extras", () => {
+    expect(commandBindings.map((binding) => binding.assetRel)).toEqual([
+      "commands/start-session.md",
+      "commands/recall.md",
+      "commands/research-mode.md",
+    ]);
     expect(agentBindings).toHaveLength(15);
     expect(extraBindings).toHaveLength(2);
   });
@@ -82,7 +94,9 @@ describe("plugin/assets packaging parity", () => {
     );
   });
 
-  test("no out-of-scope command file is packaged", () => {
+  test("recall and research-mode are packaged; close-session stays out of scope", () => {
+    expect(packagedFiles).toContain("commands/recall.md");
+    expect(packagedFiles).toContain("commands/research-mode.md");
     expect(packagedFiles).not.toContain("commands/close-session.md");
   });
 

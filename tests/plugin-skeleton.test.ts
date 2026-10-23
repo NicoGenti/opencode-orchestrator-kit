@@ -3,8 +3,33 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, isAbsolute, join, relative, sep } from "node:path";
 
 import plugin from "../plugin/src/index.ts";
+import { loadPackagedCommand } from "../plugin/src/command";
 
 const ROOT = join(import.meta.dir, "..");
+
+/** Every packaged command: the exact registration order the plugin must use. */
+const COMMAND_SOURCES = ["start-session", "recall", "research-mode"] as const;
+
+/** Parsed source of one repo-root command file: frontmatter + trimmed body. */
+function parseCommandSource(name: string): { description: string; agent: string; body: string } {
+  const raw = readFileSync(join(ROOT, "command", `${name}.md`), "utf-8");
+  const frontmatter = raw.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+  if (!frontmatter) {
+    throw new Error(`command/${name}.md has no frontmatter block`);
+  }
+  const value = (key: string): string => {
+    const found = new RegExp(`^${key}:\\s*(.+)$`, "m").exec(frontmatter[1])?.[1]?.trim();
+    if (!found) {
+      throw new Error(`command/${name}.md frontmatter has no "${key}"`);
+    }
+    return found;
+  };
+  return {
+    description: value("description"),
+    agent: value("agent"),
+    body: raw.replace(/^---\r?\n[\s\S]*?\r?\n---/, "").trim(),
+  };
+}
 
 /** Recursively collect every SKILL.md path under a directory. */
 function collectSkillFiles(dir: string): string[] {
@@ -31,30 +56,10 @@ const repoSkillIds: string[] = collectSkillFiles(join(ROOT, "skills"))
   )
   .sort();
 
-const commandSource = readFileSync(
-  join(ROOT, "command", "start-session.md"),
-  "utf-8",
-);
-
-const frontmatter = commandSource.match(/^---\r?\n([\s\S]*?)\r?\n---/);
-if (!frontmatter) {
-  throw new Error("command/start-session.md has no frontmatter block");
+const expectedSources: Record<string, ReturnType<typeof parseCommandSource>> = {};
+for (const name of COMMAND_SOURCES) {
+  expectedSources[name] = parseCommandSource(name);
 }
-
-function frontmatterValue(block: string, key: string): string {
-  const value = new RegExp(`^${key}:\\s*(.+)$`, "m").exec(block)?.[1]?.trim();
-  if (!value) {
-    throw new Error(`command/start-session.md frontmatter has no "${key}"`);
-  }
-  return value;
-}
-
-const expectedDescription = frontmatterValue(frontmatter[1], "description");
-
-/** Body: the markdown after the frontmatter block, trimmed. */
-const expectedBody = commandSource
-  .replace(/^---\r?\n[\s\S]*?\r?\n---/, "")
-  .trim();
 
 const commands: Array<Record<string, unknown>> = [];
 const skills: Array<Record<string, unknown>> = [];
@@ -145,17 +150,39 @@ describe("opencode-orchestrator-kit plugin skeleton", () => {
     expect(typeof plugin.setup).toBe("function");
   });
 
-  test("registers exactly one command mirrored from command/start-session.md", () => {
-    expect(commands).toHaveLength(1);
-    expect(commands[0].name).toBe("start-session");
-    expect(commands[0].agent).toBe("orchestrator");
-    expect(commands[0].description).toBe(expectedDescription);
+  test("registers exactly three commands in registration order", () => {
+    expect(commands).toHaveLength(3);
+    expect(commands.map((command) => command.name)).toEqual([...COMMAND_SOURCES]);
   });
 
-  test("the registered command body equals the trimmed markdown body", () => {
-    const execute = commands[0].execute as () => string;
-    expect(typeof execute).toBe("function");
-    expect(execute()).toBe(expectedBody);
+  test("each command mirrors its repo-root source: agent/description/body", () => {
+    for (let index = 0; index < COMMAND_SOURCES.length; index++) {
+      const name = COMMAND_SOURCES[index];
+      const expected = expectedSources[name];
+      const command = commands[index];
+      expect(command.name).toBe(name);
+      expect(command.agent).toBe(expected.agent);
+      expect(command.agent).toBe("orchestrator");
+      expect(command.description).toBe(expected.description);
+      expect(typeof command.execute).toBe("function");
+      const execute = command.execute as () => string;
+      expect(execute()).toBe(expected.body);
+    }
+  });
+
+  test("loadPackagedCommand loads each packaged stem from its repo-root source", () => {
+    for (const name of COMMAND_SOURCES) {
+      const expected = expectedSources[name];
+      const command = loadPackagedCommand(name);
+      expect(command.name).toBe(name);
+      expect(command.agent).toBe(expected.agent);
+      expect(command.description).toBe(expected.description);
+      expect(command.body).toBe(expected.body);
+    }
+  });
+
+  test("loadPackagedCommand keeps close-session unpackaged (throws)", () => {
+    expect(() => loadPackagedCommand("close-session")).toThrow();
   });
 
   test("registers all 9 kit skills with ids from the repo skill directories", () => {
@@ -186,9 +213,11 @@ describe("opencode-orchestrator-kit plugin skeleton", () => {
     }
   });
 
-  test("registers exactly one native plan_board tool with a documented standing authorization", () => {
-    expect(tools).toHaveLength(1);
-    expect(tools[0].name).toBe("plan_board");
-    expect(typeof tools[0].execute).toBe("function");
+  test("registers exactly the two native tools with executable execute", () => {
+    expect(tools).toHaveLength(2);
+    expect(tools.map((tool) => tool.name)).toEqual(["plan_board", "comprehension_telemetry"]);
+    for (const tool of tools) {
+      expect(typeof tool.execute).toBe("function");
+    }
   });
 });

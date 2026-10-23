@@ -92,3 +92,46 @@
   `.github/workflows/`. Board: `plan-board.py move --to qa` -> `already-in-column` (piano gia'
   in qa con `comprehension: skipped`), `check` ok (0 errori, 0 warning). Gate comprensione:
   skipped (esecuzione headless). Fasi 4+ non avviate (scope limitato alla fase 3).
+- 2026-10-23: piano 13 fase 4 eseguita (issue #13, gate di comprensione e ricerca nel plugin):
+  nuovi `plugin/src/comprehension.ts` (costanti `CLASSIFICATION_RULES` con triggers verbatim da
+  `agents/orchestrator.md` + `gateRequiresCoach`, `COMPREHENSION_DEFAULTS` pari al template,
+  `loadComprehensionConfig` — assente -> default silenziosi, JSON invalido/non-oggetto -> 1
+  warning, merge per chiave con 1 warning per foglio invalido, mai throw — e writer
+  `formatGateRow`/`appendGateRow` + `formatRecallRow`/`appendRecallRow`: riga DCI0 ISO-8601 e
+  riga dci1 con data locale, header-once su `.context/comprehension-log.md`, append-only via
+  `appendFile "a"`, validazione PRIMA di ogni accesso fs, `TelemetryContractError` con il nome
+  del campo violato, `mode` ammesso solo LIGHT|DEEP per costruzione: NONE non scrive mai),
+  `plugin/src/research.ts` (port di `tests/contract-fields.ts`: `TASK_FIELDS` 19 /
+  `RECALL_FIELDS` 8 con parita' di ordine e messaggi, `slotForTaskIndex`, `makeResearchId`
+  `res-YYYYMMDD-HHMMSS-<32hex>` da CSPRNG, `ResearchController` con seed pigro da
+  `research.enabled`, `set` on/off che azzera lo slot, `startTask` A/B alternati, appends JSONL
+  append-only MAI letti; hardening privacy ratificato: `plan` stringa vuota o `ID_RE` — i
+  validatori plugin rifiutano piani che il canonico accetta, Superset dichiarato nei test)
+  e `plugin/src/comprehension-tool.ts` (tool nativo `comprehension_telemetry` via
+  `ctx.tool.transform` con degradazione silenziosa, schema a 13 proprieta` con 7 azioni:
+  append_gate_row, append_recall_row, research_status, research_set, research_start_task,
+  research_task_event, research_recall_event; codici `bad-argument`/`invalid-*`/
+  `research-disabled`; zero-I/O del dataset disattivato verificato con file avvelenato
+  invariato byte a byte). Comandi: `plugin/assets/commands/{recall,research-mode}.md` copie
+  byte-identiche delle fonti, registrati con `loadPackagedCommand` in `command.ts` (step 4 di
+  `index.ts`, 3 comandi in ordine), tool wired come step 8 dopo `plan_board`. TDD: RED osservato
+  769 pass/8 fail/4 errori (moduli mancanti + conteggi). Test nuovi: `tests/plugin-comprehension
+  .test.ts`, `tests/plugin-research.test.ts` (parita' vs `tests/contract-fields.ts` su 36+19
+  eventi, suite privacy, controller matrix), `tests/plugin-telemetry-tool.test.ts`; aggiornati
+  `plugin-skeleton` (3 comandi/2 tool), `assets-parity` (3 comandi byte-parity),
+  `plugin-plan-board-tool` (2 tool). Disclosure: 1 sola modifica a un test — correzione
+  applicata dall'executor in `tests/plugin-comprehension.test.ts`:
+  "recall senza re-emit di header" mancava il pre-append del gate row (setup assente, asserzione
+  `created:false` incoerente col contract) — aggiunto il pre-append, nessun'altra asserzione
+  toccata. Verifiche (eseguite dall'orchestratore): `bun run typecheck` exit 0, `bun test`
+  852/852 (42 file; RED intermedio 849/3 con le 2 correzioni poi applicate: sync
+  `state.taskIndex` in `startTask`, byte finale in piu` su `assets/commands/research-mode.md`),
+  `bun run lint` exit 0; `git status` 5 modified + 9 new, senza lockfile ne'
+  `.github/workflows/`. Deviazioni ratificate: config assente -> default SENZA warning (il
+  flusso V2 senza install.sh non ha il file; lo skill prevede una warning line, disclosure
+  qui); classificazione portata come costanti dati con pin di parita' sul doc (il giudizio
+  resta prose dell'orchestrator); stato research/sessione in memoria di processo (non
+  `ctx.storage`, non dichiarato dallo shim: `research.enabled` resta il seed persistente,
+  `/research-mode on|off` resta session-scoped come da command). Board: `move --to qa` ->
+  `already-in-column`, `check` ok (0 errori, 0 warning). Gate comprensione: skipped
+  (esecuzione headless). Fasi 5+ non avviate (scope limitato alla fase 4).

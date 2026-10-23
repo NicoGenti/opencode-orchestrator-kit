@@ -17,24 +17,35 @@ function frontmatterValue(
   return value?.trim();
 }
 
-/** Load the packaged /start-session command (mirrors command/start-session.md). */
-export function loadPackagedStartSession(): PackagedCommand {
-  const raw = readAsset("commands/start-session.md");
+/**
+ * Loads one packaged command by asset stem (e.g. "start-session") from
+ * `plugin/assets/commands/<stem>.md`, mirroring the repo-root source
+ * command/<stem>.md exactly: same frontmatter parse, same trimmed body.
+ * The name IS the asset stem. Throws when the asset is missing (packaging
+ * parity decides what is packaged) or lacks description/agent frontmatter.
+ */
+export function loadPackagedCommand(assetStem: string): PackagedCommand {
+  const raw = readAsset(`commands/${assetStem}.md`);
   const match = raw.match(/^---\r?\n([\s\S]*?)\r?\n---/);
   if (!match) {
-    throw new Error("packaged start-session.md has no frontmatter block");
+    throw new Error(`packaged ${assetStem}.md has no frontmatter block`);
   }
   const description = frontmatterValue(match[1], "description");
   const agent = frontmatterValue(match[1], "agent");
   if (!description || !agent) {
     throw new Error(
-      "packaged start-session.md frontmatter needs description and agent",
+      `packaged ${assetStem}.md frontmatter needs description and agent`,
     );
   }
   return {
-    name: "start-session",
+    name: assetStem,
     description,
     agent,
     body: raw.replace(/^---\r?\n[\s\S]*?\r?\n---/, "").trim(),
   };
+}
+
+/** Load the packaged /start-session command (thin wrapper, Phase 1 parity). */
+export function loadPackagedStartSession(): PackagedCommand {
+  return loadPackagedCommand("start-session");
 }

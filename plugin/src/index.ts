@@ -2,7 +2,7 @@ import { Plugin } from "./runtime/opencode-plugin";
 import type { AgentEditor } from "./runtime/opencode-plugin";
 
 import { collectPackagedSkills } from "./assets";
-import { loadPackagedStartSession } from "./command";
+import { loadPackagedCommand } from "./command";
 
 import {
   collectAvailabilityWarnings,
@@ -14,22 +14,25 @@ import type { ResolvedTierMap } from "./tiers";
 import { collectPackagedAgents, parseModelRef } from "./agents";
 
 import { registerPlanBoardTool } from "./plan-board-tool";
+import { registerComprehensionTelemetryTool } from "./comprehension-tool";
 
 /** Prefix used for every kit signal printed to the console. */
 const WARNING_PREFIX = "[opencode-orchestrator-kit]";
 
 /**
- * opencode-orchestrator-kit plugin (Phase 3).
+ * opencode-orchestrator-kit plugin (Phase 4).
  *
  * Reads the plugin options `{ preset?, withExtras? }`, resolves the tier map
  * from the bundled presets ( throwing TierConfigError early on bad config ),
  * signals unavailable tier models against `ctx.model.list()` (non-fatal), and
- * registers: one command (`/start-session`), the 9 kit skills and the 15
- * packaged agents (+2 extras when `withExtras: true`) via `ctx.agent.transform`.
+ * registers: three commands (`/start-session`, `/recall`, `/research-mode`),
+ * the 9 kit skills and the 15 packaged agents (+2 extras when
+ * `withExtras: true`) via `ctx.agent.transform`.
  *
- * Phase 3 additionally registers the native `plan_board` tool (the pure
- * plan-board CLI port) via `ctx.tool.transform`; when the host does not
- * expose `ctx.tool` the registration degrades silently and setup stays
+ * Phase 3 registers the native `plan_board` tool (the pure plan-board CLI
+ * port) and Phase 4 the native `comprehension_telemetry` tool, both via
+ * `ctx.tool.transform` in that registration order; when the host does not
+ * expose `ctx.tool` the registrations degrade silently and setup stays
  * successful.
  *
  * Agent registration is an upsert guarded by `editor.get(id)`: user-configured
@@ -72,15 +75,18 @@ export default Plugin.define({
       }
     }
 
-    // 4. Commands.
+    // 4. Commands — three packaged commands in registration order
+    //    (start-session, recall, research-mode; mirrors command/*.md).
     ctx.command.transform((editor) => {
-      const startSession = loadPackagedStartSession();
-      editor.add({
-        name: startSession.name,
-        description: startSession.description,
-        agent: startSession.agent,
-        execute: () => startSession.body,
-      });
+      for (const stem of ["start-session", "recall", "research-mode"] as const) {
+        const command = loadPackagedCommand(stem);
+        editor.add({
+          name: command.name,
+          description: command.description,
+          agent: command.agent,
+          execute: () => command.body,
+        });
+      }
     });
 
     // 5. Skills.
@@ -105,6 +111,11 @@ export default Plugin.define({
     // 7. Native plan_board tool (Phase 3) via ctx.tool.transform; degrades
     //    silently when the host does not expose ctx.tool.
     registerPlanBoardTool(ctx);
+
+    // 8. Native comprehension_telemetry tool (Phase 4) via ctx.tool.transform;
+    //    same silent degradation. Order matters for the tools parity pin:
+    //    plan_board is registered first, comprehension_telemetry second.
+    registerComprehensionTelemetryTool(ctx);
   },
 });
 

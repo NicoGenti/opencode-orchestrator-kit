@@ -199,9 +199,10 @@ afterAll(() => {
 });
 
 describe("registrazione del tool nativo plan_board", () => {
-  test("esattamente un tool, nominato plan_board", () => {
-    expect(tools).toHaveLength(1);
+  test("due tool registrati: plan_board primo, comprehension_telemetry secondo", () => {
+    expect(tools).toHaveLength(2);
     expect(tools[0].name).toBe("plan_board");
+    expect(tools[1].name).toBe("comprehension_telemetry");
   });
 
   test("description documenta l'autorizzazione standing e i codici di uscita (0 ok, 1 bloccante)", () => {
