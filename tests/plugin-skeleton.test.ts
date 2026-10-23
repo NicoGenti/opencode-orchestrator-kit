@@ -59,27 +59,75 @@ const expectedBody = commandSource
 const commands: Array<Record<string, unknown>> = [];
 const skills: Array<Record<string, unknown>> = [];
 
+/** Minimal agent editor: records nothing; skeleton test only guards shape. */
+function noopAgentEditor() {
+  const agents = new Map<string, Record<string, unknown>>();
+  return {
+    list: () => [...agents.keys()],
+    get: (id: string) => agents.get(id),
+    default: (id: string) => void agents.set(id, { id, mode: "primary" }),
+    update: (id: string, fn: (agent: Record<string, unknown>) => void) => {
+      const agent = agents.get(id) ?? { id, name: id, mode: "primary" };
+      fn(agent);
+      agents.set(id, agent);
+    },
+    remove: (id: string) => void agents.delete(id),
+  };
+}
+
+const warned: string[] = [];
+const originalWarn = console.warn;
+console.warn = (...args: unknown[]) => {
+  warned.push(args.map(String).join(" "));
+};
+
 // Run the plugin setup once against a recording mock context.
-plugin.setup({
-  command: {
-    transform: (callback) => {
-      void callback({
-        add: (entry: Record<string, unknown>) => {
-          commands.push(entry);
-        },
-      });
+let setupPromise: unknown;
+try {
+  setupPromise = plugin.setup({
+    options: {},
+    model: {
+      list: async () => [
+        { providerID: "opencode-go", id: "gpt-5.6-luna" },
+        { providerID: "opencode-go", id: "kimi-k3" },
+        { providerID: "opencode-go", id: "minimax-m3" },
+        { providerID: "ollama", id: "deepseek-v4.1-flash:cloud" },
+      ],
     },
-  },
-  skill: {
-    transform: (callback) => {
-      void callback({
-        add: (entry: Record<string, unknown>) => {
-          skills.push(entry);
-        },
-      });
+    agent: {
+      transform: async (callback) => {
+        await callback(noopAgentEditor());
+      },
     },
-  },
-});
+    command: {
+      transform: (callback) => {
+        void callback({
+          add: (entry: Record<string, unknown>) => {
+            commands.push(entry);
+          },
+        });
+      },
+    },
+    skill: {
+      transform: (callback) => {
+        void callback({
+          add: (entry: Record<string, unknown>) => {
+            skills.push(entry);
+          },
+        });
+      },
+    },
+  } as never);
+} finally {
+  console.warn = originalWarn;
+}
+await setupPromise;
+
+if (warned.length !== 0) {
+  throw new Error(
+    `setup must not warn in the happy-path mock context: ${warned.join(" | ")}`,
+  );
+}
 
 describe("opencode-orchestrator-kit plugin skeleton", () => {
   test("default export has the stable plugin id and a setup function", () => {
