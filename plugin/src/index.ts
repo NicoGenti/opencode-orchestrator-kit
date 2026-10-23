@@ -13,17 +13,24 @@ import type { ResolvedTierMap } from "./tiers";
 
 import { collectPackagedAgents, parseModelRef } from "./agents";
 
+import { registerPlanBoardTool } from "./plan-board-tool";
+
 /** Prefix used for every kit signal printed to the console. */
 const WARNING_PREFIX = "[opencode-orchestrator-kit]";
 
 /**
- * opencode-orchestrator-kit plugin (Phase 2).
+ * opencode-orchestrator-kit plugin (Phase 3).
  *
  * Reads the plugin options `{ preset?, withExtras? }`, resolves the tier map
  * from the bundled presets ( throwing TierConfigError early on bad config ),
  * signals unavailable tier models against `ctx.model.list()` (non-fatal), and
  * registers: one command (`/start-session`), the 9 kit skills and the 15
  * packaged agents (+2 extras when `withExtras: true`) via `ctx.agent.transform`.
+ *
+ * Phase 3 additionally registers the native `plan_board` tool (the pure
+ * plan-board CLI port) via `ctx.tool.transform`; when the host does not
+ * expose `ctx.tool` the registration degrades silently and setup stays
+ * successful.
  *
  * Agent registration is an upsert guarded by `editor.get(id)`: user-configured
  * agents win. It never calls `editor.default(...)` — the user's startup agent
@@ -94,6 +101,10 @@ export default Plugin.define({
         registerAgent(editor, agent, tierMap);
       }
     });
+
+    // 7. Native plan_board tool (Phase 3) via ctx.tool.transform; degrades
+    //    silently when the host does not expose ctx.tool.
+    registerPlanBoardTool(ctx);
   },
 });
 

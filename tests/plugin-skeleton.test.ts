@@ -58,6 +58,7 @@ const expectedBody = commandSource
 
 const commands: Array<Record<string, unknown>> = [];
 const skills: Array<Record<string, unknown>> = [];
+const tools: Array<Record<string, unknown>> = [];
 
 /** Minimal agent editor: records nothing; skeleton test only guards shape. */
 function noopAgentEditor() {
@@ -113,6 +114,15 @@ try {
         void callback({
           add: (entry: Record<string, unknown>) => {
             skills.push(entry);
+          },
+        });
+      },
+    },
+    tool: {
+      transform: (callback: (editor: { add(): void }) => void) => {
+        void callback({
+          add: (entry: Record<string, unknown>) => {
+            tools.push(entry);
           },
         });
       },
@@ -174,5 +184,11 @@ describe("opencode-orchestrator-kit plugin skeleton", () => {
     for (const skill of skills) {
       expect(skill.content).toBe(readFileSync(skill.path as string, "utf-8"));
     }
+  });
+
+  test("registers exactly one native plan_board tool with a documented standing authorization", () => {
+    expect(tools).toHaveLength(1);
+    expect(tools[0].name).toBe("plan_board");
+    expect(typeof tools[0].execute).toBe("function");
   });
 });
