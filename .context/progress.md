@@ -35,3 +35,28 @@
   `plugin/`, 2 nuovi test. Board: `plan-board.py move --to qa` rifiutato `already-in-column`
   (il piano era gia' in qa, `comprehension: skipped`), `check` ok. Gate comprensione: skipped
   (esecuzione headless). Fasi 2+ non avviate (scope limitato alla fase 1).
+- 2026-10-23: piano 13 fase 2 eseguita (issue #13, agenti e tier): nuovo `plugin/src/tiers.ts`
+  (5 tier TIER_ROUTER/REASONING/CODE/FAST/REVIEW, fallback one-hop ROUTER→REASONING e
+  REVIEW→CODE, preset bundlati con parity test vs `templates/models.config.json` e cross-check
+  vs `resolvePreset` di `scripts/resolve-model-preset.ts`, `TierConfigError` con messaggio
+  chiaro per preset sconosciuto / tier required mancante / token irrisolto / valore
+  `placeholder/*`; modelli non disponibili in `ctx.model.list()` segnalati con `console.warn`
+  prefissato `[opencode-orchestrator-kit]`, non fatali; registro vuoto → un solo warning) e
+  `plugin/src/agents.ts` (parser frontmatter description/mode/model inline o `>-`,
+  `parseModelRef` → oggetto Model.Ref `{providerID, id, variant?}`). Registrazione agenti via
+  `ctx.agent.transform` + `editor.update` (upsert) con guard `editor.get(id)` (config utente
+  vince), `mode` sempre impostato esplicito (orchestrator unico `primary` su 15/17, mai
+  chiamato `editor.default()`), `system` = body del file senza frontmatter. Asset nuovi:
+  `plugin/assets/agents/` (15 copie byte-identiche) + `plugin/assets/extras/` (2, attivate da
+  `withExtras: true`). Shim `@opencode/plugin` esteso in parallelo (`ctx.options`,
+  `ctx.model.list`, `ctx.agent.transform` con AgentEditor/AgentInfo) sia nello stand-in
+  runtime sia nell'ambient `plugin/types/`. Test: nuovi `tests/plugin-tiers.test.ts` (19) e
+  `tests/plugin-agents.test.ts` (10) con RED osservato, estesi `tests/plugin-assets-parity.test.ts`
+  (albero = 1 comando + 9 skill + 15 agenti + 2 extras, byte-parity) e `tests/plugin-skeleton.test.ts`;
+  allow-line di `tests/comprehension-config.test.ts` estesa alla copia byte-identica
+  (`plugin/assets/agents/orchestrator.md`, stessa riga sanzionata — unica modifica fuori
+  spec, causata dalla fase 2 e segnalata dall'executor). Verifiche (eseguite dall'orchestratore):
+  `bun run typecheck` exit 0, `bun test` 741/741 (37 file), `bun run lint` exit 0; `git status`
+  senza lockfile né `.github/workflows/`. Riconciliazione: il piano dice "16 agenti", repo
+  reale 15 (+2 extras) → registrati 15 di default / 17 con extras. Gate comprensione: skipped
+  (esecuzione headless). Fasi 3+ non avviate (scope limitato alla fase 2).

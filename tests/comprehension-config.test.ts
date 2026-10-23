@@ -282,7 +282,12 @@ describe("comprehension-config — Group D: unknown-tier sweep", () => {
     const allowed = hits.filter(h => {
       if (h.startsWith("plan/")) return true; // git-local plan prose, never shipped
       const m = h.match(/^([^:]+):(\d+):(.*)$/);
-      return !!m && m[1] === "agents/orchestrator.md" && m[3] === prohibitionLine;
+      // The plugin ships a byte-identical copy of the agents (Phase 2 of
+      // issue #13); it may only carry the same sanctioned prohibition line.
+      const sanctioned = (m?.[1] === "agents/orchestrator.md" ||
+        m?.[1] === "plugin/assets/agents/orchestrator.md") &&
+        m?.[3] === prohibitionLine;
+      return !!m && sanctioned;
     });
     expect(allowed.length).toBe(hits.length);
     expect(hits.length).toBeGreaterThan(0); // the prohibition line itself must still be found

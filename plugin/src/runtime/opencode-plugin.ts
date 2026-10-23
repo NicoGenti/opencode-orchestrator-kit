@@ -35,26 +35,69 @@ export interface SkillEditor {
   add(skill: SkillInfo): void;
 }
 
+/** OpenCode 2 Model.Ref object shape (`agent.model`). */
+export interface ModelRef {
+  providerID: string;
+  id: string;
+  variant?: string;
+}
+
+/** Agent entry as exposed by the AgentEditor (`Agent.Info` fields in use). */
+export interface AgentInfo {
+  id: string;
+  name: string;
+  model?: ModelRef;
+  system?: string;
+  description?: string;
+  mode?: "subagent" | "primary" | "all";
+  hidden?: boolean;
+  permissions?: Record<string, unknown>;
+}
+
+/**
+ * Editor handed to a `ctx.agent.transform` callback. `update` is an UPSERT
+ * (unknown ids are seeded with defaults and inserted) — hence "mode" must be
+ * set explicitly for every update, because seeding defaults to "primary".
+ */
+export interface AgentEditor {
+  list(): AgentInfo[];
+  get(id: string): AgentInfo | undefined;
+  default(id: string): void;
+  update(id: string, callback: (agent: AgentInfo) => void): void;
+  remove(id: string): void;
+}
+
 /** Editor-transform context handed to the plugin `setup`. */
 export interface PluginContext {
+  /** Plugin options from the `plugins` config entry (all optional). */
+  options: Record<string, unknown>;
+  /** Runtime model registry for availability checks. */
+  model: {
+    list(): Promise<Array<{ providerID: string; id: string }>>;
+  };
   command: {
     transform(callback: (editor: CommandEditor) => unknown): void;
   };
   skill: {
     transform(callback: (editor: SkillEditor) => unknown): void;
   };
+  agent: {
+    transform(
+      callback: (editor: AgentEditor) => void | Promise<void>,
+    ): Promise<void>;
+  };
 }
 
 /** Input accepted by `Plugin.define`. */
 export interface PluginDefinition {
   id: string;
-  setup: (ctx: PluginContext) => void;
+  setup: (ctx: PluginContext) => void | Promise<void>;
 }
 
 /** What `Plugin.define` returns (the installed plugin instance). */
 export interface PluginInstance {
   id: string;
-  setup: (ctx: PluginContext) => void;
+  setup: (ctx: PluginContext) => void | Promise<void>;
 }
 
 /** Minimal @opencode/plugin 2.1.x entry point surface used by this kit. */
