@@ -60,3 +60,35 @@
   senza lockfile né `.github/workflows/`. Riconciliazione: il piano dice "16 agenti", repo
   reale 15 (+2 extras) → registrati 15 di default / 17 con extras. Gate comprensione: skipped
   (esecuzione headless). Fasi 3+ non avviate (scope limitato alla fase 2).
+- 2026-10-23: piano 13 fase 3 eseguita (plan board nativa): nuovo `plugin/src/plan-board.ts`
+  (port TypeScript pura di `scripts/plan-board.py`, zero dipendenze oltre a node:fs/node:path:
+  libreria `runPlanBoard(argv)` — mai stdout/exit/throw — piu' CLI `bun plugin/src/plan-board.ts
+  <check|move|new|adopt> [flag]` con guard `import.meta.main`; stessi payload JSON, codici,
+  messaggi, ordine delle chiavi e formato human di `emit()`, stesse regole id=segmento iniziale
+  dello stem / status=colonna / 9 sezioni / comprehension obbligatoria per `move -> complete`,
+  preservazione CRLF e data di calendario locale) e nuovo tool nativo `plan_board`
+  (`plugin/src/plan-board-tool.ts`, wired in `plugin/src/index.ts` step 7 via
+  `ctx.tool.transform` con guard `ctx.tool?` -> degradazione silenziosa; descrizione che
+  esplicita la standing authorization `plan-board-standing-v1` e gli exit 0/1; input JSON
+  Schema con enum; `execute` -> `JSON.stringify(runPlanBoard(argv).payload, null, 2)`).
+  Shim `@opencode/plugin` e stand-in runtime estesi in parallelo con `ToolInfo`, `ToolEditor` e
+  `ctx.tool?`. Deviazioni documentate dal python: errori di argomento -> exit 1 (argparse
+  darebbe 2, codici `bad-argument`/`missing-argument`), `missing-column` e `internal-error`
+  invece del traceback; micro-deviazione nota: un `--root` non canonico (`./plan`, `x/`,
+  `x/../y`) viene riecheggiato verbatim invece di normalizzato come `PurePath`. Disclosure:
+  correzioni di revisione applicate dall'orchestratore sul port (la riga human di un `check`
+  fallito stampava `FAIL <codice> ...` ed e' stata riallineata al `FAIL` byte-identico del
+  python, test incluso; e due nit nel docstring di `index.ts` risolti con micro-dispatch).
+  TDD: RED osservato 0/24 sul port (implementazione temporaneamente messa da parte) e 14
+  fail/7 pass poi 21/21 sul tool (dispatch solo-test prima, implementazione poi) — i subagenti
+  non avevano permesso shell, tutte le esecuzioni a carico dell'orchestratore. Test nuovi:
+  `tests/plan-board-ts.test.ts` (24, sempre attivi, nessuna dipendenza da python),
+  `tests/plugin-plan-board-tool.test.ts` (14) e `tests/plugin-skeleton.test.ts` (+1, mock
+  `tool`). Parita' manuale python<->TS NON committata (i test di parita' sono fase 6):
+  7 scenari su board gemelle (JSON + albero file + formato human) -> ALL EQUAL, e sulla board
+  reale `check --root plan --json` byte-identico con exit 0 per entrambi. Verifiche
+  (eseguite dall'orchestratore): `bun run typecheck` exit 0, `bun test` 780/780 (39 file),
+  `bun run lint` exit 0; `git status` 4 modified + 4 new, senza lockfile ne'
+  `.github/workflows/`. Board: `plan-board.py move --to qa` -> `already-in-column` (piano gia'
+  in qa con `comprehension: skipped`), `check` ok (0 errori, 0 warning). Gate comprensione:
+  skipped (esecuzione headless). Fasi 4+ non avviate (scope limitato alla fase 3).

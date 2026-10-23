@@ -62,6 +62,22 @@ declare module "@opencode/plugin" {
     update(id: string, callback: (agent: AgentInfo) => void): void;
     remove(id: string): void;
   }
+  /** Tool entry contributed through ctx.tool.transform; mirrors the shape
+   *  recorded by the Phase-0 spike against @opencode/plugin@2.1.2 type defs
+   *  (tool.d.ts: editor.add({ name, description, input JSON Schema, options,
+   *  execute }) — tools cannot be upsert-created, only added). */
+  export interface ToolInfo {
+    name: string;
+    description: string;
+    /** JSON Schema of the tool input. */
+    input?: Record<string, unknown>;
+    options?: Record<string, unknown>;
+    execute: (input: unknown) => unknown;
+  }
+  /** Editor handed to a ctx.tool.transform callback. */
+  export interface ToolEditor {
+    add(tool: ToolInfo): void;
+  }
   /** Editor-transform context handed to the plugin setup. */
   export interface PluginContext {
     /** Plugin options from the `plugins` config entry (all optional). */
@@ -80,6 +96,11 @@ declare module "@opencode/plugin" {
       transform(
         callback: (editor: AgentEditor) => void | Promise<void>,
       ): Promise<void>;
+    };
+    /** Optional V2 tools transform — the plugin degrades silently when the
+     *  host does not expose ctx.tool. */
+    tool?: {
+      transform(callback: (editor: ToolEditor) => unknown): void;
     };
   }
   /** Input accepted by Plugin.define. */
