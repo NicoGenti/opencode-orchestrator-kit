@@ -2,7 +2,11 @@ import { Plugin } from "./runtime/opencode-plugin";
 import type { AgentEditor } from "./runtime/opencode-plugin";
 
 import { collectPackagedSkills } from "./assets";
-import { loadPackagedStartSession } from "./command";
+import {
+  loadPackagedRecall,
+  loadPackagedResearchMode,
+  loadPackagedStartSession,
+} from "./command";
 
 import {
   collectAvailabilityWarnings,
@@ -24,8 +28,9 @@ const WARNING_PREFIX = "[opencode-orchestrator-kit]";
  * Reads the plugin options `{ preset?, withExtras? }`, resolves the tier map
  * from the bundled presets ( throwing TierConfigError early on bad config ),
  * signals unavailable tier models against `ctx.model.list()` (non-fatal), and
- * registers: one command (`/start-session`), the 9 kit skills and the 15
- * packaged agents (+2 extras when `withExtras: true`) via `ctx.agent.transform`.
+ * registers: three commands (`/start-session`, `/recall`, `/research-mode`),
+ * the 9 kit skills and the 15 packaged agents (+2 extras when `withExtras:
+ * true`) via `ctx.agent.transform`.
  *
  * Phase 3 additionally registers the native `plan_board` tool (the pure
  * plan-board CLI port) via `ctx.tool.transform`; when the host does not
@@ -72,7 +77,8 @@ export default Plugin.define({
       }
     }
 
-    // 4. Commands.
+    // 4. Commands (/start-session, /recall, /research-mode — packaged copies
+    //    of the repo-root command/*.md documents).
     ctx.command.transform((editor) => {
       const startSession = loadPackagedStartSession();
       editor.add({
@@ -80,6 +86,20 @@ export default Plugin.define({
         description: startSession.description,
         agent: startSession.agent,
         execute: () => startSession.body,
+      });
+      const recall = loadPackagedRecall();
+      editor.add({
+        name: recall.name,
+        description: recall.description,
+        agent: recall.agent,
+        execute: () => recall.body,
+      });
+      const researchMode = loadPackagedResearchMode();
+      editor.add({
+        name: researchMode.name,
+        description: researchMode.description,
+        agent: researchMode.agent,
+        execute: () => researchMode.body,
       });
     });
 

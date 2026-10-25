@@ -31,30 +31,41 @@ const repoSkillIds: string[] = collectSkillFiles(join(ROOT, "skills"))
   )
   .sort();
 
-const commandSource = readFileSync(
-  join(ROOT, "command", "start-session.md"),
-  "utf-8",
-);
+/** Repo-root command documents packaged by the plugin (v0.6.x: 3 commands). */
+const COMMAND_NAMES = ["start-session", "recall", "research-mode"] as const;
 
-const frontmatter = commandSource.match(/^---\r?\n([\s\S]*?)\r?\n---/);
-if (!frontmatter) {
-  throw new Error("command/start-session.md has no frontmatter block");
+/** Frontmatter description + trimmed body of one command document. */
+interface CommandSource {
+  description: string;
+  body: string;
 }
 
-function frontmatterValue(block: string, key: string): string {
-  const value = new RegExp(`^${key}:\\s*(.+)$`, "m").exec(block)?.[1]?.trim();
-  if (!value) {
-    throw new Error(`command/start-session.md frontmatter has no "${key}"`);
+/**
+ * Parse one repo-root command/<name>.md into its frontmatter description and
+ * trimmed markdown body — the shape the packaged loader must mirror.
+ */
+function loadCommandSource(name: string): CommandSource {
+  const source = readFileSync(join(ROOT, "command", `${name}.md`), "utf-8");
+  const frontmatter = /^---\r?\n([\s\S]*?)\r?\n---/.exec(source);
+  if (!frontmatter) {
+    throw new Error(`command/${name}.md has no frontmatter block`);
   }
-  return value;
+  function frontmatterValue(block: string, key: string): string {
+    const value = new RegExp(`^${key}:\\s*(.+)$`, "m").exec(block)?.[1]?.trim();
+    if (!value) {
+      throw new Error(`command/${name}.md frontmatter has no "${key}"`);
+    }
+    return value;
+  }
+  return {
+    description: frontmatterValue(frontmatter[1], "description"),
+    body: source.replace(/^---\r?\n[\s\S]*?\r?\n---/, "").trim(),
+  };
 }
 
-const expectedDescription = frontmatterValue(frontmatter[1], "description");
-
-/** Body: the markdown after the frontmatter block, trimmed. */
-const expectedBody = commandSource
-  .replace(/^---\r?\n[\s\S]*?\r?\n---/, "")
-  .trim();
+const commandSources = new Map<string, CommandSource>(
+  COMMAND_NAMES.map((name) => [name, loadCommandSource(name)] as const),
+);
 
 const commands: Array<Record<string, unknown>> = [];
 const skills: Array<Record<string, unknown>> = [];
@@ -145,17 +156,34 @@ describe("opencode-orchestrator-kit plugin skeleton", () => {
     expect(typeof plugin.setup).toBe("function");
   });
 
-  test("registers exactly one command mirrored from command/start-session.md", () => {
-    expect(commands).toHaveLength(1);
-    expect(commands[0].name).toBe("start-session");
-    expect(commands[0].agent).toBe("orchestrator");
-    expect(commands[0].description).toBe(expectedDescription);
+  test("registers exactly three commands: start-session, recall, research-mode", () => {
+    expect(commands).toHaveLength(3);
+    expect(commands.map((command) => String(command.name)).sort()).toEqual([
+      "recall",
+      "research-mode",
+      "start-session",
+    ]);
+    for (const command of commands) {
+      expect(command.agent).toBe("orchestrator");
+      expect(typeof command.execute).toBe("function");
+      const execute = command.execute as (ctx?: unknown) => unknown;
+      expect(execute()).toBeTruthy();
+    }
   });
 
-  test("the registered command body equals the trimmed markdown body", () => {
-    const execute = commands[0].execute as () => string;
-    expect(typeof execute).toBe("function");
-    expect(execute()).toBe(expectedBody);
+  test("every registered command mirrors its source frontmatter description", () => {
+    for (const command of commands) {
+      const source = commandSources.get(String(command.name));
+      expect(source).toBeDefined();
+      expect(command.description).toBe(source?.description);
+    }
+  });
+
+  test("every registered command body equals the trimmed markdown body", () => {
+    for (const command of commands) {
+      const source = commandSources.get(String(command.name));
+      expect((command.execute as () => string)()).toBe(source?.body);
+    }
   });
 
   test("registers all 9 kit skills with ids from the repo skill directories", () => {
