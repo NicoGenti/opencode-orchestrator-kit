@@ -92,3 +92,37 @@
   `.github/workflows/`. Board: `plan-board.py move --to qa` -> `already-in-column` (piano gia'
   in qa con `comprehension: skipped`), `check` ok (0 errori, 0 warning). Gate comprensione:
   skipped (esecuzione headless). Fasi 4+ non avviate (scope limitato alla fase 3).
+- 2026-10-25: piano 13 fase 4 eseguita (gate di comprensione e ricerca): nuovo
+  `plugin/src/comprehension.ts` (libreria pura, solo node:fs/path/crypto, mai throw/stdout):
+  costanti contratto `GATE_TYPES`/`TASK_FIELDS`(19)/`RECALL_FIELDS`(8)/`FORBIDDEN_FIELDS` +
+  cross-check parita' con l'oracolo test-only `tests/contract-fields.ts`; id `res-`/`ev-`
+  (UTC `YYYYMMDD-HHMMSS` + 16 byte CSPRNG hex, regex `RESEARCH_ID_RE`/`EVALUATION_ID_RE`);
+  `gateRequiresCoach` (solo LIGHT/DEEP) e `slotForTaskIndex` (0→A, 1→B, 2→A); loader
+  `.opencode/comprehension.config.json` (file > default per entry, mai throw, default
+  strutturalmente uguali a `templates/comprehension.config.json` con ordine top-level
+  pinned, JSON invalido → default + 1 warning, entry invalida → fallback entry + 1 warning);
+  writer append-only `.context/comprehension-log.md` (header-once `# comprehension telemetry...`,
+  mai reinserimento header, rifiuto righe vuote) con `formatImmediateRow`/`formatRecallRow`
+  byte-esatti (riga space-separated con `DCI=skipped` variante SKIPPED, riga dci1
+  pipe-separated con `type=dci1`); retention record `.context/comprehension/<ev-id>.md`
+  piatto (formato SKILL.md, `writeRetentionRecord` rifiuta overwrite con `record-exists`);
+  `createResearchRecorder(root, enabled)` — DISABLED: nessun tocco al filesystem
+  (dataset non letto, non scritto, zero mkdir); ENABLED: validazione 19/8 campi
+  (missing/unknown/forbidden field, invarianti slot A/B, forma DCI `DCI=<score>/<pari 2-8>`)
+  prima di ogni append JSONL, `validateFile()` con errori 1-based `N: msg`. Comandi
+  `/recall` e `/research-mode` impacchettati (`plugin/assets/commands/*.md`, byte-identici
+  ai sorgenti `command/`, con correzione micro-dispatch finale: il sorgente
+  `research-mode.md` non ha newline finale e la copia era stata trascritta con `\n` extra)
+  e registrati in step 4 di `plugin/src/index.ts` via `loadPackagedRecall`/
+  `loadPackagedResearchMode` (helper condiviso `loadPackagedCommand` in `plugin/src/command.ts`,
+  stesso meccanismo di start-session: description/agent dal frontmatter, body trimmed).
+  TDD: RED osservato (777 pass / 5 fail / 1 module-not-found su 782), poi GREEN parziale
+  823/1 (parity byte asset), micro-fix, poi verde totale. Test nuovi: `tests/plugin-comprehension.test.ts`;
+  estesi `tests/plugin-assets-parity.test.ts` (binding 3 comandi + 9 skill + 15 agenti + 2 extras)
+  e `tests/plugin-skeleton.test.ts` (3 comandi). Niente `ctx.storage`/permessi (fasi 5+),
+  niente `TIER_COMPREHENSION` (sweep test). Verifiche (eseguite dall'orchestratore):
+  `bun run typecheck` exit 0, `bun test` 824/824 (40 file), `bun run lint` exit 0;
+  `git status` 4 modified + 4 new, senza lockfile ne' `.github/workflows/`. Board:
+  `plan-board.py move --to qa` -> `already-in-column` (piano gia' in qa con
+  `comprehension: skipped`), `check` ok (0 errori, 0 warning). Gate comprensione:
+  skipped (esecuzione headless). Fasi 5+ non avviate (scope limitato alla fase 4).

@@ -4,6 +4,8 @@ import { join, relative, sep } from "node:path";
 
 const ROOT = join(import.meta.dir, "..");
 const SOURCE_COMMAND = join(ROOT, "command", "start-session.md");
+const SOURCE_RECALL = join(ROOT, "command", "recall.md");
+const SOURCE_RESEARCH_MODE = join(ROOT, "command", "research-mode.md");
 const SOURCE_SKILLS = join(ROOT, "skills");
 const SOURCE_AGENTS = join(ROOT, "agents");
 const SOURCE_EXTRAS = join(ROOT, "extras");
@@ -51,6 +53,8 @@ function collectAllFiles(dir: string, out: string[] = []): string[] {
 
 const bindings: AssetBinding[] = [
   { source: SOURCE_COMMAND, assetRel: "commands/start-session.md" },
+  { source: SOURCE_RECALL, assetRel: "commands/recall.md" },
+  { source: SOURCE_RESEARCH_MODE, assetRel: "commands/research-mode.md" },
   ...collectSkillSources(SOURCE_SKILLS).map((source) => ({
     source,
     assetRel: `skills/${relative(SOURCE_SKILLS, source).split(sep).join("/")}`,
@@ -59,6 +63,9 @@ const bindings: AssetBinding[] = [
   ...collectFlatSources(SOURCE_EXTRAS, "extras"),
 ];
 
+const commandBindings = bindings.filter((binding) =>
+  binding.assetRel.startsWith("commands/"),
+);
 const agentBindings = bindings.filter((binding) =>
   binding.assetRel.startsWith("agents/"),
 );
@@ -71,7 +78,8 @@ const packagedFiles = collectAllFiles(ASSETS_DIR)
   .sort();
 
 describe("plugin/assets packaging parity", () => {
-  test("the addressable sources cover 15 agents and 2 extras", () => {
+  test("the addressable sources cover 3 commands, 15 agents and 2 extras", () => {
+    expect(commandBindings).toHaveLength(3);
     expect(agentBindings).toHaveLength(15);
     expect(extraBindings).toHaveLength(2);
   });
@@ -83,6 +91,14 @@ describe("plugin/assets packaging parity", () => {
   });
 
   test("no out-of-scope command file is packaged", () => {
+    // Exactly the three kit command documents live under commands/ — any
+    // additional packaging (e.g. close-session.md) is out of scope.
+    const packagedCommands = packagedFiles.filter((file) =>
+      file.startsWith("commands/"),
+    );
+    expect(packagedCommands.sort()).toEqual(
+      commandBindings.map((binding) => binding.assetRel).sort(),
+    );
     expect(packagedFiles).not.toContain("commands/close-session.md");
   });
 
