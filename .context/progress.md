@@ -126,3 +126,31 @@
   `plan-board.py move --to qa` -> `already-in-column` (piano gia' in qa con
   `comprehension: skipped`), `check` ok (0 errori, 0 warning). Gate comprensione:
   skipped (esecuzione headless). Fasi 5+ non avviate (scope limitato alla fase 4).
+- 2026-10-26: piano 13 fase 5 eseguita (permessi V2): nuovo `plugin/src/frontmatter-map.ts`
+  (lettore del sottoinsieme YAML/JSON per `tools`/`permission`: JSON inline, block map con
+  indentazione, chiavi quotate con `:` interno tipo `pnpm test:*`, coercizione `true`/`false`,
+  errore esplicito su riga non parsabile) e nuovo `plugin/src/permissions.ts` (traduzione V1→V2
+  come lista ordinata `{action, resource, effect}`: `bash→shell`, `task→subagent`,
+  `patch|write|edit→edit`, identità per le altre azioni, pass-through per `code-review-graph_*`;
+  ordinamento last-match-wins con catch-all `*` emesso PRIMA delle eccezioni e chiave globale
+  `"*"` (caso `security.md`) emessa per prima; fusione dei gruppi `write`+`edit`+`patch` con
+  precedenza deny>ask>allow; normalizzazione globstar `plan/**/*.md`→`plan/*.md` perché in V2
+  `*` attraversa `/`; matcher wildcard case-insensitive `matchesPattern`, `resolveEffect`,
+  `kitInvariantRules`, `assertKitPermissionInvariants` che lancia prima di ogni registrazione).
+  `plugin/src/agents.ts` espone `PackagedAgent.permissions` (traduzione + invarianti di kit in
+  coda) e valida; `plugin/src/index.ts` scrive `info.permissions`; shim e ambient
+  `PermissionRule` corretti da `Record<string, unknown>` a `PermissionRule[]`. Contratto:
+  `docs/PLUGIN-V2-PERMISSIONS.md` (nuovo, 5 sezioni) + riga fase 5 di
+  `docs/PLUGIN-V2-FEASIBILITY.md` chiusa. Due deviazioni deliberate: l'orchestrator perde la
+  scrittura `plan/**` che V1 gli dava (AGENTS.md assegna il ciclo di vita a `plan-writer`) e
+  `plan-writer` nega (non piu' `ask`) gli edit fuori dalla board root. Test: nuovo
+  `tests/plugin-permissions.test.ts` (21, array esatti per orchestrator 24 regole e plan-writer 8,
+  matcher, invarianti, manifest 17 agenti) + 3 test in `tests/plugin-agents.test.ts` (10→13,
+  `info.permissions` dopo `plugin.setup`). Esecuzione sub-agent-driven in 3 batch
+  (implementer-files) con artefatti validati prima in repo ombra. Verifiche (rieseguite
+  dall'orchestratore): `bun test` 831 pass / 17 fail / 848 test (41 file, fail-set identico alla
+  baseline ambientale), `bun run typecheck` exit 0, `bun run lint` exit 0; 10 file cambiati, 0
+  path vietati (`agents/`, `extras/`, `plugin/assets/`, `plan/`, `.context/`, `scripts/`,
+  lockfile). Commit: 1131841, 01f886e, ae38a88. Board: piano 13 gia' in `qa`, nessun move.
+  Gate comprensione: skipped (fase di piano, esecuzione headless). Fase 6 (test/CI/release) non
+  avviata.
