@@ -3,6 +3,8 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { collectPackagedAgents } from "../plugin/src/agents.ts";
+import { resolveEffect } from "../plugin/src/permissions.ts";
+import type { PermissionRule } from "../plugin/src/permissions.ts";
 import { TierConfigError, resolveTierMap } from "../plugin/src/tiers.ts";
 import plugin from "../plugin/src/index.ts";
 
@@ -340,5 +342,48 @@ describe("model availability signaling", () => {
     expect(captured.warnings).toHaveLength(1);
     expect(captured.warnings[0]).toContain("[opencode-orchestrator-kit]");
     expect(captured.warnings[0]).toContain("empty");
+  });
+});
+
+describe("agent registration (permissions, Phase 5)", () => {
+  test("(i) every registered agent carries the packaged V2 rules", async () => {
+    const harness = makeHarness({
+      options: { withExtras: true },
+      models: REGISTRY_FULL,
+    });
+    await setup(harness);
+    for (const packaged of collectPackagedAgents(true)) {
+      const registered = harness.editor.updates.get(packaged.id);
+      expect(registered).toBeDefined();
+      expect(registered!.permissions).toEqual(packaged.permissions);
+    }
+  });
+
+  test("(j) orchestrator cannot edit application code but keeps session-memory writes", async () => {
+    const harness = makeHarness({ models: REGISTRY_FULL });
+    await setup(harness);
+    const rules = harness.editor.updates.get("orchestrator")!.permissions as PermissionRule[];
+    expect(resolveEffect(rules, "edit", "src/app.ts")).toBe("deny");
+    expect(resolveEffect(rules, "edit", ".context/progress.md")).toBe("allow");
+    expect(resolveEffect(rules, "edit", ".context/decisions.md")).toBe("allow");
+    expect(resolveEffect(rules, "shell", "git status --short")).toBe("allow");
+    expect(resolveEffect(rules, "shell", "rm -rf .")).toBe("deny");
+    expect(resolveEffect(rules, "webfetch", "https://example.com")).toBe("deny");
+  });
+
+  test("(k) only plan-writer may edit under the board root", async () => {
+    const harness = makeHarness({
+      options: { withExtras: true },
+      models: REGISTRY_FULL,
+    });
+    await setup(harness);
+    for (const [id, agent] of harness.editor.updates) {
+      const effect = resolveEffect(
+        agent.permissions as PermissionRule[],
+        "edit",
+        "plan/qa/13-example.md",
+      );
+      expect(`${id}=${effect}`).toBe(id === "plan-writer" ? "plan-writer=allow" : `${id}=deny`);
+    }
   });
 });
