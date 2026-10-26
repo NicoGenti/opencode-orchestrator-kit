@@ -20,7 +20,7 @@ The kit splits the work into a routing layer and a roster of specialists:
 - **Exploration starts from a repo map.** The `profiler` generates a compact `.context/repo-map.md` (hard 300-line budget) that the `explorer` reads before broad searches, reducing whole-file reads and token waste.
 - **It adapts to any repository.** On first run the `profiler` agent detects the stack (or interviews you for an empty repo) and scaffolds `.context/` (memory) and `plan/` (kanban).
 
-It works with the plain `opencode` CLI, no plugin required. Optional notes for [OpenCode Studio](https://github.com/Microck/opencode-studio) users are in `docs/SETUP-OPENCODE-STUDIO.md`.
+On **OpenCode 2** the kit installs as the `opencode-orchestrator-kit` plugin: agents, commands and skills are registered at runtime — nothing is written into your project's `.opencode/` directory. The native copy-based installer still works and remains supported, but it is **deprecated in favor of the plugin** on OpenCode 2 (the `default` profile it ships references provider IDs that are not yours — see the *Choose your model profile* step). Optional notes for [OpenCode Studio](https://github.com/Microck/opencode-studio) users are in `docs/SETUP-OPENCODE-STUDIO.md`.
 
 ## How a request flows
 
@@ -73,6 +73,32 @@ Full contracts, permissions and model fallbacks are in each `agents/*.md` file (
 | Docs lookup | `librarian` | Yes (routed only for remote documentation lookups) |
 | Opt-in extras | `pc-doctor` (Windows-local only), `writer` (docs generation) | `--with-extras` only |
 
+## Install on OpenCode 2 (plugin — recommended)
+
+With the plugin, tier resolution happens at runtime from `plugin/src/tiers.ts` presets — there is no `{{TIER_*}}` substitution at install time. Add the plugin to your `opencode.json`:
+
+```json
+{
+  "plugins": [
+    {
+      "package": "opencode-orchestrator-kit",
+      "options": { "preset": "<preset>", "withExtras": false }
+    }
+  ]
+}
+```
+
+What the plugin registers at runtime (nothing is copied into `.opencode/`):
+
+- **15 agents** (+ `pc-doctor` and `writer` opt-in with `"withExtras": true`), from the same `agents/`/`extras/` contracts.
+- **3 commands** (`/start-session`, `/recall`, `/research-mode`) and **9 skills**.
+- **One native tool, `plan_board`**, the TypeScript port of `scripts/plan-board.py`: standing authorization covers `check` and `move` of conforming plan files without approval; every other board operation (`new`, `adopt`, body edits, deletion, rename) needs per-request approval.
+- **Setup options**: `preset` (one of the four bundled presets, same format as `templates/models.config.json`; a preset whose tier values are all `placeholder/*` fails fast with a `TierConfigError`) and `withExtras` (default `false`).
+
+Your own configuration always wins: the plugin upserts an agent's `transform` only when the editor returns nothing for it, so user config in `~/.config/opencode/` or the project config is never overwritten.
+
+The plugin requires **`@opencode/plugin` `^2.1.0`** as a peer dependency (install it once alongside OpenCode 2). Coming from the copy-based installer, or mixing both paths? Follow [`docs/MIGRATION-V1-V2.md`](docs/MIGRATION-V1-V2.md).
+
 ## Quickstart
 
 > **Heads-up:** the `default` model profile references provider IDs that are not yours. To actually run agents you need at least one usable provider/model mapping of your own: switch to the `generic` preset and edit `.opencode/models.config.json` before your first `/start-session` (step 3).
@@ -83,7 +109,9 @@ Full contracts, permissions and model fallbacks are in each `agents/*.md` file (
 - **Bash**. `install.sh` is a bash script. Supported: Linux, macOS, and Windows under Git Bash, MSYS or Cygwin. Plain `cmd.exe` and PowerShell are not supported.
 - At least one usable provider account you can point a tier to. OpenCode does not bundle provider credentials.
 
-### 2. Install the kit
+### 2. Install the kit (legacy installer — deprecated)
+
+The `install.sh` copy-based installer is the **v1 path**, kept for OpenCode 1.x and offline use. It is deprecated in favor of the plugin (see "Install on OpenCode 2" above and [`docs/MIGRATION-V1-V2.md`](docs/MIGRATION-V1-V2.md)).
 
 From the repo root:
 
@@ -107,6 +135,8 @@ The installer seeds `.opencode/models.config.json` from `templates/models.config
 Without the installer, the manual path covers the same five items: `AGENTS.md`, `CONTRIBUTING.md`, `agents/`, `skills/` and `command/`. Place them where OpenCode looks (project root, or `~/.config/opencode/` for global). `extras/` is not part of the manual default.
 
 ### 3. Choose your model profile
+
+> On the plugin path this step collapses to picking a `preset` (see above) — tier resolution happens at runtime and there are no `{{TIER_*}}` tokens to resolve.
 
 Five logical tiers are written into agent `model:` lines as `{{TIER_*}}` tokens:
 

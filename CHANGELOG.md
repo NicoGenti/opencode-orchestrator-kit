@@ -4,7 +4,19 @@ All notable changes to this project are documented in this file. The format foll
 
 ## [Unreleased]
 
+### Added
+
+- **OpenCode 2 plugin package (`opencode-orchestrator-kit`)**: the kit now ships as an OpenCode 2 plugin (`plugin/`, `Plugin.define`, peer dependency `@opencode/plugin ^2.1.0`). At runtime it registers the full roster (15 agents, `pc-doctor`/`writer` behind the `withExtras` opt-in), the `/start-session`, `/recall` and `/research-mode` commands, the 9 skills and one native tool — no copy into `.opencode/`. Setup options: `preset` (bundled presets mirror `templates/models.config.json`; a preset whose tiers are all `placeholder/*` fails fast with a `TierConfigError`) and `withExtras` (default `false`). User configuration always wins: agent `transform` upsert only when the editor returns nothing.
+- **Runtime tier resolution**: logical `{{TIER_*}}` tokens are resolved at runtime from the bundled presets — five tiers (`ROUTER`, `REASONING`, `CODE`, `FAST`, `REVIEW`) with fallbacks `ROUTER→REASONING` and `REVIEW→CODE`; the V1 fail-fast-on-placeholder policy is preserved as a plugin-side `TierConfigError`.
+- **Native `plan_board` tool**: TypeScript port of `scripts/plan-board.py` exposed as a native opencode tool, with the same standing authorization (check plus move of conforming plan files without per-request approval; all other board mutations require approval).
+- **Comprehension-gate library + V1→V2 permission translation**: the comprehension gate (classification, Slicer, DCI, telemetry) is available to the plugin through a TypeScript library; the plugin translates the V1 agents' permission surfaces into the OpenCode 2 plugin format.
+- **Plugin/asset parity and integration tests**: `tests/plan-board-parity.test.ts` (TypeScript port vs `scripts/plan-board.py`) and `tests/plugin-integration.test.ts` (registration surface, options, fail-fast, package sanity).
+- **V1→V2 migration guide**: new `docs/MIGRATION-V1-V2.md` — what changes with the plugin (runtime registration instead of copy-install, runtime tier resolution instead of install-time substitution, `plan_board` standing authorization), what does not change (orchestration contract, 9-section task specs, agent behavior), step-by-step migration, options table, rollback and troubleshooting.
+- **README/QUICKSTART restructure**: the OpenCode 2 plugin is now the primary install path (`plugins` entry in `opencode.json` with the `preset`/`withExtras` options); the `install.sh` copy-based installer is documented as a deprecated legacy subsection, linked to the migration guide.
+
 ### Changed
+
+- **`install.sh` deprecated**: the header now directs OpenCode 2 users to the `opencode-orchestrator-kit` plugin (`docs/MIGRATION-V1-V2.md`); the installer stays functional on the v1 line and every flag/allowlist/behavior is unchanged.
 
 - **Repository hygiene**: `.opencode/` (the `./install.sh project` self-install used for local opencode2 development) and `.hermes/` (agent-local plan-mode state) are now fully gitignored; `.opencode/PROJECT-PROFILE.md` and `.opencode/models.config.json` left the index via `git rm --cached` (they stay on disk, they leave the published repo). The `.gitignore` negations for `.context/` and `plan/` were rewritten into rules that actually hold: only `.context/{decisions,issues,progress}.md`, `plan/README.md`, `plan/.gitignore` and the four `plan/<column>/.gitkeep` placeholders are versioned.
 - **`scripts/plan-board.py`**: the `--root` default is now `plan` relative to the working directory (it used to be a maintainer-local path) and the tool description no longer names a private repository; covered by a regression test.
