@@ -3,6 +3,13 @@ import { join } from "node:path";
 
 import { assetsDir } from "./assets";
 import type { ModelRef } from "./runtime/opencode-plugin";
+import { parseFrontmatterMap } from "./frontmatter-map";
+import {
+  assertKitPermissionInvariants,
+  kitInvariantRules,
+  toV2Permissions,
+} from "./permissions";
+import type { PermissionRule } from "./permissions";
 
 /** Absolute path of the packaged agents directory (plugin/assets/agents/). */
 const AGENTS_SUBDIR = "agents";
@@ -32,6 +39,11 @@ export interface PackagedAgent {
   model: string;
   /** System prompt: the file body, frontmatter stripped, trimmed. */
   system: string;
+  /**
+   * V2 permission rules, ready for `Agent.Info.permissions`: the frontmatter
+   * translation (permissions.ts) plus the kit invariants appended last.
+   */
+  permissions: PermissionRule[];
 }
 
 /**
@@ -95,15 +107,16 @@ export interface ParsedAgentFrontmatter {
 }
 
 /**
- * Extract the fields this phase registers (description / mode / model) and
+ * Extract the fields this phase registers (description / mode / model) plus
  * the system prompt body from a packaged agent markdown file. All other
- * frontmatter keys are ignored here; Phase 5 owns the permissions translation
- * (note: `temperature` has no OpenCode 2 home and is dropped silently).
+ * frontmatter keys are ignored here. `tools`/`permission` are translated to
+ * the V2 rule list here (permissions.ts); `temperature` has no OpenCode 2 home
+ * and is dropped silently.
  */
 export function parseAgentFile(
   content: string,
   source: string,
-): ParsedAgentFrontmatter & { system: string } {
+): ParsedAgentFrontmatter & { system: string; permissions: PermissionRule[] } {
   const match = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
   if (!match) {
     throw new Error(`${source} has no frontmatter block`);
@@ -125,6 +138,10 @@ export function parseAgentFile(
     description,
     mode: mode as AgentMode,
     model,
+    permissions: toV2Permissions(
+      parseFrontmatterMap(match[1], "permission"),
+      parseFrontmatterMap(match[1], "tools"),
+    ),
     system: content.replace(/^---\r?\n[\s\S]*?\r?\n---/, "").trim(),
   };
 }
@@ -138,12 +155,15 @@ function collectAgents(subdir: string, sourceRoot: string): PackagedAgent[] {
       const id = entry.name.replace(/\.md$/, "");
       const content = readFileSync(path, "utf-8");
       const parsed = parseAgentFile(content, `${sourceRoot}/${entry.name}`);
+      const permissions = [...parsed.permissions, ...kitInvariantRules(id)];
+      assertKitPermissionInvariants(id, permissions);
       return {
         id,
         path,
         source: `${sourceRoot}/${entry.name}`,
         assetRel: `${subdir}/${entry.name}`,
         ...parsed,
+        permissions,
       };
     });
 }

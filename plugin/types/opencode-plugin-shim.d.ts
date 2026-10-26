@@ -39,6 +39,15 @@ declare module "@opencode/plugin" {
     id: string;
     variant?: string;
   }
+  /** One entry of the V2 ordered permission rule list (agents.<id>.permissions). */
+  export interface PermissionRule {
+    /** Tool permission action (V2 names: edit, shell, subagent, ...). */
+    action: string;
+    /** Value being used: path, command, URL, skill ID, agent ID, ... */
+    resource: string;
+    effect: "allow" | "ask" | "deny";
+  }
+
   /** Agent entry as exposed by the AgentEditor (Agent.Info fields in use). */
   export interface AgentInfo {
     id: string;
@@ -48,7 +57,7 @@ declare module "@opencode/plugin" {
     description?: string;
     mode?: "subagent" | "primary" | "all";
     hidden?: boolean;
-    permissions?: Record<string, unknown>;
+    permissions?: PermissionRule[];
   }
   /**
    * Editor handed to a ctx.agent.transform callback. update is an UPSERT

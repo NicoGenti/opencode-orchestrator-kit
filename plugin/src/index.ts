@@ -41,6 +41,11 @@ const WARNING_PREFIX = "[opencode-orchestrator-kit]";
  * agents win. It never calls `editor.default(...)` — the user's startup agent
  * is NOT changed; orchestrator stays the only `mode: primary` kit agent.
  *
+ * Phase 5 registers each agent's V2 `permissions` (ordered rules, last match
+ * wins): the frontmatter translation lives in permissions.ts, the kit invariants
+ * (orchestrator cannot edit application code, only plan-writer can edit the
+ * board root) are appended last and asserted before registration.
+ *
  * Note: @opencode/plugin is a peer dependency not installed in this repo — the
  * import is served by the temporary runtime stand-in until Phase 6 swaps it
  * for `import { Plugin } from "@opencode/plugin"` (see the header of
@@ -148,5 +153,9 @@ function registerAgent(
     info.mode = agent.mode;
     info.model = parseModelRef(value);
     info.system = agent.system;
+
+    // V2 ordered permission rules: frontmatter translation + kit invariants
+    // (already composed and validated by collectPackagedAgents).
+    info.permissions = agent.permissions;
   });
 }
