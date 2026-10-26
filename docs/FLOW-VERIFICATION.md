@@ -78,7 +78,7 @@ Decisione esplicita: nessun intervento automatico da parte di questa verifica. `
 
 ## 6. Nota sulle flaky
 
-I 3 nomi delle suite installer/oc2 che compaiono e scompaiono (`install.sh global`, `install-freellmapi.sh` x2) sono flaky da contesa: sotto carico pieno vanno in timeout a 5 s, in isolamento passano (nota in testa alla fixture). La baseline completa e' in `tests/fixtures/baseline-failures.txt` (5 righe di commento + 21 nomi; conteggi riletti sul file) e una regressione e' solo un nome NUOVO; un elenco piu' corto non e' una regressione (regola dichiarata nella fixture stessa).
+I 3 nomi delle suite installer/oc2 che compaiono e scompaiono (`install.sh global`, `install-freellmapi.sh` x2) sono flaky da contesa: sotto carico pieno vanno in timeout a 5 s, in isolamento passano (nota in testa alla fixture). La baseline completa e' in `tests/fixtures/baseline-failures.txt` (6 righe di commento + 20 nomi; conteggi riletti sul file) e una regressione e' solo un nome NUOVO; un elenco piu' corto non e' una regressione (regola dichiarata nella fixture stessa).
 
 ## 7. Censimento O4A (sola lettura, nessuna scrittura)
 
