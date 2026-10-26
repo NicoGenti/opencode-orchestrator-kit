@@ -3,7 +3,7 @@
 # NB: i nomi delle suite installer/oc2 (install.sh global, install-freellmapi.sh x2)
 # sono flaky da contesa: sotto carico pieno vanno in timeout a 5 s e compaiono qui, in isolamento passano.
 # Un elenco piu' corto non e' una regressione; conta solo un nome NUOVO.
-comprehension-config — Group D: unknown-tier sweep > no unknown comprehension tier token appears in shipped files
+# 2026-10-26: rimossa la riga "comprehension-config - Group D: unknown-tier sweep > no unknown comprehension tier token appears in shipped files" (ora verde su Windows: scan in TypeScript, .context/ in whitelist).
 detect-os.sh — natural detection on the active shell > active bash classifies as a supported kind (or reports unsupported)
 detect-os.sh — preflight > KIT_FORCE_KIND overrides for each supported kind exit 0 with the right kind
 detect-os.sh — preflight > KIT_FORCE_KIND with an unknown kind exits non-zero
