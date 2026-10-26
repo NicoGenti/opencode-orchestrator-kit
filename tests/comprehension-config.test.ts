@@ -312,8 +312,17 @@ describe("comprehension-config — Group D: unknown-tier sweep", () => {
       "`); tier resolution stays on the existing `TIER_FAST` / `TIER_REVIEW` mapping via the preset resolver.";
     const hits = sweepHits(tier);
 
+    // Positive control: the prohibition sentence is still shipped exactly once
+    // in the canonical agent. This keeps the guard strict now that `.context/`
+    // prose is allowed below.
+    const prohibitionHits = hits.filter(
+      h => h.startsWith("agents/orchestrator.md:") && h.endsWith(prohibitionLine)
+    );
+    expect(prohibitionHits.length).toBe(1);
+
     const allowed = hits.filter(h => {
       if (h.startsWith("plan/")) return true; // git-local plan prose, never shipped
+      if (h.startsWith(".context/")) return true; // tracked session memory, never installed
       const m = h.match(/^([^:]+):(\d+):(.*)$/);
       // The plugin ships a byte-identical copy of the agents (Phase 2 of
       // issue #13); it may only carry the same sanctioned prohibition line.
@@ -323,7 +332,6 @@ describe("comprehension-config — Group D: unknown-tier sweep", () => {
       return !!m && sanctioned;
     });
     expect(allowed.length).toBe(hits.length);
-    expect(hits.length).toBeGreaterThan(0); // the prohibition line itself must still be found
   });
 });
 
