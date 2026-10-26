@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 # OpenCode Orchestrator Kit — installer
+# DEPRECATED: prefer the opencode-orchestrator-kit plugin on OpenCode 2;
+# see docs/MIGRATION-V1-V2.md. This installer is maintained on the v1 line.
 # Works for native OpenCode (project or global config) and for OpenCode Studio profiles.
 # Usage:
 #   ./install.sh project                       # copy into ./.opencode/ + ./AGENTS.md (this repo only)

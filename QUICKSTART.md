@@ -14,6 +14,33 @@
 
 ## Installation
 
+### Plugin (OpenCode 2 — recommended)
+
+With the `opencode-orchestrator-kit` plugin on OpenCode 2 (requires `@opencode/plugin` `^2.1.0`), agents, commands and skills are registered at runtime — nothing is copied into your project's `.opencode/` directory:
+
+```json
+{
+  "plugins": [
+    {
+      "package": "opencode-orchestrator-kit",
+      "options": { "preset": "<preset>", "withExtras": false }
+    }
+  ]
+}
+```
+
+Pick a `preset` (the bundled presets mirror `templates/models.config.json`; a preset whose tier values are all `placeholder/*` fails fast with a `TierConfigError`). Your own configuration always wins over the plugin registration. Then start:
+
+```bash
+opencode
+```
+
+Select `@orchestrator` and run **`/start-session`**. Coming from the copy-based installer? See [`docs/MIGRATION-V1-V2.md`](docs/MIGRATION-V1-V2.md).
+
+### Legacy installer (deprecated)
+
+The `install.sh` copy-based installer is the v1 path, kept for OpenCode 1.x and offline use:
+
 ```bash
 git clone https://github.com/NicoGenti/opencode-orchestrator-kit
 cd opencode-orchestrator-kit
