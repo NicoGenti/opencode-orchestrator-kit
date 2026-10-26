@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 const REPO_ROOT = join(import.meta.dir, "..");
@@ -262,23 +262,56 @@ describe("comprehension-config — Group C: negative validation", () => {
 // ── Group D: unknown-tier sweep ───────────────────────────────────────────────
 // The orchestrator deliberately names the forbidden token once, inside a
 // prohibition sentence; that exact line is the only permitted match outside
-// git-local plan prose. The token is assembled from parts so this test file
-// never contains the literal string it sweeps for.
+// non-shipped prose (`plan/`, `.context/`). The token is assembled from parts so
+// this test file never contains the literal string it sweeps for.
+//
+// The sweep reads the filesystem directly instead of shelling out to `grep`:
+// `child_process.exec` runs through cmd.exe on Windows, where the POSIX
+// pipeline (`2>/dev/null || true`) yields no output and the "prohibition line
+// must exist" guard failed with 0 hits. A recursive read is deterministic on
+// every host and immune to CRLF noise in the sanctioned-line comparison.
+
+const SWEEP_EXTENSIONS = [".md", ".ts", ".json", ".yml", ".yaml", ".txt"];
+
+// `.hermes/` holds gitignored plan-mode drafts: never shipped, never scanned.
+const SWEEP_SKIP_DIRS = new Set(["node_modules", ".git", ".hermes"]);
+
+/** Repo-relative paths (forward slashes) of every file with a swept extension. */
+function sweepFiles(dir: string, rel = ""): string[] {
+  const out: string[] = [];
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const relPath = rel ? `${rel}/${entry.name}` : entry.name;
+    if (entry.isDirectory()) {
+      if (SWEEP_SKIP_DIRS.has(entry.name)) continue;
+      out.push(...sweepFiles(join(dir, entry.name), relPath));
+    } else if (entry.isFile()) {
+      if (!SWEEP_EXTENSIONS.some(ext => entry.name.endsWith(ext))) continue;
+      out.push(relPath);
+    }
+  }
+  return out;
+}
+
+/** `path:line:content` hits, same shape the old `grep -rn` produced. */
+function sweepHits(tier: string): string[] {
+  const hits: string[] = [];
+  for (const relPath of sweepFiles(REPO_ROOT)) {
+    const lines = readFileSync(join(REPO_ROOT, relPath), "utf-8").split(/\r?\n/);
+    for (let i = 0; i < lines.length; i += 1) {
+      if (lines[i].includes(tier)) hits.push(`${relPath}:${i + 1}:${lines[i]}`);
+    }
+  }
+  return hits;
+}
 
 describe("comprehension-config — Group D: unknown-tier sweep", () => {
-  test("no unknown comprehension tier token appears in shipped files", async () => {
-    const { exec } = await import("node:child_process");
-    const { promisify } = await import("node:util");
-    const execAsync = promisify(exec);
+  test("no unknown comprehension tier token appears in shipped files", () => {
     const tier = ["TIER", "COMPREHENSION"].join("_");
-    const { stdout } = await execAsync(
-      `grep -rn "${tier}" --include="*.md" --include="*.ts" --include="*.json" --include="*.yml" --include="*.yaml" --include="*.txt" --exclude-dir=node_modules --exclude-dir=.git . 2>/dev/null || true`,
-      { cwd: REPO_ROOT }
-    );
-    const hits = stdout.trim().split("\n").filter(Boolean).map(h => h.replace(/^\.\//, ""));
     const prohibitionLine =
       "No new tier token is introduced (no `" + tier +
       "`); tier resolution stays on the existing `TIER_FAST` / `TIER_REVIEW` mapping via the preset resolver.";
+    const hits = sweepHits(tier);
+
     const allowed = hits.filter(h => {
       if (h.startsWith("plan/")) return true; // git-local plan prose, never shipped
       const m = h.match(/^([^:]+):(\d+):(.*)$/);
