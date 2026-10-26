@@ -154,3 +154,28 @@
   lockfile). Commit: 1131841, 01f886e, ae38a88. Board: piano 13 gia' in `qa`, nessun move.
   Gate comprensione: skipped (fase di piano, esecuzione headless). Fase 6 (test/CI/release) non
   avviata.
+- 2026-10-26: piano 13 fase 6 eseguita (test, docs, release-readiness): nuovo
+  `tests/plan-board-parity.test.ts` (parità differenziale python<->TS su 10 scenari: root
+  vuoto, board conforme, warning, errore bloccante con exit 1, new/move/adopt su root gemelle
+  fresh, dry-run; confronto payload `--json` con sostituzione del root in token `<ROOT>`;
+  skip senza python; nessuna divergenza: `plugin/src/plan-board.ts` invariato) e nuovo
+  `tests/plugin-integration.test.ts` (integrazione plugin con ctx mock: preset `generic` con
+  soli `placeholder/*` fallisce in anticipo con TierConfigError e zero registrazioni; scenario
+  default da `opencode.json` su repo vuoto → 15 agenti senza extras, orchestrator unico
+  primary, 5 tier risolti senza placeholder, 3 comandi, 9 skill, tool unico `plan_board` il
+  cui output coincide con `runPlanBoard`; repo esistente → agente utente preesistente
+  intatto, altre 14 registrazioni, zero scritture su filesystem; publish-sanity: exports/files
+  di `plugin/package.json` e asset referenced da `assets.ts` presenti). Docs: README con
+  installazione plugin come path primario (snippet `plugins:` in `opencode.json`, peer
+  `@opencode/plugin ^2.1.0`, registrazione a runtime, user-config wins, tool `plan_board`),
+  install.sh deprecato; QUICKSTART con sezione plugin prima della legacy; CHANGELOG con voci
+  `[Unreleased]` per la migrazione (nessun bump di versione); nuovo `docs/MIGRATION-V1-V2.md`
+  (cosa cambia/rimane, passi, opzioni preset/withExtras, rollback, troubleshooting);
+  deprecation notice nella sola testata commento di `install.sh` (test installer intatti).
+  Vincolo rispettato: nessuna modifica a `.github/workflows/`; publish npm e branch v1 rimandati
+  al release workflow (fuori scope runner). Verifiche (rieseguite dall'orchestratore):
+  `bun run typecheck` exit 0, `bun test` 863 pass / 0 fail / 2723 expect (43 file, fail-set
+  vuoto: sottoinsieme stretto della baseline 17 fail), `bun run lint` exit 0. Commit: b6616db,
+  075a395, 21e4a1f. Board: piano 13 gia' in `qa`, move rifiutato con `already-in-column`,
+  `check` ok (0 errori, 0 warning). Gate comprensione: skipped (fase di piano, esecuzione
+  headless).
