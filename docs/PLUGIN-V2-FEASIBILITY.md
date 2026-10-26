@@ -125,7 +125,7 @@ Important details:
 | Phase 0 (feasibility) | **Risk CLOSED** (see Verdict). Proceed to Phase 1 without the copy-fallback as the primary design; keep it as a documented, switchable safety. |
 | Phase 2 (agents + tiers) | Doable in-plugin via `ctx.agent.transform` + `ctx.model.list()` validation; keep `ROUTER→REASONING` and `REVIEW→CODE` fallbacks; ensure orchestrator stays the only primary (and consider `editor.default("orchestrator")` only if intended — it changes the user's startup agent). |
 | Phase 3/4 (plan board, comprehension) | Commands via `command.transform add`, native tools via `tool.transform add`, state via `ctx.storage`. |
-| Phase 5 (permissions) | `permission` frontmatter maps to `Agent.Info.permissions`; `temperature` and `tools` frontmatter have no v2 equivalent — document the mapping loss. |
+| Phase 5 (permissions) | **DONE.** `permission`/`tools` frontmatter translate to `Agent.Info.permissions` as an ordered rule list; mapping, ordering rules and losses documented in `docs/PLUGIN-V2-PERMISSIONS.md`. |
 
 **Acceptance-criteria note:** the plan says "16 agents"; the repo has 15
 committed agents (+2 extras = 17 installable). Reconcile the count when
