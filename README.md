@@ -93,7 +93,7 @@ What the plugin registers at runtime (nothing is copied into `.opencode/`):
 - **15 agents** (+ `pc-doctor` and `writer` opt-in with `"withExtras": true`), from the same `agents/`/`extras/` contracts.
 - **3 commands** (`/start-session`, `/recall`, `/research-mode`) and **9 skills**.
 - **One native tool, `plan_board`**, the TypeScript port of `scripts/plan-board.py`: standing authorization covers `check` and `move` of conforming plan files without approval; every other board operation (`new`, `adopt`, body edits, deletion, rename) needs per-request approval.
-- **Setup options**: `preset` (one of the four bundled presets, same format as `templates/models.config.json`; a preset whose tier values are all `placeholder/*` fails fast with a `TierConfigError`) and `withExtras` (default `false`).
+- **Setup options**: `preset` (one of the five bundled presets: `default`, `freellmapi`, `generic`, `opencode-go-free`, `ollama`, all in the same format as `templates/models.config.json`; a preset whose tier values are all `placeholder/*` fails fast with a `TierConfigError`) and `withExtras` (default `false`).
 
 Your own configuration always wins: the plugin upserts an agent's `transform` only when the editor returns nothing for it, so user config in `~/.config/opencode/` or the project config is never overwritten.
 
@@ -143,12 +143,12 @@ Five logical tiers are written into agent `model:` lines as `{{TIER_*}}` tokens:
 | Tier token | Default agent(s) | Role | Required? |
 | --- | --- | --- | --- |
 | `TIER_ROUTER` | `orchestrator` | Routing and checkpointing. | Optional (falls back to `TIER_REASONING`). |
-| `TIER_REASONING` | `oracle`, `security`, `planner` | Deep reasoning and architecture. | Required. |
+| `TIER_REASONING` | `oracle`, `security`, `planner`, `plan-writer` | Deep reasoning and architecture. | Required. |
 | `TIER_CODE` | `developer-fixer`, `test-engineer` | Implementation and test writing. | Required. |
-| `TIER_FAST` | `profiler`, `explorer`, `build-helper`, `npm-helper`, `deploy-helper` | Lightweight, high-throughput work. | Required. |
+| `TIER_FAST` | `profiler`, `explorer`, `build-helper`, `npm-helper`, `deploy-helper`, `comprehension-coach`, `librarian` | Lightweight, high-throughput work. | Required. |
 | `TIER_REVIEW` | `code-reviewer` | Correctness and quality review. | Optional (falls back to `TIER_CODE`). |
 
-`templates/models.config.json` ships two profiles: `default` (known-good provider IDs, ready out of the box) and `generic` (editable, every tier is a `placeholder/*` sentinel).
+`templates/models.config.json` ships five presets: `default` (known-good provider IDs), `freellmapi` (the local FreeLLMAPI app), `opencode-go-free`, `ollama`, and `generic` (editable, every tier is a `placeholder/*` sentinel).
 
 To use your own providers:
 

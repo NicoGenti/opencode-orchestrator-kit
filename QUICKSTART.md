@@ -6,11 +6,12 @@
 - **Bash** available — `install.sh` is a bash script. Supported: Linux, macOS,
   and Windows under Git Bash, MSYS, or Cygwin. Plain `cmd.exe` / PowerShell are
   not supported.
-- A usable provider/model mapping of your own. The kit ships with one
-  known-good profile (`default`) and one editable profile (`generic`) in
-  `templates/models.config.json`; you must configure at least one tier before
-  `/start-session` can actually run agents. See
-  `docs/CONFIGURATION.md` and the README's "Choose your model profile" step.
+- A usable provider/model mapping of your own. The kit ships five bundled
+  presets in `templates/models.config.json`: four ready-to-use (`default`,
+  `freellmapi`, `opencode-go-free`, `ollama`) and one editable (`generic`,
+  where every tier is a `placeholder/*` sentinel). You must point at least one
+  tier at a provider you actually have before `/start-session` can run agents.
+  See `docs/CONFIGURATION.md` and the README's "Choose your model profile" step.
 
 ## Installation
 
@@ -37,9 +38,9 @@ opencode
 
 Select `@orchestrator` and run **`/start-session`**. Coming from the copy-based installer? See [`docs/MIGRATION-V1-V2.md`](docs/MIGRATION-V1-V2.md).
 
-### Legacy installer (deprecated)
+### Legacy installer (deprecated — use V2 plugin)
 
-The `install.sh` copy-based installer is the v1 path, kept for OpenCode 1.x and offline use:
+The `install.sh` copy-based installer is the v1 path, kept for OpenCode 1.x and offline use, but it is deprecated in favor of the V2 plugin (it prints a deprecation notice on stderr). Full migration guide: [`docs/MIGRATION-V1-V2.md`](docs/MIGRATION-V1-V2.md).
 
 ```bash
 git clone https://github.com/NicoGenti/opencode-orchestrator-kit
@@ -91,10 +92,10 @@ The installer resolves the tokens for you; to switch presets afterwards, re-run
 
 ## How it works
 
-A single "router" agent dispatches requests to 16 specialized subagents (planner,
-plan-writer,
-developer-fixer, explorer, ...) without ever touching application code, reducing
-token usage while keeping responsibilities cleanly separated.
+A single "router" agent dispatches requests to 14 core specialist subagents
+(planner, plan-writer, developer-fixer, explorer, ...), or 16 in total with the
+`withExtras` opt-in (`pc-doctor`, `writer`), without ever touching application
+code, reducing token usage while keeping responsibilities cleanly separated.
 
 On first run, the `profiler` generates a compact `.context/repo-map.md` (hard
 300-line budget) that the `explorer` reads before broad searches. The explorer
