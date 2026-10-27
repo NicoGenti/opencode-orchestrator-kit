@@ -1,6 +1,6 @@
 {
   "name": "opencode-orchestrator-kit",
-  "version": "0.7.0-alpha.1",
+  "version": "0.7.0",
   "description": "OpenCode 2 plugin packaging the opencode-orchestrator-kit: the orchestrator routing workflow, plan-board tooling, session-memory rules, the kit skills and the /start-session command.",
   "license": "MIT",
   "type": "module",

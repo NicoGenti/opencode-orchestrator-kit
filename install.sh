@@ -45,6 +45,9 @@
 
 set -euo pipefail
 
+echo "DEPRECATED: prefer the opencode-orchestrator-kit plugin on OpenCode 2;" >&2
+echo "see docs/MIGRATION-V1-V2.md. This installer remains functional on the v1 line." >&2
+
 KIT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MODE="copy"
 # TARGET is re-captured from the first non-flag argument after the flag
