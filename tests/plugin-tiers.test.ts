@@ -263,6 +263,7 @@ describe("TierConfigError: unknown preset", () => {
       "freellmapi",
       "generic",
       "opencode-go-free",
+      "ollama",
     ]) {
       expect((error as TierConfigError).message).toContain(preset);
     }
@@ -275,7 +276,7 @@ describe("bundled config parity", () => {
   });
 
   test("resolveTierMap equals resolvePreset for the resolvable presets", () => {
-    for (const preset of ["default", "freellmapi", "opencode-go-free"]) {
+    for (const preset of ["default", "freellmapi", "opencode-go-free", "ollama"]) {
       const expected = resolvePreset(TEMPLATE_CONFIG as never, preset);
       const actual = resolveTierMap(preset);
       expect(actual.preset).toBe(expected.preset);
