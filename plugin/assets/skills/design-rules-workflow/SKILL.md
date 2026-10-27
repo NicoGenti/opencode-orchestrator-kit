@@ -1,3 +1,8 @@
+---
+name: design-rules-workflow
+description: Approval-gated flow to create or normalize the design-rules artifact.
+---
+
 # Design Rules Workflow
 
 Approval-gated flow to create or normalize the design-rules artifact. The orchestrator loads this skill when `/start-session` step 0b reports no artifact (new/empty repo) or a non-canonical one.

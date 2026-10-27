@@ -48,10 +48,10 @@ describe("workflow-hardening — W1 prompt budget (v0.6.1)", () => {
 });
 
 describe("workflow-hardening — W2 on-demand loading", () => {
-  test("orchestrator skill permission allows exactly conductor + comprehension-workflow", () => {
+  test("orchestrator skill permission allows conductor, comprehension-workflow and design-rules-workflow", () => {
     const fm = ORCH.slice(0, ORCH.indexOf("\n---", 4));
     expect(fm).toContain('"skill":{"*":"deny","conductor":"allow"');
-    expect(fm).toContain('"comprehension-workflow":"allow"}}');
+    expect(fm).toContain('"comprehension-workflow":"allow","design-rules-workflow":"allow"}}');
   });
 
   test("orchestrator points LIGHT/DEEP + /recall to the skill, /recall details to the command file", () => {
@@ -338,4 +338,3 @@ describe("workflow-hardening — v0.6.7 flat record paths + helper declaration",
     expect(RESEARCH).toMatch(/record-id\.ts/);
   });
 });
-
