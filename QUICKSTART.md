@@ -101,7 +101,9 @@ On first run, the `profiler` generates a compact `.context/repo-map.md` (hard
 300-line budget) that the `explorer` reads before broad searches. The explorer
 follows a token-aware search ladder — repo map → `rg` → optional ast-grep →
 optional Code Review Graph → targeted reads — and returns bounded, evidence-based
-findings instead of whole-file dumps.
+findings instead of whole-file dumps. On a new or empty repository, the `profiler`
+also asks for the project's goal and seeds `.context/DESIGN-RULES.md`, so
+architecture decisions stay explicit from the first session.
 
 Operations helpers (`build-helper`, `npm-helper`, `deploy-helper`) are installed by
 default and only routed on matching failures. Extras (`pc-doctor`, `writer`) require

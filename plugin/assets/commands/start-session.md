@@ -6,6 +6,7 @@ agent: orchestrator
 New session. Before doing anything else, run your bootstrap cycle:
 
 0. **Bootstrap check**: verify `.opencode/PROJECT-PROFILE.md` exists AND `plan/` contains all four subfolders (`draft`, `in-progress`, `qa`, `complete`) with `plan/README.md`. If either is missing, delegate to `profiler` before any other routing. Skip only when both conditions are already satisfied.
+0b. **Design rules check**: verify a design-rules artifact exists — `.context/DESIGN-RULES.md`, root `ARCHITECTURE.md`, or root `DESIGN-RULES.md`. If none exists and the repo is empty/new, the `profiler` intake seeds `.context/DESIGN-RULES.md` from the user's goal answers. If an artifact exists, treat it as a binding input for `oracle` and `planner` routing.
 0.5. **Session memory load**: read `.context/progress.md`, `.context/decisions.md`, `.context/issues.md`, and `.opencode/PROJECT-PROFILE.md` (if they exist) before planning any routing. If `PROJECT-PROFILE.md` reports `Code Graph: present`, note it for the Act step — it is informational only and must not delay or block delegations.
 1. **Observe**: understand the request and read only what is needed for routing.
 2. **Orient**: classify the request and estimate scope.
@@ -38,4 +39,3 @@ observed in this runtime:
 Routing consequence: a request carrying a URL, an issue link or any remote document MUST be routed
 to an agent that can fetch it (e.g. `librarian`) — never reformulated as a local search. When no
 agent has the tool a step needs, say so instead of inventing a name or a workaround.
-
