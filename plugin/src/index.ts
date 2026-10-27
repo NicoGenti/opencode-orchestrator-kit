@@ -91,28 +91,41 @@ export default Plugin.define({
 
     // 4. Commands (/start-session, /recall, /research-mode — packaged copies
     //    of the repo-root command/*.md documents).
+    //    OpenCode 2.2 contract: `execute(input)` must return a promise AND
+    //    deliver the prompt itself; the host chains `.then()` on the result.
     ctx.command.transform((editor) => {
-      const startSession = loadPackagedStartSession();
-      editor.add({
-        name: startSession.name,
-        description: startSession.description,
-        agent: startSession.agent,
-        execute: () => startSession.body,
-      });
-      const recall = loadPackagedRecall();
-      editor.add({
-        name: recall.name,
-        description: recall.description,
-        agent: recall.agent,
-        execute: () => recall.body,
-      });
-      const researchMode = loadPackagedResearchMode();
-      editor.add({
-        name: researchMode.name,
-        description: researchMode.description,
-        agent: researchMode.agent,
-        execute: () => researchMode.body,
-      });
+      for (const packaged of [
+        loadPackagedStartSession(),
+        loadPackagedRecall(),
+        loadPackagedResearchMode(),
+      ]) {
+        editor.add({
+          name: packaged.name,
+          description: packaged.description,
+          execute: async ({ sessionID, prompt, delivery }) => {
+            if (typeof ctx.session.switchAgent === "function") {
+              try {
+                await ctx.session.switchAgent({
+                  sessionID,
+                  agent: packaged.agent,
+                });
+              } catch (error) {
+                // Il prompt resta la parte essenziale: un cambio agente fallito
+                // non deve impedire l'invio del comando.
+                console.warn(
+                  `${WARNING_PREFIX} /${packaged.name}: could not switch the session to '${packaged.agent}' (${String(error)}); delivering the prompt on the current agent`,
+                );
+              }
+            }
+            await ctx.session.prompt({
+              ...prompt,
+              sessionID,
+              text: packaged.body,
+              delivery,
+            });
+          },
+        });
+      }
     });
 
     // 5. Skills.
