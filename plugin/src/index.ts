@@ -67,7 +67,14 @@ export default Plugin.define({
     const tierMap = resolveTierMap(presetName);
 
     // 3. Unavailable models are signaled, never fatal.
-    const registry = await ctx.model.list();
+    //    OpenCode 2.2 returns `{ location, data }` from ctx.model.list();
+    //    2.1 returned a bare array. Accept both shapes.
+    const listed = (await ctx.model.list()) as unknown;
+    const registry: ReadonlyArray<{ providerID: string; id: string }> =
+      Array.isArray(listed)
+        ? (listed as Array<{ providerID: string; id: string }>)
+        : ((listed as { data?: Array<{ providerID: string; id: string }> })
+            ?.data ?? []);
     if (registry.length === 0) {
       console.warn(
         `${WARNING_PREFIX} runtime model registry is empty; skipping tier availability checks (preset: '${tierMap.preset}')`,
