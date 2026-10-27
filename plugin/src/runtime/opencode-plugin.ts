@@ -1,10 +1,10 @@
-// TEMPORARY runtime stand-in for "@opencode/plugin".
-// Pinned to the @opencode/plugin 2.1.x surface per docs/PLUGIN-V2-FEASIBILITY.md;
-// to be replaced by the real dependency in Phase 6 when lockfile changes are
-// allowed. It exists because `bun test` must exercise the real plugin sources
-// with ZERO npm dependencies installed (the peer dependency declared in
-// plugin/package.json documents the real contract). The ambient type shim for
-// the real specifier lives in plugin/types/opencode-plugin-shim.d.ts.
+// Runtime stand-in for "@opencode/plugin" — the shipped 0.7.0 design.
+// Pinned to the @opencode/plugin 2.1.x surface per docs/PLUGIN-V2-FEASIBILITY.md
+// and the shipped OpenCode 2.2 command contract. It exists because `bun test`
+// must exercise the real plugin sources with ZERO npm dependencies installed
+// (the peer dependency declared in plugin/package.json, @opencode/plugin
+// ^2.1.0, documents the real contract). The ambient type shim for the real
+// specifier lives in plugin/types/opencode-plugin-shim.d.ts.
 
 /** Invocation handed to a command's `execute` by the host (OpenCode 2.2). */
 export interface CommandInvocation {

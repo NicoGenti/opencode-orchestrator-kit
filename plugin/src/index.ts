@@ -47,8 +47,8 @@ const WARNING_PREFIX = "[opencode-orchestrator-kit]";
  * board root) are appended last and asserted before registration.
  *
  * Note: @opencode/plugin is a peer dependency not installed in this repo — the
- * import is served by the temporary runtime stand-in until Phase 6 swaps it
- * for `import { Plugin } from "@opencode/plugin"` (see the header of
+ * import is served by the shipped 0.7.0 runtime stand-in (the peer dependency
+ * `@opencode/plugin ^2.1.0` documents the real host contract; see the header of
  * src/runtime/opencode-plugin.ts and plugin/types/opencode-plugin-shim.d.ts).
  */
 export default Plugin.define({
