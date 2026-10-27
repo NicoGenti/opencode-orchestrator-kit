@@ -83,7 +83,7 @@ Follow this order, stopping as soon as you have enough signal:
 2. Ask the user up to 3 targeted questions: target stack/language, framework, desired CI/CD platform.
 3. Ask up to 3 goal questions: project purpose and target audience, core capabilities to build first, known constraints or integrations.
 4. Write an initial `PROJECT-PROFILE.md` based on the answers, marked as "user-declared, not yet verified against code."
-5. If `.context/DESIGN-RULES.md` does not exist, write it seeded strictly from the goal answers, under a "Draft — to be refined by oracle" heading. Never invent requirements; if the user skips the goal questions, write the artifact with empty sections.
+5. If `.context/DESIGN-RULES.md` does not exist, write it seeded strictly from the goal answers, using exactly these canonical headings: `## Purpose`, `## Users and Use Cases`, `## Constraints`, `## Architectural Style`, `## Module Boundaries`, `## Data and Integrations`, `## Non-Functional Requirements`, `## Design Rules`, `## Decision Log`, under a "Draft — to be refined by oracle" heading. Never invent requirements; if the user skips the goal questions, write the artifact with empty sections.
 6. Report back to the orchestrator that scaffolding should be delegated to `developer-fixer`.
 
 ## Memory Template Initialization (both cases)

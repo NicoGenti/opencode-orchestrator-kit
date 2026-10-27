@@ -70,6 +70,17 @@ You SHOULD:
 - Follow repository conventions before generic advice
 - Distinguish required fixes from optional improvements
 
+## Design Rules Compliance
+
+When a design-rules artifact exists (`.context/DESIGN-RULES.md`, root `ARCHITECTURE.md`, or root `DESIGN-RULES.md`), you MUST check the diff against it and report:
+
+- Module boundary violations.
+- Dependency-direction violations.
+- Contradictions with the Decision Log.
+- New design rules introduced without a corresponding test or documented decision.
+
+Skip this checklist silently when no artifact exists.
+
 ## Constraints
 
 You MUST:
