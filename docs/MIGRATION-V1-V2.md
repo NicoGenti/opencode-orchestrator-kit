@@ -15,7 +15,9 @@ The kit ships two install paths:
 | Plan board | `scripts/plan-board.py` invoked from bash | The same tool, ported to TypeScript and exposed as the native **`plan_board`** tool |
 | Extras | `--with-extras` flag at install time | `"withExtras": true` option |
 
-The plugin's **standing authorization** for `plan_board` covers `check` plus `move` of conforming plan files without a per-request approval; every other board operation (`new`, `adopt`, body edits, deletion, rename) still requires approval — identical to the v1 contract. User configuration always wins: an agent's `transform` is upserted only when the editor returns nothing for it, so your own config in `~/.config/opencode/` or the project config is never overwritten. A preset whose tier values are **all `placeholder/*`** fails fast with a `TierConfigError` before registration — the same fail-fast policy the v1 validator enforced pre-install (V2 presets without placeholders are not reachable from the bundled four, but custom presets inherit this check).
+The plugin's **standing authorization** for `plan_board` covers `check` plus `move` of conforming plan files without a per-request approval; every other board operation (`new`, `adopt`, body edits, deletion, rename) still requires approval — identical to the v1 contract. User configuration always wins: an agent's `transform` is upserted only when the editor returns nothing for it, so your own config in `~/.config/opencode/` or the project config is never overwritten. A preset whose tier values are **all `placeholder/*`** fails fast with a `TierConfigError` before registration — the same fail-fast policy the v1 validator enforced pre-install. Five presets are bundled (`default`, `freellmapi`, `generic`, `opencode-go-free`, `ollama`); any other preset name fails fast with the same `TierConfigError`.
+
+One asset does not carry over: the plugin registers 3 of the kit's 4 commands (`/start-session`, `/recall`, `/research-mode`), while `/close-session` remains V1-only (it ships in `command/` and is installed by the copy-based installer).
 
 ## What does NOT change
 
@@ -33,7 +35,7 @@ The plugin's **standing authorization** for `plan_board` covers `check` plus `mo
      "plugins": [
        {
          "package": "opencode-orchestrator-kit",
-         "options": { "preset": "your-preset", "withExtras": false }
+         "options": { "preset": "default", "withExtras": false }
        }
      ]
    }
@@ -56,7 +58,7 @@ Remove the plugin entry from `opencode.json` and re-run the v1 installer (`./ins
 
 ## Troubleshooting
 
-- **`TierConfigError` at plugin load** — the configured `preset` has every tier set to a `placeholder/*` sentinel. Pick a ready preset or provide a preset with real `<provider>/<model>` values; your own configuration always wins, so a fully configured user profile suppresses the plugin's `transform` upserts rather than failing.
+- **`TierConfigError` at plugin load** — the configured `preset` has every tier set to a `placeholder/*` sentinel, or the preset name is not one of the five bundled ones. Pick the bundled preset that matches the providers you have (`default`, `freellmapi`, `opencode-go-free`, `ollama`), or define your own agents in user config: the plugin options accept only `preset` and `withExtras` (there is no custom-preset slot), and your own configuration always wins over the plugin registration.
 - **An agent uses a different model than expected** — user configuration takes precedence over the plugin registration. Check `~/.config/opencode/` and the project's `opencode.json` for pins on that agent.
 - **`@opencode/plugin` version conflict** — the plugin requires `^2.1.0` as a peer dependency. Older OpenCode 2 releases with a V1-only plugin API are not supported; either upgrade OpenCode 2 or stay on the v1 installer.
 - **Board operations suddenly prompting for approval** — only `check` and `move` of conforming files are standing-approved; `new`, `adopt`, body edits, deletion and rename always need approval, on both paths. Verify the file conforms (`python scripts/plan-board.py check ...` or the `plan_board` tool).
