@@ -52,7 +52,7 @@ The roster is partitioned into four tiers. Tiers differ in **when** the orchestr
 
 | Runtime ID | Tier | Role | Read/write scope |
 | --- | --- | --- | --- |
-| `profiler` | Core routing | Repo bootstrap: stack/CI detection, empty-repo intake, `plan/` scaffolding, token-budgeted repo map generation. Runs once per repo; the repo map is refreshed on every run. | Writes only `PROJECT-PROFILE.md`, `.context/*` templates, `.context/repo-map.md`, `plan/README.md`, `plan/*/.gitkeep` |
+| `profiler` | Core routing | Repo bootstrap: stack/CI detection, empty-repo intake with design-rules seeding, `plan/` scaffolding, token-budgeted repo map generation. Runs once per repo; the repo map is refreshed on every run. | Writes only `PROJECT-PROFILE.md`, `.context/*` templates, `.context/DESIGN-RULES.md`, `.context/repo-map.md`, `plan/README.md`, `plan/*/.gitkeep` |
 | `explorer` | Core routing | Codebase, file, or symbol exploration via a token-aware search ladder (repo map → `rg` → optional ast-grep → optional Code Review Graph → targeted reads). | Read-only |
 | `oracle` | Core routing | Architecture, design, or strategy advice. The standard non-trivial workflow is `explorer` → `oracle` → `planner` → `developer-fixer`. | Read-only |
 | `planner` | Core routing | Turns exploration into a phased development plan. | Writes to `plan/draft/` only |
