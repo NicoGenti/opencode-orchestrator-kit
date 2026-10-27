@@ -73,6 +73,17 @@ const extraBindings = bindings.filter((binding) =>
   binding.assetRel.startsWith("extras/"),
 );
 
+/**
+ * Normalize CRLF to LF so a comparison is host-EOL independent.
+ *
+ * Only the pure `\n` vs `\r\n` difference is tolerated: a lone `\r` is left
+ * untouched, and any other byte difference (a mutated character) still
+ * fails the comparison.
+ */
+function normalizeEol(text: string): string {
+  return text.replace(/\r\n/g, "\n");
+}
+
 const packagedFiles = collectAllFiles(ASSETS_DIR)
   .map((path) => relative(ASSETS_DIR, path).split(sep).join("/"))
   .sort();
@@ -102,10 +113,34 @@ describe("plugin/assets packaging parity", () => {
     expect(packagedFiles).not.toContain("commands/close-session.md");
   });
 
-  test("every packaged asset is byte-identical to its repo-root source", () => {
+  test("the EOL tolerance does not hide a mutated character", () => {
+    const source = readFileSync(
+      join(ROOT, "skills", "github-actions-cicd", "SKILL.md"),
+      "utf-8",
+    );
+    // A pure LF/CRLF difference is tolerated (host core.autocrlf artifact).
+    const lf = normalizeEol(source);
+    expect(normalizeEol(lf.replace(/\n/g, "\r\n"))).toBe(lf);
+    // A single mutated character is NOT tolerated.
+    const mutated = source.replace("workflow", "workflov");
+    expect(mutated).not.toBe(source);
+    expect(normalizeEol(mutated)).not.toBe(normalizeEol(source));
+    // A whitespace-only mutation is NOT tolerated either: the tolerance is
+    // scoped to the line terminators, not to whitespace in general.
+    const respaced = source.replace(" ", "\t");
+    expect(respaced).not.toBe(source);
+    expect(normalizeEol(respaced)).not.toBe(normalizeEol(source));
+  });
+
+  test("every packaged asset is content-identical to its repo-root source", () => {
     for (const binding of bindings) {
       const packaged = join(ASSETS_DIR, ...binding.assetRel.split("/"));
-      const same = readFileSync(packaged).equals(readFileSync(binding.source));
+      // EOL-normalized: the repository content is the contract, the working
+      // tree's LF/CRLF split is a host artifact (core.autocrlf), not a
+      // difference. Every other byte difference still fails the comparison.
+      const same =
+        normalizeEol(readFileSync(packaged, "utf-8")) ===
+        normalizeEol(readFileSync(binding.source, "utf-8"));
       expect(same).toBe(true);
     }
   });

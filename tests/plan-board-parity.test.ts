@@ -17,6 +17,10 @@ import { spawnSync } from "node:child_process";
  *  - le due esecuzioni girano su radici mkdtemp diverse che differiscono
  *    SOLO per il path assoluto -> ogni occorrenza del path della propria
  *    radice viene sostituita dal token `<ROOT>` prima del confronto;
+ *  - la sostituzione avviene sulla forma ESCAPATA del path: `JSON.stringify`
+ *    raddoppia ogni `\` in `\\`, quindi il path grezzo non compare mai
+ *    letteralmente nel payload serializzato (dividere per il path grezzo
+ *    sarebbe un no-op silenzioso: il confronto fallirebbe sempre su Windows);
  *  - nessun campo volatile viene scartato: `created`/`updated` derivano da
  *    `today()` (data locale, identica per entrambe le esecuzioni) e i
  *    payload non contengono timestamp.
@@ -158,6 +162,23 @@ function runTs(args: string[], root: string): RunResult {
 }
 
 /**
+ * Sostituisce il path della radice con il token `<ROOT>` nel payload gia'
+ * serializzato.
+ *
+ * `JSON.stringify` scappa ogni backslash in `\\`: il path assoluto della radice
+ * (es. `C:\Users\...\pb-parity-pyXXXX`) non compare MAI letteralmente nel
+ * testo serializzato, solo nella sua forma ESCAPATA. Dividere per il path grezzo
+ * e' quindi un no-op silenzioso. Qui si divide per la forma escapata (senza le
+ * virgolette, cosi' il risultato resta JSON valido) e si sostituisce ogni
+ * occorrenza: i path dei campi `root`, `path` ed `errors/warnings[].file` sono
+ * tutti sotto la radice, quindi il prefisso radice li copre tutti.
+ */
+function normalizeRoot(serialized: string, root: string): string {
+  const escaped = JSON.stringify(root).slice(1, -1);
+  return serialized.split(escaped).join("<ROOT>");
+}
+
+/**
  * Aspetta la parita' di una coppia di esecuzioni: exit code identici, JSON
  * valido su entrambi gli stdout e payload normalizzati profondamente uguali.
  */
@@ -171,8 +192,8 @@ function expectParity(
   expect(py.status, `${label}: exit python`).toBe(ts.status);
   expect(py.json, `${label}: stdout python non e' JSON`).not.toBeNull();
   expect(ts.json, `${label}: stdout ts non e' JSON`).not.toBeNull();
-  const pyText = JSON.stringify(py.json).split(pyRoot).join("<ROOT>");
-  const tsText = JSON.stringify(ts.json).split(tsRoot).join("<ROOT>");
+  const pyText = normalizeRoot(JSON.stringify(py.json), pyRoot);
+  const tsText = normalizeRoot(JSON.stringify(ts.json), tsRoot);
   expect(JSON.parse(pyText), label).toEqual(JSON.parse(tsText));
 }
 
