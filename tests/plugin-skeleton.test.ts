@@ -70,6 +70,9 @@ const commandSources = new Map<string, CommandSource>(
 const commands: Array<Record<string, unknown>> = [];
 const skills: Array<Record<string, unknown>> = [];
 const tools: Array<Record<string, unknown>> = [];
+/** Prompt inviati da `command.execute` (contratto OpenCode 2.2). */
+const prompts: Array<Record<string, unknown>> = [];
+const switched: Array<Record<string, unknown>> = [];
 
 /** Minimal agent editor: records nothing; skeleton test only guards shape. */
 function noopAgentEditor() {
@@ -120,6 +123,15 @@ try {
         });
       },
     },
+    session: {
+      prompt: async (input: Record<string, unknown>) => {
+        prompts.push(input);
+        return {};
+      },
+      switchAgent: async (input: Record<string, unknown>) => {
+        switched.push(input);
+      },
+    },
     skill: {
       transform: (callback) => {
         void callback({
@@ -164,10 +176,9 @@ describe("opencode-orchestrator-kit plugin skeleton", () => {
       "start-session",
     ]);
     for (const command of commands) {
-      expect(command.agent).toBe("orchestrator");
       expect(typeof command.execute).toBe("function");
-      const execute = command.execute as (ctx?: unknown) => unknown;
-      expect(execute()).toBeTruthy();
+      // OpenCode 2.2: nessun campo `agent` nella definizione del comando.
+      expect(command.agent).toBeUndefined();
     }
   });
 
@@ -179,10 +190,23 @@ describe("opencode-orchestrator-kit plugin skeleton", () => {
     }
   });
 
-  test("every registered command body equals the trimmed markdown body", () => {
+  test("every registered command delivers the trimmed markdown body to orchestrator", async () => {
     for (const command of commands) {
       const source = commandSources.get(String(command.name));
-      expect((command.execute as () => string)()).toBe(source?.body);
+      const execute = command.execute as (input: unknown) => Promise<void>;
+      const returned = execute({
+        sessionID: "ses_skeleton",
+        prompt: { text: "ignored" },
+        delivery: "queue",
+      });
+      expect(typeof (returned as { then?: unknown } | undefined)?.then).toBe("function");
+      await returned;
+      expect(prompts.at(-1)?.text).toBe(source?.body);
+      expect(prompts.at(-1)?.sessionID).toBe("ses_skeleton");
+      expect(switched.at(-1)).toEqual({
+        sessionID: "ses_skeleton",
+        agent: "orchestrator",
+      });
     }
   });
 

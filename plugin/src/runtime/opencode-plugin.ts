@@ -6,14 +6,25 @@
 // plugin/package.json documents the real contract). The ambient type shim for
 // the real specifier lives in plugin/types/opencode-plugin-shim.d.ts.
 
+/** Invocation handed to a command's `execute` by the host (OpenCode 2.2). */
+export interface CommandInvocation {
+  sessionID: string;
+  /** Original prompt input (text, attachments, agent/model when the host sets them). */
+  prompt: Record<string, unknown>;
+  delivery: "steer" | "queue";
+}
+
 /** Command entry contributed through `ctx.command.transform`. */
 export interface CommandInfo {
   name: string;
   description: string;
-  /** V1 command-kit parity: the agent that handles the command. */
-  agent?: string;
-  /** Command implementation; returns the markdown body (Phase 1 skeleton). */
-  execute?: (input: unknown) => unknown;
+  /**
+   * Command implementation. OpenCode 2.2 calls `execute(input).then(...)`:
+   * the callback MUST return a promise AND deliver the prompt itself
+   * (see ctx.session.prompt). Returning a string makes the host throw
+   * `t(s).then is not a function`.
+   */
+  execute: (input: CommandInvocation) => Promise<void>;
 }
 
 /** Editor handed to a `ctx.command.transform` callback. */
@@ -105,6 +116,11 @@ export interface PluginContext {
   };
   command: {
     transform(callback: (editor: CommandEditor) => unknown): void;
+  };
+  /** Session client: command executors deliver their prompt through it. */
+  session: {
+    prompt(input: Record<string, unknown>): Promise<unknown>;
+    switchAgent?(input: { sessionID: string; agent: string }): Promise<void>;
   };
   skill: {
     transform(callback: (editor: SkillEditor) => unknown): void;
