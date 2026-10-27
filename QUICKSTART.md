@@ -127,6 +127,8 @@ At close, the orchestrator classifies the change (NONE/LIGHT/DEEP) and announces
 See `README.md` for the responsibility map and customization notes,
 `docs/SETUP-NATIVE.md` for the manual install path,
 `docs/CONFIGURATION.md` for the full tier-resolution rules,
+`docs/DESIGN-RULES.md` for the design-rules artifact lifecycle and the
+approval-gated create/normalize flow,
 `docs/BENCHMARK-TOKEN-USAGE.md` to measure the token impact of the repo map,
 `AGENTS.md` for details on each subagent's role and responsibilities, and
 `CONTRIBUTING.md` to contribute to the project.

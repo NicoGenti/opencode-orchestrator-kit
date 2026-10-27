@@ -6,6 +6,7 @@ All notable changes to this project are documented in this file. The format foll
 
 ### Added
 
+- **Design-first governance (plan 0002)**: canonical `templates/design-rules.md`, approval-gated `design-rules-workflow` skill (oracle research + user-approved normalization), design-rules as binding input for planner and compliance checklist for code-reviewer, and `docs/PROVIDER-SMOKE-CHECK.md` per-tier tool-use checklist.
 - **Design-first bootstrap (plan 0001)**: the session bootstrap now checks for a design-rules artifact (`.context/DESIGN-RULES.md`, root `ARCHITECTURE.md`, or root `DESIGN-RULES.md`); on a new/empty repo the `profiler` asks for the project goal and seeds `.context/DESIGN-RULES.md` from the user's answers, while existing artifacts are detected and reported for user-approved normalization only.
 
 ## [0.7.0] — 2026-10-27

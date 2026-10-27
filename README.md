@@ -2,7 +2,7 @@
 
 **A cost-aware, multi-agent workflow for [OpenCode](https://opencode.ai): one router agent that never writes code, and specialists that each run on the cheapest model able to do the job.**
 
-[![Tests](https://github.com/NicoGenti/opencode-orchestrator-kit/actions/workflows/test.yml/badge.svg)](https://github.com/NicoGenti/opencode-orchestrator-kit/actions/workflows/test.yml) [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE.txt) [![OpenCode](https://img.shields.io/badge/works%20with-OpenCode%20CLI-blue)](https://opencode.ai) [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+[![Tests](https://github.com/NicoGenti/opencode-orchestrator-kit/actions/workflows/test.yml/badge.svg)](https://github.com/NicoGenti/opencode-orchestrator-kit/actions/workflows/test.yml) [![License: MIT](https://github.com/NicoGenti/opencode-orchestrator-kit/blob/main/LICENSE.txt)](LICENSE.txt) [![OpenCode](https://github.com/NicoGenti/opencode-orchestrator-kit#)](https://opencode.ai) [![PRs Welcome](https://github.com/NicoGenti/opencode-orchestrator-kit/blob/main/CONTRIBUTING.md)](CONTRIBUTING.md)
 
 <!-- DEMO: add a short terminal GIF of /start-session followed by a small task here -->
 
@@ -43,6 +43,7 @@ Every delegation uses a 9-section task spec (Goal, Success Criteria, Scope, Safe
 - **Routing is separated from execution.** `agents/orchestrator.md` is the only `mode: primary` agent and can only classify and delegate, so orchestration mistakes cannot silently change the codebase.
 - **Logical model tiers instead of hardcoded IDs.** Agents reference `{{TIER_ROUTER}}`, `{{TIER_REASONING}}`, `{{TIER_CODE}}`, `{{TIER_FAST}}` and `{{TIER_REVIEW}}`. Switching provider means editing one config file, and a validator runs before install.
 - **Plans are files, not chat history.** The kanban in `plan/` is the source of truth, so work is resumable and reviewable in Git.
+- **Design rules are first-class.** On a new repo the profiler seeds `.context/DESIGN-RULES.md`; the orchestrator can research and normalize it via the approval-gated `design-rules-workflow` skill, and `planner`/`code-reviewer` treat it as a binding input.
 - **Technical review is separate from human comprehension.** `code-reviewer` and `security` verify the code; `comprehension-coach` checks that the developer understood it.
 
 ## Agent roster
@@ -91,7 +92,7 @@ With the plugin, tier resolution happens at runtime from `plugin/src/tiers.ts` p
 What the plugin registers at runtime (nothing is copied into `.opencode/`):
 
 - **15 agents** (+ `pc-doctor` and `writer` opt-in with `"withExtras": true`), from the same `agents/`/`extras/` contracts.
-- **3 commands** (`/start-session`, `/recall`, `/research-mode`) and **9 skills**.
+- **3 commands** (`/start-session`, `/recall`, `/research-mode`) and **10 skills**.
 - **One native tool, `plan_board`**, the TypeScript port of `scripts/plan-board.py`: standing authorization covers `check` and `move` of conforming plan files without approval; every other board operation (`new`, `adopt`, body edits, deletion, rename) needs per-request approval.
 - **Setup options**: `preset` (one of the five bundled presets: `default`, `freellmapi`, `generic`, `opencode-go-free`, `ollama`, all in the same format as `templates/models.config.json`; a preset whose tier values are all `placeholder/*` fails fast with a `TierConfigError`) and `withExtras` (default `false`).
 
