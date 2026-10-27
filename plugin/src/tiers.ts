@@ -152,6 +152,19 @@ export const BUNDLED_MODEL_CONFIG: BundledModelConfig = {
         TIER_FAST: "opencode-go/minimax-m3.1-flash-free",
       },
     },
+    ollama: {
+      label: "Ollama Cloud (provider ollama locale)",
+      description:
+        "Instrada ogni tier sul provider `ollama` definito in opencode.jsonc (Ollama Cloud via endpoint OpenAI-compatibile locale). Verificato il 2026-10-27 con `opencode2 run --model`: tutti e cinque i modelli rispondono su `ollama`, mentre il provider `ollama-cloud` del catalogo built-in risponde `Model unavailable` per gli stessi id. Nessun consumo su opencode-go, nessun freellmapi.",
+      requires: ["ollama"],
+      models: {
+        TIER_ROUTER: "ollama/glm-5.3-flash:cloud",
+        TIER_REASONING: "ollama/beam:cloud",
+        TIER_CODE: "ollama/deepseek-v4.1-flash:cloud",
+        TIER_REVIEW: "ollama/glm-5.3:cloud",
+        TIER_FAST: "ollama/minimax-m3.1-flash:cloud",
+      },
+    },
   },
 };
 
