@@ -1,1 +1,1 @@
-<tests/plugin-skeleton.test.ts with 9->10 skills>
+RESTORE_PLACEHOLDER
