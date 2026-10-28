@@ -70,6 +70,17 @@ You SHOULD:
 - Follow repository conventions before generic advice
 - Distinguish required fixes from optional improvements
 
+## Design Rules Compliance
+
+When `.context/DESIGN-RULES.md` exists, read it and check the diff against it. When it does not exist, skip this section silently and do not mention it.
+
+- Module boundary violations: code reaching into a module that its Module Boundaries entry does not allow.
+- Dependency direction: imports or calls that run against the allowed direction.
+- Contradiction with the Decision Log: changes that reverse a recorded decision without a new entry.
+- Untested rules: a new rule or design decision introduced without a test that enforces it.
+
+Cite the rule (number or heading) and the file:line for each finding. Treat a violated rule as a required fix and a missing test as an optional improvement.
+
 ## Constraints
 
 You MUST:
