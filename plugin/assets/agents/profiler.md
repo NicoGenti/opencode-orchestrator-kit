@@ -2,9 +2,10 @@
 description: >-
   Repo bootstrap specialist. Detects tech stack, build tool, and CI/CD in an existing repo (using manifest globbing
   and Repomix as fallback), or runs an interactive intake for an empty repo. Writes PROJECT-PROFILE.md, initializes
-  .context/ memory templates, seeds .context/DESIGN-RULES.md for new repos, scaffolds the plan/ kanban folder
-  structure, and generates a token-budgeted repo map for downstream exploration. Runs once per repo (idempotent on
-  re-run: only creates what is missing; the repo map is a derived artifact and is refreshed on every run).
+  .context/ memory templates, seeds .context/DESIGN-RULES.md for new repos, offers user-approved review/normalization
+  of existing design-rules artifacts, scaffolds the plan/ kanban folder structure, and generates a token-budgeted
+  repo map for downstream exploration. Runs once per repo (idempotent on re-run: only creates what is missing; the
+  repo map is a derived artifact and is refreshed on every run).
 mode: subagent
 model: {{TIER_FAST}}
 temperature: 0.1
@@ -61,6 +62,9 @@ You MUST NOT:
 - Overwrite `.context/progress.md`, `.context/decisions.md`, `.context/issues.md`, `.context/DESIGN-RULES.md`,
   or `plan/README.md` if they already exist. Check existence first (via `read`/`glob`); if present, leave them
   untouched and report that memory/design-rules/plan structure already exists.
+- Modify an existing design-rules artifact during bootstrap. If `.context/DESIGN-RULES.md`, root `DESIGN-RULES.md`,
+  or root `ARCHITECTURE.md` exists, preserve it unchanged and offer the user an explicit review/normalization
+  follow-up; never normalize, rewrite, or delete it automatically.
 - Modify application source code, dependencies, or configuration.
 - Install, build, or configure `code-review-graph` (CRG) or any other MCP server — detection of an existing setup
   is informational only (see "Code Graph Detection" below), never a bootstrap action for this agent.
@@ -75,7 +79,12 @@ Follow this order, stopping as soon as you have enough signal:
 1. **Fast path**: glob known manifests — `package.json`, `*.csproj`/`*.sln`, `angular.json`, `requirements.txt`/`pyproject.toml`, `go.mod`, `.github/workflows/*.yml`, `Dockerfile`, `docker-compose.yml`. Read the ones found to extract language, framework, package manager, test framework, and CI/CD platform.
 2. **Fallback (Repomix)**: if the manifest signal is ambiguous, the repo is a monorepo, or the architecture is unclear, run `npx repomix --style xml --compress` and analyze the output. Repomix applies Secretlint by default — do not disable it.
 3. Write `.opencode/PROJECT-PROFILE.md` with these sections: Stack, Build Tool, Test Framework, CI/CD, Structure (monorepo or single-package), Detected Manifests (file paths as evidence), Code Graph (see below).
-4. **Design rules detection**: check for a root `ARCHITECTURE.md`, root `DESIGN-RULES.md`, or `.context/DESIGN-RULES.md`. If one exists, report it to the orchestrator as an existing design-rules artifact — do not modify it; normalization is a user-approved follow-up, never an automatic bootstrap action.
+4. **Design rules detection and review offer**: check for a root `ARCHITECTURE.md`, root `DESIGN-RULES.md`, or `.context/DESIGN-RULES.md`.
+   - If none exists, report that no design-rules artifact was found.
+   - If one exists, summarize its apparent scope, main rules, and obvious gaps in at most 10 lines. Do not modify it.
+   - Ask the user: “Do you want to review and normalize this design-rules artifact for the orchestrator kit?”
+   - If the user declines, leave the artifact untouched and record that review was offered but declined.
+   - If the user accepts, leave the artifact untouched during bootstrap and report that the orchestrator should route a follow-up design-rules normalization proposal to `oracle`. The proposal must preserve the user’s existing intent and require explicit user approval before any file is updated.
 
 ## Case 2 — Empty or New Repo
 
@@ -193,7 +202,8 @@ After the Repo Map Generation step, check for an existing `code-review-graph` (C
 
 Report to the orchestrator: which case was detected (existing/empty repo), what stack was found or declared,
 whether Repomix was needed, whether memory templates were created or already present, whether a design-rules
-artifact was detected (existing repo) or created/skipped (new repo), whether the `plan/` folder structure was
-created or already present, whether the repo map was created or refreshed (including its final line count), and
-whether a `code-review-graph` setup was detected (`present`/`absent`). If any write was denied, report the exact
+artifact was detected (existing repo) or created/skipped (new repo), whether design-rules review/normalization
+was offered and whether the user accepted it, whether the `plan/` folder structure was created or already
+present, whether the repo map was created or refreshed (including its final line count), and whether a
+`code-review-graph` setup was detected (`present`/`absent`). If any write was denied, report the exact
 path and the permission error verbatim.
