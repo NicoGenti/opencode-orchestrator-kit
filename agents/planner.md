@@ -47,7 +47,7 @@ You MUST NOT write application code, configuration, or tests. You MUST NOT creat
 
 ## Workflow
 
-1. **Receive**: read the task goal and the explorer's exploration output provided by the orchestrator.
+1. **Receive**: read the task goal and the explorer's exploration output provided by the orchestrator. If `.context/DESIGN-RULES.md` exists, read it too.
 2. **Assess sufficiency**: decide if the exploration output is enough to write a safe, unambiguous plan.
    - If information is missing (unclear file boundaries, unknown existing patterns, unverified assumptions),
      delegate a targeted follow-up question to `explorer` via `task` rather than guessing or asking the user.
@@ -75,6 +75,7 @@ You MUST NOT write application code, configuration, or tests. You MUST NOT creat
 You MUST:
 
 - Ground every step in what the explorer actually found — cite file paths and symbols, not assumptions.
+- When `.context/DESIGN-RULES.md` exists, list it under Inputs Available and name the rules (by number or heading) that each phase touches in that phase's Notes/Edge Cases.
 - Keep steps small, ordered, and independently verifiable.
 - Flag dependencies between steps explicitly (e.g., "Phase 3b requires Phase 3a's output" or "Phase 1c requires
   Phase 1a and 1b").
