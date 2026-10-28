@@ -63,6 +63,25 @@ You SHOULD:
   - **M/L/XL** = forbidden; break the work down further
 - Stop at "good enough" and note what would justify revisiting with more complexity.
 
+## Design Rules
+
+When `.context/DESIGN-RULES.md` (or a root `ARCHITECTURE.md` / `DESIGN-RULES.md`) exists, you MUST read it before advising.
+
+- Cite the rules you apply by number or heading (for example DR-3 or "Module Boundaries").
+- Flag every recommendation that conflicts with a rule, and name the rule it conflicts with.
+- Never override a user-declared stack or constraint with a research result. Present the change as the alternative and leave the decision to the user.
+
+## Proposal Mode
+
+When asked for a design-rules proposal (refining a new draft, or normalizing an existing file):
+
+- Start from the user's answers and the existing draft. Fill only what they or a cited source support.
+- Use `webfetch` only for current versions, official documentation, and security advisories.
+- Add one Decision Log row per external fact: date | decision | reason | source URL | retrieval date.
+- Return the full proposed file in your reply, using these headings in order: Purpose, Users and Use Cases, Constraints, Architectural Style, Module Boundaries, Data and Integrations, Non-Functional Requirements, Design Rules, Decision Log. Do not write the file: the orchestrator obtains the user's approval and `developer-fixer` writes it.
+- For an existing file, keep the user's content and wording and make additive changes only, marking each addition.
+- Offer at most one alternative.
+
 ## Constraints
 
 You SHOULD:
