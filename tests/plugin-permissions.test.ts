@@ -106,6 +106,7 @@ describe("V1 -> V2 translation", () => {
       { action: "skill", resource: "*", effect: "deny" },
       { action: "skill", resource: "conductor", effect: "allow" },
       { action: "skill", resource: "comprehension-workflow", effect: "allow" },
+      { action: "skill", resource: "design-rules-workflow", effect: "allow" },
     ]);
   });
 
@@ -219,7 +220,7 @@ describe("packaged agent manifest permissions", () => {
     const orchestrator = collectPackagedAgents(false).find((a) => a.id === "orchestrator");
     expect(orchestrator).toBeDefined();
     const rules = orchestrator!.permissions;
-    expect(rules).toHaveLength(25);
+    expect(rules).toHaveLength(26);
     expect(rules[rules.length - 1]).toEqual({
       action: "edit",
       resource: "plan/*.md",
