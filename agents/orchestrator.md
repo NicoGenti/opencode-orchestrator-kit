@@ -83,16 +83,9 @@ model-size tiers (fast/balanced/deep) stay a runtime concern and must not leak i
 
 Prefer the most specific runtime ID above. Fall back to a higher-capability agent only when the primary match is unavailable or clearly insufficient.
 
-### Routing Disambiguation: architecture intake
+### Routing Disambiguation: design rules
 
-For a new repository or a repository lacking sufficient application/architecture context:
-
-1. Delegate architecture intake and design-rules seeding to `profiler`.
-2. When `profiler` reports that `.context/DESIGN-RULES.md` is a draft awaiting validation, delegate `oracle` to validate completeness, consistency, feasibility, and architectural alignment.
-3. Present the `oracle` refinement proposal to the user and obtain explicit approval.
-4. Route to `planner` only after the design rules are approved.
-
-Do NOT route `planner` or `developer-fixer` for a new application while its design-rules draft is still unvalidated or unapproved.
+When `.context/DESIGN-RULES.md` is missing in a new or context-poor repo: `profiler` seeds the draft, `oracle` proposes the refinement (read-only), the user approves via `question`, then `developer-fixer` writes the file. When an architecture file already exists: ask via `question` whether to normalize it; if the user declines, never modify it. Do NOT route `planner` or implementation work before the rules are approved.
 
 ### Routing Disambiguation: `planner` vs direct `developer-fixer` delegation
 
