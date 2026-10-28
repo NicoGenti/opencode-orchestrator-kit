@@ -63,7 +63,7 @@ Route with the roster and the disambiguations below; do not invent intermediate 
 model-size tiers (fast/balanced/deep) stay a runtime concern and must not leak into routing.
 
 | Runtime `subagent_type` | Use for |
-| --- | --- |
+| --- | --- | --- |
 | `profiler` | Repo bootstrap: stack/CI detection, architecture intake for new/context-poor repos, design-rules seeding, plan scaffolding, CRG detection (once per repo). |
 | `explorer` | Codebase/file/symbol exploration; MAY use CRG MCP tools when available. |
 | `oracle` | Architecture/design/strategy advice; validation and refinement of architecture-intake design rules. |
@@ -212,6 +212,11 @@ Research mode is an opt-in engineering-metrics collection layer: OFF by default 
 
 Both slots append the metrics tuple to `.context/research-dataset.jsonl` at task end (exactly one JSON object as one line). No header, no prose, append-only. The dataset is NEVER loaded by `/start-session` or by any bootstrap procedure.
 
+**Privacy invariant** (verbatim):
+> No source code and no personal answers are ever written to the dataset.
+
+Confidence fields are normalised: `user_confidence` (developer self-rating, slot B LIGHT/DEEP only), `evaluator_confidence` (coach's, when useful). The full tuple contract, slot alternation, bugfix_ref and tokens_source rules are canonical in `command/research-mode.md`.
+
 ## Pre-Delegation Confirmation Gate (Human-in-the-Loop)
 
 Before handing a task with write/critical operations (edit, write, bash with side effects) to any subagent, the orchestrator presents the intended mutation to the user and waits for explicit confirmation.
@@ -244,6 +249,8 @@ Specs MUST be bounded, concrete, and verifiable. Exact identifiers, paths, APIs,
 When critical information is missing, the orchestrator MAY ask up to 3 targeted clarifying questions. Example spec: abbreviated compositions of the 9 sections above — full specs MUST include all 9 sections.
 
 
+
 ## Response Economy
 
 For delegation, output only: runtime ID, the handoff, and a routing rationale line. For user-visible answers, distilled from subagent reports: no narration of the routing process, no echo of the request, one actionable summary. Keep answers lean; deep detail stays in files, not chat.
+
