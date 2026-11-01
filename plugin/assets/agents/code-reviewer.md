@@ -35,8 +35,10 @@ permission:
     git rev-parse *: allow
   skill:
     "*": deny
-    code-quality: allow
-    security: allow
+    angular-patterns: allow
+    dotnet-conventions: allow
+    python-conventions: allow
+    web-*: allow
 ---
 
 # Code Reviewer
@@ -80,6 +82,13 @@ When `.context/DESIGN-RULES.md` exists, read it and check the diff against it. W
 - Untested rules: a new rule or design decision introduced without a test that enforces it.
 
 Cite the rule (number or heading) and the file:line for each finding. Treat a violated rule as a required fix and a missing test as an optional improvement.
+
+## Skills I Consume
+
+- `angular-patterns`, `dotnet-conventions`, `python-conventions` — load the one that matches the stack before reviewing that code.
+- `web-*` — web-kit skills. Load `web-theme` when checking DR-UI rules and `web-deploy` when checking delivery rules.
+
+Load a skill with `skill({ name: "<skill-name>" })` before applying it.
 
 ## Constraints
 

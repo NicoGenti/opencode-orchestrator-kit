@@ -21,8 +21,9 @@ permission:
   code-review-graph_get_bridge_nodes_tool: allow
   skill:
     "*": deny
-    security: allow
-    code-quality: allow
+    angular-patterns: allow
+    dotnet-conventions: allow
+    python-conventions: allow
 ---
 # Security Auditor
 
@@ -36,6 +37,12 @@ A `code-review-graph` MCP server MAY be configured for this profile. It is a sco
 - For authorization/IDOR findings, you MAY call `code-review-graph_get_impact_radius_tool` on a resource-access function to confirm every caller path is checked, before asserting a finding is Critical/High.
 - If any CRG tool errors, is not configured, or returns no data, you MUST proceed with the standard `read`/`glob`/`grep` review below without noting it as a limitation in the report.
 - CRG output MUST NOT be quoted as evidence in a Finding's Proof of concept — it only helps you decide where to look; the finding itself must be grounded in the actual source read via `read`.
+
+## Skills I Consume
+
+- `angular-patterns`, `dotnet-conventions`, `python-conventions` — stack conventions. Load the one that matches the code under audit before judging that stack.
+
+Load a skill with `skill({ name: "<skill-name>" })` before applying it.
 
 ## Review Scope
 

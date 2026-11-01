@@ -124,12 +124,17 @@ Follow this order, stopping as soon as you have enough signal:
 
 ## Design Rules
 
+## UI & Delivery
+
 ## Decision Log
 ```
 
 Map the answers as follows: product purpose to Purpose; target users and core workflows to Users and Use Cases;
 stack, CI/CD, deployment target and operational constraints to Constraints; domains, entities and integrations to
 Data and Integrations; security, privacy, compliance, performance and quality to Non-Functional Requirements.
+Fill UI & Delivery only when the user stated the project is a web site or web app built with web-kit: then copy
+the DR-UI-1…13 rules from web-kit `docs/design-rules-ui.md` verbatim (they are user-approved kit rules, not invented
+requirements); otherwise leave it empty.
 Leave Architectural Style, Module Boundaries, Design Rules and Decision Log empty unless the user stated them:
 `oracle` proposes them later. Never invent requirements; sections without an answer stay empty.
 

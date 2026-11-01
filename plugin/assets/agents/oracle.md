@@ -28,8 +28,10 @@ permission:
   webfetch: allow
   skill:
     "*": deny
-    code-quality: allow
-    security: ask
+    angular-patterns: allow
+    dotnet-conventions: allow
+    python-conventions: allow
+    web-*: allow
 ---
 
 # Oracle
@@ -81,6 +83,14 @@ When asked for a design-rules proposal (refining a new draft, or normalizing an 
 - Return the full proposed file in your reply, using these headings in order: Purpose, Users and Use Cases, Constraints, Architectural Style, Module Boundaries, Data and Integrations, Non-Functional Requirements, Design Rules, Decision Log. Do not write the file: the orchestrator obtains the user's approval and `developer-fixer` writes it.
 - For an existing file, keep the user's content and wording and make additive changes only, marking each addition.
 - Offer at most one alternative.
+- Keep a `UI & Delivery` section when the draft already has one or the user stated a web-kit project; otherwise omit that heading.
+
+## Skills I Consume
+
+- `angular-patterns`, `dotnet-conventions`, `python-conventions` — stack conventions. Load the one that matches the project before recommending a structure for that stack.
+- `web-*` — web-kit skills. Load `web-theme` when citing DR-UI rules and `web-deploy` when citing delivery practice.
+
+Load a skill with `skill({ name: "<skill-name>" })` before applying it.
 
 ## Constraints
 

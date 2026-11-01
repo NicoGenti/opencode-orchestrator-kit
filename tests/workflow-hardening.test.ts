@@ -48,10 +48,10 @@ describe("workflow-hardening — W1 prompt budget (v0.6.1)", () => {
 });
 
 describe("workflow-hardening — W2 on-demand loading", () => {
-  test("orchestrator skill permission allows exactly conductor + comprehension-workflow", () => {
+  test("orchestrator skill permission allows exactly comprehension-workflow + web-* (web-kit)", () => {
     const fm = ORCH.slice(0, ORCH.indexOf("\n---", 4));
-    expect(fm).toContain('"skill":{"*":"deny","conductor":"allow"');
-    expect(fm).toContain('"comprehension-workflow":"allow"}}');
+    expect(fm).toContain('"skill":{"*":"deny","comprehension-workflow":"allow","web-*":"allow"}}');
+    expect(fm).not.toContain("conductor");
   });
 
   test("orchestrator points LIGHT/DEEP + /recall to the skill, /recall details to the command file", () => {
