@@ -7,6 +7,11 @@ All notable changes to this project are documented in this file. The format foll
 ### Added
 
 - **Design-first bootstrap (plan 0001)**: the session bootstrap now checks for a design-rules artifact (`.context/DESIGN-RULES.md`, root `ARCHITECTURE.md`, or root `DESIGN-RULES.md`); on a new/empty repo the `profiler` asks for the project goal and seeds `.context/DESIGN-RULES.md` from the user's answers, while existing artifacts are detected and reported for user-approved normalization only.
+- **Web-kit UI & Delivery section**: `templates/design-rules.md` and the profiler's inline design-rules draft gain `## UI & Delivery` (DR-UI-1…13). The profiler fills it only when the user states the project is a web-kit site; otherwise the section stays empty, and the template comment says to delete it when web-kit does not apply.
+
+### Fixed
+
+- **Per-agent skill allowlists**: `permission.skill` now names only skills that ship in `skills/` (including `skills/examples/`, matched by each `SKILL.md` `name:`) or the `web-*` glob that covers the external web-kit skills (`web-theme`, `web-brand`, `web-scaffold-landing`, `web-scaffold-shop`, `web-scaffold-admin`, `web-deploy`). Removed allowlist entries that do not ship (`conductor`, `debug`, `deslop`, `simplify`, `code-quality`, `security`, `windows-env`, `windows-schtasks`, and the exact names `web-theme` / `web-deploy`, which `web-*` already covers). `developer-fixer` allows `build-debug`, `npm-debug`, `dev-cleanup`, `structural-search`, `angular-patterns`, `dotnet-conventions`, `python-conventions`, and `web-*`. Covered by `tests/skill-allowlist.test.ts`.
 
 ## [0.7.0] — 2026-10-27
 

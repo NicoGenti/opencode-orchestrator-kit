@@ -31,8 +31,6 @@ permission:
     git log *: allow
   skill:
     "*": deny
-    windows-env: allow
-    windows-schtasks: allow
     dev-cleanup: allow
 ---
 # PC Doctor
@@ -57,17 +55,15 @@ Defer to another agent when:
 
 ## Skills I Consume
 
-- `windows-env` — env var and PATH troubleshooting.
-- `windows-schtasks` — scheduled task creation and inspection.
 - `dev-cleanup` — safe cleanup of caches and dev artifacts.
 
-Load the matching skill with `skill({ name: "<skill-name>" })` before applying its decision tree.
+Load `dev-cleanup` with `skill({ name: "dev-cleanup" })` before applying its decision tree. Env vars, PATH, and scheduled tasks follow the steps in this file.
 
 ## What I Do
 
 1. Identify the exact symptom by asking at most 3 clarifying questions.
-2. Load the matching skill (`skill({ name: "..." })`).
-3. Apply the skill's decision tree.
+2. When the fix is cache or dev-artifact cleanup, load `skill({ name: "dev-cleanup" })` and apply its decision tree.
+3. For env vars, PATH, services, and scheduled tasks, follow the steps in this file.
 4. Show the exact command and ask before any mutation.
 5. Verify (e.g., open a new shell and re-read the var, or `schtasks /query` for the new task).
 

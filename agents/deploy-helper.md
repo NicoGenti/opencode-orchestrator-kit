@@ -37,6 +37,7 @@ permission:
     github-actions-cicd: allow
     npm-debug: allow
     dev-cleanup: allow
+    web-*: allow
 ---
 # Deploy Helper
 
@@ -70,6 +71,7 @@ Defer to another agent when:
 - `github-actions-cicd` — workflow structure, caching, security conventions, deploy environment rules.
 - `npm-debug` — when a pipeline failure is rooted in an npm/Node toolchain issue.
 - `dev-cleanup` — safe cleanup of caches when a stale cache is the suspected cause.
+- `web-*` — web-kit delivery skills. Load `web-deploy` for Dockerfile, Compose + Caddy, and GitHub Actions or Azure DevOps pipelines on a web-kit project.
 
 Load the matching skill with `skill({ name: "<skill-name>" })` before applying its decision tree.
 

@@ -104,8 +104,8 @@ describe("V1 -> V2 translation", () => {
       { action: "shell", resource: "ls *", effect: "allow" },
       { action: "shell", resource: "cat *", effect: "allow" },
       { action: "skill", resource: "*", effect: "deny" },
-      { action: "skill", resource: "conductor", effect: "allow" },
       { action: "skill", resource: "comprehension-workflow", effect: "allow" },
+      { action: "skill", resource: "web-*", effect: "allow" },
     ]);
   });
 
