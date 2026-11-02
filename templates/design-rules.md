@@ -1,12 +1,6 @@
 <!--
-The DR-UI rules under "## UI & Delivery" are a copy of the rules section in
-web-kit `docs/design-rules-ui.md` on branch `main`:
-https://github.com/NicoGenti/web-kit/blob/main/docs/design-rules-ui.md
-`bun run check-design-rules` fetches that raw file and diffs the rules.
-`.github/workflows/check-design-rules.yml` runs it weekly and on demand and
-fails when the copy drifts. The `web-*` skill prefix is reserved for that kit.
-Edit those rules upstream, then refresh this copy. The rest of this file is
-the orchestrator kit's design-rules template, not an upstream document.
+Template users copy to `.context/DESIGN-RULES.md` and customize.
+Nothing here is pinned to an upstream repository. Delete any section that does not apply.
 -->
 
 # Design Rules
@@ -48,9 +42,9 @@ the orchestrator kit's design-rules template, not an upstream document.
 
 ## UI & Delivery
 
-<!-- Only for web sites/apps built with web-kit (separate repo, https://github.com/NicoGenti/web-kit).
-Install its skills on the OpenCode skills path. Keep the DR-UI rules below when the user confirmed web-kit; otherwise delete this section.
-Citable by planner and code-reviewer as DR-UI-n. Upstream: web-kit docs/design-rules-ui.md on main (see the header comment). -->
+<!-- Optional sample for a web UI. Keep it when the project has one; otherwise delete this section.
+Users may rewrite every rule. Planner and code-reviewer can cite the ones that remain as DR-UI-n.
+A web-stack skill pack, if the project uses one, loads through the reserved `web-*` skill prefix (see README "Companion kits"). -->
 
 - **DR-UI-1 — Solo token.** Colori, raggi, ombre, spazi, tipografia e durate si scrivono solo come variabili `--ui-*` (o utility/mixin che le mappano). Nessun esadecimale, `px` di colore o durata letterale nei componenti. Verifica: `web-theme/scripts/audit-theme.sh <src>` senza segnalazioni.
 - **DR-UI-2 — Tre strati di stile.** Ordine fisso: tema (`theme/`, copiato da web-theme e mai modificato a mano) → brand (`brand.css`, solo override di token) → app (stili dei componenti). Un cambio di brand non tocca i componenti.
