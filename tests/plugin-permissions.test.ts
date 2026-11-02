@@ -26,7 +26,10 @@ function frontmatterOf(relPath: string): string {
 
 function rulesOf(relPath: string): PermissionRule[] {
   const fm = frontmatterOf(relPath);
-  return toV2Permissions(parseFrontmatterMap(fm, "permission"), parseFrontmatterMap(fm, "tools"));
+  return toV2Permissions(
+    parseFrontmatterMap(fm, "permission"),
+    parseFrontmatterMap(fm, "tools"),
+  );
 }
 
 const FM_INLINE = [
@@ -56,14 +59,22 @@ describe("frontmatter map reader (YAML subset + inline JSON)", () => {
       '    "*": deny',
       "    ls *: allow",
     ].join("\n");
-    expect(parseFrontmatterMap(fm, "tools")).toEqual({ read: true, write: false });
+    expect(parseFrontmatterMap(fm, "tools")).toEqual({
+      read: true,
+      write: false,
+    });
     expect(parseFrontmatterMap(fm, "permission")).toEqual({
       bash: { "*": "deny", "ls *": "allow" },
     });
   });
 
   test("keeps a colon inside a shell pattern key", () => {
-    const fm = ["permission:", "  bash:", '    "*": deny', "    pnpm test:*: allow"].join("\n");
+    const fm = [
+      "permission:",
+      "  bash:",
+      '    "*": deny',
+      "    pnpm test:*: allow",
+    ].join("\n");
     expect(parseFrontmatterMap(fm, "permission")).toEqual({
       bash: { "*": "deny", "pnpm test:*": "allow" },
     });
@@ -90,9 +101,21 @@ describe("V1 -> V2 translation", () => {
       { action: "webfetch", resource: "*", effect: "deny" },
       { action: "edit", resource: "*", effect: "deny" },
       { action: "edit", resource: ".context/progress.md", effect: "allow" },
-      { action: "edit", resource: ".context/comprehension/*.md", effect: "allow" },
-      { action: "edit", resource: ".context/comprehension-log.md", effect: "allow" },
-      { action: "edit", resource: ".context/research-dataset.jsonl", effect: "allow" },
+      {
+        action: "edit",
+        resource: ".context/comprehension/*.md",
+        effect: "allow",
+      },
+      {
+        action: "edit",
+        resource: ".context/comprehension-log.md",
+        effect: "allow",
+      },
+      {
+        action: "edit",
+        resource: ".context/research-dataset.jsonl",
+        effect: "allow",
+      },
       { action: "edit", resource: "plan/*.md", effect: "allow" },
       { action: "edit", resource: ".context/decisions.md", effect: "allow" },
       { action: "edit", resource: ".context/issues.md", effect: "allow" },
@@ -115,7 +138,11 @@ describe("V1 -> V2 translation", () => {
       { action: "edit", resource: "plan/*.md", effect: "allow" },
       { action: "webfetch", resource: "*", effect: "deny" },
       { action: "shell", resource: "*", effect: "deny" },
-      { action: "shell", resource: "python */plan-board.py *", effect: "allow" },
+      {
+        action: "shell",
+        resource: "python */plan-board.py *",
+        effect: "allow",
+      },
       { action: "shell", resource: "ls *", effect: "allow" },
       { action: "shell", resource: "cat *", effect: "allow" },
       { action: "subagent", resource: "*", effect: "deny" },
@@ -126,7 +153,11 @@ describe("V1 -> V2 translation", () => {
   test("a top-level `*` key becomes the global fallback emitted first", () => {
     const rules = rulesOf("agents/security.md");
     expect(rules[0]).toEqual({ action: "*", resource: "*", effect: "deny" });
-    expect(rules[1]).toEqual({ action: "read", resource: "*", effect: "allow" });
+    expect(rules[1]).toEqual({
+      action: "read",
+      resource: "*",
+      effect: "allow",
+    });
   });
 
   test("`tools: {x: false}` becomes a blanket deny emitted before permission rules", () => {
@@ -135,19 +166,27 @@ describe("V1 -> V2 translation", () => {
       { write: false, read: true },
     );
     expect(rules[0]).toEqual({ action: "edit", resource: "*", effect: "deny" });
-    expect(rules[1]).toEqual({ action: "read", resource: "*", effect: "allow" });
+    expect(rules[1]).toEqual({
+      action: "read",
+      resource: "*",
+      effect: "allow",
+    });
     expect(rules).toHaveLength(4);
   });
 
   test("collapses V1 globstar segments (V2 `*` already crosses `/`)", () => {
     expect(normalizeResource("plan/**/*.md")).toBe("plan/*.md");
-    expect(normalizeResource(".context/comprehension/**/*.md")).toBe(".context/comprehension/*.md");
+    expect(normalizeResource(".context/comprehension/**/*.md")).toBe(
+      ".context/comprehension/*.md",
+    );
     expect(normalizeResource("**/*.env")).toBe("*.env");
     expect(normalizeResource("pnpm test:*")).toBe("pnpm test:*");
   });
 
   test("rejects a non-effect permission value", () => {
-    expect(() => toV2Permissions({ read: "yes" }, undefined)).toThrow(/allow\|ask\|deny/);
+    expect(() => toV2Permissions({ read: "yes" }, undefined)).toThrow(
+      /allow\|ask\|deny/,
+    );
   });
 });
 
@@ -183,24 +222,42 @@ describe("kit permission invariants", () => {
   });
 
   test("the composed orchestrator rules deny application code", () => {
-    const rules = [...rulesOf("agents/orchestrator.md"), ...kitInvariantRules("orchestrator")];
-    expect(() => assertKitPermissionInvariants("orchestrator", rules)).not.toThrow();
+    const rules = [
+      ...rulesOf("agents/orchestrator.md"),
+      ...kitInvariantRules("orchestrator"),
+    ];
+    expect(() =>
+      assertKitPermissionInvariants("orchestrator", rules),
+    ).not.toThrow();
     expect(resolveEffect(rules, "edit", "src/app.ts")).toBe("deny");
     expect(resolveEffect(rules, "edit", "plan/qa/13-example.md")).toBe("deny");
     expect(resolveEffect(rules, "edit", ".context/progress.md")).toBe("allow");
   });
 
   test("assertKitPermissionInvariants throws when the board deny is missing", () => {
-    const rules = [...rulesOf("agents/developer-fixer.md"), ...kitInvariantRules("developer-fixer")];
-    expect(() => assertKitPermissionInvariants("developer-fixer", rules)).not.toThrow();
+    const rules = [
+      ...rulesOf("agents/developer-fixer.md"),
+      ...kitInvariantRules("developer-fixer"),
+    ];
     expect(() =>
-      assertKitPermissionInvariants("developer-fixer", rules.filter((r) => r.resource !== "plan/*.md")),
+      assertKitPermissionInvariants("developer-fixer", rules),
+    ).not.toThrow();
+    expect(() =>
+      assertKitPermissionInvariants(
+        "developer-fixer",
+        rules.filter((r) => r.resource !== "plan/*.md"),
+      ),
     ).toThrow(/permission invariant violated/);
   });
 
   test("plan-writer keeps the board root and denies application code", () => {
-    const rules = [...rulesOf("agents/plan-writer.md"), ...kitInvariantRules("plan-writer")];
-    expect(() => assertKitPermissionInvariants("plan-writer", rules)).not.toThrow();
+    const rules = [
+      ...rulesOf("agents/plan-writer.md"),
+      ...kitInvariantRules("plan-writer"),
+    ];
+    expect(() =>
+      assertKitPermissionInvariants("plan-writer", rules),
+    ).not.toThrow();
     expect(resolveEffect(rules, "edit", "plan/qa/13-example.md")).toBe("allow");
     expect(resolveEffect(rules, "edit", "src/app.ts")).toBe("deny");
   });
@@ -212,12 +269,14 @@ describe("kit permission invariants", () => {
       { action: "skill", resource: "*", effect: "deny" },
       { action: "subagent", resource: "*", effect: "deny" },
     ];
-    expect(() => assertKitPermissionInvariants("developer-fixer", base)).not.toThrow();
+    expect(() =>
+      assertKitPermissionInvariants("developer-fixer", base),
+    ).not.toThrow();
     for (const action of ["shell", "skill", "subagent"] as const) {
       const stripped = base.filter((rule) => rule.action !== action);
-      expect(() => assertKitPermissionInvariants("developer-fixer", stripped)).toThrow(
-        new RegExp(`no catch-all rule for '${action}'`),
-      );
+      expect(() =>
+        assertKitPermissionInvariants("developer-fixer", stripped),
+      ).toThrow(new RegExp(`no catch-all rule for '${action}'`));
     }
   });
 
@@ -226,7 +285,9 @@ describe("kit permission invariants", () => {
       { action: "*", resource: "*", effect: "deny" },
       { action: "edit", resource: "plan/*.md", effect: "deny" },
     ];
-    expect(() => assertKitPermissionInvariants("security", rules)).not.toThrow();
+    expect(() =>
+      assertKitPermissionInvariants("security", rules),
+    ).not.toThrow();
   });
 
   test("an allow catch-all for shell is rejected", () => {
@@ -236,7 +297,9 @@ describe("kit permission invariants", () => {
       { action: "skill", resource: "*", effect: "deny" },
       { action: "subagent", resource: "*", effect: "deny" },
     ];
-    expect(() => assertKitPermissionInvariants("explorer", rules)).toThrow(/catch-all is 'allow'/);
+    expect(() => assertKitPermissionInvariants("explorer", rules)).toThrow(
+      /catch-all is 'allow'/,
+    );
   });
 
   test("only the orchestrator may spawn developer-fixer", () => {
@@ -247,14 +310,18 @@ describe("kit permission invariants", () => {
       { action: "subagent", resource: "*", effect: "deny" },
       { action: "subagent", resource: "developer-fixer", effect: "allow" },
     ];
-    expect(() => assertKitPermissionInvariants("oracle", denied)).toThrow(/developer-fixer/);
+    expect(() => assertKitPermissionInvariants("oracle", denied)).toThrow(
+      /developer-fixer/,
+    );
     const router: PermissionRule[] = [
       { action: "edit", resource: "*", effect: "deny" },
       { action: "shell", resource: "*", effect: "deny" },
       { action: "skill", resource: "*", effect: "deny" },
       { action: "subagent", resource: "*", effect: "allow" },
     ];
-    expect(() => assertKitPermissionInvariants("orchestrator", router)).not.toThrow();
+    expect(() =>
+      assertKitPermissionInvariants("orchestrator", router),
+    ).not.toThrow();
     expect(resolveEffect(router, "subagent", "developer-fixer")).toBe("allow");
   });
 });
@@ -265,12 +332,16 @@ describe("packaged agent manifest permissions", () => {
     expect(agents).toHaveLength(17);
     for (const agent of agents) {
       expect(agent.permissions.length).toBeGreaterThan(0);
-      expect(() => assertKitPermissionInvariants(agent.id, agent.permissions)).not.toThrow();
+      expect(() =>
+        assertKitPermissionInvariants(agent.id, agent.permissions),
+      ).not.toThrow();
     }
   });
 
   test("orchestrator ends with the board-root deny and cannot edit application code", () => {
-    const orchestrator = collectPackagedAgents(false).find((a) => a.id === "orchestrator");
+    const orchestrator = collectPackagedAgents(false).find(
+      (a) => a.id === "orchestrator",
+    );
     expect(orchestrator).toBeDefined();
     const rules = orchestrator!.permissions;
     expect(rules).toHaveLength(25);
@@ -285,7 +356,11 @@ describe("packaged agent manifest permissions", () => {
 
   test("plan-writer is the only agent allowed to edit plan files", () => {
     for (const agent of collectPackagedAgents(true)) {
-      const effect = resolveEffect(agent.permissions, "edit", "plan/qa/13-example.md");
+      const effect = resolveEffect(
+        agent.permissions,
+        "edit",
+        "plan/qa/13-example.md",
+      );
       expect(`${agent.id}=${effect}`).toBe(
         agent.id === "plan-writer" ? "plan-writer=allow" : `${agent.id}=deny`,
       );

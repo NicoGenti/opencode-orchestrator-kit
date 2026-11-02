@@ -1,5 +1,12 @@
 import { describe, expect, test, beforeAll, afterAll } from "bun:test";
-import { existsSync, mkdtempSync, mkdirSync, writeFileSync, rmSync, utimesSync } from "node:fs";
+import {
+  existsSync,
+  mkdtempSync,
+  mkdirSync,
+  writeFileSync,
+  rmSync,
+  utimesSync,
+} from "node:fs";
 import { join, resolve } from "node:path";
 import { tmpdir } from "node:os";
 

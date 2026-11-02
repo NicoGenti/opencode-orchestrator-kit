@@ -30,7 +30,7 @@ describe("recall-command — v0.5.0 Comprehension Retention", () => {
 
   test("manual-only verbatim phrase present", () => {
     expect(recall).toContain(
-      "Manual invocation only. Nothing in this profile may trigger `/recall` automatically."
+      "Manual invocation only. Nothing in this profile may trigger `/recall` automatically.",
     );
   });
 
@@ -66,7 +66,9 @@ describe("recall-command — v0.5.0 Comprehension Retention", () => {
   });
 
   test("metric caveat (operational, not validated) present", () => {
-    expect(recall).toContain("metrica operativa, non una metrica scientificamente validata");
+    expect(recall).toContain(
+      "metrica operativa, non una metrica scientificamente validata",
+    );
     expect(recall).toContain("DCI₁");
   });
 
@@ -96,16 +98,18 @@ describe("recall-command — v0.5.0 Comprehension Retention", () => {
 
   test("orchestrator isolation: manual invocation only, never in bootstrap", () => {
     expect(orchestrator).toContain(
-      "Manual invocation only. Nothing in this profile may trigger `/recall` automatically."
+      "Manual invocation only. Nothing in this profile may trigger `/recall` automatically.",
     );
-    expect(orchestrator).toContain("never at session start, never during bootstrap");
+    expect(orchestrator).toContain(
+      "never at session start, never during bootstrap",
+    );
   });
 
   // ── Group R3: command/start-session.md ───────────────────────────────────────
 
   test("loaded set regression guard: exactly the 3 memory files (v0.4.0)", () => {
     expect(startSession).toContain(
-      "the loaded set stays exactly `.context/progress.md`, `.context/decisions.md`, `.context/issues.md`"
+      "the loaded set stays exactly `.context/progress.md`, `.context/decisions.md`, `.context/issues.md`",
     );
   });
 
@@ -126,8 +130,12 @@ describe("recall-command — v0.5.0 Comprehension Retention", () => {
   });
 
   test("v0.6.7 selection is per evaluation: number or evaluation_id; plan-id only for single-evaluation plans", () => {
-    expect(recall).toContain("the evaluation to recall (number or evaluation_id)");
-    expect(recall).toContain("plan-id is used only if that plan has exactly ONE evaluation");
+    expect(recall).toContain(
+      "the evaluation to recall (number or evaluation_id)",
+    );
+    expect(recall).toContain(
+      "plan-id is used only if that plan has exactly ONE evaluation",
+    );
   });
 
   test("v0.6.7 the record path is flat: comprehension/<evaluation-id>.md", () => {
@@ -137,7 +145,9 @@ describe("recall-command — v0.5.0 Comprehension Retention", () => {
 
   test("v0.6.7 step 9 keeps the immediate baseline immutable (no in-place record rewrite)", () => {
     expect(recall).not.toContain("update the selected record's `outcome`");
-    expect(recall).toContain("dci_immediate, user_confidence_immediate, outcome_immediate");
+    expect(recall).toContain(
+      "dci_immediate, user_confidence_immediate, outcome_immediate",
+    );
     expect(recall).toContain("every recall is a NEW line");
   });
 

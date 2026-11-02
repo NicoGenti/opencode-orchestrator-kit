@@ -114,7 +114,8 @@ export type Slot = "A" | "B";
  * first active task = A, next = B, then A, B, …
  */
 export function slotForTaskIndex(i: number): Slot {
-  if (!Number.isInteger(i) || i < 0) throw new Error("task index must be a non-negative integer");
+  if (!Number.isInteger(i) || i < 0)
+    throw new Error("task index must be a non-negative integer");
   return i % 2 === 0 ? "A" : "B";
 }
 
@@ -155,41 +156,88 @@ export function gateRequiresCoach(gate: GateType): boolean {
 
 /** Task event = ResearchTupleV1 (19 fields, canonical order, all required). */
 export const TASK_FIELDS = [
-  "event", "schema_version", "research_id", "date", "plan", "slot", "task_type",
-  "gate_type", "duration_min", "agent_calls", "input_tokens", "output_tokens",
-  "user_confidence", "evaluator_confidence", "dci_immediate", "retries", "skipped",
-  "bugfix_ref", "tokens_source",
+  "event",
+  "schema_version",
+  "research_id",
+  "date",
+  "plan",
+  "slot",
+  "task_type",
+  "gate_type",
+  "duration_min",
+  "agent_calls",
+  "input_tokens",
+  "output_tokens",
+  "user_confidence",
+  "evaluator_confidence",
+  "dci_immediate",
+  "retries",
+  "skipped",
+  "bugfix_ref",
+  "tokens_source",
 ] as const;
 
 /** Recall event: same research_id as the correlated task event + the DCI1 reading. */
 export const RECALL_FIELDS = [
-  "event", "schema_version", "research_id", "date", "dci_delayed",
-  "evaluator_confidence", "retries", "skipped",
+  "event",
+  "schema_version",
+  "research_id",
+  "date",
+  "dci_delayed",
+  "evaluator_confidence",
+  "retries",
+  "skipped",
 ] as const;
 
 export type TaskEvent = {
-  event: "task"; schema_version: typeof SCHEMA_VERSION; research_id: string;
-  date: string; plan: string; slot: Slot; task_type: string; gate_type: GateType;
-  duration_min: number; agent_calls: number;
-  input_tokens: number; output_tokens: number;
-  user_confidence: number | "n/a"; evaluator_confidence: number | "n/a";
-  dci_immediate: string; retries: number; skipped: boolean;
-  bugfix_ref: string; tokens_source: "estimated" | "exact";
+  event: "task";
+  schema_version: typeof SCHEMA_VERSION;
+  research_id: string;
+  date: string;
+  plan: string;
+  slot: Slot;
+  task_type: string;
+  gate_type: GateType;
+  duration_min: number;
+  agent_calls: number;
+  input_tokens: number;
+  output_tokens: number;
+  user_confidence: number | "n/a";
+  evaluator_confidence: number | "n/a";
+  dci_immediate: string;
+  retries: number;
+  skipped: boolean;
+  bugfix_ref: string;
+  tokens_source: "estimated" | "exact";
 };
 
 /** ResearchTupleV1 (v0.6.4) — the task event of DatasetEventV1. */
 export type ResearchTupleV1 = TaskEvent;
 
 export type RecallEvent = {
-  event: "recall"; schema_version: typeof SCHEMA_VERSION; research_id: string;
-  date: string; dci_delayed: string; evaluator_confidence: number | "n/a";
-  retries: number; skipped: boolean;
+  event: "recall";
+  schema_version: typeof SCHEMA_VERSION;
+  research_id: string;
+  date: string;
+  dci_delayed: string;
+  evaluator_confidence: number | "n/a";
+  retries: number;
+  skipped: boolean;
 };
 
 /** Fields forbidden by the dataset schema (v0.6.0 extras + session identifiers). */
 export const FORBIDDEN = new Set([
-  "ts", "session_id", "task_id", "user_conf", "dci1", "gap", "src",
-  "confidence_delta", "escalations", "questions_count", "alternation",
+  "ts",
+  "session_id",
+  "task_id",
+  "user_conf",
+  "dci1",
+  "gap",
+  "src",
+  "confidence_delta",
+  "escalations",
+  "questions_count",
+  "alternation",
 ] as const);
 
 // ── Example events, parsed from command/research-mode.md (single contract source) ──
@@ -212,22 +260,33 @@ const taskExamples = parseExampleLines('{"event":"task"');
 const recallExamples = parseExampleLines('{"event":"recall"');
 
 if (taskExamples.length < 2) {
-  throw new Error(`expected slot A + slot B task events in research-mode.md, found ${taskExamples.length}`);
+  throw new Error(
+    `expected slot A + slot B task events in research-mode.md, found ${taskExamples.length}`,
+  );
 }
 if (recallExamples.length < 1) {
-  throw new Error(`expected a recall event example in research-mode.md, found ${recallExamples.length}`);
+  throw new Error(
+    `expected a recall event example in research-mode.md, found ${recallExamples.length}`,
+  );
 }
 
 /** All example events parsed from the contract doc (task events first, then recall). */
-export const EXAMPLES: Record<string, unknown>[] = [...taskExamples, ...recallExamples];
+export const EXAMPLES: Record<string, unknown>[] = [
+  ...taskExamples,
+  ...recallExamples,
+];
 export const TASK_EXAMPLES: Record<string, unknown>[] = taskExamples;
 export const RECALL_EXAMPLES: Record<string, unknown>[] = recallExamples;
 
-export function makeTaskEvent(overrides: Record<string, unknown> = {}): Record<string, unknown> {
+export function makeTaskEvent(
+  overrides: Record<string, unknown> = {},
+): Record<string, unknown> {
   return { ...structuredClone(taskExamples[1]), ...overrides };
 }
 
-export function makeRecallEvent(overrides: Record<string, unknown> = {}): Record<string, unknown> {
+export function makeRecallEvent(
+  overrides: Record<string, unknown> = {},
+): Record<string, unknown> {
   return { ...structuredClone(recallExamples[0]), ...overrides };
 }
 
@@ -244,89 +303,146 @@ export function validDCI(v: unknown): boolean {
   return Number(m[1]) <= avail;
 }
 
-const isNum = (v: unknown) => typeof v === "string" ? false : typeof v === "number" && Number.isFinite(v);
-const isNonNegInt = (v: unknown) => isNum(v) && Number.isInteger(v) && (v as number) >= 0;
-const conf1to5orNa = (v: unknown) => v === "n/a" || (isNonNegInt(v) && (v as number) >= 1 && (v as number) <= 5);
-const isConf1to5 = (v: unknown) => isNonNegInt(v) && (v as number) >= 1 && (v as number) <= 5;
+const isNum = (v: unknown) =>
+  typeof v === "string" ? false : typeof v === "number" && Number.isFinite(v);
+const isNonNegInt = (v: unknown) =>
+  isNum(v) && Number.isInteger(v) && (v as number) >= 0;
+const conf1to5orNa = (v: unknown) =>
+  v === "n/a" || (isNonNegInt(v) && (v as number) >= 1 && (v as number) <= 5);
+const isConf1to5 = (v: unknown) =>
+  isNonNegInt(v) && (v as number) >= 1 && (v as number) <= 5;
 
 /** Validate one task event (ResearchTupleV1) against the v0.6.4 contract. [] when valid. */
 export function validateTaskEvent(e: Record<string, unknown>): string[] {
   const errs: string[] = [];
   for (const f of TASK_FIELDS) if (!(f in e)) errs.push(`missing field: ${f}`);
   for (const k of Object.keys(e)) {
-    if (!(TASK_FIELDS as readonly string[]).includes(k)) errs.push(`unknown field: ${k}`);
+    if (!(TASK_FIELDS as readonly string[]).includes(k))
+      errs.push(`unknown field: ${k}`);
     if (FORBIDDEN.has(k)) errs.push(`forbidden field: ${k}`);
   }
   if ("event" in e && e.event !== "task") errs.push("event must be 'task'");
   if ("schema_version" in e && e.schema_version !== SCHEMA_VERSION)
     errs.push(`schema_version must be ${SCHEMA_VERSION}`);
   if ("research_id" in e && !isValidResearchId(e.research_id))
-    errs.push("research_id must match res-YYYYMMDD-HHMMSS-<32hex> (v0.6.6 128-bit format)");
+    errs.push(
+      "research_id must match res-YYYYMMDD-HHMMSS-<32hex> (v0.6.6 128-bit format)",
+    );
   if ("date" in e && !(typeof e.date === "string" && ISO_DATE_RE.test(e.date)))
     errs.push("date must be ISO YYYY-MM-DD");
-  if ("plan" in e && typeof e.plan !== "string") errs.push("plan must be a string");
-  if ("slot" in e && e.slot !== "A" && e.slot !== "B") errs.push("slot must be A|B");
-  if ("task_type" in e && !["bugfix", "feature", "test", "docs", "refactor", "other"].includes(e.task_type as string))
-    errs.push("task_type must be one of bugfix|feature|test|docs|refactor|other");
-  if ("gate_type" in e && !(GATE_TYPES as readonly string[]).includes(e.gate_type as string))
+  if ("plan" in e && typeof e.plan !== "string")
+    errs.push("plan must be a string");
+  if ("slot" in e && e.slot !== "A" && e.slot !== "B")
+    errs.push("slot must be A|B");
+  if (
+    "task_type" in e &&
+    !["bugfix", "feature", "test", "docs", "refactor", "other"].includes(
+      e.task_type as string,
+    )
+  )
+    errs.push(
+      "task_type must be one of bugfix|feature|test|docs|refactor|other",
+    );
+  if (
+    "gate_type" in e &&
+    !(GATE_TYPES as readonly string[]).includes(e.gate_type as string)
+  )
     errs.push("gate_type must be n/a|NONE|LIGHT|DEEP");
-  if ("duration_min" in e && (!isNum(e.duration_min) || (e.duration_min as number) < 0))
+  if (
+    "duration_min" in e &&
+    (!isNum(e.duration_min) || (e.duration_min as number) < 0)
+  )
     errs.push("duration_min must be a non-negative number");
   if ("agent_calls" in e && !isNonNegInt(e.agent_calls))
-    errs.push("agent_calls must be a non-negative integer (count of ALL subagent delegations)");
-  if ("input_tokens" in e && !isNonNegInt(e.input_tokens)) errs.push("input_tokens must be a non-negative integer");
-  if ("output_tokens" in e && !isNonNegInt(e.output_tokens)) errs.push("output_tokens must be a non-negative integer");
+    errs.push(
+      "agent_calls must be a non-negative integer (count of ALL subagent delegations)",
+    );
+  if ("input_tokens" in e && !isNonNegInt(e.input_tokens))
+    errs.push("input_tokens must be a non-negative integer");
+  if ("output_tokens" in e && !isNonNegInt(e.output_tokens))
+    errs.push("output_tokens must be a non-negative integer");
   if ("user_confidence" in e && !conf1to5orNa(e.user_confidence))
     errs.push("user_confidence must be 1-5 or n/a");
   if ("evaluator_confidence" in e && !conf1to5orNa(e.evaluator_confidence))
     errs.push("evaluator_confidence must be 1-5 or n/a");
   if ("dci_immediate" in e && !validDCI(e.dci_immediate))
-    errs.push("dci_immediate must be n/a or DCI=<score>/<even denominator 2-8>");
-  if ("retries" in e && e.retries !== 0 && e.retries !== 1) errs.push("retries must be 0 or 1");
-  if ("skipped" in e && typeof e.skipped !== "boolean") errs.push("skipped must be boolean");
+    errs.push(
+      "dci_immediate must be n/a or DCI=<score>/<even denominator 2-8>",
+    );
+  if ("retries" in e && e.retries !== 0 && e.retries !== 1)
+    errs.push("retries must be 0 or 1");
+  if ("skipped" in e && typeof e.skipped !== "boolean")
+    errs.push("skipped must be boolean");
   if ("bugfix_ref" in e) {
     const b = e.bugfix_ref;
     if (typeof b !== "string" || (b !== "" && !/^plan=\d{4}$/.test(b)))
       errs.push('bugfix_ref must be "" or "plan=<NNNN>"');
   }
-  if ("tokens_source" in e && e.tokens_source !== "estimated" && e.tokens_source !== "exact")
+  if (
+    "tokens_source" in e &&
+    e.tokens_source !== "estimated" &&
+    e.tokens_source !== "exact"
+  )
     errs.push("tokens_source must be estimated|exact");
   if ("dci_delayed" in e)
-    errs.push("dci_delayed is not a task field (retired with the v0.6.3 backfill; DCI1 is a recall event)");
-  if (e.dci_immediate === "n/a" && e.user_confidence !== "n/a" && e.user_confidence !== undefined && e.slot === "A")
+    errs.push(
+      "dci_delayed is not a task field (retired with the v0.6.3 backfill; DCI1 is a recall event)",
+    );
+  if (
+    e.dci_immediate === "n/a" &&
+    e.user_confidence !== "n/a" &&
+    e.user_confidence !== undefined &&
+    e.slot === "A"
+  )
     errs.push("slot A carries no calibration answer");
 
   // Slot behavior invariants (source of truth: SLOT_BEHAVIOR)
   if (e.slot === "A") {
     if (e.gate_type !== "n/a") errs.push("slot A records gate_type n/a");
-    if (e.user_confidence !== "n/a") errs.push("user_confidence is n/a in slot A");
-    if (e.evaluator_confidence !== "n/a") errs.push("evaluator_confidence is n/a in slot A");
-    if (e.dci_immediate !== "n/a") errs.push("dci_immediate is n/a in slot A (no gate reading in control)");
-    if (e.retries !== undefined && e.retries !== 0) errs.push("slot A records 0 retries (no gate)");
+    if (e.user_confidence !== "n/a")
+      errs.push("user_confidence is n/a in slot A");
+    if (e.evaluator_confidence !== "n/a")
+      errs.push("evaluator_confidence is n/a in slot A");
+    if (e.dci_immediate !== "n/a")
+      errs.push("dci_immediate is n/a in slot A (no gate reading in control)");
+    if (e.retries !== undefined && e.retries !== 0)
+      errs.push("slot A records 0 retries (no gate)");
     if (e.skipped !== undefined && e.skipped !== false)
       errs.push("slot A never records a user skip (control ≠ skip)");
   }
   if (e.slot === "B") {
-    if (e.gate_type === "n/a") errs.push("slot B records its gate classification (NONE/LIGHT/DEEP)");
+    if (e.gate_type === "n/a")
+      errs.push("slot B records its gate classification (NONE/LIGHT/DEEP)");
     if (e.gate_type === "NONE") {
-      if (e.user_confidence !== "n/a") errs.push("NONE: no calibration question → user_confidence n/a");
-      if (e.evaluator_confidence !== "n/a") errs.push("NONE: no evaluation → evaluator_confidence n/a");
-      if (e.dci_immediate !== "n/a") errs.push("NONE: no gate reading → dci_immediate n/a");
-      if (e.retries !== undefined && e.retries !== 0) errs.push("NONE: no retries");
-      if (e.skipped !== undefined && e.skipped !== false) errs.push("NONE: nothing to skip");
+      if (e.user_confidence !== "n/a")
+        errs.push("NONE: no calibration question → user_confidence n/a");
+      if (e.evaluator_confidence !== "n/a")
+        errs.push("NONE: no evaluation → evaluator_confidence n/a");
+      if (e.dci_immediate !== "n/a")
+        errs.push("NONE: no gate reading → dci_immediate n/a");
+      if (e.retries !== undefined && e.retries !== 0)
+        errs.push("NONE: no retries");
+      if (e.skipped !== undefined && e.skipped !== false)
+        errs.push("NONE: nothing to skip");
     }
     const gated = e.gate_type === "LIGHT" || e.gate_type === "DEEP";
     if (gated && e.skipped === false) {
       if (!isConf1to5(e.user_confidence))
-        errs.push("LIGHT/DEEP without skip: user_confidence must be 1-5 (calibration asked)");
+        errs.push(
+          "LIGHT/DEEP without skip: user_confidence must be 1-5 (calibration asked)",
+        );
       if (!isConf1to5(e.evaluator_confidence))
         errs.push("LIGHT/DEEP without skip: evaluator_confidence must be 1-5");
       if (typeof e.dci_immediate !== "string" || !DCI_RE.test(e.dci_immediate))
-        errs.push("LIGHT/DEEP without skip: dci_immediate must be a DCI reading");
+        errs.push(
+          "LIGHT/DEEP without skip: dci_immediate must be a DCI reading",
+        );
     }
     if (gated && e.skipped === true) {
-      if (e.evaluator_confidence !== "n/a") errs.push("SKIPPED: no verdict → evaluator_confidence n/a");
-      if (e.dci_immediate !== "n/a") errs.push("SKIPPED: no reading → dci_immediate n/a");
+      if (e.evaluator_confidence !== "n/a")
+        errs.push("SKIPPED: no verdict → evaluator_confidence n/a");
+      if (e.dci_immediate !== "n/a")
+        errs.push("SKIPPED: no reading → dci_immediate n/a");
     }
   }
   return errs;
@@ -335,27 +451,35 @@ export function validateTaskEvent(e: Record<string, unknown>): string[] {
 /** Validate one recall event against the v0.6.4 contract. [] when valid. */
 export function validateRecallEvent(e: Record<string, unknown>): string[] {
   const errs: string[] = [];
-  for (const f of RECALL_FIELDS) if (!(f in e)) errs.push(`missing field: ${f}`);
+  for (const f of RECALL_FIELDS)
+    if (!(f in e)) errs.push(`missing field: ${f}`);
   for (const k of Object.keys(e)) {
-    if (!(RECALL_FIELDS as readonly string[]).includes(k)) errs.push(`unknown field: ${k}`);
+    if (!(RECALL_FIELDS as readonly string[]).includes(k))
+      errs.push(`unknown field: ${k}`);
     if (FORBIDDEN.has(k)) errs.push(`forbidden field: ${k}`);
   }
   if ("event" in e && e.event !== "recall") errs.push("event must be 'recall'");
   if ("schema_version" in e && e.schema_version !== SCHEMA_VERSION)
     errs.push(`schema_version must be ${SCHEMA_VERSION}`);
   if ("research_id" in e && !isValidResearchId(e.research_id))
-    errs.push("research_id must match res-YYYYMMDD-HHMMSS-<32hex> (v0.6.6 128-bit format)");
+    errs.push(
+      "research_id must match res-YYYYMMDD-HHMMSS-<32hex> (v0.6.6 128-bit format)",
+    );
   if ("date" in e && !(typeof e.date === "string" && ISO_DATE_RE.test(e.date)))
     errs.push("date must be ISO YYYY-MM-DD");
   if ("dci_delayed" in e && !validDCI(e.dci_delayed))
     errs.push("dci_delayed must be n/a or DCI=<score>/<even denominator 2-8>");
   if ("evaluator_confidence" in e && !conf1to5orNa(e.evaluator_confidence))
     errs.push("evaluator_confidence must be 1-5 or n/a");
-  if ("retries" in e && e.retries !== 0 && e.retries !== 1) errs.push("retries must be 0 or 1");
-  if ("skipped" in e && typeof e.skipped !== "boolean") errs.push("skipped must be boolean");
+  if ("retries" in e && e.retries !== 0 && e.retries !== 1)
+    errs.push("retries must be 0 or 1");
+  if ("skipped" in e && typeof e.skipped !== "boolean")
+    errs.push("skipped must be boolean");
   if (e.skipped === true) {
-    if (e.dci_delayed !== "n/a") errs.push("skipped recall: dci_delayed must be n/a");
-    if (e.evaluator_confidence !== "n/a") errs.push("skipped recall: evaluator_confidence must be n/a");
+    if (e.dci_delayed !== "n/a")
+      errs.push("skipped recall: dci_delayed must be n/a");
+    if (e.evaluator_confidence !== "n/a")
+      errs.push("skipped recall: evaluator_confidence must be n/a");
   }
   if (e.skipped === false) {
     if (typeof e.dci_delayed !== "string" || !DCI_RE.test(e.dci_delayed))
@@ -374,6 +498,9 @@ export function validateEventLine(e: Record<string, unknown>): string[] {
 }
 
 /** Correlation: a recall event is tied to its task by the SAME research_id. */
-export function sameResearchId(task: Record<string, unknown>, ev: Record<string, unknown>): boolean {
+export function sameResearchId(
+  task: Record<string, unknown>,
+  ev: Record<string, unknown>,
+): boolean {
   return task.research_id === ev.research_id;
 }

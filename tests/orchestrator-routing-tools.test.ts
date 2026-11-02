@@ -26,7 +26,10 @@ describe("orchestrator frontmatter — harness contract del free tier", () => {
   // Issue correlate: anomalyco/opencode#55435, #50627, #51241.
   const REQUIRED = ["read", "glob", "grep", "bash"] as const;
   const tools = frontmatterValue(ORCH, "tools") as Record<string, boolean>;
-  const permission = frontmatterValue(ORCH, "permission") as Record<string, unknown>;
+  const permission = frontmatterValue(ORCH, "permission") as Record<
+    string,
+    unknown
+  >;
 
   test('permission non ha un deny catch-all al primo livello (nessuna chiave "*")', () => {
     expect(Object.keys(permission)).not.toContain("*");

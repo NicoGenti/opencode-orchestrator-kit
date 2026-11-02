@@ -18,7 +18,10 @@ const SKILL = readFileSync(
   join(REPO_ROOT, "skills", "comprehension-workflow", "SKILL.md"),
   "utf-8",
 );
-const CONFIG_DOC = readFileSync(join(REPO_ROOT, "docs", "CONFIGURATION.md"), "utf-8");
+const CONFIG_DOC = readFileSync(
+  join(REPO_ROOT, "docs", "CONFIGURATION.md"),
+  "utf-8",
+);
 const TEMPLATE = readFileSync(
   join(REPO_ROOT, "templates", "comprehension.config.json"),
   "utf-8",
@@ -51,15 +54,21 @@ describe("install.sh seeds comprehension.config.json", () => {
   test("the function copies the shipped template as its source", () => {
     const body = comprehensionSeedFunctionBody();
     expect(body).toContain("templates/comprehension.config.json");
-    expect(body).toMatch(/cp\s+"\$\{KIT_DIR\}\/templates\/comprehension\.config\.json"/);
+    expect(body).toMatch(
+      /cp\s+"\$\{KIT_DIR\}\/templates\/comprehension\.config\.json"/,
+    );
   });
 
   test("there are three call sites alongside install_model_profile", () => {
     const occurrences = INSTALL_SH.match(/seed_comprehension_config/g) ?? [];
     // 1 definition + 3 invocations
     expect(occurrences.length).toBeGreaterThanOrEqual(4);
-    expect(INSTALL_SH).toContain('seed_comprehension_config "$(pwd)/.opencode"');
-    expect(INSTALL_SH).toContain('seed_comprehension_config "$HOME/.config/opencode"');
+    expect(INSTALL_SH).toContain(
+      'seed_comprehension_config "$(pwd)/.opencode"',
+    );
+    expect(INSTALL_SH).toContain(
+      'seed_comprehension_config "$HOME/.config/opencode"',
+    );
     expect(INSTALL_SH).toContain('seed_comprehension_config "$PROFILE_DIR"');
   });
 });
@@ -79,7 +88,9 @@ describe("shipped docs/skill no longer claim manual copy is the only path", () =
 
 describe("templates/comprehension.config.json stays the seeded source of truth", () => {
   test("parses as JSON with comprehension.mode === 'adaptive'", () => {
-    const parsed = JSON.parse(TEMPLATE) as { comprehension?: { mode?: string } };
+    const parsed = JSON.parse(TEMPLATE) as {
+      comprehension?: { mode?: string };
+    };
     expect(parsed.comprehension?.mode).toBe("adaptive");
   });
 });

@@ -1,24 +1,40 @@
 import { describe, expect, test, beforeAll, afterAll } from "bun:test";
-import { mkdtempSync, mkdirSync, readdirSync, readFileSync, writeFileSync, existsSync, rmSync } from "node:fs";
+import {
+  mkdtempSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  writeFileSync,
+  existsSync,
+  rmSync,
+} from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { spawnSync } from "node:child_process";
 
 const REPO = join(import.meta.dir, "..");
 const SH = join(REPO, "scripts", "install-freellmapi.sh");
-const hasBash = spawnSync("bash", ["--version"], { stdio: "ignore" }).status === 0;
+const hasBash =
+  spawnSync("bash", ["--version"], { stdio: "ignore" }).status === 0;
 const maybe = hasBash ? describe : describe.skip;
 
 // Offline puro: OC2_SHIM punta a un percorso inesistente cosi' lo script salta
 // (SKIP) i contatti con opencode2 e la suite non dipende da nessun servizio.
 const NO_OC2 = "Z:/nonexistent/oc2/shim";
-const OFFLINE_ENV = { ...process.env, OC2_SHIM: NO_OC2, FREELLMAPI_BASE_URL: "http://127.0.0.1:31415/v1" };
+const OFFLINE_ENV = {
+  ...process.env,
+  OC2_SHIM: NO_OC2,
+  FREELLMAPI_BASE_URL: "http://127.0.0.1:31415/v1",
+};
 
 let dir = "";
 let failDir = "";
 beforeAll(() => {
   dir = mkdtempSync(join(tmpdir(), "fm-install-")).replaceAll("\\", "/");
-  failDir = mkdtempSync(join(tmpdir(), "fm-install-fail-")).replaceAll("\\", "/");
+  failDir = mkdtempSync(join(tmpdir(), "fm-install-fail-")).replaceAll(
+    "\\",
+    "/",
+  );
 });
 afterAll(() => {
   rmSync(dir, { recursive: true, force: true });
@@ -27,64 +43,112 @@ afterAll(() => {
 
 maybe("install-freellmapi.sh", () => {
   test("installa il kit e cabla il profilo freellmapi (offline)", () => {
-    const r = spawnSync("bash", [SH.replaceAll("\\", "/"), "--with-extras",
-      "--no-preflight", "--no-smoke", "--no-gitignore", "--key", "k-test", dir],
-      { encoding: "utf-8", env: OFFLINE_ENV });
+    const r = spawnSync(
+      "bash",
+      [
+        SH.replaceAll("\\", "/"),
+        "--with-extras",
+        "--no-preflight",
+        "--no-smoke",
+        "--no-gitignore",
+        "--key",
+        "k-test",
+        dir,
+      ],
+      { encoding: "utf-8", env: OFFLINE_ENV },
+    );
     expect(r.status).toBe(0);
 
     const opencode = join(dir, ".opencode");
-    const agents = readdirSync(join(opencode, "agents")).filter((f) => f.endsWith(".md"));
+    const agents = readdirSync(join(opencode, "agents")).filter((f) =>
+      f.endsWith(".md"),
+    );
     expect(agents.length).toBeGreaterThan(10);
     for (const f of agents) {
       const t = readFileSync(join(opencode, "agents", f), "utf-8");
       expect(t).not.toMatch(/\{\{TIER_/);
       expect(t).not.toMatch(/^model:/m);
     }
-    const extras = readdirSync(join(opencode, "extras")).filter((f) => f.endsWith(".md"));
+    const extras = readdirSync(join(opencode, "extras")).filter((f) =>
+      f.endsWith(".md"),
+    );
     for (const f of extras) {
       const t = readFileSync(join(opencode, "extras", f), "utf-8");
       expect(t).not.toMatch(/\{\{TIER_/);
       expect(t).not.toMatch(/^model:/m);
     }
-    const cfg = JSON.parse(readFileSync(join(opencode, "opencode.jsonc"), "utf-8"));
-    expect(cfg.provider.freellmapi.options.baseURL).toBe("http://127.0.0.1:31415/v1");
+    const cfg = JSON.parse(
+      readFileSync(join(opencode, "opencode.jsonc"), "utf-8"),
+    );
+    expect(cfg.provider.freellmapi.options.baseURL).toBe(
+      "http://127.0.0.1:31415/v1",
+    );
     expect(cfg.provider.freellmapi.options.apiKey).toBe("k-test");
     expect(cfg.agent.orchestrator.model).toBe("freellmapi/auto:smart");
     expect(Object.keys(cfg.agent).length).toBeGreaterThan(10);
     expect(cfg.enabled_providers).toContain("freellmapi");
-    const prof = JSON.parse(readFileSync(join(opencode, "models.config.json"), "utf-8"));
+    const prof = JSON.parse(
+      readFileSync(join(opencode, "models.config.json"), "utf-8"),
+    );
     expect(prof.default_preset).toBe("freellmapi");
     expect(existsSync(join(dir, "AGENTS.md"))).toBe(true);
   });
 
   test("la preflight fallisce con messaggio chiaro se il server e' irraggiungibile", () => {
-    const r = spawnSync("bash", [SH.replaceAll("\\", "/"), "--no-smoke",
-      "--key", "k-test", "--base-url", "http://127.0.0.1:1/v1", failDir],
-      { encoding: "utf-8", env: OFFLINE_ENV });
+    const r = spawnSync(
+      "bash",
+      [
+        SH.replaceAll("\\", "/"),
+        "--no-smoke",
+        "--key",
+        "k-test",
+        "--base-url",
+        "http://127.0.0.1:1/v1",
+        failDir,
+      ],
+      { encoding: "utf-8", env: OFFLINE_ENV },
+    );
     expect(r.status).toBe(1);
     expect(r.stderr).toContain("FreeLLMAPI non raggiungibile");
   });
   test("la guardia avverte che senza catalogo runtime serve oc2-fm", () => {
-    const stubDir = mkdtempSync(join(tmpdir(), "oc2-stub-")).replaceAll("\\", "/");
+    const stubDir = mkdtempSync(join(tmpdir(), "oc2-stub-")).replaceAll(
+      "\\",
+      "/",
+    );
     const stub = join(stubDir, "oc2-stub").replaceAll("\\", "/");
-    writeFileSync(stub, [
-      "#!/bin/sh",
-      'case "$1" in',
-      "  models) exit 0 ;;",
-      "  *) printf '%s' '[{\"path\":\"<proj>/.opencode/opencode.jsonc\",\"type\":\"project\",\"info\":{\"providers\":{\"freellmapi\":{}},\"agents\":{\"orchestrator\":{\"model\":\"freellmapi/auto:smart\"}}}}]' ;;",
-      "esac",
-      "",
-    ].join("\n"), "utf-8");
+    writeFileSync(
+      stub,
+      [
+        "#!/bin/sh",
+        'case "$1" in',
+        "  models) exit 0 ;;",
+        '  *) printf \'%s\' \'[{"path":"<proj>/.opencode/opencode.jsonc","type":"project","info":{"providers":{"freellmapi":{}},"agents":{"orchestrator":{"model":"freellmapi/auto:smart"}}}}]\' ;;',
+        "esac",
+        "",
+      ].join("\n"),
+      "utf-8",
+    );
     spawnSync("chmod", ["+x", stub]);
 
     const proj = mkdtempSync(join(tmpdir(), "fm-guard-")).replaceAll("\\", "/");
-    const r = spawnSync("bash", [SH.replaceAll("\\", "/"), "--with-extras", "--no-preflight",
-      "--no-smoke", "--no-gitignore", "--key", "k-test", proj],
-      { encoding: "utf-8", env: { ...process.env, OC2_SHIM: stub } });
+    const r = spawnSync(
+      "bash",
+      [
+        SH.replaceAll("\\", "/"),
+        "--with-extras",
+        "--no-preflight",
+        "--no-smoke",
+        "--no-gitignore",
+        "--key",
+        "k-test",
+        proj,
+      ],
+      { encoding: "utf-8", env: { ...process.env, OC2_SHIM: stub } },
+    );
     expect(r.stdout).toMatch(/catalogo runtime/i);
     expect(r.stdout).toContain("oc2-fm");
     rmSync(stubDir, { recursive: true, force: true });
     rmSync(proj, { recursive: true, force: true });
   });
-
 });

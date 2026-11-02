@@ -1,5 +1,12 @@
 import { describe, expect, test } from "bun:test";
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  writeFileSync,
+} from "node:fs";
 import { join, relative, sep } from "node:path";
 
 import plugin from "../plugin/src/index.ts";
@@ -87,7 +94,10 @@ type Editor = {
  * Esegue `plugin.setup` con un editor agent seedato opzionale e cattura
  * registri + warning di console. `withPluginsOptions` sono le opzioni host.
  */
-async function setupWith(options: Record<string, unknown>, seed?: Map<string, Record<string, unknown>>): Promise<Harness> {
+async function setupWith(
+  options: Record<string, unknown>,
+  seed?: Map<string, Record<string, unknown>>,
+): Promise<Harness> {
   const agents = new Map<string, Record<string, unknown>>(seed ?? []);
   const touched: string[] = [];
   const commands: Array<Record<string, unknown>> = [];
@@ -126,7 +136,8 @@ async function setupWith(options: Record<string, unknown>, seed?: Map<string, Re
 
   const warned: string[] = [];
   const original = console.warn;
-  console.warn = (...args: unknown[]) => void warned.push(args.map(String).join(" "));
+  console.warn = (...args: unknown[]) =>
+    void warned.push(args.map(String).join(" "));
   try {
     await plugin.setup(ctx);
   } finally {
@@ -233,7 +244,9 @@ describe("plugin integration — empty repo", () => {
       expect(ref).not.toContain("placeholder/");
       // ref risolto = un modello reale del registry runtime
       expect(
-        REGISTRY_FULL.some((m) => m.providerID === model.providerID && m.id === model.id),
+        REGISTRY_FULL.some(
+          (m) => m.providerID === model.providerID && m.id === model.id,
+        ),
       ).toBe(true);
     }
   });
@@ -258,7 +271,9 @@ describe("plugin integration — empty repo", () => {
     const execute = tools[0].execute as (input: unknown) => string;
     const payload = JSON.parse(execute({ command: "check", root: board }));
     // coerente con runPlanBoard (stesso percorso di codice, stessa semantica ok)
-    expect(payload).toEqual(runPlanBoard(["check", "--root", board, "--json"]).payload);
+    expect(payload).toEqual(
+      runPlanBoard(["check", "--root", board, "--json"]).payload,
+    );
     expect(payload.ok).toBe(true);
     expect(payload.plans?.draft).toEqual([]);
   });
@@ -268,7 +283,12 @@ describe("plugin integration — existing repo (user config wins)", () => {
   test("(2) explorer pre-configurato intatto, 14 altri registrati, zero write", async () => {
     const repo = makeTmpRepo({ withExtras: false });
     const before = snapshot(repo);
-    const userAgent = { id: "explorer", name: "explorer", mode: "subagent", model: "user/custom-model" };
+    const userAgent = {
+      id: "explorer",
+      name: "explorer",
+      mode: "subagent",
+      model: "user/custom-model",
+    };
     const seed = new Map<string, Record<string, unknown>>([
       ["explorer", { ...userAgent }],
     ]);
@@ -276,12 +296,16 @@ describe("plugin integration — existing repo (user config wins)", () => {
     const { touched } = await setupWith(readKitOptions(repo), seed);
 
     // l'agente utente resta esattamente com'era (update non chiamato per lui)
-    expect(await Promise.resolve(seed.get("explorer"))).toEqual({ ...userAgent });
+    expect(await Promise.resolve(seed.get("explorer"))).toEqual({
+      ...userAgent,
+    });
 
     // upsert solo gli altri 14
     expect(touched).toHaveLength(14);
     expect(touched).not.toContain("explorer");
-    expect([...touched].sort()).toEqual(AGENT_IDS.filter((id) => id !== "explorer"));
+    expect([...touched].sort()).toEqual(
+      AGENT_IDS.filter((id) => id !== "explorer"),
+    );
 
     // nessun filesystem write nella repo
     expect(snapshot(repo)).toEqual(before);
@@ -290,25 +314,42 @@ describe("plugin integration — existing repo (user config wins)", () => {
 
 describe("plugin integration — publish sanity", () => {
   test("(3) package.json exports/files coprono runtime, tipi e asset packeteid", () => {
-    const pkg = JSON.parse(readFileSync(join(PLUGIN_DIR, "package.json"), "utf-8"));
+    const pkg = JSON.parse(
+      readFileSync(join(PLUGIN_DIR, "package.json"), "utf-8"),
+    );
     // exports["."] punta a un file esistente (stringa diretta o mappa esport)
-    const target = typeof pkg.exports["."] === "string" ? pkg.exports["."] : pkg.exports["."].import;
+    const target =
+      typeof pkg.exports["."] === "string"
+        ? pkg.exports["."]
+        : pkg.exports["."].import;
     expect(existsSync(join(PLUGIN_DIR, target))).toBe(true);
     // files copre le directory del runtime, tipii, asset — esistono tutte
-    expect(pkg.files).toEqual(expect.arrayContaining(["src", "types", "assets"]));
+    expect(pkg.files).toEqual(
+      expect.arrayContaining(["src", "types", "assets"]),
+    );
     for (const dir of pkg.files) {
       expect(existsSync(join(PLUGIN_DIR, dir))).toBe(true);
     }
     // ogni asset referenziato da assets.ts esiste su disco: assetsDir risolta
-    expect(existsSync(join(assetsDir, "commands", "start-session.md"))).toBe(true);
+    expect(existsSync(join(assetsDir, "commands", "start-session.md"))).toBe(
+      true,
+    );
     // i 9 SKILL.md pacchettizzati + agents/extras/commands in assets
-    const skillFiles = walkFiles(join(PLUGIN_DIR, "assets", "skills")).filter((f) => f.endsWith("SKILL.md"));
+    const skillFiles = walkFiles(join(PLUGIN_DIR, "assets", "skills")).filter(
+      (f) => f.endsWith("SKILL.md"),
+    );
     expect(skillFiles).toHaveLength(9);
     expect(collectPackagedAgents(false).length).toBe(15);
     expect(collectPackagedAgents(true).length).toBe(17);
-    expect(existsSync(join(PLUGIN_DIR, "assets", "agents", "orchestrator.md"))).toBe(true);
-    expect(existsSync(join(PLUGIN_DIR, "assets", "extras", "writer.md"))).toBe(true);
-    expect(existsSync(join(PLUGIN_DIR, "types", "opencode-plugin-shim.d.ts"))).toBe(true);
+    expect(
+      existsSync(join(PLUGIN_DIR, "assets", "agents", "orchestrator.md")),
+    ).toBe(true);
+    expect(existsSync(join(PLUGIN_DIR, "assets", "extras", "writer.md"))).toBe(
+      true,
+    );
+    expect(
+      existsSync(join(PLUGIN_DIR, "types", "opencode-plugin-shim.d.ts")),
+    ).toBe(true);
   });
 });
 

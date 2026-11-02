@@ -1,5 +1,12 @@
 import { describe, expect, test, afterAll } from "bun:test";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
@@ -20,11 +27,19 @@ import { spawnSync } from "node:child_process";
 const REPO_ROOT = join(import.meta.dir, "..");
 const SCRIPT = join(REPO_ROOT, "scripts", "plan-board.py");
 const COLUMNS = ["draft", "in-progress", "qa", "complete"] as const;
-const COMPREHENSION_VALUES = ["none", "pass", "skipped", "fail", "disabled", "n/a"];
+const COMPREHENSION_VALUES = [
+  "none",
+  "pass",
+  "skipped",
+  "fail",
+  "disabled",
+  "n/a",
+];
 
 function pythonBin(): string | null {
   for (const cmd of ["python3", "python"]) {
-    if (spawnSync(cmd, ["--version"], { stdio: "ignore" }).status === 0) return cmd;
+    if (spawnSync(cmd, ["--version"], { stdio: "ignore" }).status === 0)
+      return cmd;
   }
   return null;
 }
@@ -91,10 +106,17 @@ function writeBody(text: string): string {
   return p;
 }
 
-type RunResult = { status: number | null; json: any; stdout: string; stderr: string };
+type RunResult = {
+  status: number | null;
+  json: any;
+  stdout: string;
+  stderr: string;
+};
 
 function run(args: string[], root: string): RunResult {
-  const r = spawnSync(PY, [SCRIPT, ...args, "--root", root, "--json"], { encoding: "utf-8" });
+  const r = spawnSync(PY, [SCRIPT, ...args, "--root", root, "--json"], {
+    encoding: "utf-8",
+  });
   const stdout = r.stdout ?? "";
   let json: any = null;
   try {
@@ -106,7 +128,12 @@ function run(args: string[], root: string): RunResult {
 }
 
 /** Un piano conforme minimo gia' presente in una colonna (senza passare dal tool). */
-function seedPlan(root: string, column: string, stem: string, extra = ""): string {
+function seedPlan(
+  root: string,
+  column: string,
+  stem: string,
+  extra = "",
+): string {
   const p = join(root, column, `${stem}.md`);
   writeFileSync(
     p,
@@ -136,13 +163,30 @@ maybe("plan-board.py — gate comprensione su qa -> complete", () => {
     for (const value of COMPREHENSION_VALUES) {
       const root = makeBoard();
       seedPlan(root, "qa", "9001-gate");
-      const r = run(["move", "--id", "9001-gate", "--to", "complete", "--comprehension", value], root);
+      const r = run(
+        [
+          "move",
+          "--id",
+          "9001-gate",
+          "--to",
+          "complete",
+          "--comprehension",
+          value,
+        ],
+        root,
+      );
       expect({ value, status: r.status }).toEqual({ value, status: 0 });
       expect(r.json?.verified).toBe(true);
       const dst = join(root, "complete", "9001-gate.md");
-      expect({ value, exists: existsSync(dst) }).toEqual({ value, exists: true });
+      expect({ value, exists: existsSync(dst) }).toEqual({
+        value,
+        exists: true,
+      });
       const text = readFileSync(dst, "utf-8");
-      expect({ value, has: text.includes(`comprehension: ${value}`) }).toEqual({ value, has: true });
+      expect({ value, has: text.includes(`comprehension: ${value}`) }).toEqual({
+        value,
+        has: true,
+      });
     }
   });
 
@@ -151,24 +195,29 @@ maybe("plan-board.py — gate comprensione su qa -> complete", () => {
     seedPlan(root, "qa", "9001-gate");
     const r = run(["check"], root);
     expect(r.status).toBe(0);
-    expect(r.json?.warnings?.map((w: any) => w.code)).toContain("missing-comprehension");
+    expect(r.json?.warnings?.map((w: any) => w.code)).toContain(
+      "missing-comprehension",
+    );
   });
 
   test("draft -> in-progress non richiede --comprehension", () => {
     const root = makeBoard();
-    const r = run([
-      "new",
-      "--id",
-      "9002-demo",
-      "--title",
-      "Demo",
-      "--owner",
-      "plan-writer",
-      "--executor",
-      "developer-fixer",
-      "--body",
-      writeBody(BODY_OK),
-    ], root);
+    const r = run(
+      [
+        "new",
+        "--id",
+        "9002-demo",
+        "--title",
+        "Demo",
+        "--owner",
+        "plan-writer",
+        "--executor",
+        "developer-fixer",
+        "--body",
+        writeBody(BODY_OK),
+      ],
+      root,
+    );
     expect(r.status).toBe(0);
     const m = run(["move", "--id", "9002-demo", "--to", "in-progress"], root);
     expect(m.status).toBe(0);
@@ -179,7 +228,18 @@ maybe("plan-board.py — gate comprensione su qa -> complete", () => {
   test("un valore --comprehension non valido e' rifiutato (exit non-zero, nessuno spostamento)", () => {
     const root = makeBoard();
     seedPlan(root, "qa", "9001-gate");
-    const r = run(["move", "--id", "9001-gate", "--to", "complete", "--comprehension", "bogus"], root);
+    const r = run(
+      [
+        "move",
+        "--id",
+        "9001-gate",
+        "--to",
+        "complete",
+        "--comprehension",
+        "bogus",
+      ],
+      root,
+    );
     expect(r.status).not.toBe(0);
     expect(existsSync(join(root, "qa", "9001-gate.md"))).toBe(true);
     expect(existsSync(join(root, "complete", "9001-gate.md"))).toBe(false);

@@ -1,5 +1,12 @@
 import { describe, expect, test, afterAll } from "bun:test";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
@@ -24,7 +31,8 @@ const COLUMNS = ["draft", "in-progress", "qa", "complete"] as const;
 
 function pythonBin(): string | null {
   for (const cmd of ["python3", "python"]) {
-    if (spawnSync(cmd, ["--version"], { stdio: "ignore" }).status === 0) return cmd;
+    if (spawnSync(cmd, ["--version"], { stdio: "ignore" }).status === 0)
+      return cmd;
   }
   return null;
 }
@@ -95,10 +103,17 @@ function writeBody(text: string, name?: string): string {
   return p;
 }
 
-type RunResult = { status: number | null; json: any; stdout: string; stderr: string };
+type RunResult = {
+  status: number | null;
+  json: any;
+  stdout: string;
+  stderr: string;
+};
 
 function run(args: string[], root?: string): RunResult {
-  const r = spawnSync(PY, [SCRIPT, ...args, "--root", root ?? "", "--json"], { encoding: "utf-8" });
+  const r = spawnSync(PY, [SCRIPT, ...args, "--root", root ?? "", "--json"], {
+    encoding: "utf-8",
+  });
   const stdout = r.stdout ?? "";
   let json: any = null;
   try {
@@ -110,7 +125,12 @@ function run(args: string[], root?: string): RunResult {
 }
 
 /** Un piano conforme minimo gia' presente in una colonna (senza passare dal tool). */
-function seedPlan(root: string, column: string, stem: string, extra = ""): string {
+function seedPlan(
+  root: string,
+  column: string,
+  stem: string,
+  extra = "",
+): string {
   const p = join(root, column, `${stem}.md`);
   writeFileSync(
     p,
@@ -143,37 +163,52 @@ maybe("plan-board.py — contratto check", () => {
   test("status diverso dalla cartella: status-folder-mismatch ed exit 1", () => {
     const root = makeBoard();
     const p = seedPlan(root, "qa", "0008-drift");
-    writeFileSync(p, readFileSync(p, "utf-8").replace("status: qa", "status: draft"), "utf-8");
+    writeFileSync(
+      p,
+      readFileSync(p, "utf-8").replace("status: qa", "status: draft"),
+      "utf-8",
+    );
     const r = run(["check"], root);
     expect(r.status).toBe(1);
-    expect(r.json?.errors?.map((e: any) => e.code)).toContain("status-folder-mismatch");
+    expect(r.json?.errors?.map((e: any) => e.code)).toContain(
+      "status-folder-mismatch",
+    );
   });
 
   test("file legacy senza frontmatter: solo warning, exit 0", () => {
     const root = makeBoard();
-    writeFileSync(join(root, "draft", "0007-legacy.md"), "# Legacy\n\nSenza frontmatter.\n", "utf-8");
+    writeFileSync(
+      join(root, "draft", "0007-legacy.md"),
+      "# Legacy\n\nSenza frontmatter.\n",
+      "utf-8",
+    );
     const r = run(["check"], root);
     expect(r.status).toBe(0);
-    expect(r.json?.warnings?.map((w: any) => w.code)).toContain("legacy-no-frontmatter");
+    expect(r.json?.warnings?.map((w: any) => w.code)).toContain(
+      "legacy-no-frontmatter",
+    );
   });
 });
 
 maybe("plan-board.py — contratto new", () => {
   test("crea il piano e riscrive il frontmatter (verified: true)", () => {
     const root = makeBoard();
-    const r = run([
-      "new",
-      "--id",
-      "9001-demo",
-      "--title",
-      "Demo",
-      "--owner",
-      "plan-writer",
-      "--executor",
-      "developer-fixer",
-      "--body",
-      writeBody(BODY_OK),
-    ], root);
+    const r = run(
+      [
+        "new",
+        "--id",
+        "9001-demo",
+        "--title",
+        "Demo",
+        "--owner",
+        "plan-writer",
+        "--executor",
+        "developer-fixer",
+        "--body",
+        writeBody(BODY_OK),
+      ],
+      root,
+    );
     expect(r.status).toBe(0);
     expect(r.json?.action).toBe("new");
     expect(r.json?.verified).toBe(true);
@@ -188,19 +223,22 @@ maybe("plan-board.py — contratto new", () => {
 
   test("body senza una delle nove sezioni: body-incomplete, nessun file creato", () => {
     const root = makeBoard();
-    const r = run([
-      "new",
-      "--id",
-      "9002-broken",
-      "--title",
-      "Broken",
-      "--owner",
-      "plan-writer",
-      "--executor",
-      "developer-fixer",
-      "--body",
-      writeBody(BODY_OK.replace("## Verification", "## Verifica")),
-    ], root);
+    const r = run(
+      [
+        "new",
+        "--id",
+        "9002-broken",
+        "--title",
+        "Broken",
+        "--owner",
+        "plan-writer",
+        "--executor",
+        "developer-fixer",
+        "--body",
+        writeBody(BODY_OK.replace("## Verification", "## Verifica")),
+      ],
+      root,
+    );
     expect(r.status).toBe(1);
     expect(r.json?.code).toBe("body-incomplete");
     expect(r.json?.message).toContain("## Verification");
@@ -209,19 +247,22 @@ maybe("plan-board.py — contratto new", () => {
 
   test("id non slug-safe: bad-id", () => {
     const root = makeBoard();
-    const r = run([
-      "new",
-      "--id",
-      "9003 bad id",
-      "--title",
-      "Bad",
-      "--owner",
-      "plan-writer",
-      "--executor",
-      "developer-fixer",
-      "--body",
-      writeBody(BODY_OK),
-    ], root);
+    const r = run(
+      [
+        "new",
+        "--id",
+        "9003 bad id",
+        "--title",
+        "Bad",
+        "--owner",
+        "plan-writer",
+        "--executor",
+        "developer-fixer",
+        "--body",
+        writeBody(BODY_OK),
+      ],
+      root,
+    );
     expect(r.status).toBe(1);
     expect(r.json?.code).toBe("bad-id");
   });
@@ -229,19 +270,22 @@ maybe("plan-board.py — contratto new", () => {
   test("id gia' presente come segmento iniziale di un altro piano: duplicate-id", () => {
     const root = makeBoard();
     seedPlan(root, "draft", "9001-alpha");
-    const r = run([
-      "new",
-      "--id",
-      "9001",
-      "--title",
-      "Duplicato",
-      "--owner",
-      "plan-writer",
-      "--executor",
-      "developer-fixer",
-      "--body",
-      writeBody(BODY_OK),
-    ], root);
+    const r = run(
+      [
+        "new",
+        "--id",
+        "9001",
+        "--title",
+        "Duplicato",
+        "--owner",
+        "plan-writer",
+        "--executor",
+        "developer-fixer",
+        "--body",
+        writeBody(BODY_OK),
+      ],
+      root,
+    );
     expect(r.status).toBe(1);
     expect(r.json?.code).toBe("duplicate-id");
   });
@@ -249,19 +293,22 @@ maybe("plan-board.py — contratto new", () => {
   test("target gia' esistente nella stessa colonna: target-exists", () => {
     const root = makeBoard();
     seedPlan(root, "draft", "9005-same");
-    const r = run([
-      "new",
-      "--id",
-      "9005-same",
-      "--title",
-      "Duplicato",
-      "--owner",
-      "plan-writer",
-      "--executor",
-      "developer-fixer",
-      "--body",
-      writeBody(BODY_OK),
-    ], root);
+    const r = run(
+      [
+        "new",
+        "--id",
+        "9005-same",
+        "--title",
+        "Duplicato",
+        "--owner",
+        "plan-writer",
+        "--executor",
+        "developer-fixer",
+        "--body",
+        writeBody(BODY_OK),
+      ],
+      root,
+    );
     expect(r.status).toBe(1);
     expect(r.json?.code).toBe("target-exists");
   });
@@ -319,7 +366,9 @@ maybe("plan-board.py — contratto move", () => {
     const r = run(["move", "--id", "0006", "--to", "qa"], root);
     expect(r.status).toBe(0);
     expect(r.json?.verified).toBe(true);
-    expect(existsSync(join(root, "qa", "0006-branching-strategy.md"))).toBe(true);
+    expect(existsSync(join(root, "qa", "0006-branching-strategy.md"))).toBe(
+      true,
+    );
   });
 
   test("colonna inesistente: bad-column ed exit 1", () => {
@@ -332,21 +381,24 @@ maybe("plan-board.py — contratto move", () => {
 
   test("colonna di destinazione inesistente in new: bad-column, niente traceback", () => {
     const root = makeBoard();
-    const r = run([
-      "new",
-      "--id",
-      "9001-demo",
-      "--title",
-      "Demo",
-      "--owner",
-      "plan-writer",
-      "--executor",
-      "developer-fixer",
-      "--column",
-      "bogus",
-      "--body",
-      writeBody(BODY_OK),
-    ], root);
+    const r = run(
+      [
+        "new",
+        "--id",
+        "9001-demo",
+        "--title",
+        "Demo",
+        "--owner",
+        "plan-writer",
+        "--executor",
+        "developer-fixer",
+        "--column",
+        "bogus",
+        "--body",
+        writeBody(BODY_OK),
+      ],
+      root,
+    );
     expect(r.status).toBe(1);
     expect(r.json?.code).toBe("bad-column");
   });
@@ -355,20 +407,29 @@ maybe("plan-board.py — contratto move", () => {
 maybe("plan-board.py — contratto adopt", () => {
   test("file legacy: frontmatter creato, titolo dal primo heading, warning dichiarato", () => {
     const root = makeBoard();
-    writeFileSync(join(root, "draft", "0009-adopt.md"), "# Nuovo titolo\n\nCorpo legacy.\n", "utf-8");
-    const r = run([
-      "adopt",
-      "--file",
-      "0009-adopt",
-      "--owner",
-      "plan-writer",
-      "--executor",
-      "developer-fixer",
-    ], root);
+    writeFileSync(
+      join(root, "draft", "0009-adopt.md"),
+      "# Nuovo titolo\n\nCorpo legacy.\n",
+      "utf-8",
+    );
+    const r = run(
+      [
+        "adopt",
+        "--file",
+        "0009-adopt",
+        "--owner",
+        "plan-writer",
+        "--executor",
+        "developer-fixer",
+      ],
+      root,
+    );
     expect(r.status).toBe(0);
     expect(r.json?.action).toBe("adopt");
     expect(r.json?.verified).toBe(true);
-    expect(r.json?.warnings?.map((w: any) => w.code)).toContain("derived-frontmatter");
+    expect(r.json?.warnings?.map((w: any) => w.code)).toContain(
+      "derived-frontmatter",
+    );
     const text = readFileSync(join(root, "draft", "0009-adopt.md"), "utf-8");
     expect(text.startsWith("---\nid: 0009-adopt\n")).toBe(true);
     expect(text).toContain("title: Nuovo titolo");
@@ -380,7 +441,18 @@ maybe("plan-board.py — contratto adopt", () => {
     const root = makeBoard();
     const p = seedPlan(root, "draft", "0010-conforme");
     const before = readFileSync(p, "utf-8");
-    const r = run(["adopt", "--file", "0010-conforme", "--owner", "plan-writer", "--executor", "developer-fixer"], root);
+    const r = run(
+      [
+        "adopt",
+        "--file",
+        "0010-conforme",
+        "--owner",
+        "plan-writer",
+        "--executor",
+        "developer-fixer",
+      ],
+      root,
+    );
     expect(r.status).toBe(1);
     expect(r.json?.code).toBe("already-has-frontmatter");
     expect(readFileSync(p, "utf-8")).toBe(before);
@@ -395,7 +467,10 @@ maybe("plan-board.py — root predefinito", () => {
     for (const col of COLUMNS) mkdirSync(join(root, col), { recursive: true });
     seedPlan(root, "draft", "9100-default");
 
-    const r = spawnSync(PY, [SCRIPT, "check", "--json"], { cwd: work, encoding: "utf-8" });
+    const r = spawnSync(PY, [SCRIPT, "check", "--json"], {
+      cwd: work,
+      encoding: "utf-8",
+    });
     const json = JSON.parse(r.stdout ?? "{}");
     expect(r.status).toBe(0);
     expect(json.plans?.draft?.map((p: any) => p.id)).toEqual(["9100-default"]);

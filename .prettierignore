@@ -20,3 +20,16 @@ LICENSE.txt
 agents/
 skills/
 docs/
+
+# Agent extras use an unquoted YAML scalar `model: {{TIER_*}}`. Prettier's YAML
+# formatter parses `{{...}}` as a flow mapping and reprints it as `{ { TIER_* } }`,
+# which destroys the install-time tier token. Keep these files, and their
+# byte-identical plugin/assets mirrors, out of Prettier.
+extras/
+plugin/assets/extras/
+
+# agents/ and skills/ are already ignored above. Their packaged copies must stay
+# byte-identical (tests/plugin-assets-parity.test.ts). Ignoring the mirrors
+# prevents a later `prettier --write` from formatting only one side.
+plugin/assets/agents/
+plugin/assets/skills/

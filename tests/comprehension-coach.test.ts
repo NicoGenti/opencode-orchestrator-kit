@@ -39,7 +39,9 @@ function checkSubsequence(keys: readonly string[]): string | null {
       cursor++;
       continue;
     }
-    const expectedIdx = CANONICAL_ORDER.indexOf(key as (typeof CANONICAL_ORDER)[number]);
+    const expectedIdx = CANONICAL_ORDER.indexOf(
+      key as (typeof CANONICAL_ORDER)[number],
+    );
     if (expectedIdx === -1) {
       return `unknown key "${key}"`;
     }
@@ -86,9 +88,15 @@ describe("comprehension-coach — Phase 1 agent + baseline", () => {
     let inPermission = false;
     let found = false;
     for (const line of lines) {
-      if (line.startsWith("permission:")) { inPermission = true; continue; }
-      if (inPermission && /^[^ ]/.test(line) && !line.startsWith("permission")) break;
-      if (inPermission && /webfetch:\s*deny/.test(line)) { found = true; }
+      if (line.startsWith("permission:")) {
+        inPermission = true;
+        continue;
+      }
+      if (inPermission && /^[^ ]/.test(line) && !line.startsWith("permission"))
+        break;
+      if (inPermission && /webfetch:\s*deny/.test(line)) {
+        found = true;
+      }
     }
     expect(found).toBe(true);
   });
@@ -99,9 +107,15 @@ describe("comprehension-coach — Phase 1 agent + baseline", () => {
     let inPermission = false;
     let found = false;
     for (const line of lines) {
-      if (line.startsWith("permission:")) { inPermission = true; continue; }
-      if (inPermission && /^[^ ]/.test(line) && !line.startsWith("permission")) break;
-      if (inPermission && /write:\s*deny/.test(line)) { found = true; }
+      if (line.startsWith("permission:")) {
+        inPermission = true;
+        continue;
+      }
+      if (inPermission && /^[^ ]/.test(line) && !line.startsWith("permission"))
+        break;
+      if (inPermission && /write:\s*deny/.test(line)) {
+        found = true;
+      }
     }
     expect(found).toBe(true);
   });
@@ -112,9 +126,15 @@ describe("comprehension-coach — Phase 1 agent + baseline", () => {
     let inPermission = false;
     let found = false;
     for (const line of lines) {
-      if (line.startsWith("permission:")) { inPermission = true; continue; }
-      if (inPermission && /^[^ ]/.test(line) && !line.startsWith("permission")) break;
-      if (inPermission && /edit:\s*deny/.test(line)) { found = true; }
+      if (line.startsWith("permission:")) {
+        inPermission = true;
+        continue;
+      }
+      if (inPermission && /^[^ ]/.test(line) && !line.startsWith("permission"))
+        break;
+      if (inPermission && /edit:\s*deny/.test(line)) {
+        found = true;
+      }
     }
     expect(found).toBe(true);
   });
@@ -169,7 +189,10 @@ describe("comprehension-coach — Phase 1 agent + baseline", () => {
     const ofStart = raw.indexOf("## Output Format");
     const outside =
       raw.slice(0, start) +
-      raw.slice(end === -1 ? raw.length : end, ofStart === -1 ? raw.length : ofStart);
+      raw.slice(
+        end === -1 ? raw.length : end,
+        ofStart === -1 ? raw.length : ofStart,
+      );
     expect(outside).not.toMatch(/[0-9]\s*-\s*[0-9]/);
   });
 
@@ -180,7 +203,10 @@ describe("comprehension-coach — Phase 1 agent + baseline", () => {
     const ofStart = raw.indexOf("## Output Format");
     const outside =
       raw.slice(0, start) +
-      raw.slice(end === -1 ? raw.length : end, ofStart === -1 ? raw.length : ofStart);
+      raw.slice(
+        end === -1 ? raw.length : end,
+        ofStart === -1 ? raw.length : ofStart,
+      );
     expect(outside).not.toMatch(/\bDCI\b/);
   });
 
@@ -280,7 +306,9 @@ describe("comprehension-coach — v0.4.0 DCI + calibration", () => {
     const raw = readFileSync(COACH_PATH, "utf-8");
     const idxChallenge = raw.indexOf("## CHALLENGE");
     const idxEvaluate = raw.indexOf("## EVALUATE");
-    const idxCalibration = raw.indexOf("Quanto pensi di aver compreso la modifica?");
+    const idxCalibration = raw.indexOf(
+      "Quanto pensi di aver compreso la modifica?",
+    );
     expect(idxCalibration).toBeGreaterThan(idxChallenge);
     expect(idxCalibration).toBeLessThan(idxEvaluate);
   });
@@ -289,18 +317,24 @@ describe("comprehension-coach — v0.4.0 DCI + calibration", () => {
     const raw = readFileSync(COACH_PATH, "utf-8");
     const idxEvaluate = raw.indexOf("## EVALUATE");
     const idxDciScoring = raw.indexOf("### DCI scoring");
-    const idxCalibration = raw.indexOf("Quanto pensi di aver compreso la modifica?");
+    const idxCalibration = raw.indexOf(
+      "Quanto pensi di aver compreso la modifica?",
+    );
     // calibration question must be before EVALUATE or after DCI scoring section ends
     // DCI scoring section starts at ### DCI scoring; it ends before ## Retry Protocol
     const idxRetryProtocol = raw.indexOf("## Retry Protocol");
-    const afterEvaluateAndBeforeDciScoring = idxCalibration > idxEvaluate && idxCalibration < idxDciScoring;
-    const afterDciScoring = idxCalibration > idxDciScoring && idxCalibration < idxRetryProtocol;
+    const afterEvaluateAndBeforeDciScoring =
+      idxCalibration > idxEvaluate && idxCalibration < idxDciScoring;
+    const afterDciScoring =
+      idxCalibration > idxDciScoring && idxCalibration < idxRetryProtocol;
     expect(afterEvaluateAndBeforeDciScoring || afterDciScoring).toBe(false);
   });
 
   test("NONE verbatim: NONE-classified sessions never reach the gate", () => {
     const raw = readFileSync(COACH_PATH, "utf-8");
-    expect(raw).toMatch(/NONE-classified sessions never reach the gate and are never asked the calibration question/);
+    expect(raw).toMatch(
+      /NONE-classified sessions never reach the gate and are never asked the calibration question/,
+    );
   });
 
   test("LIGHT mode N/A concession present in rubric", () => {

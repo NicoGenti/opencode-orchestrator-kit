@@ -9,8 +9,11 @@ const ORCHESTRATOR_PATH = join(REPO_ROOT, "agents/orchestrator.md");
 /** Returns the content of the "Configuration and precedence" subsection. */
 function extractConfigSection(raw: string): string {
   const lines = raw.split(/\r?\n/);
-  const start = lines.findIndex(l => l.trim() === "### Configuration and precedence");
-  if (start === -1) throw new Error("Configuration and precedence section not found");
+  const start = lines.findIndex(
+    (l) => l.trim() === "### Configuration and precedence",
+  );
+  if (start === -1)
+    throw new Error("Configuration and precedence section not found");
   const end = lines.findIndex((l, i) => i > start && /^## /.test(l.trim()));
   return lines.slice(start, end === -1 ? undefined : end).join("\n");
 }
@@ -22,25 +25,35 @@ interface ComprehensionConfig {
     mode?: string;
     light?: { questions?: number; modelTier?: string };
     deep?: { questions?: number; modelTier?: string; escalationTier?: string };
-    context?: { maxDiffLines?: number; unifiedContextLines?: number; maxRelatedSymbols?: number };
+    context?: {
+      maxDiffLines?: number;
+      unifiedContextLines?: number;
+      maxRelatedSymbols?: number;
+    };
     evaluation?: { maxRetries?: number; escalateOnAmbiguity?: boolean };
   };
 }
 
 function validate(cfg: unknown): { valid: boolean; errors: string[] } {
   const errors: string[] = [];
-  if (typeof cfg !== "object" || cfg === null) return { valid: false, errors: ["not an object"] };
+  if (typeof cfg !== "object" || cfg === null)
+    return { valid: false, errors: ["not an object"] };
   const c = (cfg as ComprehensionConfig).comprehension;
   if (!c) return { valid: false, errors: ["missing comprehension key"] };
 
-  if (c.enabled !== undefined && typeof c.enabled !== "boolean") errors.push("enabled must be boolean");
-  if (c.mode !== undefined && typeof c.mode !== "string") errors.push("mode must be string");
+  if (c.enabled !== undefined && typeof c.enabled !== "boolean")
+    errors.push("enabled must be boolean");
+  if (c.mode !== undefined && typeof c.mode !== "string")
+    errors.push("mode must be string");
   if (c.light) {
     if (c.light.questions !== undefined) {
       if (!Number.isInteger(c.light.questions) || c.light.questions < 0)
         errors.push("light.questions must be non-negative integer");
     }
-    if (c.light.modelTier !== undefined && typeof c.light.modelTier !== "string")
+    if (
+      c.light.modelTier !== undefined &&
+      typeof c.light.modelTier !== "string"
+    )
       errors.push("light.modelTier must be string");
   }
   if (c.deep) {
@@ -50,29 +63,47 @@ function validate(cfg: unknown): { valid: boolean; errors: string[] } {
     }
     if (c.deep.modelTier !== undefined && typeof c.deep.modelTier !== "string")
       errors.push("deep.modelTier must be string");
-    if (c.deep.escalationTier !== undefined && typeof c.deep.escalationTier !== "string")
+    if (
+      c.deep.escalationTier !== undefined &&
+      typeof c.deep.escalationTier !== "string"
+    )
       errors.push("deep.escalationTier must be string");
   }
   if (c.context) {
     if (c.context.maxDiffLines !== undefined) {
-      if (!Number.isInteger(c.context.maxDiffLines) || c.context.maxDiffLines < 0)
+      if (
+        !Number.isInteger(c.context.maxDiffLines) ||
+        c.context.maxDiffLines < 0
+      )
         errors.push("context.maxDiffLines must be non-negative integer");
     }
     if (c.context.unifiedContextLines !== undefined) {
-      if (!Number.isInteger(c.context.unifiedContextLines) || c.context.unifiedContextLines < 0)
+      if (
+        !Number.isInteger(c.context.unifiedContextLines) ||
+        c.context.unifiedContextLines < 0
+      )
         errors.push("context.unifiedContextLines must be non-negative integer");
     }
     if (c.context.maxRelatedSymbols !== undefined) {
-      if (!Number.isInteger(c.context.maxRelatedSymbols) || c.context.maxRelatedSymbols < 0)
+      if (
+        !Number.isInteger(c.context.maxRelatedSymbols) ||
+        c.context.maxRelatedSymbols < 0
+      )
         errors.push("context.maxRelatedSymbols must be non-negative integer");
     }
   }
   if (c.evaluation) {
     if (c.evaluation.maxRetries !== undefined) {
-      if (!Number.isInteger(c.Evaluation?.maxRetries) || c.evaluation.maxRetries < 0)
+      if (
+        !Number.isInteger(c.Evaluation?.maxRetries) ||
+        c.evaluation.maxRetries < 0
+      )
         errors.push("evaluation.maxRetries must be non-negative integer");
     }
-    if (c.evaluation.escalateOnAmbiguity !== undefined && typeof c.evaluation.escalateOnAmbiguity !== "boolean")
+    if (
+      c.evaluation.escalateOnAmbiguity !== undefined &&
+      typeof c.evaluation.escalateOnAmbiguity !== "boolean"
+    )
       errors.push("evaluation.escalateOnAmbiguity must be boolean");
   }
 
@@ -94,7 +125,11 @@ describe("comprehension-config — Group A: template", () => {
   test("top-level keys are comprehension + recall + research", () => {
     const raw = readFileSync(CONFIG_PATH, "utf-8");
     const parsed = JSON.parse(raw);
-    expect(Object.keys(parsed)).toEqual(["comprehension", "recall", "research"]);
+    expect(Object.keys(parsed)).toEqual([
+      "comprehension",
+      "recall",
+      "research",
+    ]);
   });
 
   test("recall.enabled is true", () => {
@@ -168,9 +203,20 @@ describe("comprehension-config — Group A: template", () => {
     const parsed = JSON.parse(raw);
     const c = parsed.comprehension;
     expect(Object.keys(c.light)).toEqual(["questions", "modelTier"]);
-    expect(Object.keys(c.deep)).toEqual(["questions", "modelTier", "escalationTier"]);
-    expect(Object.keys(c.context)).toEqual(["maxDiffLines", "unifiedContextLines", "maxRelatedSymbols"]);
-    expect(Object.keys(c.evaluation)).toEqual(["maxRetries", "escalateOnAmbiguity"]);
+    expect(Object.keys(c.deep)).toEqual([
+      "questions",
+      "modelTier",
+      "escalationTier",
+    ]);
+    expect(Object.keys(c.context)).toEqual([
+      "maxDiffLines",
+      "unifiedContextLines",
+      "maxRelatedSymbols",
+    ]);
+    expect(Object.keys(c.evaluation)).toEqual([
+      "maxRetries",
+      "escalateOnAmbiguity",
+    ]);
   });
 });
 
@@ -201,7 +247,9 @@ describe("comprehension-config — Group B: defaults table cross-check", () => {
   });
 
   test("defaults table lists deep.escalationTier TIER_REVIEW", () => {
-    expect(raw).toMatch(/\|\s*`deep\.escalationTier`\s*\|\s*`TIER_REVIEW`\s*\|/);
+    expect(raw).toMatch(
+      /\|\s*`deep\.escalationTier`\s*\|\s*`TIER_REVIEW`\s*\|/,
+    );
   });
 
   test("defaults table lists context.maxDiffLines 300", () => {
@@ -221,15 +269,18 @@ describe("comprehension-config — Group B: defaults table cross-check", () => {
   });
 
   test("defaults table lists evaluation.escalateOnAmbiguity true", () => {
-    expect(raw).toMatch(/\|\s*`evaluation\.escalateOnAmbiguity`\s*\|\s*`true`\s*\|/);
+    expect(raw).toMatch(
+      /\|\s*`evaluation\.escalateOnAmbiguity`\s*\|\s*`true`\s*\|/,
+    );
   });
 
   test("orchestrator keeps the tier-token prohibition line (Group D fixture)", () => {
     const orch = readFileSync(ORCHESTRATOR_PATH, "utf-8");
     const tier = ["TIER", "COMPREHENSION"].join("_");
     expect(orch).toContain(
-      "No new tier token is introduced (no `" + tier +
-      "`); tier resolution stays on the existing `TIER_FAST` / `TIER_REVIEW` mapping via the preset resolver."
+      "No new tier token is introduced (no `" +
+        tier +
+        "`); tier resolution stays on the existing `TIER_FAST` / `TIER_REVIEW` mapping via the preset resolver.",
     );
   });
 });
@@ -239,21 +290,44 @@ describe("comprehension-config — Group B: defaults table cross-check", () => {
 describe("comprehension-config — Group C: negative validation", () => {
   test("missing context.maxDiffLines is invalid", () => {
     const base = JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
-    const mutated = { comprehension: { ...base.comprehension, context: { unifiedContextLines: 3, maxRelatedSymbols: 3 } } };
+    const mutated = {
+      comprehension: {
+        ...base.comprehension,
+        context: { unifiedContextLines: 3, maxRelatedSymbols: 3 },
+      },
+    };
     const result = validate(mutated);
     expect(result.valid).toBe(false);
   });
 
   test("negative questions is invalid", () => {
     const base = JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
-    const mutated = { comprehension: { ...base.comprehension, deep: { questions: -5, modelTier: "TIER_FAST", escalationTier: "TIER_REVIEW" } } };
+    const mutated = {
+      comprehension: {
+        ...base.comprehension,
+        deep: {
+          questions: -5,
+          modelTier: "TIER_FAST",
+          escalationTier: "TIER_REVIEW",
+        },
+      },
+    };
     const result = validate(mutated);
     expect(result.valid).toBe(false);
   });
 
   test("negative context.maxDiffLines is invalid", () => {
     const base = JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
-    const mutated = { comprehension: { ...base.comprehension, context: { maxDiffLines: -1, unifiedContextLines: 3, maxRelatedSymbols: 3 } } };
+    const mutated = {
+      comprehension: {
+        ...base.comprehension,
+        context: {
+          maxDiffLines: -1,
+          unifiedContextLines: 3,
+          maxRelatedSymbols: 3,
+        },
+      },
+    };
     const result = validate(mutated);
     expect(result.valid).toBe(false);
   });
@@ -285,7 +359,7 @@ function sweepFiles(dir: string, rel = ""): string[] {
       if (SWEEP_SKIP_DIRS.has(entry.name)) continue;
       out.push(...sweepFiles(join(dir, entry.name), relPath));
     } else if (entry.isFile()) {
-      if (!SWEEP_EXTENSIONS.some(ext => entry.name.endsWith(ext))) continue;
+      if (!SWEEP_EXTENSIONS.some((ext) => entry.name.endsWith(ext))) continue;
       out.push(relPath);
     }
   }
@@ -296,7 +370,9 @@ function sweepFiles(dir: string, rel = ""): string[] {
 function sweepHits(tier: string): string[] {
   const hits: string[] = [];
   for (const relPath of sweepFiles(REPO_ROOT)) {
-    const lines = readFileSync(join(REPO_ROOT, relPath), "utf-8").split(/\r?\n/);
+    const lines = readFileSync(join(REPO_ROOT, relPath), "utf-8").split(
+      /\r?\n/,
+    );
     for (let i = 0; i < lines.length; i += 1) {
       if (lines[i].includes(tier)) hits.push(`${relPath}:${i + 1}:${lines[i]}`);
     }
@@ -308,7 +384,8 @@ describe("comprehension-config — Group D: unknown-tier sweep", () => {
   test("no unknown comprehension tier token appears in shipped files", () => {
     const tier = ["TIER", "COMPREHENSION"].join("_");
     const prohibitionLine =
-      "No new tier token is introduced (no `" + tier +
+      "No new tier token is introduced (no `" +
+      tier +
       "`); tier resolution stays on the existing `TIER_FAST` / `TIER_REVIEW` mapping via the preset resolver.";
     const hits = sweepHits(tier);
 
@@ -316,18 +393,20 @@ describe("comprehension-config — Group D: unknown-tier sweep", () => {
     // in the canonical agent. This keeps the guard strict now that `.context/`
     // prose is allowed below.
     const prohibitionHits = hits.filter(
-      h => h.startsWith("agents/orchestrator.md:") && h.endsWith(prohibitionLine)
+      (h) =>
+        h.startsWith("agents/orchestrator.md:") && h.endsWith(prohibitionLine),
     );
     expect(prohibitionHits.length).toBe(1);
 
-    const allowed = hits.filter(h => {
+    const allowed = hits.filter((h) => {
       if (h.startsWith("plan/")) return true; // git-local plan prose, never shipped
       if (h.startsWith(".context/")) return true; // tracked session memory, never installed
       const m = h.match(/^([^:]+):(\d+):(.*)$/);
       // The plugin ships a byte-identical copy of the agents (Phase 2 of
       // issue #13); it may only carry the same sanctioned prohibition line.
-      const sanctioned = (m?.[1] === "agents/orchestrator.md" ||
-        m?.[1] === "plugin/assets/agents/orchestrator.md") &&
+      const sanctioned =
+        (m?.[1] === "agents/orchestrator.md" ||
+          m?.[1] === "plugin/assets/agents/orchestrator.md") &&
         m?.[3] === prohibitionLine;
       return !!m && sanctioned;
     });
@@ -338,8 +417,14 @@ describe("comprehension-config — Group D: unknown-tier sweep", () => {
 // ── Group E: slicing & asymmetric evaluation ──────────────────────────────────
 
 describe("comprehension-config — Group E: slicing & asymmetric evaluation", () => {
-  const orchestratorContent = readFileSync(join(REPO_ROOT, "agents/orchestrator.md"), "utf-8");
-  const coachContent = readFileSync(join(REPO_ROOT, "agents/comprehension-coach.md"), "utf-8");
+  const orchestratorContent = readFileSync(
+    join(REPO_ROOT, "agents/orchestrator.md"),
+    "utf-8",
+  );
+  const coachContent = readFileSync(
+    join(REPO_ROOT, "agents/comprehension-coach.md"),
+    "utf-8",
+  );
 
   test("orchestrator.md contains the slicing pipeline wording", () => {
     expect(orchestratorContent).toContain("git diff");
@@ -349,7 +434,9 @@ describe("comprehension-config — Group E: slicing & asymmetric evaluation", ()
   });
 
   test("orchestrator.md contains the hotspot cap (maxDiffLines / focused lines)", () => {
-    expect(orchestratorContent).toMatch(/maxDiffLines.*focused lines|focused lines.*maxDiffLines/);
+    expect(orchestratorContent).toMatch(
+      /maxDiffLines.*focused lines|focused lines.*maxDiffLines/,
+    );
     expect(orchestratorContent).toContain("≤ `maxDiffLines`");
   });
 
@@ -372,36 +459,53 @@ describe("comprehension-config — Group E: slicing & asymmetric evaluation", ()
   });
 
   test("comprehension-coach.md contains the whole-file re-read prohibition in EVALUATE", () => {
-    expect(coachContent).toMatch(/whole.file re.read.*EVALUATE|EVALUATE.*whole.file re.read/i);
+    expect(coachContent).toMatch(
+      /whole.file re.read.*EVALUATE|EVALUATE.*whole.file re.read/i,
+    );
   });
 
   test("comprehension-coach.md describes that CHALLENGE context may extend to the slice", () => {
-    expect(coachContent).toContain("CHALLENGE context may extend up to the slice");
+    expect(coachContent).toContain(
+      "CHALLENGE context may extend up to the slice",
+    );
     expect(coachContent).toContain("Slicer");
   });
 });
 
-
 // ── Group F: escalation routing & docs ──────────────────────────────────────
 
 describe("comprehension-config — Group F: escalation routing & docs", () => {
-  const orchestratorContent = readFileSync(join(REPO_ROOT, "agents/orchestrator.md"), "utf-8");
-  const configDocContent = readFileSync(join(REPO_ROOT, "docs/CONFIGURATION.md"), "utf-8");
+  const orchestratorContent = readFileSync(
+    join(REPO_ROOT, "agents/orchestrator.md"),
+    "utf-8",
+  );
+  const configDocContent = readFileSync(
+    join(REPO_ROOT, "docs/CONFIGURATION.md"),
+    "utf-8",
+  );
 
   test("orchestrator.md contains single escalation wording (never chained, never on PASS)", () => {
-    expect(orchestratorContent).toContain("exactly ONE escalation per task evaluation");
+    expect(orchestratorContent).toContain(
+      "exactly ONE escalation per task evaluation",
+    );
     expect(orchestratorContent).toMatch(/never \w+ on a verdict of PASS/i);
   });
 
   test("orchestrator.md contains all three escalation trigger conditions", () => {
     expect(orchestratorContent).toContain("the evaluation result is ambiguous");
     expect(orchestratorContent).toContain("security-critical");
-    expect(orchestratorContent).toContain("architectural decision cannot be confidently judged");
+    expect(orchestratorContent).toContain(
+      "architectural decision cannot be confidently judged",
+    );
   });
 
   test("orchestrator.md contains tier-not-name mapping rule", () => {
-    expect(orchestratorContent).toContain("follows the tier, not the fixed name");
-    expect(orchestratorContent).toMatch(/code-reviewer.*TIER_REVIEW|TIER_REVIEW.*code-reviewer/);
+    expect(orchestratorContent).toContain(
+      "follows the tier, not the fixed name",
+    );
+    expect(orchestratorContent).toMatch(
+      /code-reviewer.*TIER_REVIEW|TIER_REVIEW.*code-reviewer/,
+    );
   });
 
   test("orchestrator.md contains final verdict wording (no second evaluation, no second retry)", () => {
@@ -416,11 +520,15 @@ describe("comprehension-config — Group F: escalation routing & docs", () => {
   test("docs/CONFIGURATION.md contains the default limits table", () => {
     expect(configDocContent).toMatch(/\|\s*`enabled`\s*\|\s*`true`\s*\|/);
     expect(configDocContent).toMatch(/\|\s*`light\.questions`\s*\|\s*`2`\s*\|/);
-    expect(configDocContent).toMatch(/\|\s*`deep\.escalationTier`\s*\|\s*`TIER_REVIEW`\s*\|/);
+    expect(configDocContent).toMatch(
+      /\|\s*`deep\.escalationTier`\s*\|\s*`TIER_REVIEW`\s*\|/,
+    );
   });
 
   test("docs/CONFIGURATION.md states install.sh seeds the config", () => {
     expect(configDocContent).toMatch(/install\.sh.*seed/i);
-    expect(configDocContent).toMatch(/cp templates\/comprehension\.config\.json/);
+    expect(configDocContent).toMatch(
+      /cp templates\/comprehension\.config\.json/,
+    );
   });
 });

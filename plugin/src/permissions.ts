@@ -44,7 +44,9 @@ export function normalizeResource(resource: string): string {
 }
 
 function isEffect(value: unknown): value is PermissionEffect {
-  return typeof value === "string" && (EFFECTS as readonly string[]).includes(value);
+  return (
+    typeof value === "string" && (EFFECTS as readonly string[]).includes(value)
+  );
 }
 
 /** deny > ask > allow — merged catch-alls fold to the most restrictive one. */
@@ -98,7 +100,9 @@ export function toV2Permissions(
     const action = mapAction(key);
     if (action === "*") {
       if (!isEffect(value)) {
-        throw new Error(`permission."*" must be allow|ask|deny (got ${JSON.stringify(value)})`);
+        throw new Error(
+          `permission."*" must be allow|ask|deny (got ${JSON.stringify(value)})`,
+        );
       }
       globalFallback = value;
       continue;
@@ -106,7 +110,9 @@ export function toV2Permissions(
     const bucket = bucketFor(action);
     if (typeof value !== "object") {
       if (!isEffect(value)) {
-        throw new Error(`permission.${key} must be allow|ask|deny (got ${JSON.stringify(value)})`);
+        throw new Error(
+          `permission.${key} must be allow|ask|deny (got ${JSON.stringify(value)})`,
+        );
       }
       bucket.catchAlls.push(value);
       continue;
@@ -120,7 +126,11 @@ export function toV2Permissions(
       if (rawResource === "*") {
         bucket.catchAlls.push(effect);
       } else {
-        bucket.exceptions.push({ action, resource: normalizeResource(rawResource), effect });
+        bucket.exceptions.push({
+          action,
+          resource: normalizeResource(rawResource),
+          effect,
+        });
       }
     }
   }
@@ -132,7 +142,11 @@ export function toV2Permissions(
     const bucket = buckets.get(action);
     if (!bucket) continue;
     if (bucket.catchAlls.length > 0) {
-      rules.push({ action, resource: "*", effect: strongest(bucket.catchAlls) });
+      rules.push({
+        action,
+        resource: "*",
+        effect: strongest(bucket.catchAlls),
+      });
     }
     rules.push(...bucket.exceptions);
   }
@@ -192,7 +206,10 @@ export function resolveEffect(
 ): PermissionEffect {
   let effect: PermissionEffect = "allow";
   for (const rule of rules) {
-    if (matchesPattern(rule.action, action) && matchesPattern(rule.resource, resource)) {
+    if (
+      matchesPattern(rule.action, action) &&
+      matchesPattern(rule.resource, resource)
+    ) {
       effect = rule.effect;
     }
   }
@@ -217,7 +234,10 @@ const IMPLEMENTOR = "developer-fixer";
  * rule matches every action; a later action-specific `resource: "*"` rule
  * overrides it, because resolution is last-match-wins.
  */
-function lastCatchAll(rules: PermissionRule[], action: string): PermissionRule | undefined {
+function lastCatchAll(
+  rules: PermissionRule[],
+  action: string,
+): PermissionRule | undefined {
   let found: PermissionRule | undefined;
   for (const rule of rules) {
     if (rule.resource !== "*") continue;
@@ -238,7 +258,10 @@ function invariantError(agentId: string, detail: string): Error {
  * is the same hole. The orchestrator is the only agent whose subagent catch-all
  * may be `allow`, because it is the router.
  */
-function assertDeclaredCatchAlls(agentId: string, rules: PermissionRule[]): void {
+function assertDeclaredCatchAlls(
+  agentId: string,
+  rules: PermissionRule[],
+): void {
   for (const action of CATCH_ALL_ACTIONS) {
     const catchAll = lastCatchAll(rules, action);
     if (!catchAll) {
@@ -264,9 +287,16 @@ function assertDeclaredCatchAlls(agentId: string, rules: PermissionRule[]): void
  * default for shell, skill, or subagent, or that lets a non-router spawn
  * `developer-fixer` (which would bypass a read-only permission surface).
  */
-export function assertKitPermissionInvariants(agentId: string, rules: PermissionRule[]): void {
+export function assertKitPermissionInvariants(
+  agentId: string,
+  rules: PermissionRule[],
+): void {
   assertDeclaredCatchAlls(agentId, rules);
-  const expectations: Array<{ action: string; resource: string; effect: PermissionEffect }> = [
+  const expectations: Array<{
+    action: string;
+    resource: string;
+    effect: PermissionEffect;
+  }> = [
     {
       action: "edit",
       resource: BOARD_SAMPLE,
@@ -282,7 +312,11 @@ export function assertKitPermissionInvariants(agentId: string, rules: Permission
     expectations.push({ action: "edit", resource: APP_SAMPLE, effect: "deny" });
   }
   for (const expectation of expectations) {
-    const actual = resolveEffect(rules, expectation.action, expectation.resource);
+    const actual = resolveEffect(
+      rules,
+      expectation.action,
+      expectation.resource,
+    );
     if (actual !== expectation.effect) {
       throw invariantError(
         agentId,

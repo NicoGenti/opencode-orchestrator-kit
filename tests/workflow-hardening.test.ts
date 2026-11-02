@@ -25,11 +25,23 @@ import {
 
 const REPO_ROOT = join(import.meta.dir, "..");
 const ORCH = readFileSync(join(REPO_ROOT, "agents/orchestrator.md"), "utf-8");
-const COACH = readFileSync(join(REPO_ROOT, "agents/comprehension-coach.md"), "utf-8");
-const SKILL = readFileSync(join(REPO_ROOT, "skills/comprehension-workflow/SKILL.md"), "utf-8");
+const COACH = readFileSync(
+  join(REPO_ROOT, "agents/comprehension-coach.md"),
+  "utf-8",
+);
+const SKILL = readFileSync(
+  join(REPO_ROOT, "skills/comprehension-workflow/SKILL.md"),
+  "utf-8",
+);
 const RECALL = readFileSync(join(REPO_ROOT, "command/recall.md"), "utf-8");
-const RESEARCH = readFileSync(join(REPO_ROOT, "command/research-mode.md"), "utf-8");
-const START = readFileSync(join(REPO_ROOT, "command/start-session.md"), "utf-8");
+const RESEARCH = readFileSync(
+  join(REPO_ROOT, "command/research-mode.md"),
+  "utf-8",
+);
+const START = readFileSync(
+  join(REPO_ROOT, "command/start-session.md"),
+  "utf-8",
+);
 
 describe("workflow-hardening — W1 prompt budget (v0.6.1)", () => {
   test("agents/orchestrator.md stays within the 24,000-char prompt budget (v0.6.4)", () => {
@@ -38,7 +50,9 @@ describe("workflow-hardening — W1 prompt budget (v0.6.1)", () => {
 
   test("orchestrator keeps routing + classification, delegates operational details", () => {
     // Routing/classification core stays (philosophy unchanged)
-    expect(ORCH).toContain("### Classification (performed by the orchestrator — no coach call)");
+    expect(ORCH).toContain(
+      "### Classification (performed by the orchestrator — no coach call)",
+    );
     expect(ORCH).toContain("### Delegation format (LIGHT / DEEP only)");
     expect(ORCH).toContain("### Escalation routing");
     // Operational details live in the on-demand skill
@@ -50,12 +64,16 @@ describe("workflow-hardening — W1 prompt budget (v0.6.1)", () => {
 describe("workflow-hardening — W2 on-demand loading", () => {
   test("orchestrator skill permission allows exactly comprehension-workflow + web-* (web-kit)", () => {
     const fm = ORCH.slice(0, ORCH.indexOf("\n---", 4));
-    expect(fm).toContain('"skill":{"*":"deny","comprehension-workflow":"allow","web-*":"allow"}}');
+    expect(fm).toContain(
+      '"skill":{"*":"deny","comprehension-workflow":"allow","web-*":"allow"}}',
+    );
     expect(fm).not.toContain("conductor");
   });
 
   test("orchestrator points LIGHT/DEEP + /recall to the skill, /recall details to the command file", () => {
-    expect(ORCH).toMatch(/load it when running a LIGHT\/DEEP gate or `\/recall`/);
+    expect(ORCH).toMatch(
+      /load it when running a LIGHT\/DEEP gate or `\/recall`/,
+    );
     expect(ORCH).toMatch(/canonical in `command\/recall\.md`/);
     expect(SKILL).toContain("## Manual /recall");
   });
@@ -87,7 +105,9 @@ describe("workflow-hardening — W3 coach contract (v0.6.1)", () => {
     expect(COACH).toContain("evaluator_confidence: <1-5>");
     expect(COACH).toMatch(/No additional commentary required/);
     // user_confidence never rated by the coach
-    expect(COACH).toMatch(/Not the coach to rate|not the coach's to rate|is the orchestrator's to record/i);
+    expect(COACH).toMatch(
+      /Not the coach to rate|not the coach's to rate|is the orchestrator's to record/i,
+    );
   });
 });
 
@@ -109,14 +129,19 @@ describe("workflow-hardening — W4 DCI contract (v0.6.1)", () => {
       ["recall", RECALL],
       ["research", RESEARCH],
     ] as const) {
-      expect(doc, `${name} must not contain DCI=<x>/5-style examples`).not.toMatch(/DCI=\d\/5/);
+      expect(
+        doc,
+        `${name} must not contain DCI=<x>/5-style examples`,
+      ).not.toMatch(/DCI=\d\/5/);
     }
   });
 });
 
 describe("workflow-hardening — W5 recall budget (v0.6.1)", () => {
   test("pre-answer: plan + saved questions only; post-answer: capped plan-scoped reads", () => {
-    expect(ORCH).toMatch(/before the user answers, only the plan document \+ the selected record are consulted/i);
+    expect(ORCH).toMatch(
+      /before the user answers, only the plan document \+ the selected record are consulted/i,
+    );
     expect(ORCH).toContain("maxDiffLines=300");
     expect(ORCH).toContain("maxRelatedSymbols=3");
     expect(RECALL).toMatch(/maxDiffLines=300/);
@@ -126,28 +151,40 @@ describe("workflow-hardening — W5 recall budget (v0.6.1)", () => {
   test("no whole-repo scans, no unnecessary whole-file reads", () => {
     expect(ORCH).toContain("never whole-repo scans");
     expect(RECALL).toContain("NEVER repo-wide scans");
-    expect(RECALL).toMatch(/never a whole-file read when a bounded slice suffices/);
+    expect(RECALL).toMatch(
+      /never a whole-file read when a bounded slice suffices/,
+    );
   });
 
   test("retrieval-before-explanation invariant intact", () => {
-    expect(RECALL).toContain("ALL questions are shown BEFORE any code or explanation");
+    expect(RECALL).toContain(
+      "ALL questions are shown BEFORE any code or explanation",
+    );
   });
 });
 
 describe("workflow-hardening — W6 token efficiency (v0.6.1)", () => {
   test("NONE = 0 coach calls (orchestrator classification table)", () => {
-    expect(ORCH).toMatch(/\|\s*\*\*NONE\*\*\s*\|[^\n]*\|\s*0 — skip coach entirely\s*\|/);
+    expect(ORCH).toMatch(
+      /\|\s*\*\*NONE\*\*\s*\|[^\n]*\|\s*0 — skip coach entirely\s*\|/,
+    );
   });
 
   test("LIGHT <= 2 questions, DEEP <= 4 questions", () => {
-    expect(ORCH).toMatch(/\|\s*\*\*LIGHT\*\*\s*\|[^\n]*\|\s*max 2 questions\s*\|/);
-    expect(ORCH).toMatch(/\|\s*\*\*DEEP\*\*\s*\|[^\n]*\|\s*max 4 questions\s*\|/);
+    expect(ORCH).toMatch(
+      /\|\s*\*\*LIGHT\*\*\s*\|[^\n]*\|\s*max 2 questions\s*\|/,
+    );
+    expect(ORCH).toMatch(
+      /\|\s*\*\*DEEP\*\*\s*\|[^\n]*\|\s*max 4 questions\s*\|/,
+    );
   });
 
   test("default tier TIER_FAST for gate work; TIER_REVIEW only for escalation", () => {
     expect(ORCH).toContain("TIER_FAST");
     expect(SKILL).toMatch(/deep\.escalationTier.*TIER_REVIEW/);
-    expect(ORCH).toMatch(/only when the evaluation result is ambiguous|ONLY when one of these three conditions holds/);
+    expect(ORCH).toMatch(
+      /only when the evaluation result is ambiguous|ONLY when one of these three conditions holds/,
+    );
     expect(ORCH).toMatch(/the reasoning involves security-critical/);
     expect(ORCH).toMatch(/architectural decision cannot be confidently judged/);
   });
@@ -167,7 +204,9 @@ describe("workflow-hardening — W6 token efficiency (v0.6.1)", () => {
 
 describe("workflow-hardening — W7 privacy & isolation (regression)", () => {
   test("telemetry rows carry no user answers and no source-code content", () => {
-    expect(SKILL).toMatch(/MUST NOT include any user answer text|no user answers|privacy/i);
+    expect(SKILL).toMatch(
+      /MUST NOT include any user answer text|no user answers|privacy/i,
+    );
     expect(ORCH).toMatch(/No user answers, no source code/);
   });
 
@@ -179,7 +218,8 @@ describe("workflow-hardening — W7 privacy & isolation (regression)", () => {
   });
 
   test("research dataset privacy invariant verbatim", () => {
-    const INVARIANT = "No source code and no personal answers are ever written to the dataset.";
+    const INVARIANT =
+      "No source code and no personal answers are ever written to the dataset.";
     expect(RESEARCH).toContain(INVARIANT);
     expect(ORCH).toContain(INVARIANT);
   });
@@ -218,9 +258,15 @@ describe("workflow-hardening — W8 P0 frontend permissions (v0.6.2)", () => {
 
 describe("workflow-hardening — W9 hard boundary (v0.6.2)", () => {
   test("both sinks are append-only; reads are lifecycle-scoped", () => {
-    expect(ORCH).toMatch(/\*\*Hard boundary\*\*: both sinks \(this log, `\.context\/research-dataset\.jsonl`\) are append-only/);
-    expect(ORCH).toMatch(/Sanctioned writes: session memory; plan metadata; comprehension records; comprehension telemetry; research telemetry/);
-    expect(ORCH).toMatch(/Direct writes are limited to sanctioned categories only/);
+    expect(ORCH).toMatch(
+      /\*\*Hard boundary\*\*: both sinks \(this log, `\.context\/research-dataset\.jsonl`\) are append-only/,
+    );
+    expect(ORCH).toMatch(
+      /Sanctioned writes: session memory; plan metadata; comprehension records; comprehension telemetry; research telemetry/,
+    );
+    expect(ORCH).toMatch(
+      /Direct writes are limited to sanctioned categories only/,
+    );
     expect(RESEARCH).toMatch(/no intermediate or diagnostic rows/);
     expect(RESEARCH).toMatch(/exactly one JSON object as one line/);
   });
@@ -233,7 +279,9 @@ describe("workflow-hardening — W9 hard boundary (v0.6.2)", () => {
 
 describe("workflow-hardening — W10 coach atomic output includes DCI (v0.6.2)", () => {
   test("Output Format block contains all four lines including DCI", () => {
-    const out = COACH.slice(COACH.indexOf("After EVALUATE, emit exactly this block"));
+    const out = COACH.slice(
+      COACH.indexOf("After EVALUATE, emit exactly this block"),
+    );
     const closing = out.indexOf("```", out.indexOf("```") + 3);
     const block = out.slice(0, closing);
     expect(block).toContain("Comprehension: <PASS | RETRY | FAIL | SKIPPED>");
@@ -246,23 +294,30 @@ describe("workflow-hardening — W10 coach atomic output includes DCI (v0.6.2)",
   });
 
   test("coach file keeps a single Output block (no second DCI-bearing block elsewhere)", () => {
-    const fenceCount = COACH.split("```")
-      .filter((b) => b.includes("Comprehension: <PASS | RETRY | FAIL | SKIPPED>")).length;
+    const fenceCount = COACH.split("```").filter((b) =>
+      b.includes("Comprehension: <PASS | RETRY | FAIL | SKIPPED>"),
+    ).length;
     expect(fenceCount).toBe(1);
   });
 });
 
 describe("workflow-hardening — W11 /recall whitelist (v0.6.2)", () => {
   test("whitelist covers plan + selected per-evaluation record + bounded inspection", () => {
-    expect(RECALL).toMatch(/ONLY the plan document in `plan\/complete\/`, the per-evaluation record in `\.context\/comprehension\/<evaluation-id>\.md`, and the bounded post-answer inspection/);
+    expect(RECALL).toMatch(
+      /ONLY the plan document in `plan\/complete\/`, the per-evaluation record in `\.context\/comprehension\/<evaluation-id>\.md`, and the bounded post-answer inspection/,
+    );
     expect(RECALL).toMatch(/maxDiffLines=300/);
     expect(RECALL).toContain("maxRelatedSymbols=3");
   });
 
   test("recall steps state the whitelist and the immutable-baseline record update (appends only)", () => {
     expect(RECALL).toMatch(/only through step 5's whitelist/);
-    expect(RECALL).not.toMatch(/update the selected record's `outcome`, `dci` and `user_conf` fields/);
-    expect(RECALL).toMatch(/dci_immediate, user_confidence_immediate, outcome_immediate/);
+    expect(RECALL).not.toMatch(
+      /update the selected record's `outcome`, `dci` and `user_conf` fields/,
+    );
+    expect(RECALL).toMatch(
+      /dci_immediate, user_confidence_immediate, outcome_immediate/,
+    );
     expect(RECALL).toMatch(/every recall is a NEW line/);
   });
 });
@@ -292,18 +347,19 @@ describe("workflow-hardening — W13 research tuple DCI0 baseline (v0.6.2)", () 
 
 describe("workflow-hardening — W14 behavioral A/B flow (v0.6.2)", () => {
   test("research command carries a TDD behavioral flow with a simulated turn transcript", () => {
-      const flow = RESEARCH.slice(RESEARCH.indexOf("Behavioral A/B flow (normative example)"));
-      const simUser = (flow.match(/SIM-U:/g) || []).length;
-      const simCoach = (flow.match(/SIM-C:/g) || []).length;
-      expect(RESEARCH).toContain("Behavioral A/B flow (normative example)");
-      expect(simUser).toBe(1);   // the only calibration turn is slot B's — slot A (control) has no gate
-      expect(simCoach).toBe(2);  // coach verdict blocks for both slots
-    });
-
+    const flow = RESEARCH.slice(
+      RESEARCH.indexOf("Behavioral A/B flow (normative example)"),
+    );
+    const simUser = (flow.match(/SIM-U:/g) || []).length;
+    const simCoach = (flow.match(/SIM-C:/g) || []).length;
+    expect(RESEARCH).toContain("Behavioral A/B flow (normative example)");
+    expect(simUser).toBe(1); // the only calibration turn is slot B's — slot A (control) has no gate
+    expect(simCoach).toBe(2); // coach verdict blocks for both slots
+  });
 
   test("flow shows a real pass and a real fail of the comprehension gate", () => {
     // gate outcomes read from parsed example tuples and normalized coach verdicts
-    expect(TASK_EXAMPLES[0].gate_type).toBe("n/a");   // slot A control: no gate
+    expect(TASK_EXAMPLES[0].gate_type).toBe("n/a"); // slot A control: no gate
     expect(TASK_EXAMPLES[1].gate_type).toBe("LIGHT"); // slot B
     expect(TASK_EXAMPLES[1].retries).toBe(1);
     expect((RESEARCH.match(/Comprehension: PASS/g) || []).length).toBe(1);
@@ -338,4 +394,3 @@ describe("workflow-hardening — v0.6.7 flat record paths + helper declaration",
     expect(RESEARCH).toMatch(/record-id\.ts/);
   });
 });
-

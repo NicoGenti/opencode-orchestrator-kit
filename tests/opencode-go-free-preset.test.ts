@@ -11,7 +11,13 @@ describe("templates/models.config.json — preset opencode-go-free", () => {
     const cfg = JSON.parse(readFileSync(TPL, "utf-8"));
     const p = cfg.presets["opencode-go-free"];
     expect(p).toBeDefined();
-    for (const t of ["TIER_ROUTER", "TIER_REASONING", "TIER_CODE", "TIER_FAST", "TIER_REVIEW"]) {
+    for (const t of [
+      "TIER_ROUTER",
+      "TIER_REASONING",
+      "TIER_CODE",
+      "TIER_FAST",
+      "TIER_REVIEW",
+    ]) {
       expect(p.models[t]).toMatch(/^opencode-go\/.+?-free$/);
     }
   });
@@ -27,8 +33,18 @@ describe("templates/models.config.json — preset opencode-go-free", () => {
   });
 
   test("validate-models.sh accetta opencode-go-free", () => {
-    const r = spawnSync("bash", [join(REPO, "scripts", "validate-models.sh"),
-      "--config", TPL, "--preset", "opencode-go-free", "--skip-agents"], { encoding: "utf-8" });
+    const r = spawnSync(
+      "bash",
+      [
+        join(REPO, "scripts", "validate-models.sh"),
+        "--config",
+        TPL,
+        "--preset",
+        "opencode-go-free",
+        "--skip-agents",
+      ],
+      { encoding: "utf-8" },
+    );
     const out = r.stdout.replace(/[\r']/g, "");
     expect(out).toContain("OK: preset opencode-go-free passed all checks.");
     expect(r.status).toBe(0);

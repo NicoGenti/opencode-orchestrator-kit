@@ -1,12 +1,25 @@
 import { describe, expect, test, beforeAll, afterAll } from "bun:test";
-import { existsSync, readFileSync, mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
+import {
+  existsSync,
+  readFileSync,
+  mkdtempSync,
+  mkdirSync,
+  writeFileSync,
+  rmSync,
+} from "node:fs";
 import { join, resolve } from "node:path";
 import { tmpdir } from "node:os";
 
 // Import the function directly rather than spawning the script
-const { extractStablePrefix, assemblePrompt } = await import("../scripts/assemble-prompt.ts");
+const { extractStablePrefix, assemblePrompt } = await import(
+  "../scripts/assemble-prompt.ts"
+);
 
-const BASELINE_FILE = resolve(import.meta.dir, "fixtures", "prompt-prefix-boundary.txt");
+const BASELINE_FILE = resolve(
+  import.meta.dir,
+  "fixtures",
+  "prompt-prefix-boundary.txt",
+);
 
 function loadBaseline(): string[] {
   return readFileSync(BASELINE_FILE, "utf8")
@@ -17,7 +30,12 @@ function loadBaseline(): string[] {
 
 describe("assemble-prompt.ts — stable prefix extraction", () => {
   test("script exists and is executable", () => {
-    const SCRIPT_PATH = resolve(import.meta.dir, "..", "scripts", "assemble-prompt.ts");
+    const SCRIPT_PATH = resolve(
+      import.meta.dir,
+      "..",
+      "scripts",
+      "assemble-prompt.ts",
+    );
     expect(existsSync(SCRIPT_PATH)).toBe(true);
   });
 
@@ -42,7 +60,10 @@ describe("assemble-prompt.ts — stable prefix extraction", () => {
     const result = await extractStablePrefix();
     const extrasEntries = result.filter((p) => p.startsWith("extras/"));
     if (extrasEntries.length > 0) {
-      const lastAgentsIdx = result.reduce((last, p, i) => (p.startsWith("agents/") ? i : last), -1);
+      const lastAgentsIdx = result.reduce(
+        (last, p, i) => (p.startsWith("agents/") ? i : last),
+        -1,
+      );
       const firstExtrasIdx = result.indexOf(extrasEntries[0]);
       expect(lastAgentsIdx).toBeLessThan(firstExtrasIdx);
     }
@@ -95,17 +116,20 @@ describe("assemble-prompt.ts — model-preset resolution", () => {
     tempDir = mkdtempSync(join(tmpdir(), "assemble-prompt-model-test-"));
     configPath = join(tempDir, ".opencode", "models.config.json");
     mkdirSync(join(tempDir, ".opencode"), { recursive: true });
-    writeFileSync(configPath, JSON.stringify({
-      "presets": {
-        "test-preset": {
-          "models": {
-            "TIER_REASONING": "test/reasoning-model",
-            "TIER_CODE": "test/code-model",
-            "TIER_FAST": "test/fast-model"
-          }
-        }
-      }
-    }));
+    writeFileSync(
+      configPath,
+      JSON.stringify({
+        presets: {
+          "test-preset": {
+            models: {
+              TIER_REASONING: "test/reasoning-model",
+              TIER_CODE: "test/code-model",
+              TIER_FAST: "test/fast-model",
+            },
+          },
+        },
+      }),
+    );
 
     // Create AGENTS.md (required for extractStablePrefix)
     writeFileSync(join(tempDir, "AGENTS.md"), "# Test\n");
@@ -125,7 +149,7 @@ describe("assemble-prompt.ts — model-preset resolution", () => {
   test("assemblePrompt resolves model-preset tokens", async () => {
     const result = await assemblePrompt(tempDir, {
       modelConfigPath: configPath,
-      preset: "test-preset"
+      preset: "test-preset",
     });
     expect(result.modelConfig).toBeDefined();
     expect(result.modelConfig!.preset).toBe("test-preset");
@@ -133,7 +157,7 @@ describe("assemble-prompt.ts — model-preset resolution", () => {
 
   test("assemblePrompt handles missing model config gracefully", async () => {
     const result = await assemblePrompt(tempDir, {
-      modelConfigPath: join(tempDir, "nonexistent.json")
+      modelConfigPath: join(tempDir, "nonexistent.json"),
     });
     expect(result.modelConfig).toBeNull();
   });
@@ -146,47 +170,55 @@ describe("assemble-prompt.ts — model-preset resolution", () => {
     writeFileSync(join(testDir, "agents", "a.md"), "# A\n");
 
     const testConfigPath = join(testDir, "models.config.json");
-    writeFileSync(testConfigPath, JSON.stringify({
-      "presets": {
-        "preset-a": {
-          "models": {
-            "TIER_REASONING": "a/reasoning",
-            "TIER_CODE": "a/code",
-            "TIER_FAST": "a/fast"
-          }
-        }
-      }
-    }));
+    writeFileSync(
+      testConfigPath,
+      JSON.stringify({
+        presets: {
+          "preset-a": {
+            models: {
+              TIER_REASONING: "a/reasoning",
+              TIER_CODE: "a/code",
+              TIER_FAST: "a/fast",
+            },
+          },
+        },
+      }),
+    );
 
     try {
       // First run with cache
       const firstResult = await assemblePrompt(testDir, {
         modelConfigPath: testConfigPath,
-        preset: "preset-a"
+        preset: "preset-a",
       });
 
       // Change the model config
-      writeFileSync(testConfigPath, JSON.stringify({
-        "presets": {
-          "preset-b": {
-            "models": {
-              "TIER_REASONING": "b/reasoning",
-              "TIER_CODE": "b/code",
-              "TIER_FAST": "b/fast"
-            }
-          }
-        }
-      }));
+      writeFileSync(
+        testConfigPath,
+        JSON.stringify({
+          presets: {
+            "preset-b": {
+              models: {
+                TIER_REASONING: "b/reasoning",
+                TIER_CODE: "b/code",
+                TIER_FAST: "b/fast",
+              },
+            },
+          },
+        }),
+      );
 
       // Second run should miss cache due to changed config
       const secondResult = await assemblePrompt(testDir, {
         modelConfigPath: testConfigPath,
-        preset: "preset-b"
+        preset: "preset-b",
       });
 
       // The stable prefix should be the same, but the model config should be different
       expect(firstResult.stablePrefix).toEqual(secondResult.stablePrefix);
-      expect(firstResult.modelConfig!.preset).not.toBe(secondResult.modelConfig!.preset);
+      expect(firstResult.modelConfig!.preset).not.toBe(
+        secondResult.modelConfig!.preset,
+      );
     } finally {
       rmSync(testDir, { recursive: true, force: true });
     }
@@ -197,7 +229,7 @@ describe("assemble-prompt.ts — model-preset resolution", () => {
     writeFileSync(malformedPath, "{ invalid json }");
 
     const result = await assemblePrompt(tempDir, {
-      modelConfigPath: malformedPath
+      modelConfigPath: malformedPath,
     });
     // Malformed JSON should cause modelConfig to be null (transparent fallback)
     expect(result.modelConfig).toBeNull();
@@ -208,7 +240,7 @@ describe("assemble-prompt.ts — model-preset resolution", () => {
     // should work regardless of whether this directory exists.
     const result = await assemblePrompt(tempDir, {
       modelConfigPath: configPath,
-      preset: "test-preset"
+      preset: "test-preset",
     });
     expect(result.stablePrefix).toBeDefined();
     expect(result.stablePrefix.length).toBeGreaterThan(0);
@@ -256,23 +288,26 @@ describe("assemble-prompt.ts — model-preset resolution", () => {
     writeFileSync(join(testDir, "agents", "a.md"), "# A\n");
 
     const testConfigPath = join(testDir, "models.config.json");
-    writeFileSync(testConfigPath, JSON.stringify({
-      "presets": {
-        "test-preset": {
-          "models": {
-            "TIER_REASONING": "test/reasoning-model",
-            "TIER_CODE": "test/code-model",
-            "TIER_FAST": "test/fast-model"
-          }
-        }
-      }
-    }));
+    writeFileSync(
+      testConfigPath,
+      JSON.stringify({
+        presets: {
+          "test-preset": {
+            models: {
+              TIER_REASONING: "test/reasoning-model",
+              TIER_CODE: "test/code-model",
+              TIER_FAST: "test/fast-model",
+            },
+          },
+        },
+      }),
+    );
 
     try {
       const result1 = await assemblePrompt(testDir, {
         modelConfigPath: testConfigPath,
         preset: "test-preset",
-        useCache: false
+        useCache: false,
       });
 
       // Modify a file
@@ -281,7 +316,7 @@ describe("assemble-prompt.ts — model-preset resolution", () => {
       const result2 = await assemblePrompt(testDir, {
         modelConfigPath: testConfigPath,
         preset: "test-preset",
-        useCache: false
+        useCache: false,
       });
 
       // Without cache, both results should reflect the current state
@@ -298,7 +333,7 @@ describe("assemble-prompt.ts — model-preset resolution", () => {
 
     const result = await assemblePrompt(tempDir, {
       modelConfigPath: configPath,
-      preset: "test-preset"
+      preset: "test-preset",
     });
 
     expect(result.stablePrefix).toContain("agents/large.md");

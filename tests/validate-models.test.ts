@@ -1,5 +1,11 @@
 import { describe, expect, test, beforeAll, afterAll } from "bun:test";
-import { mkdtempSync, writeFileSync, rmSync, existsSync, mkdirSync } from "node:fs";
+import {
+  mkdtempSync,
+  writeFileSync,
+  rmSync,
+  existsSync,
+  mkdirSync,
+} from "node:fs";
 import { join, resolve } from "node:path";
 import { tmpdir } from "node:os";
 import { spawnSync } from "node:child_process";
@@ -17,7 +23,12 @@ import { spawnSync } from "node:child_process";
  * macOS/Linux/Windows one of the two is required by the kit already.
  */
 
-const VALIDATOR_RAW = resolve(import.meta.dir, "..", "scripts", "validate-models.sh");
+const VALIDATOR_RAW = resolve(
+  import.meta.dir,
+  "..",
+  "scripts",
+  "validate-models.sh",
+);
 const VALIDATOR = toBashPath(VALIDATOR_RAW);
 
 /**
@@ -59,14 +70,19 @@ function bashAvailable(): boolean {
   return probe.status === 0;
 }
 
-function runValidator(args: string[], cwd: string): {
+function runValidator(
+  args: string[],
+  cwd: string,
+): {
   status: number | null;
   stdout: string;
   stderr: string;
 } {
   // Translate Windows-style arg paths so bash can resolve them. cwd stays a
   // Windows path because Node's spawnSync uses Windows APIs for the cwd.
-  const bashArgs = args.map((a) => (/^[A-Za-z]:[\\/]/.test(a) ? toBashPath(a) : a));
+  const bashArgs = args.map((a) =>
+    /^[A-Za-z]:[\\/]/.test(a) ? toBashPath(a) : a,
+  );
   const result = spawnSync("bash", [VALIDATOR, ...bashArgs], {
     cwd,
     env: { ...process.env },
@@ -100,7 +116,9 @@ function safeRmSync(path: string): void {
       if (!isBusy || attempt === maxAttempts) throw err;
       // Synchronous sleep — small enough not to slow the suite noticeably.
       const until = Date.now() + delayMs;
-      while (Date.now() < until) { /* spin briefly */ }
+      while (Date.now() < until) {
+        /* spin briefly */
+      }
     }
   }
 }
@@ -111,7 +129,8 @@ describe("validate-models.sh — preflight", () => {
   });
 });
 
-const skipIfNoBashOrPython = !bashAvailable() || !hasPython() ? describe.skip : describe;
+const skipIfNoBashOrPython =
+  !bashAvailable() || !hasPython() ? describe.skip : describe;
 
 skipIfNoBashOrPython("validate-models.sh — known-good default preset", () => {
   let tempDir: string;
@@ -123,24 +142,37 @@ skipIfNoBashOrPython("validate-models.sh — known-good default preset", () => {
     configPath = join(tempDir, "models.config.json");
     agentsDir = join(tempDir, "agents");
     mkdirSync(agentsDir, { recursive: true });
-    writeFileSync(configPath, JSON.stringify({
-      default_preset: "default",
-      presets: {
-        default: {
-          label: "default",
-          models: {
-            TIER_ROUTER: "opencode-go/gpt-5.6-luna",
-            TIER_REASONING: "opencode-go/kimi-k3",
-            TIER_CODE: "opencode-go/minimax-m3",
-            TIER_REVIEW: "opencode-go/minimax-m3",
-            TIER_FAST: "ollama/deepseek-v4-flash:cloud",
+    writeFileSync(
+      configPath,
+      JSON.stringify(
+        {
+          default_preset: "default",
+          presets: {
+            default: {
+              label: "default",
+              models: {
+                TIER_ROUTER: "opencode-go/gpt-5.6-luna",
+                TIER_REASONING: "opencode-go/kimi-k3",
+                TIER_CODE: "opencode-go/minimax-m3",
+                TIER_REVIEW: "opencode-go/minimax-m3",
+                TIER_FAST: "ollama/deepseek-v4-flash:cloud",
+              },
+            },
           },
         },
-      },
-    }, null, 2));
+        null,
+        2,
+      ),
+    );
     // Plant a couple of agent files with the canonical tokens.
-    writeFileSync(join(agentsDir, "orchestrator.md"), "---\nmodel: {{TIER_ROUTER}}\n---\n");
-    writeFileSync(join(agentsDir, "developer-fixer.md"), "---\nmodel: {{TIER_CODE}}\n---\n");
+    writeFileSync(
+      join(agentsDir, "orchestrator.md"),
+      "---\nmodel: {{TIER_ROUTER}}\n---\n",
+    );
+    writeFileSync(
+      join(agentsDir, "developer-fixer.md"),
+      "---\nmodel: {{TIER_CODE}}\n---\n",
+    );
   });
 
   afterAll(() => {
@@ -148,7 +180,10 @@ skipIfNoBashOrPython("validate-models.sh — known-good default preset", () => {
   });
 
   test("exit 0 on the known-good default profile", () => {
-    const r = runValidator(["--config", configPath, "--preset", "default"], tempDir);
+    const r = runValidator(
+      ["--config", configPath, "--preset", "default"],
+      tempDir,
+    );
     expect(r.status).toBe(0);
     expect(r.stdout).toMatch(/OK:/);
     expect(r.stdout).toMatch(/default/);
@@ -161,170 +196,228 @@ skipIfNoBashOrPython("validate-models.sh — known-good default preset", () => {
   });
 });
 
-skipIfNoBashOrPython("validate-models.sh — generic preset with unresolved placeholders", () => {
-  let tempDir: string;
-  let configPath: string;
+skipIfNoBashOrPython(
+  "validate-models.sh — generic preset with unresolved placeholders",
+  () => {
+    let tempDir: string;
+    let configPath: string;
 
-  beforeAll(() => {
-    tempDir = mkdtempSync(join(tmpdir(), "validate-models-generic-"));
-    configPath = join(tempDir, "models.config.json");
-    writeFileSync(configPath, JSON.stringify({
-      default_preset: "generic",
-      presets: {
-        generic: {
-          label: "generic",
-          models: {
-            TIER_ROUTER: "placeholder/router-model-id",
-            TIER_REASONING: "placeholder/reasoning-model-id",
-            TIER_CODE: "placeholder/code-model-id",
-            TIER_REVIEW: "placeholder/review-model-id",
-            TIER_FAST: "placeholder/fast-model-id",
+    beforeAll(() => {
+      tempDir = mkdtempSync(join(tmpdir(), "validate-models-generic-"));
+      configPath = join(tempDir, "models.config.json");
+      writeFileSync(
+        configPath,
+        JSON.stringify(
+          {
+            default_preset: "generic",
+            presets: {
+              generic: {
+                label: "generic",
+                models: {
+                  TIER_ROUTER: "placeholder/router-model-id",
+                  TIER_REASONING: "placeholder/reasoning-model-id",
+                  TIER_CODE: "placeholder/code-model-id",
+                  TIER_REVIEW: "placeholder/review-model-id",
+                  TIER_FAST: "placeholder/fast-model-id",
+                },
+              },
+            },
           },
-        },
-      },
-    }, null, 2));
-  });
+          null,
+          2,
+        ),
+      );
+    });
 
-  afterAll(() => {
-    if (tempDir) safeRmSync(tempDir);
-  });
+    afterAll(() => {
+      if (tempDir) safeRmSync(tempDir);
+    });
 
-  test("exit non-zero with placeholder diagnostics", () => {
-    const r = runValidator(["--config", configPath, "--skip-agents"], tempDir);
-    expect(r.status).not.toBe(0);
-    expect(r.stdout).toMatch(/unresolved placeholder/);
-    expect(r.stdout).toMatch(/placeholder\/reasoning-model-id/);
-  });
+    test("exit non-zero with placeholder diagnostics", () => {
+      const r = runValidator(
+        ["--config", configPath, "--skip-agents"],
+        tempDir,
+      );
+      expect(r.status).not.toBe(0);
+      expect(r.stdout).toMatch(/unresolved placeholder/);
+      expect(r.stdout).toMatch(/placeholder\/reasoning-model-id/);
+    });
 
-  test("exit non-zero when --preset is unknown", () => {
-    const r = runValidator(
-      ["--config", configPath, "--preset", "does-not-exist", "--skip-agents"],
-      tempDir,
-    );
-    expect(r.status).not.toBe(0);
-    expect(r.stdout).toMatch(/not found/);
-  });
-});
+    test("exit non-zero when --preset is unknown", () => {
+      const r = runValidator(
+        ["--config", configPath, "--preset", "does-not-exist", "--skip-agents"],
+        tempDir,
+      );
+      expect(r.status).not.toBe(0);
+      expect(r.stdout).toMatch(/not found/);
+    });
+  },
+);
 
-skipIfNoBashOrPython("validate-models.sh — preset missing a required tier", () => {
-  let tempDir: string;
-  let configPath: string;
+skipIfNoBashOrPython(
+  "validate-models.sh — preset missing a required tier",
+  () => {
+    let tempDir: string;
+    let configPath: string;
 
-  beforeAll(() => {
-    tempDir = mkdtempSync(join(tmpdir(), "validate-models-missing-"));
-    configPath = join(tempDir, "models.config.json");
-    writeFileSync(configPath, JSON.stringify({
-      default_preset: "broken",
-      presets: {
-        broken: {
-          label: "broken",
-          models: {
-            TIER_REASONING: "x/r",
-            // TIER_CODE missing — required, no fallback available.
-            TIER_FAST: "x/f",
+    beforeAll(() => {
+      tempDir = mkdtempSync(join(tmpdir(), "validate-models-missing-"));
+      configPath = join(tempDir, "models.config.json");
+      writeFileSync(
+        configPath,
+        JSON.stringify(
+          {
+            default_preset: "broken",
+            presets: {
+              broken: {
+                label: "broken",
+                models: {
+                  TIER_REASONING: "x/r",
+                  // TIER_CODE missing — required, no fallback available.
+                  TIER_FAST: "x/f",
+                },
+              },
+            },
           },
-        },
-      },
-    }, null, 2));
-  });
+          null,
+          2,
+        ),
+      );
+    });
 
-  afterAll(() => {
-    if (tempDir) safeRmSync(tempDir);
-  });
+    afterAll(() => {
+      if (tempDir) safeRmSync(tempDir);
+    });
 
-  test("exit non-zero and names the missing required tier", () => {
-    const r = runValidator(["--config", configPath, "--skip-agents"], tempDir);
-    expect(r.status).not.toBe(0);
-    expect(r.stdout).toMatch(/missing required tier/);
-    expect(r.stdout).toMatch(/TIER_CODE/);
-  });
-});
+    test("exit non-zero and names the missing required tier", () => {
+      const r = runValidator(
+        ["--config", configPath, "--skip-agents"],
+        tempDir,
+      );
+      expect(r.status).not.toBe(0);
+      expect(r.stdout).toMatch(/missing required tier/);
+      expect(r.stdout).toMatch(/TIER_CODE/);
+    });
+  },
+);
 
-skipIfNoBashOrPython("validate-models.sh — three-tier legacy preset (backward-compat)", () => {
-  let tempDir: string;
-  let configPath: string;
-  let agentsDir: string;
+skipIfNoBashOrPython(
+  "validate-models.sh — three-tier legacy preset (backward-compat)",
+  () => {
+    let tempDir: string;
+    let configPath: string;
+    let agentsDir: string;
 
-  beforeAll(() => {
-    tempDir = mkdtempSync(join(tmpdir(), "validate-models-legacy-"));
-    configPath = join(tempDir, "models.config.json");
-    agentsDir = join(tempDir, "agents");
-    mkdirSync(agentsDir, { recursive: true });
-    writeFileSync(configPath, JSON.stringify({
-      default_preset: "three-tier-legacy",
-      presets: {
-        "three-tier-legacy": {
-          label: "three-tier-legacy",
-          models: {
-            TIER_REASONING: "legacy/reasoning",
-            TIER_CODE: "legacy/code",
-            TIER_FAST: "legacy/fast",
+    beforeAll(() => {
+      tempDir = mkdtempSync(join(tmpdir(), "validate-models-legacy-"));
+      configPath = join(tempDir, "models.config.json");
+      agentsDir = join(tempDir, "agents");
+      mkdirSync(agentsDir, { recursive: true });
+      writeFileSync(
+        configPath,
+        JSON.stringify(
+          {
+            default_preset: "three-tier-legacy",
+            presets: {
+              "three-tier-legacy": {
+                label: "three-tier-legacy",
+                models: {
+                  TIER_REASONING: "legacy/reasoning",
+                  TIER_CODE: "legacy/code",
+                  TIER_FAST: "legacy/fast",
+                },
+              },
+            },
           },
-        },
-      },
-    }, null, 2));
-    // Agents exercising the optional tiers — these must resolve via fallback.
-    writeFileSync(join(agentsDir, "orchestrator.md"), "---\nmodel: {{TIER_ROUTER}}\n---\n");
-    writeFileSync(join(agentsDir, "code-reviewer.md"), "---\nmodel: {{TIER_REVIEW}}\n---\n");
-  });
+          null,
+          2,
+        ),
+      );
+      // Agents exercising the optional tiers — these must resolve via fallback.
+      writeFileSync(
+        join(agentsDir, "orchestrator.md"),
+        "---\nmodel: {{TIER_ROUTER}}\n---\n",
+      );
+      writeFileSync(
+        join(agentsDir, "code-reviewer.md"),
+        "---\nmodel: {{TIER_REVIEW}}\n---\n",
+      );
+    });
 
-  afterAll(() => {
-    if (tempDir) safeRmSync(tempDir);
-  });
+    afterAll(() => {
+      if (tempDir) safeRmSync(tempDir);
+    });
 
-  test("exit 0 with fallback notes printed", () => {
-    const r = runValidator(["--config", configPath], tempDir);
-    expect(r.status).toBe(0);
-    expect(r.stdout).toMatch(/falling back to TIER_REASONING/);
-    expect(r.stdout).toMatch(/falling back to TIER_CODE/);
-    expect(r.stdout).toMatch(/OK:/);
-  });
-});
+    test("exit 0 with fallback notes printed", () => {
+      const r = runValidator(["--config", configPath], tempDir);
+      expect(r.status).toBe(0);
+      expect(r.stdout).toMatch(/falling back to TIER_REASONING/);
+      expect(r.stdout).toMatch(/falling back to TIER_CODE/);
+      expect(r.stdout).toMatch(/OK:/);
+    });
+  },
+);
 
-skipIfNoBashOrPython("validate-models.sh — agent files contain unresolved {{TIER_*}} literals", () => {
-  let tempDir: string;
-  let configPath: string;
-  let agentsDir: string;
+skipIfNoBashOrPython(
+  "validate-models.sh — agent files contain unresolved {{TIER_*}} literals",
+  () => {
+    let tempDir: string;
+    let configPath: string;
+    let agentsDir: string;
 
-  beforeAll(() => {
-    tempDir = mkdtempSync(join(tmpdir(), "validate-models-unresolved-"));
-    configPath = join(tempDir, "models.config.json");
-    agentsDir = join(tempDir, "agents");
-    mkdirSync(agentsDir, { recursive: true });
-    writeFileSync(configPath, JSON.stringify({
-      default_preset: "default",
-      presets: {
-        default: {
-          label: "default",
-          models: {
-            TIER_ROUTER: "opencode-go/gpt-5.6-luna",
-            TIER_REASONING: "opencode-go/kimi-k3",
-            TIER_CODE: "opencode-go/minimax-m3",
-            TIER_REVIEW: "opencode-go/minimax-m3",
-            TIER_FAST: "ollama/deepseek-v4-flash:cloud",
+    beforeAll(() => {
+      tempDir = mkdtempSync(join(tmpdir(), "validate-models-unresolved-"));
+      configPath = join(tempDir, "models.config.json");
+      agentsDir = join(tempDir, "agents");
+      mkdirSync(agentsDir, { recursive: true });
+      writeFileSync(
+        configPath,
+        JSON.stringify(
+          {
+            default_preset: "default",
+            presets: {
+              default: {
+                label: "default",
+                models: {
+                  TIER_ROUTER: "opencode-go/gpt-5.6-luna",
+                  TIER_REASONING: "opencode-go/kimi-k3",
+                  TIER_CODE: "opencode-go/minimax-m3",
+                  TIER_REVIEW: "opencode-go/minimax-m3",
+                  TIER_FAST: "ollama/deepseek-v4-flash:cloud",
+                },
+              },
+            },
           },
-        },
-      },
-    }, null, 2));
-    // Unknown tier — must fail token-resolution check.
-    writeFileSync(join(agentsDir, "weird.md"), "---\nmodel: {{TIER_UNKNOWN}}\n---\n");
-  });
+          null,
+          2,
+        ),
+      );
+      // Unknown tier — must fail token-resolution check.
+      writeFileSync(
+        join(agentsDir, "weird.md"),
+        "---\nmodel: {{TIER_UNKNOWN}}\n---\n",
+      );
+    });
 
-  afterAll(() => {
-    if (tempDir) safeRmSync(tempDir);
-  });
+    afterAll(() => {
+      if (tempDir) safeRmSync(tempDir);
+    });
 
-  test("exit non-zero when an agent uses an unrecognised {{TIER_*}} token", () => {
-    const r = runValidator(["--config", configPath], tempDir);
-    expect(r.status).not.toBe(0);
-    expect(r.stdout).toMatch(/preset cannot resolve/);
-    expect(r.stdout).toMatch(/TIER_UNKNOWN/);
-  });
-});
+    test("exit non-zero when an agent uses an unrecognised {{TIER_*}} token", () => {
+      const r = runValidator(["--config", configPath], tempDir);
+      expect(r.status).not.toBe(0);
+      expect(r.stdout).toMatch(/preset cannot resolve/);
+      expect(r.stdout).toMatch(/TIER_UNKNOWN/);
+    });
+  },
+);
 
 skipIfNoBashOrPython("validate-models.sh — missing config file", () => {
   test("exit non-zero with a clear diagnostic", () => {
-    const r = runValidator(["--config", "/nonexistent/path/models.config.json"], process.cwd());
+    const r = runValidator(
+      ["--config", "/nonexistent/path/models.config.json"],
+      process.cwd(),
+    );
     expect(r.status).not.toBe(0);
     expect(r.stdout).toMatch(/config not found/);
   });

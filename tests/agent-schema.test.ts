@@ -29,7 +29,9 @@ const OPTIONAL_JSON_KEYS = ["tools", "permission"] as const;
 function extractFrontmatter(raw: string): string {
   const match = raw.match(/^---\r?\n([\s\S]*?)\r?\n---/);
   if (!match) {
-    throw new Error("No YAML frontmatter block found (expected leading '---' ... '---').");
+    throw new Error(
+      "No YAML frontmatter block found (expected leading '---' ... '---').",
+    );
   }
   return match[1];
 }
@@ -42,13 +44,21 @@ function hasTopLevelKey(frontmatter: string, key: string): boolean {
  * (e.g. `tools: {"webfetch":true}`), or null when the value is a multi-line
  * YAML block (e.g. `tools:\n  read: true`) or absent entirely. */
 function inlineJsonValue(frontmatter: string, key: string): string | null {
-  const match = frontmatter.match(new RegExp(`^${key}:\\s*(\\{.*\\})\\s*$`, "m"));
+  const match = frontmatter.match(
+    new RegExp(`^${key}:\\s*(\\{.*\\})\\s*$`, "m"),
+  );
   return match ? match[1] : null;
 }
 
 const agentFiles = [
-  ...readdirSync(AGENTS_DIR).filter((f) => f.endsWith(".md")).map((f) => ({ dir: "agents", file: f })),
-  ...(existsSync(EXTRAS_DIR) ? readdirSync(EXTRAS_DIR).filter((f) => f.endsWith(".md")).map((f) => ({ dir: "extras", file: f })) : []),
+  ...readdirSync(AGENTS_DIR)
+    .filter((f) => f.endsWith(".md"))
+    .map((f) => ({ dir: "agents", file: f })),
+  ...(existsSync(EXTRAS_DIR)
+    ? readdirSync(EXTRAS_DIR)
+        .filter((f) => f.endsWith(".md"))
+        .map((f) => ({ dir: "extras", file: f }))
+    : []),
 ];
 
 describe("agent frontmatter schema", () => {
@@ -103,6 +113,8 @@ describe("agent frontmatter schema — negative case (proves the check has teeth
   });
 
   test("a fixture with no frontmatter block throws", () => {
-    expect(() => extractFrontmatter("# No frontmatter here\n\nJust prose.")).toThrow();
+    expect(() =>
+      extractFrontmatter("# No frontmatter here\n\nJust prose."),
+    ).toThrow();
   });
 });

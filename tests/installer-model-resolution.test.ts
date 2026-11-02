@@ -1,5 +1,11 @@
 import { describe, expect, test, beforeAll, afterAll } from "bun:test";
-import { mkdtempSync, readFileSync, readdirSync, rmSync, chmodSync } from "node:fs";
+import {
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  chmodSync,
+} from "node:fs";
 import { join, resolve } from "node:path";
 import { tmpdir } from "node:os";
 import { spawnSync, SpawnSyncReturns } from "node:child_process";
@@ -68,7 +74,10 @@ maybe("install.sh global — resolves {{TIER_*}} model tokens", () => {
   test("installed agents contain no literal tier tokens", () => {
     const r = runWithExports(
       toBashPath(INSTALL_SH),
-      ["export KIT_FORCE_KIND=linux", `export HOME=${shq(toNativePath(tmpHome))}`],
+      [
+        "export KIT_FORCE_KIND=linux",
+        `export HOME=${shq(toNativePath(tmpHome))}`,
+      ],
       ["global"],
     );
     expect(r.status).toBe(0);

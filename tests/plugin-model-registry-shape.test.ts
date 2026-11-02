@@ -30,7 +30,10 @@ function harness(registry: unknown) {
       transform: async (cb: (e: unknown) => void) => {
         cb({
           get: (id: string) => agents.get(id),
-          update: (id: string, fn: (agent: Record<string, unknown>) => void) => {
+          update: (
+            id: string,
+            fn: (agent: Record<string, unknown>) => void,
+          ) => {
             const agent = agents.get(id) ?? { id, name: id, mode: "primary" };
             fn(agent);
             agents.set(id, agent);
@@ -58,7 +61,9 @@ describe("ctx.model.list(): forma 2.1 (array) e 2.2 ({location,data})", () => {
     await plugin.setup(ctx as never);
 
     expect(agents.size).toBe(15);
-    expect((agents.get("orchestrator")?.permissions as unknown[]).length).toBe(25);
+    expect((agents.get("orchestrator")?.permissions as unknown[]).length).toBe(
+      25,
+    );
     expect(agents.get("plan-writer")?.mode).toBe("subagent");
     expect(commands).toHaveLength(3);
     expect(skills).toHaveLength(9);
@@ -71,6 +76,8 @@ describe("ctx.model.list(): forma 2.1 (array) e 2.2 ({location,data})", () => {
     await plugin.setup(ctx as never);
 
     expect(agents.size).toBe(15);
-    expect((agents.get("orchestrator")?.permissions as unknown[]).length).toBe(25);
+    expect((agents.get("orchestrator")?.permissions as unknown[]).length).toBe(
+      25,
+    );
   });
 });

@@ -1,6 +1,14 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  cpSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -50,7 +58,10 @@ describe("scripts/prepare-pages.mjs — happy path", () => {
   test("renames site/index.docs.html to site/index.html and copies it to site/404.html", () => {
     const sandbox = makeSandbox();
     mkdirSync(join(sandbox, "site"), { recursive: true });
-    writeFileSync(join(sandbox, "site", "index.docs.html"), "<html>built docs</html>");
+    writeFileSync(
+      join(sandbox, "site", "index.docs.html"),
+      "<html>built docs</html>",
+    );
 
     const result = runScript(sandbox);
 
@@ -59,8 +70,14 @@ describe("scripts/prepare-pages.mjs — happy path", () => {
     expect(existsSync(join(sandbox, "site", "index.html"))).toBe(true);
     expect(existsSync(join(sandbox, "site", "404.html"))).toBe(true);
 
-    const indexContent = readFileSync(join(sandbox, "site", "index.html"), "utf-8");
-    const notFoundContent = readFileSync(join(sandbox, "site", "404.html"), "utf-8");
+    const indexContent = readFileSync(
+      join(sandbox, "site", "index.html"),
+      "utf-8",
+    );
+    const notFoundContent = readFileSync(
+      join(sandbox, "site", "404.html"),
+      "utf-8",
+    );
     expect(indexContent).toBe("<html>built docs</html>");
     expect(notFoundContent).toBe(indexContent);
   });

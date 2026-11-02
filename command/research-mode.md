@@ -10,13 +10,13 @@ Research mode records engineering-metrics events — task type, duration, agent 
 Subcommands:
 
 /research-mode on
-  Activates research mode for this session. Requires explicit user confirmation before enabling.
-  Exact confirmation phrase: "Research mode changes session behavior. Confirm activation?"
-  When confirmed, the session enters the research lifecycle: every task is assigned a `research_id` and a slot when it begins. Slot alternation is deterministic in activation order: first active task = A, next = B, then A, B, … No re-assignment after the fact.
+Activates research mode for this session. Requires explicit user confirmation before enabling.
+Exact confirmation phrase: "Research mode changes session behavior. Confirm activation?"
+When confirmed, the session enters the research lifecycle: every task is assigned a `research_id` and a slot when it begins. Slot alternation is deterministic in activation order: first active task = A, next = B, then A, B, … No re-assignment after the fact.
 
 /research-mode off
-  Immediately stops all recording. No partial event is completed or written.
-  The per-session slot state is reset. Subsequent tasks produce no dataset entries until the next explicit activation.
+Immediately stops all recording. No partial event is completed or written.
+The per-session slot state is reset. Subsequent tasks produce no dataset entries until the next explicit activation.
 
 Config path: `research.enabled: true` in `.opencode/comprehension.config.json` (user edit = explicit opt-in). Default when neither is set: OFF.
 
@@ -84,6 +84,7 @@ skipped         boolean — true when the recall comprehension was skipped
 Bugfix reference convention: when a bugfix plan is created and the defect traces back to a specific earlier plan, write `bugfix_ref: "plan=<earlierNNNN>"`; otherwise write `bugfix_ref: ""`.
 
 **Privacy invariant** (verbatim):
+
 > No source code and no personal answers are ever written to the dataset.
 
 **What never enters the dataset**: source code excerpts, file diffs, symbol names, user answers, or any content that could identify a specific user response. Only the event fields listed above are written.

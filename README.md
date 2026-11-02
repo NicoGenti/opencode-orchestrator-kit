@@ -20,21 +20,21 @@ The kit splits the work into a routing layer and a roster of specialists:
 - **Exploration starts from a repo map.** The `profiler` generates a compact `.context/repo-map.md` (hard 300-line budget) that the `explorer` reads before broad searches, reducing whole-file reads and token waste.
 - **It adapts to any repository.** On first run the `profiler` agent detects the stack (or interviews you for an empty repo) and scaffolds `.context/` (memory) and `plan/` (kanban).
 
-On **OpenCode 2** the kit installs as the `opencode-orchestrator-kit` plugin: agents, commands and skills are registered at runtime — nothing is written into your project's `.opencode/` directory. The native copy-based installer still works and remains supported, but it is **deprecated in favor of the plugin** on OpenCode 2 (the `default` profile it ships references provider IDs that are not yours — see the *Choose your model profile* step). Optional notes for [OpenCode Studio](https://github.com/Microck/opencode-studio) users are in `docs/SETUP-OPENCODE-STUDIO.md`.
+On **OpenCode 2** the kit installs as the `opencode-orchestrator-kit` plugin: agents, commands and skills are registered at runtime — nothing is written into your project's `.opencode/` directory. The native copy-based installer still works and remains supported, but it is **deprecated in favor of the plugin** on OpenCode 2 (the `default` profile it ships references provider IDs that are not yours — see the _Choose your model profile_ step). Optional notes for [OpenCode Studio](https://github.com/Microck/opencode-studio) users are in `docs/SETUP-OPENCODE-STUDIO.md`.
 
 ## How a request flows
 
 > "Add refresh-token rotation to the auth service."
 
-| Step | Agent | What happens |
-|---|---|---|
-| 1 | `explorer` | Reads the current auth flow (read-only). |
-| 2 | `planner` | Turns findings into a phased plan in `plan/draft/`. |
-| 3 | `plan-writer` | Owns the plan board: `plan/draft/` -> `plan/in-progress/` -> `plan/qa/` -> `plan/complete/`. |
-| 4 | `developer-fixer` | Implements one phase at a time, with fresh context each time. |
-| 5 | `test-engineer` | Writes and runs tests for the new logic. |
-| 6 | `security` | Reviews the auth-sensitive change before it reaches `plan/complete/`. |
-| 7 | `comprehension-coach` | Optional human comprehension check, scaled to the change (NONE / LIGHT / DEEP). |
+| Step | Agent                 | What happens                                                                                 |
+| ---- | --------------------- | -------------------------------------------------------------------------------------------- |
+| 1    | `explorer`            | Reads the current auth flow (read-only).                                                     |
+| 2    | `planner`             | Turns findings into a phased plan in `plan/draft/`.                                          |
+| 3    | `plan-writer`         | Owns the plan board: `plan/draft/` -> `plan/in-progress/` -> `plan/qa/` -> `plan/complete/`. |
+| 4    | `developer-fixer`     | Implements one phase at a time, with fresh context each time.                                |
+| 5    | `test-engineer`       | Writes and runs tests for the new logic.                                                     |
+| 6    | `security`            | Reviews the auth-sensitive change before it reaches `plan/complete/`.                        |
+| 7    | `comprehension-coach` | Optional human comprehension check, scaled to the change (NONE / LIGHT / DEEP).              |
 
 Every delegation uses a 9-section task spec (Goal, Success Criteria, Scope, Safety, Inputs, Outputs, Test Plan, Verification, Edge Cases), never a free-form prompt. The orchestrator itself never edits `auth.ts`.
 
@@ -49,29 +49,29 @@ Every delegation uses a 9-section task spec (Goal, Success Criteria, Scope, Safe
 
 ### Who does what
 
-| Concern | Primary agent | Notes |
-| --- | --- | --- |
-| **Orchestration** (routing, checkpointing) | `orchestrator` | Sole entry point. Never writes application code. |
-| **Exploration** (codebase, file, symbol research) | `explorer` | Read-only. |
-| **Planning** (turns exploration into phased plans) | `planner` | Writes to `plan/draft/` only. |
-| **Plan board** (create, move, check, adopt plan files) | `plan-writer` | Sole owner of the board. |
-| **Implementation** (one phase at a time, TDD) | `developer-fixer` | Follows the 9-section task spec. |
-| **Testing** (test authoring, coverage, reproduction) | `test-engineer` | |
-| **Review** (general correctness and quality) | `code-reviewer` | Distinct from security review. |
-| **Security** (vulnerabilities, threat model, hardening) | `security` | Routed for auth, crypto, input handling and secrets changes. |
-| **Human comprehension** (post-review check) | `comprehension-coach` | Read-only. Distinct from technical verification. |
+| Concern                                                 | Primary agent         | Notes                                                        |
+| ------------------------------------------------------- | --------------------- | ------------------------------------------------------------ |
+| **Orchestration** (routing, checkpointing)              | `orchestrator`        | Sole entry point. Never writes application code.             |
+| **Exploration** (codebase, file, symbol research)       | `explorer`            | Read-only.                                                   |
+| **Planning** (turns exploration into phased plans)      | `planner`             | Writes to `plan/draft/` only.                                |
+| **Plan board** (create, move, check, adopt plan files)  | `plan-writer`         | Sole owner of the board.                                     |
+| **Implementation** (one phase at a time, TDD)           | `developer-fixer`     | Follows the 9-section task spec.                             |
+| **Testing** (test authoring, coverage, reproduction)    | `test-engineer`       |                                                              |
+| **Review** (general correctness and quality)            | `code-reviewer`       | Distinct from security review.                               |
+| **Security** (vulnerabilities, threat model, hardening) | `security`            | Routed for auth, crypto, input handling and secrets changes. |
+| **Human comprehension** (post-review check)             | `comprehension-coach` | Read-only. Distinct from technical verification.             |
 
 Full contracts, permissions and model fallbacks are in each `agents/*.md` file (the `pc-doctor` and `writer` specialists live in `extras/*.md`) and are summarized in `AGENTS.md`.
 
 ### Tiers and installation
 
-| Tier | Agents | Installed by default? |
-| --- | --- | --- |
-| Core routing | `orchestrator`, `profiler`, `explorer`, `oracle`, `planner` | Yes |
-| Core delivery | `developer-fixer`, `test-engineer`, `code-reviewer`, `security`, `comprehension-coach`, `plan-writer` | Yes |
-| Operations helpers | `build-helper`, `npm-helper`, `deploy-helper` | Yes (routed only on a matching failure) |
-| Docs lookup | `librarian` | Yes (routed only for remote documentation lookups) |
-| Opt-in extras | `pc-doctor` (Windows-local only), `writer` (docs generation) | `--with-extras` only |
+| Tier               | Agents                                                                                                | Installed by default?                              |
+| ------------------ | ----------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| Core routing       | `orchestrator`, `profiler`, `explorer`, `oracle`, `planner`                                           | Yes                                                |
+| Core delivery      | `developer-fixer`, `test-engineer`, `code-reviewer`, `security`, `comprehension-coach`, `plan-writer` | Yes                                                |
+| Operations helpers | `build-helper`, `npm-helper`, `deploy-helper`                                                         | Yes (routed only on a matching failure)            |
+| Docs lookup        | `librarian`                                                                                           | Yes (routed only for remote documentation lookups) |
+| Opt-in extras      | `pc-doctor` (Windows-local only), `writer` (docs generation)                                          | `--with-extras` only                               |
 
 ## Install on OpenCode 2 (plugin — recommended)
 
@@ -125,12 +125,12 @@ From the repo root:
 
 The installer seeds `.opencode/models.config.json` from `templates/models.config.json`, runs the model-profile validator before writing any file, then resolves every `{{TIER_*}}` token in the installed agents to concrete model IDs.
 
-| Flag | Effect |
-| --- | --- |
-| `--symlink` | Symlink instead of installing plain files, so `git pull` in this repo updates every consumer. |
-| `--with-extras` | Also install `extras/` (`pc-doctor`, `writer`). Off by default. |
-| `--with-examples` | Also install `skills/examples/` (language-specific skill examples). Off by default. |
-| `--skip-validation` | Skip the model-profile validator. Not recommended, emergency recovery only. |
+| Flag                | Effect                                                                                        |
+| ------------------- | --------------------------------------------------------------------------------------------- |
+| `--symlink`         | Symlink instead of installing plain files, so `git pull` in this repo updates every consumer. |
+| `--with-extras`     | Also install `extras/` (`pc-doctor`, `writer`). Off by default.                               |
+| `--with-examples`   | Also install `skills/examples/` (language-specific skill examples). Off by default.           |
+| `--skip-validation` | Skip the model-profile validator. Not recommended, emergency recovery only.                   |
 
 Without the installer, the manual path covers the same five items: `AGENTS.md`, `CONTRIBUTING.md`, `agents/`, `skills/` and `command/`. Place them where OpenCode looks (project root, or `~/.config/opencode/` for global). `extras/` is not part of the manual default.
 
@@ -140,13 +140,13 @@ Without the installer, the manual path covers the same five items: `AGENTS.md`, 
 
 Five logical tiers are written into agent `model:` lines as `{{TIER_*}}` tokens:
 
-| Tier token | Default agent(s) | Role | Required? |
-| --- | --- | --- | --- |
-| `TIER_ROUTER` | `orchestrator` | Routing and checkpointing. | Optional (falls back to `TIER_REASONING`). |
-| `TIER_REASONING` | `oracle`, `security`, `planner`, `plan-writer` | Deep reasoning and architecture. | Required. |
-| `TIER_CODE` | `developer-fixer`, `test-engineer` | Implementation and test writing. | Required. |
-| `TIER_FAST` | `profiler`, `explorer`, `build-helper`, `npm-helper`, `deploy-helper`, `comprehension-coach`, `librarian` | Lightweight, high-throughput work. | Required. |
-| `TIER_REVIEW` | `code-reviewer` | Correctness and quality review. | Optional (falls back to `TIER_CODE`). |
+| Tier token       | Default agent(s)                                                                                          | Role                               | Required?                                  |
+| ---------------- | --------------------------------------------------------------------------------------------------------- | ---------------------------------- | ------------------------------------------ |
+| `TIER_ROUTER`    | `orchestrator`                                                                                            | Routing and checkpointing.         | Optional (falls back to `TIER_REASONING`). |
+| `TIER_REASONING` | `oracle`, `security`, `planner`, `plan-writer`                                                            | Deep reasoning and architecture.   | Required.                                  |
+| `TIER_CODE`      | `developer-fixer`, `test-engineer`                                                                        | Implementation and test writing.   | Required.                                  |
+| `TIER_FAST`      | `profiler`, `explorer`, `build-helper`, `npm-helper`, `deploy-helper`, `comprehension-coach`, `librarian` | Lightweight, high-throughput work. | Required.                                  |
+| `TIER_REVIEW`    | `code-reviewer`                                                                                           | Correctness and quality review.    | Optional (falls back to `TIER_CODE`).      |
 
 `templates/models.config.json` ships five presets: `default` (known-good provider IDs), `freellmapi` (the local FreeLLMAPI app), `opencode-go-free`, `ollama`, and `generic` (editable, every tier is a `placeholder/*` sentinel).
 

@@ -1,5 +1,5 @@
-import { promises as fs } from 'fs';
-import { join } from 'path';
+import { promises as fs } from "fs";
+import { join } from "path";
 
 /**
  * Cache entry interface
@@ -40,11 +40,14 @@ export class PromptCache {
    * @param modelConfigPath - Optional path to model config file (included in key for invalidation)
    * @returns Cache key string, or null if key generation fails
    */
-  private async generateKey(rootDir: string, modelConfigPath?: string): Promise<string | null> {
+  private async generateKey(
+    rootDir: string,
+    modelConfigPath?: string,
+  ): Promise<string | null> {
     try {
-      const agentsDir = join(rootDir, 'agents');
-      const extrasDir = join(rootDir, 'extras');
-      const agentsFile = join(rootDir, 'AGENTS.md');
+      const agentsDir = join(rootDir, "agents");
+      const extrasDir = join(rootDir, "extras");
+      const agentsFile = join(rootDir, "AGENTS.md");
 
       const keyParts: string[] = [];
 
@@ -54,13 +57,13 @@ export class PromptCache {
         keyParts.push(`AGENTS.md:${stat.mtimeMs}`);
       } catch {
         // If AGENTS.md doesn't exist, use a placeholder
-        keyParts.push('AGENTS.md:missing');
+        keyParts.push("AGENTS.md:missing");
       }
 
       // agents/ directory
       try {
         const agentFiles = await fs.readdir(agentsDir);
-        const mdFiles = agentFiles.filter(f => f.endsWith('.md')).sort();
+        const mdFiles = agentFiles.filter((f) => f.endsWith(".md")).sort();
         for (const file of mdFiles) {
           const stat = await fs.stat(join(agentsDir, file));
           keyParts.push(`agents/${file}:${stat.mtimeMs}`);
@@ -71,10 +74,13 @@ export class PromptCache {
 
       // extras/ directory
       try {
-        const extrasExists = await fs.stat(extrasDir).then(() => true).catch(() => false);
+        const extrasExists = await fs
+          .stat(extrasDir)
+          .then(() => true)
+          .catch(() => false);
         if (extrasExists) {
           const extrasFiles = await fs.readdir(extrasDir);
-          const mdFiles = extrasFiles.filter(f => f.endsWith('.md')).sort();
+          const mdFiles = extrasFiles.filter((f) => f.endsWith(".md")).sort();
           for (const file of mdFiles) {
             const stat = await fs.stat(join(extrasDir, file));
             keyParts.push(`extras/${file}:${stat.mtimeMs}`);
@@ -88,13 +94,15 @@ export class PromptCache {
       if (modelConfigPath) {
         try {
           const configStat = await fs.stat(modelConfigPath);
-          keyParts.push(`model-config:${modelConfigPath}:${configStat.mtimeMs}`);
+          keyParts.push(
+            `model-config:${modelConfigPath}:${configStat.mtimeMs}`,
+          );
         } catch {
           keyParts.push(`model-config:${modelConfigPath}:missing`);
         }
       }
 
-      return keyParts.join('|');
+      return keyParts.join("|");
     } catch (err) {
       // If key generation fails, return null to indicate cache miss
       console.error(`Cache key generation failed: ${err}`);
@@ -110,7 +118,10 @@ export class PromptCache {
    * @param modelConfigPath - Optional path to model config file
    * @returns Cached value or null
    */
-  async get(rootDir: string, modelConfigPath?: string): Promise<string[] | null> {
+  async get(
+    rootDir: string,
+    modelConfigPath?: string,
+  ): Promise<string[] | null> {
     if (!this.enabled) {
       return null;
     }
@@ -141,7 +152,11 @@ export class PromptCache {
    * @param value - The value to cache
    * @param modelConfigPath - Optional path to model config file
    */
-  async set(rootDir: string, value: string[], modelConfigPath?: string): Promise<void> {
+  async set(
+    rootDir: string,
+    value: string[],
+    modelConfigPath?: string,
+  ): Promise<void> {
     if (!this.enabled) {
       return;
     }

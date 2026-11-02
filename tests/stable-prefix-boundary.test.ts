@@ -33,12 +33,20 @@ import { join, normalize } from "node:path";
  */
 
 const REPO_ROOT = join(import.meta.dir, "..");
-const BASELINE_FILE = join(import.meta.dir, "fixtures", "prompt-prefix-boundary.txt");
+const BASELINE_FILE = join(
+  import.meta.dir,
+  "fixtures",
+  "prompt-prefix-boundary.txt",
+);
 const AGENTS_DIR = join(REPO_ROOT, "agents");
 const EXTRAS_DIR = join(REPO_ROOT, "extras");
 const OPENCODE_DIR = join(REPO_ROOT, ".opencode");
 const OPENCODE_CONTEXT_DIR = join(REPO_ROOT, ".opencode", "context");
-const OPENCODE_MODELS_CONFIG = join(REPO_ROOT, ".opencode", "models.config.json");
+const OPENCODE_MODELS_CONFIG = join(
+  REPO_ROOT,
+  ".opencode",
+  "models.config.json",
+);
 
 /**
  * Read the committed baseline. Each non-empty line is one relative path
@@ -184,7 +192,9 @@ describe("stable-prefix boundary (Phase 3) — live filesystem enumeration", () 
     if (existsSync(OPENCODE_CONTEXT_DIR)) {
       const flagged = join(OPENCODE_CONTEXT_DIR, "engineering-standards.md");
       if (existsSync(flagged)) {
-        expect(live).not.toContain(".opencode/context/engineering-standards.md");
+        expect(live).not.toContain(
+          ".opencode/context/engineering-standards.md",
+        );
       }
     }
   });
@@ -223,7 +233,9 @@ describe("stable-prefix boundary (Phase 3) — live filesystem enumeration", () 
     expect(agentsEntries).toEqual([...agentsEntries].sort());
     expect(extrasEntries).toEqual([...extrasEntries].sort());
     if (extrasEntries.length > 0) {
-      const lastAgents = live.lastIndexOf(agentsEntries[agentsEntries.length - 1]);
+      const lastAgents = live.lastIndexOf(
+        agentsEntries[agentsEntries.length - 1],
+      );
       const firstExtras = live.indexOf(extrasEntries[0]);
       expect(lastAgents).toBeLessThan(firstExtras);
     }

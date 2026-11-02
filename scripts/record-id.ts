@@ -9,7 +9,9 @@
  */
 
 const bytes = crypto.getRandomValues(new Uint8Array(16));
-const hex = Array.from(bytes, (b: number) => b.toString(16).padStart(2, "0")).join("");
+const hex = Array.from(bytes, (b: number) =>
+  b.toString(16).padStart(2, "0"),
+).join("");
 const pad = (n: number, w: number) => String(n).padStart(w, "0");
 const now = new Date();
 const timestamp =

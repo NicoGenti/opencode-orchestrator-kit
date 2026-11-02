@@ -1,5 +1,12 @@
 import { describe, expect, test, beforeAll, afterAll } from "bun:test";
-import { existsSync, mkdtempSync, mkdirSync, writeFileSync, rmSync, readFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdtempSync,
+  mkdirSync,
+  writeFileSync,
+  rmSync,
+  readFileSync,
+} from "node:fs";
 import { join, resolve } from "node:path";
 import { tmpdir } from "node:os";
 
@@ -20,43 +27,44 @@ const {
 } = await import("../scripts/resolve-model-preset.ts");
 
 const FIXTURE_CONFIG = {
-  "$schema": "https://nicogenti.github.io/opencode-orchestrator-kit/schemas/models.config.schema.json",
-  "version": 2,
-  "description": "Test configuration",
-  "tiers": {
-    "TIER_ROUTER": "Test routing tier",
-    "TIER_REASONING": "Test reasoning tier",
-    "TIER_CODE": "Test code tier",
-    "TIER_FAST": "Test fast tier",
-    "TIER_REVIEW": "Test review tier"
+  $schema:
+    "https://nicogenti.github.io/opencode-orchestrator-kit/schemas/models.config.schema.json",
+  version: 2,
+  description: "Test configuration",
+  tiers: {
+    TIER_ROUTER: "Test routing tier",
+    TIER_REASONING: "Test reasoning tier",
+    TIER_CODE: "Test code tier",
+    TIER_FAST: "Test fast tier",
+    TIER_REVIEW: "Test review tier",
   },
-  "default_preset": "test-preset",
-  "presets": {
+  default_preset: "test-preset",
+  presets: {
     "test-preset": {
-      "label": "Test Preset",
-      "description": "Test preset description",
-      "requires": [],
-      "models": {
-        "TIER_ROUTER": "test/router-model",
-        "TIER_REASONING": "test/reasoning-model",
-        "TIER_CODE": "test/code-model",
-        "TIER_FAST": "test/fast-model",
-        "TIER_REVIEW": "test/review-model"
-      }
+      label: "Test Preset",
+      description: "Test preset description",
+      requires: [],
+      models: {
+        TIER_ROUTER: "test/router-model",
+        TIER_REASONING: "test/reasoning-model",
+        TIER_CODE: "test/code-model",
+        TIER_FAST: "test/fast-model",
+        TIER_REVIEW: "test/review-model",
+      },
     },
     "another-preset": {
-      "label": "Another Preset",
-      "description": "Another preset description",
-      "requires": [],
-      "models": {
-        "TIER_ROUTER": "another/router-model",
-        "TIER_REASONING": "another/reasoning-model",
-        "TIER_CODE": "another/code-model",
-        "TIER_FAST": "another/fast-model",
-        "TIER_REVIEW": "another/review-model"
-      }
-    }
-  }
+      label: "Another Preset",
+      description: "Another preset description",
+      requires: [],
+      models: {
+        TIER_ROUTER: "another/router-model",
+        TIER_REASONING: "another/reasoning-model",
+        TIER_CODE: "another/code-model",
+        TIER_FAST: "another/fast-model",
+        TIER_REVIEW: "another/review-model",
+      },
+    },
+  },
 };
 
 // Three-tier legacy preset: only TIER_REASONING, TIER_CODE, TIER_FAST.
@@ -64,26 +72,26 @@ const FIXTURE_CONFIG = {
 const THREE_TIER_CONFIG = {
   presets: {
     "three-tier-legacy": {
-      "label": "Three-tier legacy fixture",
-      "models": {
-        "TIER_REASONING": "legacy/reasoning",
-        "TIER_CODE": "legacy/code",
-        "TIER_FAST": "legacy/fast"
-      }
-    }
-  }
+      label: "Three-tier legacy fixture",
+      models: {
+        TIER_REASONING: "legacy/reasoning",
+        TIER_CODE: "legacy/code",
+        TIER_FAST: "legacy/fast",
+      },
+    },
+  },
 };
 
 // Preset missing a required tier.
 const INVALID_CONFIG = {
-  "presets": {
+  presets: {
     "invalid-preset": {
-      "models": {
-        "TIER_REASONING": "test/reasoning-model"
+      models: {
+        TIER_REASONING: "test/reasoning-model",
         // Missing TIER_CODE and TIER_FAST
-      }
-    }
-  }
+      },
+    },
+  },
 };
 
 describe("resolve-model-preset.ts — canonical five-token list", () => {
@@ -150,7 +158,7 @@ describe("resolve-model-preset.ts — model-preset resolution", () => {
     const config = await loadModelConfig(configPath, tempDir);
     expect(config).toBeDefined();
     expect(config.presets).toBeDefined();
-    expect(config.presets!['test-preset']).toBeDefined();
+    expect(config.presets!["test-preset"]).toBeDefined();
   });
 
   test("loadModelConfig throws on invalid JSON", async () => {
@@ -205,20 +213,32 @@ describe("resolve-model-preset.ts — model-preset resolution", () => {
       TIER_REVIEW: "test/review-model",
     };
     for (const token of TOKENS) {
-      const resolved = await resolveModelValue(`{{${token}}}`, config, "test-preset");
+      const resolved = await resolveModelValue(
+        `{{${token}}}`,
+        config,
+        "test-preset",
+      );
       expect(resolved).toBe(explicit[token]);
     }
   });
 
   test("resolveModelValue returns concrete value unchanged", async () => {
     const config = FIXTURE_CONFIG;
-    const resolved = await resolveModelValue("concrete/model", config, "test-preset");
+    const resolved = await resolveModelValue(
+      "concrete/model",
+      config,
+      "test-preset",
+    );
     expect(resolved).toBe("concrete/model");
   });
 
   test("resolveModelValue returns unknown tokens unchanged", async () => {
     const config = FIXTURE_CONFIG;
-    const resolved = await resolveModelValue("{{UNKNOWN_TIER}}", config, "test-preset");
+    const resolved = await resolveModelValue(
+      "{{UNKNOWN_TIER}}",
+      config,
+      "test-preset",
+    );
     expect(resolved).toBe("{{UNKNOWN_TIER}}");
   });
 
@@ -292,7 +312,11 @@ describe("resolve-model-preset.ts — model-preset resolution", () => {
 
   test("resolveModelValue handles non-token values unchanged", async () => {
     const config = FIXTURE_CONFIG;
-    const resolved = await resolveModelValue("plain/model", config, "test-preset");
+    const resolved = await resolveModelValue(
+      "plain/model",
+      config,
+      "test-preset",
+    );
     expect(resolved).toBe("plain/model");
   });
 
@@ -312,7 +336,10 @@ describe("resolve-model-preset.ts — model-preset resolution", () => {
   });
 
   test("resolveModelConfig returns null for missing config file", async () => {
-    const result = await resolveModelConfig(join(tempDir, "nonexistent.json"), tempDir);
+    const result = await resolveModelConfig(
+      join(tempDir, "nonexistent.json"),
+      tempDir,
+    );
     expect(result).toBeNull();
   });
 
