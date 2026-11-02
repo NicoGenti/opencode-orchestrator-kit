@@ -3,6 +3,11 @@
   "version": "0.7.0",
   "description": "OpenCode 2 plugin packaging the opencode-orchestrator-kit: the orchestrator routing workflow, plan-board tooling, session-memory rules, the kit skills and the /start-session command.",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NicoGenti/opencode-orchestrator-kit.git",
+    "directory": "plugin"
+  },
   "type": "module",
   "exports": {
     ".": "./src/index.ts"
