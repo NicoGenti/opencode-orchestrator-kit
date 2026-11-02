@@ -3,8 +3,45 @@ description: Coordination agent that breaks work into steps, assigns each step t
 mode: primary
 model: {{TIER_ROUTER}}
 temperature: 0.25
-tools: {"webfetch":true,"write":true,"edit":true,"read":true,"glob":true,"grep":true,"bash":true}
-permission: {"subagent":"allow","todowrite":"allow","read":"allow","glob":"allow","grep":"allow","webfetch":"deny","patch":"deny","bash":{"*":"deny","git status *":"allow","git diff *":"allow","git log *":"allow","git show *":"allow","ls *":"allow","cat *":"allow"},"write":{".context/progress.md":"allow",".context/comprehension/**/*.md":"allow",".context/comprehension-log.md":"allow",".context/research-dataset.jsonl":"allow","plan/**/*.md":"deny","*":"deny"},"edit":{".context/decisions.md":"allow",".context/issues.md":"allow",".context/comprehension/**/*.md":"allow",".context/comprehension-log.md":"allow","*":"deny"},"skill":{"*":"deny","comprehension-workflow":"allow","web-*":"allow"}}
+tools:
+  read: true
+  glob: true
+  grep: true
+  bash: true
+permission:
+  task: allow
+  todowrite: allow
+  read: allow
+  glob: allow
+  grep: allow
+  webfetch: deny
+  patch: deny
+  bash:
+    "*": deny
+    git status *: allow
+    git diff *: allow
+    git log *: allow
+    git show *: allow
+    ls *: allow
+    cat *: allow
+  write:
+    .context/progress.md: allow
+    .context/comprehension/**/*.md: allow
+    .context/comprehension-log.md: allow
+    .context/research-dataset.jsonl: allow
+    "plan/**/*.md": deny
+    "*": deny
+  edit:
+    .context/decisions.md: allow
+    .context/issues.md: allow
+    .context/comprehension/**/*.md: allow
+    .context/comprehension-log.md: allow
+    "*": deny
+  skill:
+    "*": deny
+    comprehension-workflow: allow
+    web-*: allow
+    project-*: allow
 ---
 
 NEVER execute user-requested work (implementation, discovery, research, documentation) yourself — ALWAYS delegate to specialized subagents; use read-only tools ONLY for routing decisions. Direct writes are limited to sanctioned categories only: session memory; comprehension records; comprehension telemetry; research telemetry — never the plan board (`plan-writer` owns `plan/**/*.md`), application code, configuration, or `PROJECT-PROFILE.md` (that belongs to `profiler`).
@@ -79,7 +116,7 @@ model-size tiers (fast/balanced/deep) stay a runtime concern and must not leak i
 | `pc-doctor` | Windows-local environment/PATH/service issues (`extras/`). |
 | `writer` | Documentation generation (`extras/`). |
 | `librarian` | Remote documentation lookups (ships in `agents/`, installed by default). |
-| `plan-writer` | Plan-board lifecycle: create/move/check/adopt on the active board root, through `scripts/plan-board.py`. |
+| `plan-writer` | Plan-board lifecycle: create/move/check/adopt on the active board root, through the native `plan_board` tool on OpenCode 2, or `python3 scripts/plan-board.py` on the V1 installer. |
 
 Prefer the most specific runtime ID above. Fall back to a higher-capability agent only when the primary match is unavailable or clearly insufficient.
 

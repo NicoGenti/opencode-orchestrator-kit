@@ -26,6 +26,53 @@ export const V1_TO_V2_ACTION: Readonly<Record<string, string>> = {
   write: "edit",
 };
 
+/**
+ * Top-level `permission` and `tools` keys accepted in V1 agent frontmatter.
+ * Write the V1 names (`task`, `bash`). The V2 names (`subagent`, `shell`) are
+ * not valid here; `mapAction` performs that rename. `query` and
+ * `check_diagnostics` are not OpenCode actions.
+ *
+ * `list`, `todowrite`, and `todoread` pass through unchanged. V2 has no
+ * permission action for them (see docs/PLUGIN-V2-PERMISSIONS.md).
+ */
+export const KNOWN_V1_ACTIONS: readonly string[] = [
+  "*",
+  "bash",
+  "edit",
+  "execute",
+  "glob",
+  "grep",
+  "list",
+  "patch",
+  "question",
+  "read",
+  "skill",
+  "task",
+  "todoread",
+  "todowrite",
+  "webfetch",
+  "websearch",
+  "write",
+];
+
+/**
+ * MCP tool id: `<server>_<tool>` where the server name contains at least one
+ * hyphen (`code-review-graph_get_hub_nodes_tool`). A bare `word_word` key such
+ * as `check_diagnostics` is not an MCP id.
+ */
+export function isMcpToolKey(key: string): boolean {
+  return /^[a-z0-9]+(?:-[a-z0-9]+)+_[a-z0-9_]+$/.test(key);
+}
+
+export function isKnownFrontmatterAction(key: string): boolean {
+  return KNOWN_V1_ACTIONS.includes(key) || isMcpToolKey(key);
+}
+
+/** `tools` keys are the same set without the permission catch-all `*`. */
+export function isKnownToolKey(key: string): boolean {
+  return key !== "*" && isKnownFrontmatterAction(key);
+}
+
 /** MCP (`<server>_<tool>`) and plugin-defined actions pass through unchanged. */
 export function mapAction(v1Action: string): string {
   return V1_TO_V2_ACTION[v1Action] ?? v1Action;

@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import plugin from "../plugin/src/index.ts";
 import {
+  loadPackagedCloseSession,
   loadPackagedRecall,
   loadPackagedResearchMode,
   loadPackagedStartSession,
@@ -81,6 +82,7 @@ describe("CommandDefinition.execute (OpenCode 2.2)", () => {
     ["start-session", loadPackagedStartSession()],
     ["recall", loadPackagedRecall()],
     ["research-mode", loadPackagedResearchMode()],
+    ["close-session", loadPackagedCloseSession()],
   ] as const;
 
   for (const [name, packaged] of cases) {

@@ -31,8 +31,13 @@ const repoSkillIds: string[] = collectSkillFiles(join(ROOT, "skills"))
   )
   .sort();
 
-/** Repo-root command documents packaged by the plugin (v0.6.x: 3 commands). */
-const COMMAND_NAMES = ["start-session", "recall", "research-mode"] as const;
+/** Repo-root command documents packaged by the plugin. */
+const COMMAND_NAMES = [
+  "start-session",
+  "recall",
+  "research-mode",
+  "close-session",
+] as const;
 
 /** Frontmatter description + trimmed body of one command document. */
 interface CommandSource {
@@ -184,9 +189,10 @@ describe("opencode-orchestrator-kit plugin skeleton", () => {
     expect(typeof plugin.setup).toBe("function");
   });
 
-  test("registers exactly three commands: start-session, recall, research-mode", () => {
-    expect(commands).toHaveLength(3);
+  test("registers exactly four commands: start-session, recall, research-mode, close-session", () => {
+    expect(commands).toHaveLength(4);
     expect(commands.map((command) => String(command.name)).sort()).toEqual([
+      "close-session",
       "recall",
       "research-mode",
       "start-session",

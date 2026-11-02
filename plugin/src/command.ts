@@ -52,3 +52,18 @@ export function loadPackagedRecall(): PackagedCommand {
 export function loadPackagedResearchMode(): PackagedCommand {
   return loadPackagedCommand("research-mode", "research-mode");
 }
+
+/** Load the packaged /close-session command (mirrors command/close-session.md). */
+export function loadPackagedCloseSession(): PackagedCommand {
+  return loadPackagedCommand("close-session", "close-session");
+}
+
+/** Every command the plugin registers, in stable order. */
+export function loadPackagedCommands(): PackagedCommand[] {
+  return [
+    loadPackagedStartSession(),
+    loadPackagedRecall(),
+    loadPackagedResearchMode(),
+    loadPackagedCloseSession(),
+  ];
+}

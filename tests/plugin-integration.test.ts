@@ -32,7 +32,7 @@ import { runPlanBoard } from "../plugin/src/plan-board.ts";
  * Scenari:
  *  1. repo vuota, preset default: 15 agenti (senza extras), orchestrator unico
  *     primary, tutti i 5 tier risolti (nessun `{{TIER_*}}`/`placeholder/*`
- *     residuo), 3 comandi + 9 skill, esattamente un tool `plan_board` che
+ *     residuo), 4 comandi + 9 skill, esattamente un tool `plan_board` che
  *     esegue `check` su una board vuota ritornando JSON parseabile;
  *  2. repo esistente: un agente utente pre-configurato (explorer con modello
  *     custom) non viene sovrascritto, gli altri 14 si registrano e il plugin
@@ -251,7 +251,7 @@ describe("plugin integration — empty repo", () => {
     }
   });
 
-  test("(1c) 3 comandi, 9 skill, esattamente un tool plan_board eseguibile", async () => {
+  test("(1c) 4 comandi, 9 skill, esattamente un tool plan_board eseguibile", async () => {
     const repo = makeTmpRepo({});
     const board = join(repo, "plan");
     for (const col of ["draft", "in-progress", "qa", "complete"]) {
@@ -260,6 +260,7 @@ describe("plugin integration — empty repo", () => {
     const { commands, skills, tools } = await setupWith(readKitOptions(repo));
 
     expect(commands.map((c) => String(c.name)).sort()).toEqual([
+      "close-session",
       "recall",
       "research-mode",
       "start-session",

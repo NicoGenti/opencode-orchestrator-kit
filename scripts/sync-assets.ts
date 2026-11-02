@@ -4,7 +4,8 @@
  * The packaged plugin ships byte-identical copies of the addressable kit
  * markdown. This script is the only writer of that tree:
  *
- *   command/start-session.md, recall.md, research-mode.md -> assets/commands/
+ *   command/start-session.md, recall.md, research-mode.md, close-session.md
+ *                                                         -> assets/commands/
  *   skills/<id>/SKILL.md                                  -> assets/skills/
  *   agents/*.md                                           -> assets/agents/
  *   extras/*.md                                           -> assets/extras/
@@ -30,6 +31,7 @@ const PACKAGED_COMMANDS = [
   "start-session.md",
   "recall.md",
   "research-mode.md",
+  "close-session.md",
 ] as const;
 
 interface AssetBinding {

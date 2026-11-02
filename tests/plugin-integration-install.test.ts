@@ -26,14 +26,14 @@
  * it instead of assuming it.
  *
  * Scenarios:
- *  1. packaged artifact — the tarball is exactly the expected 42 files, the
+ *  1. packaged artifact — the tarball is exactly the expected 43 files, the
  *     package declares zero runtime dependencies, `files`/`exports` cover
  *     everything registration needs, and the packed assets are the repo-root
  *     sources;
- *  2. empty fixture repo — 3 commands, 9 skills, 15 agents (17 with
+ *  2. empty fixture repo — 4 commands, 9 skills, 15 agents (17 with
  *     `withExtras: true`), 1 `plan_board` tool, orchestrator the only
  *     `primary`, per-agent models resolved from the bundled preset tiers,
- *     V2 permissions on every agent (orchestrator 25 rules, plan-writer 9);
+ *     V2 permissions on every agent (orchestrator 26 rules, plan-writer 10);
  *  3. existing fixture repo — a user-defined agent colliding with a kit id
  *     wins and is not overwritten, the other kit agents still register, and
  *     NOT A SINGLE FILE is written into the repo (the `.opencode/agents/`
@@ -103,11 +103,16 @@ const SKILL_IDS = [
   "structural-search",
 ] as const;
 
-/** The 3 kit commands. */
-const COMMAND_NAMES = ["start-session", "recall", "research-mode"] as const;
+/** The 4 kit commands. */
+const COMMAND_NAMES = [
+  "start-session",
+  "recall",
+  "research-mode",
+  "close-session",
+] as const;
 
 /**
- * The exact file surface of the published package (42 entries, relative to
+ * The exact file surface of the published package (43 entries, relative to
  * the package root). Any drift is a packaging change that must be reviewed
  * explicitly — the plugin is self-contained and ships nothing else.
  */
@@ -729,7 +734,7 @@ describe("packaged artifact — offline pack and self-containment", () => {
       expect(pack.log).toContain("opencode-orchestrator-kit-");
     }
     expect(packageFiles()).toEqual([...EXPECTED_PACKAGE_FILES].sort());
-    expect(packageFiles()).toHaveLength(42);
+    expect(packageFiles()).toHaveLength(43);
     if (extractedFiles !== null) {
       expect(extractedFiles).toEqual([...EXPECTED_PACKAGE_FILES].sort());
     }
@@ -832,13 +837,14 @@ describe("packaged artifact — offline pack and self-containment", () => {
 /* -------------------------------------------------------------------------- */
 
 describe("plugin activation — empty fixture repo", () => {
-  test("the packed plugin registers 3 commands, 9 skills and 1 plan_board tool", async () => {
+  test("the packed plugin registers 4 commands, 9 skills and 1 plan_board tool", async () => {
     const repo = makeEmptyFixture({ withExtras: false });
     const options = readKitOptions(repo);
     const harness = await setupPackedPlugin(options);
 
     // Commands — the bodies come from the PACKED assets.
     expect(harness.commands.map((c) => String(c.name)).sort()).toEqual([
+      "close-session",
       "recall",
       "research-mode",
       "start-session",
@@ -982,7 +988,7 @@ describe("plugin activation — empty fixture repo", () => {
     });
   });
 
-  test("every agent carries V2 permissions (orchestrator 25 rules, plan-writer 9)", async () => {
+  test("every agent carries V2 permissions (orchestrator 26 rules, plan-writer 10)", async () => {
     const repo = makeEmptyFixture({ withExtras: true });
     const harness = await setupPackedPlugin(readKitOptions(repo));
 
@@ -996,7 +1002,7 @@ describe("plugin activation — empty fixture repo", () => {
     }
 
     const orchestrator = harness.agents.get("orchestrator")!.permissions!;
-    expect(orchestrator).toHaveLength(25);
+    expect(orchestrator).toHaveLength(26);
     expect(orchestrator[orchestrator.length - 1]).toEqual({
       action: "edit",
       resource: "plan/*.md",
@@ -1008,7 +1014,7 @@ describe("plugin activation — empty fixture repo", () => {
     );
 
     const planWriter = harness.agents.get("plan-writer")!.permissions!;
-    expect(planWriter).toHaveLength(9);
+    expect(planWriter).toHaveLength(10);
     expect(resolveEffect(planWriter, "edit", "plan/qa/13-example.md")).toBe(
       "allow",
     );

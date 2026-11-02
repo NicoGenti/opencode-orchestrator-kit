@@ -7,7 +7,6 @@ model: {{TIER_FAST}}
 temperature: 0.1
 tools: {}
 permission:
-  check_diagnostics: deny
   task: deny
   edit: deny
   write:

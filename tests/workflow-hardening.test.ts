@@ -14,6 +14,9 @@
 import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+
+import { parseFrontmatterMap } from "../plugin/src/frontmatter-map.ts";
+import type { FrontmatterMap } from "../plugin/src/frontmatter-map.ts";
 import {
   TASK_EXAMPLES,
   RECALL_EXAMPLES,
@@ -62,11 +65,13 @@ describe("workflow-hardening — W1 prompt budget (v0.6.1)", () => {
 });
 
 describe("workflow-hardening — W2 on-demand loading", () => {
-  test("orchestrator skill permission allows exactly comprehension-workflow + web-* (web-kit)", () => {
+  test("orchestrator skill permission allows comprehension-workflow, web-*, and project-*", () => {
     const fm = ORCH.slice(0, ORCH.indexOf("\n---", 4));
-    expect(fm).toContain(
-      '"skill":{"*":"deny","comprehension-workflow":"allow","web-*":"allow"}}',
-    );
+    expect(fm).toContain('"*": deny');
+    expect(fm).toContain("comprehension-workflow: allow");
+    expect(fm).toContain("web-*: allow");
+    expect(fm).toContain("project-*: allow");
+    expect(fm).not.toContain('"skill":{');
     expect(fm).not.toContain("conductor");
   });
 
@@ -241,19 +246,27 @@ describe("workflow-hardening — W7 privacy & isolation (regression)", () => {
  *      alternation=abab, user_conf=N) retired with the v0.6.0 flow fields.
  */
 describe("workflow-hardening — W8 P0 frontend permissions (v0.6.2)", () => {
+  function orchestratorPermission(): FrontmatterMap {
+    const fm = ORCH.slice(ORCH.indexOf("---\n") + 4, ORCH.indexOf("\n---", 4));
+    const permission = parseFrontmatterMap(fm, "permission");
+    if (!permission) throw new Error("orchestrator permission block missing");
+    return permission;
+  }
+
   test("orchestrator write permission includes both metric sinks", () => {
-    const fm = ORCH.slice(0, ORCH.indexOf("\n---", 4));
-    expect(fm).toContain('".context/comprehension-log.md":"allow"');
-    expect(fm).toContain('".context/research-dataset.jsonl":"allow"');
+    const write = orchestratorPermission().write;
+    expect(write).toMatchObject({
+      ".context/comprehension-log.md": "allow",
+      ".context/research-dataset.jsonl": "allow",
+    });
   });
 
   test("W8b v0.6.5 least privilege: dataset has NO edit permission (append-only by permission)", () => {
-    const fm = ORCH.slice(0, ORCH.indexOf("\n---", 4));
-    const em = fm.match(/"edit":\s*\{([\s\S]*?)\}/);
-    expect(em).not.toBeNull();
-    if (em === null) throw new Error("orchestrator edit permission missing");
-    expect(em[1]).toContain('".context/comprehension-log.md":"allow"');
-    expect(em[1]).not.toContain('".context/research-dataset.jsonl"');
+    const edit = orchestratorPermission().edit;
+    expect(edit).toMatchObject({
+      ".context/comprehension-log.md": "allow",
+    });
+    expect(edit).not.toHaveProperty(".context/research-dataset.jsonl");
   });
 });
 

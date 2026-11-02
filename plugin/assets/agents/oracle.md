@@ -9,7 +9,6 @@ permission:
   edit: deny
   write:
     "plan/**/*.md": deny
-  query: allow
   bash:
     "*": ask
     sed *: deny

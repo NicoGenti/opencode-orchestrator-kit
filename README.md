@@ -118,7 +118,7 @@ After the first tagged release publishes the package, the npm name uses the same
 What the plugin registers at runtime (nothing is copied into `.opencode/`):
 
 - **15 agents** (+ `pc-doctor` and `writer` opt-in with `"withExtras": true`), from the same `agents/`/`extras/` contracts.
-- **3 commands** (`/start-session`, `/recall`, `/research-mode`) and **9 skills**.
+- **4 commands** (`/start-session`, `/recall`, `/research-mode`, `/close-session`) and **9 skills**.
 - **One native tool, `plan_board`**, the TypeScript port of `scripts/plan-board.py`: standing authorization covers `check` and `move` of conforming plan files without approval; every other board operation (`new`, `adopt`, body edits, deletion, rename) needs per-request approval.
 - **Setup options**: `preset` (one of the five bundled presets: `default`, `freellmapi`, `generic`, `opencode-go-free`, `ollama`, all in the same format as `templates/models.config.json`; a preset whose tier values are all `placeholder/*` fails fast with a `TierConfigError`) and `withExtras` (default `false`).
 
@@ -202,11 +202,39 @@ Select `@orchestrator` (or set it as your default agent), then run **`/start-ses
 
 - **Swap providers per tier** by editing `.opencode/models.config.json` and setting `default_preset` to the profile you want.
 - **Opt into extras** with `./install.sh --with-extras` to install `pc-doctor` and `writer` into `agents/`. Re-run with `--upgrade` (or `--force`) to refresh kit files that are already installed.
-- **Add project-specific skills** under `skills/<name>/SKILL.md`; the orchestrator loads them on demand via the `skill` tool.
+- **Add a skill** by following [Companion kits](#companion-kits) below. A file at `skills/<name>/SKILL.md` is not loaded while an agent's `permission.skill` map starts with `"*": deny`.
 - **Optional structural search:** if `ast-grep` (`sg`) is installed, the `explorer` can use it for structural queries; see `skills/structural-search/SKILL.md`.
 - **Measure token impact:** follow the A/B protocol in [`docs/BENCHMARK-TOKEN-USAGE.md`](docs/BENCHMARK-TOKEN-USAGE.md) to compare exploration with and without the repo map.
 - **Design-first governance:** keep architecture decisions in `.context/DESIGN-RULES.md`; [`docs/DESIGN-RULES.md`](docs/DESIGN-RULES.md) describes the template, the lifecycle, and the checks run by `planner` and `code-reviewer`.
 - **Engineering baseline** (secrets hygiene, git hygiene, definition of done) lives in `CONTRIBUTING.md`.
+
+## Companion kits
+
+### web-kit
+
+[web-kit](https://github.com/NicoGenti/web-kit) is a separate repository. This kit does not vendor its skills or its UI rules.
+
+- The skill-name prefix **`web-*` is reserved** for web-kit skills (`web-theme`, `web-brand`, `web-scaffold-landing`, `web-scaffold-shop`, `web-scaffold-admin`, `web-deploy`). Agent allowlists use that glob, so a third-party skill named `web-…` would be enabled for every agent that allows `web-*`. Do not use the prefix for anything else.
+- Install web-kit skills on OpenCode's skills path, one directory per skill: `.opencode/skills/<name>/SKILL.md`, with the frontmatter `name` equal to `<name>` ([Skills](https://opencode.ai/v2/docs/skills)). The plugin does not register them; the `skill` tool loads whatever OpenCode discovers on that path.
+- **`/new-site` is a web-kit command**, not one of this kit's four commands. This plugin does not register it.
+- Agents whose `permission.skill` map allows `web-*`: `orchestrator`, `oracle`, `developer-fixer`, `code-reviewer`, and `deploy-helper`.
+- `developer-fixer` **asks** before web-kit build and scaffold commands: `npx`, `dotnet`, `ng`, `docker build`, and `bash` or `sh` scripts under a skill `scripts/` directory. That is what lets `/new-site` run without a blanket shell allow.
+- The DR-UI-1…13 list in `templates/design-rules.md` is a copy of web-kit `docs/design-rules-ui.md` on `main`. The file's header names that source. `bun run check-design-rules` fetches the raw file and diffs the rules section. [`.github/workflows/check-design-rules.yml`](.github/workflows/check-design-rules.yml) runs that check every Monday and on `workflow_dispatch`, and fails on drift. It is not part of the pull-request test workflow, and `bun test` does not call the network.
+
+### Adding a skill
+
+Every shipped agent starts `permission.skill` with `"*": deny`. OpenCode then loads a skill only when a later rule allows its name. Putting `skills/<name>/SKILL.md` on disk is not enough.
+
+**In this repository**
+
+1. Add `skills/<name>/SKILL.md`. The frontmatter `name` is the allowlist key (`skills/examples/` included).
+2. Add that name to the `permission.skill` map of each agent that should load it, after `"*": deny`.
+3. Run `bun run sync-assets` so `plugin/assets/` matches.
+4. `tests/skill-allowlist.test.ts` fails when an `allow` or `ask` names a skill that does not ship here. `deny` entries, the `"*"` catch-all, and globs are not required to name a shipped skill. A glob that matches **zero** shipped skills is legal only for a documented reserved prefix: `web-*` (web-kit, above) and `project-*` (below).
+
+**In a project that uses the kit**
+
+Name the skill `project-<something>` (directory and frontmatter `name`). `project-*` is reserved and already allowlisted for `orchestrator`, `developer-fixer`, and `code-reviewer`, so those agents can load the project's own skills without an edit to this kit. Other agents still need an allowlist entry. Do not use the `web-*` prefix for a project skill.
 
 ## Development
 
@@ -219,7 +247,7 @@ bun test                # test suite
 bun run sync-assets     # refresh plugin/assets after editing agents, extras, skills, or the packaged commands
 ```
 
-`plugin/assets/` is generated. After changing `agents/`, `extras/`, `skills/`, or `command/start-session.md`, `command/recall.md`, or `command/research-mode.md`, run `bun run sync-assets` (or `bun run sync-assets --check` to fail when the mirror has drifted). The plugin `prepack` script runs the same copy. Do not edit the packaged copies by hand.
+`plugin/assets/` is generated. After changing `agents/`, `extras/`, `skills/`, or a packaged command (`command/start-session.md`, `command/recall.md`, `command/research-mode.md`, `command/close-session.md`), run `bun run sync-assets` (or `bun run sync-assets --check` to fail when the mirror has drifted). The plugin `prepack` script runs the same copy. Do not edit the packaged copies by hand.
 
 Changes are tracked in `CHANGELOG.md`.
 

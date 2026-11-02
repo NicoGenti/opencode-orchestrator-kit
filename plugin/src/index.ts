@@ -2,11 +2,7 @@ import { Plugin } from "./runtime/opencode-plugin";
 import type { AgentEditor } from "./runtime/opencode-plugin";
 
 import { collectPackagedSkills } from "./assets";
-import {
-  loadPackagedRecall,
-  loadPackagedResearchMode,
-  loadPackagedStartSession,
-} from "./command";
+import { loadPackagedCommands } from "./command";
 
 import {
   collectAvailabilityWarnings,
@@ -28,7 +24,8 @@ const WARNING_PREFIX = "[opencode-orchestrator-kit]";
  * Reads the plugin options `{ preset?, withExtras? }`, resolves the tier map
  * from the bundled presets ( throwing TierConfigError early on bad config ),
  * signals unavailable tier models against `ctx.model.list()` (non-fatal), and
- * registers: three commands (`/start-session`, `/recall`, `/research-mode`),
+ * registers: four commands (`/start-session`, `/recall`, `/research-mode`,
+ * `/close-session`),
  * the 9 kit skills and the 15 packaged agents (+2 extras when `withExtras:
  * true`) via `ctx.agent.transform`.
  *
@@ -89,16 +86,12 @@ export default Plugin.define({
       }
     }
 
-    // 4. Commands (/start-session, /recall, /research-mode — packaged copies
-    //    of the repo-root command/*.md documents).
+    // 4. Commands (/start-session, /recall, /research-mode, /close-session —
+    //    packaged copies of the repo-root command/*.md documents).
     //    OpenCode 2.2 contract: `execute(input)` must return a promise AND
     //    deliver the prompt itself; the host chains `.then()` on the result.
     ctx.command.transform((editor) => {
-      for (const packaged of [
-        loadPackagedStartSession(),
-        loadPackagedRecall(),
-        loadPackagedResearchMode(),
-      ]) {
+      for (const packaged of loadPackagedCommands()) {
         editor.add({
           name: packaged.name,
           description: packaged.description,

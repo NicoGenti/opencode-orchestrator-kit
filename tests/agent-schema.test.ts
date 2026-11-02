@@ -2,6 +2,12 @@ import { describe, expect, test } from "bun:test";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
+import { parseFrontmatterMap } from "../plugin/src/frontmatter-map.ts";
+import {
+  isKnownFrontmatterAction,
+  isKnownToolKey,
+} from "../plugin/src/permissions.ts";
+
 /**
  * Schema-validation tests for agents/*.md and extras/*.md frontmatter.
  *
@@ -116,5 +122,42 @@ describe("agent frontmatter schema — negative case (proves the check has teeth
     expect(() =>
       extractFrontmatter("# No frontmatter here\n\nJust prose."),
     ).toThrow();
+  });
+});
+
+describe("agent frontmatter permission and tool keys", () => {
+  test("every permission action and tool key is a known V1 name or an MCP id", () => {
+    const problems: string[] = [];
+    for (const { dir, file } of agentFiles) {
+      const raw = readFileSync(join(REPO_ROOT, dir, file), "utf-8");
+      const fm = extractFrontmatter(raw);
+      const permission = parseFrontmatterMap(fm, "permission");
+      const tools = parseFrontmatterMap(fm, "tools");
+      for (const key of Object.keys(permission ?? {})) {
+        if (!isKnownFrontmatterAction(key)) {
+          problems.push(`${dir}/${file} permission.${key}`);
+        }
+      }
+      for (const key of Object.keys(tools ?? {})) {
+        if (!isKnownToolKey(key)) {
+          problems.push(`${dir}/${file} tools.${key}`);
+        }
+      }
+    }
+    expect(problems).toEqual([]);
+  });
+
+  test("unknown actions and the V2 names subagent and shell are rejected", () => {
+    expect(isKnownFrontmatterAction("task")).toBe(true);
+    expect(isKnownFrontmatterAction("bash")).toBe(true);
+    expect(isKnownFrontmatterAction("query")).toBe(false);
+    expect(isKnownFrontmatterAction("check_diagnostics")).toBe(false);
+    expect(isKnownFrontmatterAction("subagent")).toBe(false);
+    expect(isKnownFrontmatterAction("shell")).toBe(false);
+    expect(
+      isKnownFrontmatterAction("code-review-graph_get_hub_nodes_tool"),
+    ).toBe(true);
+    expect(isKnownToolKey("*")).toBe(false);
+    expect(isKnownToolKey("read")).toBe(true);
   });
 });
