@@ -17,7 +17,8 @@ import plugin from "../plugin/src/index.ts";
  *
  * Suite scritta PRIMA dell'implementazione (TDD, passo 1): pinna il contratto
  * osservabile del tool — esattamente un tool `plan_board`, schema input allineato
- * alla CLI di plan-board, execute che ritorna una STRING JSON, comportamento
+ * alla CLI di plan-board, execute che ritorna una Promise risolta a una STRING
+ * JSON (il host fa `execute(input).then(...)`), comportamento
  * check/move/new/adopt su board usa-e-getta identico a plugin/src/plan-board.ts.
  *
  * Nessun caso tocca la board reale del repo: root e' sempre un path assoluto
@@ -278,6 +279,12 @@ describe("registrazione del tool nativo plan_board", () => {
     expect(input.properties.column.enum).toEqual([...COLUMNS]);
     expect(input.properties.root.type).toBe("string");
     expect(input.properties.dryRun.type).toBe("boolean");
+  });
+
+  test("(j) execute ritorna una Promise: il host chiama `.then` sul valore", async () => {
+    const returned = (tools[0].execute as (input: ToolInput) => unknown)({});
+    expect(typeof (returned as { then?: unknown }).then).toBe("function");
+    await returned;
   });
 
   test("execute e' una funzione e ritorna una STRING (payload JSON, non un oggetto)", async () => {

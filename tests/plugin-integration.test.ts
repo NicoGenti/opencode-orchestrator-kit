@@ -269,8 +269,8 @@ describe("plugin integration — empty repo", () => {
 
     expect(tools).toHaveLength(1);
     expect(tools[0].name).toBe("plan_board");
-    const execute = tools[0].execute as (input: unknown) => string;
-    const payload = JSON.parse(execute({ command: "check", root: board }));
+    const execute = tools[0].execute as (input: unknown) => Promise<string>;
+    const payload = JSON.parse(await execute({ command: "check", root: board }));
     // coerente con runPlanBoard (stesso percorso di codice, stessa semantica ok)
     expect(payload).toEqual(
       runPlanBoard(["check", "--root", board, "--json"]).payload,

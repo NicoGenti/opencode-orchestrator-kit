@@ -123,10 +123,15 @@ function planBoardArgv(input: unknown): string[] {
 }
 
 /**
- * Tool implementation: runs the pure port (which never throws) and returns
+ * Tool implementation: runs the pure port (which never throws) and resolves to
  * its JSON payload as a pretty-printed string.
+ *
+ * MUST be async: the OpenCode 2 host calls `execute(input).then(...)`, so a
+ * synchronous return value makes every call fail with
+ * `t(s).then is not a function` (observed live on 2026-11-02 in the session
+ * "Restyle Petalo palette Enrica": 9 plan_board calls, all failed this way).
  */
-export function executePlanBoardTool(input: unknown): string {
+export async function executePlanBoardTool(input: unknown): Promise<string> {
   const { payload } = runPlanBoard(planBoardArgv(input));
   return JSON.stringify(payload, null, 2);
 }

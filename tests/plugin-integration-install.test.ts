@@ -898,8 +898,12 @@ describe("plugin activation — empty fixture repo", () => {
     for (const column of ["draft", "in-progress", "qa", "complete"]) {
       mkdirSync(join(board, column), { recursive: true });
     }
-    const execute = harness.tools[0].execute as (input: unknown) => string;
-    const payload = JSON.parse(execute({ command: "check", root: board })) as {
+    const execute = harness.tools[0].execute as (
+      input: unknown,
+    ) => Promise<string>;
+    const payload = JSON.parse(
+      await execute({ command: "check", root: board }),
+    ) as {
       ok: boolean;
       action: string;
     };
