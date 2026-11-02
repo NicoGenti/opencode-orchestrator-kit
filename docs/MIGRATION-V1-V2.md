@@ -30,21 +30,21 @@ The plugin registers all four kit commands: `/start-session`, `/recall`, `/resea
 
 1. Open the target project's `opencode.json` (or `opencode.jsonc`) and add the plugin. The OpenCode 2 key is `plugins`. Options use the object form `{ "package", "options" }` ([Plugins](https://opencode.ai/v2/docs/plugins)).
 
-   **npm publication is pending** until the first `v*` tag, so the npm name is not installable yet. Use a local directory (or `opencode plugin add 'github:NicoGenti/opencode-orchestrator-kit#main::path:plugin'`):
+   Install the published npm package `opencode-orchestrator-kit`:
 
    ```jsonc
    {
      "$schema": "https://opencode.ai/config.json",
      "plugins": [
        {
-         "package": "/absolute/path/to/opencode-orchestrator-kit/plugin",
+         "package": "opencode-orchestrator-kit",
          "options": { "preset": "default", "withExtras": false }
        }
      ]
    }
    ```
 
-   After the package is published, `"package": "opencode-orchestrator-kit"` replaces the local path. The options stay the same.
+   A local directory uses the same shape with `"package": "/absolute/path/to/opencode-orchestrator-kit/plugin"`. From git: `opencode plugin add 'github:NicoGenti/opencode-orchestrator-kit#main::path:plugin'`. The options stay the same.
 
 2. If you previously ran `./install.sh project`, optionally delete the V1 copies that the plugin now supersedes: `.opencode/agents/`, `.opencode/skills/`, `.opencode/command/` (keep `.opencode/models.config.json` if you still use the v1 path elsewhere, and keep `.context/` and `plan/` — those are data, not assets). Remove `AGENTS.md` only if you moved the kit content global.
 

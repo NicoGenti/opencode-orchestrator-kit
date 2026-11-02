@@ -1,7 +1,10 @@
 # Setup: Native OpenCode (no plugin required)
 
-This is the recommended path. It works with the plain `opencode` CLI, with zero
-dependency on OpenCode Studio or any other profile manager.
+This guide documents the legacy v1 installer (`install.sh`). On OpenCode 2 the
+primary install is the published npm plugin `opencode-orchestrator-kit` (the
+README and [`MIGRATION-V1-V2.md`](MIGRATION-V1-V2.md)). The steps below still
+work with the plain `opencode` CLI, with zero dependency on OpenCode Studio or
+any other profile manager.
 
 > **Heads-up:** installing the kit places the agents on disk, but to actually run
 > them you need at least one usable provider/model mapping of your own. The

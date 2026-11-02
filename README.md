@@ -20,7 +20,7 @@ The kit splits the work into a routing layer and a roster of specialists:
 - **Exploration starts from a repo map.** The `profiler` generates a compact `.context/repo-map.md` (hard 300-line budget) that the `explorer` reads before broad searches, reducing whole-file reads and token waste.
 - **It adapts to any repository.** On first run the `profiler` agent detects the stack (or interviews you for an empty repo) and scaffolds `.context/` (memory) and `plan/` (kanban).
 
-On **OpenCode 2** the kit is the `opencode-orchestrator-kit` plugin: agents, commands and skills are registered at runtime — nothing is written into your project's `.opencode/` directory. **npm publication is pending until the first tagged release** (`v*`); until that tag exists, install from a local checkout or from git (below). The native copy-based installer still works and remains supported, but it is **deprecated in favor of the plugin** on OpenCode 2 (the `default` profile it ships references provider IDs that are not yours — see the _Choose your model profile_ step). Optional notes for [OpenCode Studio](https://github.com/Microck/opencode-studio) users are in `docs/SETUP-OPENCODE-STUDIO.md`.
+On **OpenCode 2** the kit is the `opencode-orchestrator-kit` plugin, published on npm: agents, commands and skills are registered at runtime — nothing is written into your project's `.opencode/` directory. Add `"package": "opencode-orchestrator-kit"` to the `plugins` array (below). A local `plugin/` directory and a git install remain available as alternatives. The native copy-based installer still works and remains supported, but it is **deprecated in favor of the plugin** on OpenCode 2 (the `default` profile it ships references provider IDs that are not yours — see the _Choose your model profile_ step). Optional notes for [OpenCode Studio](https://github.com/Microck/opencode-studio) users are in `docs/SETUP-OPENCODE-STUDIO.md`.
 
 ## How a request flows
 
@@ -77,31 +77,9 @@ Full contracts, permissions and model fallbacks are in each `agents/*.md` file (
 
 With the plugin, tier resolution happens at runtime from `plugin/src/tiers.ts` presets — there is no `{{TIER_*}}` substitution at install time.
 
-**npm publication is pending.** `opencode-orchestrator-kit` is not on the npm registry until the first `v*` tag is pushed (see `.github/workflows/release.yml` and the release steps in `CONTRIBUTING.md`). Until then, do not use `"package": "opencode-orchestrator-kit"` — that name 404s. Use a local directory or a git install. OpenCode 2 loads plugins from the `plugins` array in `opencode.json` or `opencode.jsonc` ([Plugins](https://opencode.ai/v2/docs/plugins)). A string entry is a package name or a local directory. Pass options with the object form `{ "package", "options" }`. Local paths must be directories (a path to a single file is skipped). Relative paths resolve from the config file that contains the entry.
+`opencode-orchestrator-kit` is published on npm (`1.0.0`, tag `v1.0.0`; later releases follow `.github/workflows/release.yml` and the steps in `CONTRIBUTING.md`). OpenCode 2 loads plugins from the `plugins` array in `opencode.json` or `opencode.jsonc` ([Plugins](https://opencode.ai/v2/docs/plugins)). A string entry is a package name or a local directory. Pass options with the object form `{ "package", "options" }`. Local paths must be directories (a path to a single file is skipped). Relative paths resolve from the config file that contains the entry.
 
-Local directory (the config shape checked against the OpenCode 2 docs):
-
-```jsonc
-{
-  "$schema": "https://opencode.ai/config.json",
-  "plugins": [
-    {
-      "package": "/absolute/path/to/opencode-orchestrator-kit/plugin",
-      "options": { "preset": "generic", "withExtras": false },
-    },
-  ],
-}
-```
-
-The same docs accept a git package spec on `opencode plugin add`, including a subdirectory selector, because this plugin lives in `plugin/` and not at the repository root:
-
-```sh
-opencode plugin add 'github:NicoGenti/opencode-orchestrator-kit#main::path:plugin'
-```
-
-That command writes a package entry. Set `preset` and `withExtras` with the object form above if the generated entry has no `options`. The docs do not show a git spec inside a `package` field example; they do show git specs as `plugin add` arguments and state that startup checks unpinned npm and Git plugins. This repository has not executed that install against a live OpenCode binary.
-
-After the first tagged release publishes the package, the npm name uses the same object form:
+Primary install, the npm package:
 
 ```jsonc
 {
@@ -109,11 +87,19 @@ After the first tagged release publishes the package, the npm name uses the same
   "plugins": [
     {
       "package": "opencode-orchestrator-kit",
-      "options": { "preset": "<preset>", "withExtras": false },
+      "options": { "preset": "generic", "withExtras": false },
     },
   ],
 }
 ```
+
+A local checkout of this repository uses the same object form with an absolute directory (`"package": "/absolute/path/to/opencode-orchestrator-kit/plugin"`). The OpenCode 2 docs also accept a git package spec on `opencode plugin add`, including a subdirectory selector, because this plugin lives in `plugin/` and not at the repository root:
+
+```sh
+opencode plugin add 'github:NicoGenti/opencode-orchestrator-kit#main::path:plugin'
+```
+
+That command writes a package entry. Set `preset` and `withExtras` with the object form above if the generated entry has no `options`. The docs do not show a git spec inside a `package` field example; they do show git specs as `plugin add` arguments and state that startup checks unpinned npm and Git plugins. This repository has not executed that install against a live OpenCode binary.
 
 What the plugin registers at runtime (nothing is copied into `.opencode/`):
 
@@ -127,6 +113,8 @@ Your own configuration always wins: the plugin upserts an agent's `transform` on
 The plugin requires **`@opencode/plugin` `^2.1.0`** as a peer dependency (install it once alongside OpenCode 2). Coming from the copy-based installer, or mixing both paths? Follow [`docs/MIGRATION-V1-V2.md`](docs/MIGRATION-V1-V2.md).
 
 ## Quickstart
+
+The section above is the OpenCode 2 install (the npm package). The numbered steps below are the legacy `install.sh` installer.
 
 > **Heads-up:** the `default` model profile references provider IDs that are not yours. To actually run agents you need at least one usable provider/model mapping of your own: switch to the `generic` preset and edit `.opencode/models.config.json` before your first `/start-session` (step 3).
 
