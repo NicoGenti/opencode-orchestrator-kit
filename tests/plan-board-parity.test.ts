@@ -1,5 +1,12 @@
 import { describe, expect, test, afterAll } from "bun:test";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
@@ -44,7 +51,8 @@ const COLUMNS = ["draft", "in-progress", "qa", "complete"] as const;
 
 function pythonBin(): string | null {
   for (const cmd of ["python3", "python"]) {
-    if (spawnSync(cmd, ["--version"], { stdio: "ignore" }).status === 0) return cmd;
+    if (spawnSync(cmd, ["--version"], { stdio: "ignore" }).status === 0)
+      return cmd;
   }
   return null;
 }
@@ -109,7 +117,9 @@ function makeEmptyRoot(tag: string): string {
 /**
  * Due radici indipendenti con lo stesso seed: [radice python, radice ts].
  */
-function makePairedRoots(seed: (root: string) => void = () => {}): [string, string] {
+function makePairedRoots(
+  seed: (root: string) => void = () => {},
+): [string, string] {
   const pyRoot = makeEmptyRoot("py");
   const tsRoot = makeEmptyRoot("ts");
   for (const root of [pyRoot, tsRoot]) {
@@ -120,7 +130,12 @@ function makePairedRoots(seed: (root: string) => void = () => {}): [string, stri
 }
 
 /** Un piano conforme minimo gia' presente in una colonna (senza passare dal tool). */
-function seedPlan(root: string, column: string, stem: string, extra = ""): void {
+function seedPlan(
+  root: string,
+  column: string,
+  stem: string,
+  extra = "",
+): void {
   writeFileSync(
     join(root, column, `${stem}.md`),
     `---\nid: ${stem}\ntitle: ${stem}\nstatus: ${column}\ncreated: 2026-01-01\nupdated: 2026-01-01\n` +
@@ -138,7 +153,12 @@ function writeBody(text: string): string {
   return p;
 }
 
-type RunResult = { status: number | null; json: any; stdout: string; stderr: string };
+type RunResult = {
+  status: number | null;
+  json: any;
+  stdout: string;
+  stderr: string;
+};
 
 function toResult(r: ReturnType<typeof spawnSync>): RunResult {
   const stdout = r.stdout ?? "";
@@ -152,12 +172,20 @@ function toResult(r: ReturnType<typeof spawnSync>): RunResult {
 }
 
 function runPy(args: string[], root: string): RunResult {
-  return toResult(spawnSync(PY, [PY_SCRIPT, ...args, "--root", root, "--json"], { encoding: "utf-8" }));
+  return toResult(
+    spawnSync(PY, [PY_SCRIPT, ...args, "--root", root, "--json"], {
+      encoding: "utf-8",
+    }),
+  );
 }
 
 function runTs(args: string[], root: string): RunResult {
   return toResult(
-    spawnSync(process.execPath, [TS_SCRIPT, ...args, "--root", root, "--json"], { encoding: "utf-8" }),
+    spawnSync(
+      process.execPath,
+      [TS_SCRIPT, ...args, "--root", root, "--json"],
+      { encoding: "utf-8" },
+    ),
   );
 }
 
@@ -232,7 +260,11 @@ maybe("plan-board parity python <-> typescript", () => {
 
   test("[3] check con condizioni di warning (legacy + stray file + comprehension assente)", () => {
     const [pyRoot, tsRoot] = makePairedRoots((root) => {
-      writeFileSync(join(root, "draft", "0002-legacy.md"), "# Legacy\n\nSenza frontmatter.\n", "utf-8");
+      writeFileSync(
+        join(root, "draft", "0002-legacy.md"),
+        "# Legacy\n\nSenza frontmatter.\n",
+        "utf-8",
+      );
       writeFileSync(join(root, "qa", "notes.txt"), "stray", "utf-8");
       seedPlan(root, "complete", "0003-no-comp");
     });
@@ -243,7 +275,11 @@ maybe("plan-board parity python <-> typescript", () => {
     expect(py.status).toBe(0);
     const warnings: string[] = py.json?.warnings?.map((w: any) => w.code) ?? [];
     expect(warnings).toEqual(
-      expect.arrayContaining(["legacy-no-frontmatter", "unexpected-file", "missing-comprehension"]),
+      expect.arrayContaining([
+        "legacy-no-frontmatter",
+        "unexpected-file",
+        "missing-comprehension",
+      ]),
     );
   });
 
@@ -262,7 +298,9 @@ maybe("plan-board parity python <-> typescript", () => {
     expectParity(py, ts, pyRoot, tsRoot, "check con errore");
     expect(py.status).toBe(1);
     expect(py.json?.ok).toBe(false);
-    expect(py.json?.errors?.map((e: any) => e.code)).toContain("status-folder-mismatch");
+    expect(py.json?.errors?.map((e: any) => e.code)).toContain(
+      "status-folder-mismatch",
+    );
   });
 
   test("[5] new reale (non dry-run), poi check sul risultato", () => {
@@ -288,14 +326,24 @@ maybe("plan-board parity python <-> typescript", () => {
     const pyCheck = runPy(["check"], pyRoot);
     const tsCheck = runTs(["check"], tsRoot);
     expectParity(pyCheck, tsCheck, pyRoot, tsRoot, "check dopo new");
-    expect(pyCheck.json?.plans?.draft?.map((p: any) => p.id)).toEqual(["9001-demo"]);
+    expect(pyCheck.json?.plans?.draft?.map((p: any) => p.id)).toEqual([
+      "9001-demo",
+    ]);
   });
 
   test("[6] move --to qa --comprehension skipped su un piano di draft, poi check", () => {
     const [pyRoot, tsRoot] = makePairedRoots((root) => {
       seedPlan(root, "draft", "9002-move");
     });
-    const argv = ["move", "--id", "9002-move", "--to", "qa", "--comprehension", "skipped"];
+    const argv = [
+      "move",
+      "--id",
+      "9002-move",
+      "--to",
+      "qa",
+      "--comprehension",
+      "skipped",
+    ];
     const py = runPy(argv, pyRoot);
     const ts = runTs(argv, tsRoot);
     expectParity(py, ts, pyRoot, tsRoot, "move to qa");
@@ -318,17 +366,33 @@ maybe("plan-board parity python <-> typescript", () => {
 
   test("[8] adopt su un file legacy (senza frontmatter): frontmatter derivato + warning", () => {
     const [pyRoot, tsRoot] = makePairedRoots((root) => {
-      writeFileSync(join(root, "draft", "0020-legacy.md"), "# Nuovo titolo\n\nCorpo legacy.\n", "utf-8");
+      writeFileSync(
+        join(root, "draft", "0020-legacy.md"),
+        "# Nuovo titolo\n\nCorpo legacy.\n",
+        "utf-8",
+      );
     });
-    const argv = ["adopt", "--file", "0020-legacy", "--owner", "plan-writer", "--executor", "developer-fixer"];
+    const argv = [
+      "adopt",
+      "--file",
+      "0020-legacy",
+      "--owner",
+      "plan-writer",
+      "--executor",
+      "developer-fixer",
+    ];
     const py = runPy(argv, pyRoot);
     const ts = runTs(argv, tsRoot);
     expectParity(py, ts, pyRoot, tsRoot, "adopt legacy");
     expect(py.json?.action).toBe("adopt");
     expect(py.json?.id).toBe("0020-legacy");
     // entrambe hanno riscritto il file conservando il body
-    expect(readFileSync(join(pyRoot, "draft", "0020-legacy.md"), "utf-8")).toContain("# Nuovo titolo");
-    expect(readFileSync(join(tsRoot, "draft", "0020-legacy.md"), "utf-8")).toContain("# Nuovo titolo");
+    expect(
+      readFileSync(join(pyRoot, "draft", "0020-legacy.md"), "utf-8"),
+    ).toContain("# Nuovo titolo");
+    expect(
+      readFileSync(join(tsRoot, "draft", "0020-legacy.md"), "utf-8"),
+    ).toContain("# Nuovo titolo");
   });
 
   test("[9] new --dry-run: nessun file scritto ma payload di parita'", () => {

@@ -353,7 +353,8 @@ function extractTarGz(tarball: string, destRoot: string): string[] {
       continue; // symlinks and other special entries are not shipped
     }
 
-    const entryPath = pendingName ?? (prefix === "" ? name : `${prefix}/${name}`);
+    const entryPath =
+      pendingName ?? (prefix === "" ? name : `${prefix}/${name}`);
     pendingName = null;
     if (entryPath === "") {
       continue;
@@ -609,7 +610,9 @@ function makeTempDir(prefix: string): string {
 }
 
 /** The `plugins` entry a user writes in `opencode.json`. */
-function pluginEntry(options: Record<string, unknown>): Record<string, unknown> {
+function pluginEntry(
+  options: Record<string, unknown>,
+): Record<string, unknown> {
   return { package: "opencode-orchestrator-kit", options };
 }
 
@@ -754,8 +757,7 @@ describe("packaged artifact — offline pack and self-containment", () => {
 
   test("files and exports cover everything the registration path needs", () => {
     const raw = packedPackageJson.exports["."];
-    const target =
-      typeof raw === "string" ? raw : (raw.import ?? raw.default)!;
+    const target = typeof raw === "string" ? raw : (raw.import ?? raw.default)!;
     expect(existsSync(join(packageRoot, ...target.split("/")))).toBe(true);
     expect(packedPackageJson.files).toEqual(["src", "types", "assets"]);
     for (const entry of packedPackageJson.files) {

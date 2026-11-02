@@ -29,6 +29,8 @@ describe("profiler repo map contract", () => {
   });
 
   test("repo map is a navigation aid, not evidence", () => {
-    expect(PROFILER).toMatch(/navigation aid.*never a substitute for reading source files/is);
+    expect(PROFILER).toMatch(
+      /navigation aid.*never a substitute for reading source files/is,
+    );
   });
 });

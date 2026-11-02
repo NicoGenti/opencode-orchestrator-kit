@@ -1,5 +1,12 @@
 import { afterAll, describe, expect, test } from "bun:test";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -226,7 +233,12 @@ describe("registrazione del tool nativo plan_board", () => {
     const input = tools[0].input as Record<string, any>;
     expect(input.type).toBe("object");
     expect(input.required).toContain("command");
-    expect(input.properties.command.enum).toEqual(["check", "move", "new", "adopt"]);
+    expect(input.properties.command.enum).toEqual([
+      "check",
+      "move",
+      "new",
+      "adopt",
+    ]);
     expect(input.properties.to.enum).toEqual([...COLUMNS]);
     expect(input.properties.comprehension.enum).toEqual([
       "none",
@@ -243,9 +255,7 @@ describe("registrazione del tool nativo plan_board", () => {
 
   test("execute e' una funzione e ritorna una STRING (payload JSON, non un oggetto)", async () => {
     expect(typeof tools[0].execute).toBe("function");
-    const execute = tools[0].execute as (
-      input: ToolInput,
-    ) => Promise<unknown>;
+    const execute = tools[0].execute as (input: ToolInput) => Promise<unknown>;
     const result = await execute({});
     expect(typeof result).toBe("string");
     expect(JSON.parse(result as string).ok).toBe(false);
@@ -278,7 +288,10 @@ describe("comportamento del tool — contratto move", () => {
     expect(json.action).toBe("move");
     expect(existsSync(join(root, "in-progress", "9101-demo.md"))).toBe(true);
     expect(existsSync(join(root, "draft", "9101-demo.md"))).toBe(false);
-    const text = readFileSync(join(root, "in-progress", "9101-demo.md"), "utf-8");
+    const text = readFileSync(
+      join(root, "in-progress", "9101-demo.md"),
+      "utf-8",
+    );
     expect(text).toContain("status: in-progress");
     expect(text).toContain(`updated: ${TODAY}`);
   });

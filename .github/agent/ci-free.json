@@ -2,9 +2,7 @@
   "ci-free": {
     "label": "OpenCode free tier (CI, headless)",
     "description": "Solo modelli del free tier Console; nessun provider locale, nessuna chiave su file.",
-    "requires": [
-      "opencode"
-    ],
+    "requires": ["opencode"],
     "models": {
       "TIER_ROUTER": "opencode/mimo-v2.6-flash-free",
       "TIER_REASONING": "opencode/deepseek-v4.1-flash-free",

@@ -38,7 +38,9 @@ type CanonicalKey = (typeof CANONICAL_ORDER)[number];
 function extractFrontmatter(raw: string): string {
   const match = raw.match(/^---\r?\n([\s\S]*?)\r?\n---/);
   if (!match) {
-    throw new Error("No YAML frontmatter block found (expected leading '---' ... '---').");
+    throw new Error(
+      "No YAML frontmatter block found (expected leading '---' ... '---').",
+    );
   }
   return match[1];
 }
@@ -94,8 +96,14 @@ function checkSubsequence(
 }
 
 const agentFiles = [
-  ...readdirSync(AGENTS_DIR).filter((f) => f.endsWith(".md")).map((f) => ({ dir: "agents", file: f })),
-  ...(existsSync(EXTRAS_DIR) ? readdirSync(EXTRAS_DIR).filter((f) => f.endsWith(".md")).map((f) => ({ dir: "extras", file: f })) : []),
+  ...readdirSync(AGENTS_DIR)
+    .filter((f) => f.endsWith(".md"))
+    .map((f) => ({ dir: "agents", file: f })),
+  ...(existsSync(EXTRAS_DIR)
+    ? readdirSync(EXTRAS_DIR)
+        .filter((f) => f.endsWith(".md"))
+        .map((f) => ({ dir: "extras", file: f }))
+    : []),
 ];
 
 describe("frontmatter top-level ordering (Phase 1)", () => {
@@ -140,7 +148,9 @@ describe("frontmatter top-level ordering — `mode: primary` invariant", () => {
    */
   test("exactly one `mode: primary` agent (orchestrator only)", () => {
     const primaryMatches: string[] = [];
-    for (const file of readdirSync(AGENTS_DIR).filter((f) => f.endsWith(".md"))) {
+    for (const file of readdirSync(AGENTS_DIR).filter((f) =>
+      f.endsWith(".md"),
+    )) {
       const raw = readFileSync(join(AGENTS_DIR, file), "utf-8");
       // Match `mode: primary` only at the top level of the frontmatter block
       // (column 0, between the first pair of `---` delimiters).

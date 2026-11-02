@@ -2,7 +2,10 @@ import { describe, expect, test } from "bun:test";
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { parseFrontmatterMap, type FrontmatterMap } from "../plugin/src/frontmatter-map.ts";
+import {
+  parseFrontmatterMap,
+  type FrontmatterMap,
+} from "../plugin/src/frontmatter-map.ts";
 
 /**
  * Every agent's `permission.skill` allowlist (agents/*.md, extras/*.md, and
@@ -68,7 +71,10 @@ function isGlobPattern(name: string): boolean {
  * Skill names granted with anything other than `deny` that are neither a
  * shipped skill nor a glob pattern.
  */
-function unshippedAllows(skill: FrontmatterMap, shipped: ReadonlySet<string>): string[] {
+function unshippedAllows(
+  skill: FrontmatterMap,
+  shipped: ReadonlySet<string>,
+): string[] {
   const unknown: string[] = [];
   for (const [name, effect] of Object.entries(skill)) {
     if (name === "*" || effect === "deny" || isGlobPattern(name)) continue;
@@ -110,24 +116,31 @@ describe("shipped skill names", () => {
 });
 
 describe("agent skill allowlists name only shipped skills", () => {
-  test("both copies of every agent start with \"*\": deny and allow no unknown skill", () => {
+  test('both copies of every agent start with "*": deny and allow no unknown skill', () => {
     const problems: string[] = [];
     for (const rel of agentRelPaths()) {
       const skill = skillMapOf(rel);
       if (!skill) continue;
       const keys = Object.keys(skill);
       if (keys[0] !== "*" || skill["*"] !== "deny") {
-        problems.push(`${rel}: skill allowlist must start with "*": deny (got ${JSON.stringify(keys)})`);
+        problems.push(
+          `${rel}: skill allowlist must start with "*": deny (got ${JSON.stringify(keys)})`,
+        );
       }
       for (const name of unshippedAllows(skill, shipped)) {
-        problems.push(`${rel}: allows "${name}", which is not a shipped skill and is not a glob`);
+        problems.push(
+          `${rel}: allows "${name}", which is not a shipped skill and is not a glob`,
+        );
       }
     }
     expect(problems).toEqual([]);
   });
 
   test("developer-fixer tools.skill and permission.skill are distinct keys", () => {
-    for (const rel of ["agents/developer-fixer.md", "plugin/assets/agents/developer-fixer.md"]) {
+    for (const rel of [
+      "agents/developer-fixer.md",
+      "plugin/assets/agents/developer-fixer.md",
+    ]) {
       const fm = frontmatterOf(rel);
       expect(parseFrontmatterMap(fm, "tools")?.skill).toBe(true);
       const skill = parseFrontmatterMap(fm, "permission")?.skill;
@@ -136,7 +149,11 @@ describe("agent skill allowlists name only shipped skills", () => {
     }
   });
 
-  const pinned: Array<{ file: string; dirs: readonly string[]; keys: string[] }> = [
+  const pinned: Array<{
+    file: string;
+    dirs: readonly string[];
+    keys: string[];
+  }> = [
     {
       file: "developer-fixer.md",
       dirs: ["agents", "plugin/assets/agents"],
@@ -160,22 +177,44 @@ describe("agent skill allowlists name only shipped skills", () => {
     {
       file: "code-reviewer.md",
       dirs: ["agents", "plugin/assets/agents"],
-      keys: ["*", "angular-patterns", "dotnet-conventions", "python-conventions", "web-*"],
+      keys: [
+        "*",
+        "angular-patterns",
+        "dotnet-conventions",
+        "python-conventions",
+        "web-*",
+      ],
     },
     {
       file: "oracle.md",
       dirs: ["agents", "plugin/assets/agents"],
-      keys: ["*", "angular-patterns", "dotnet-conventions", "python-conventions", "web-*"],
+      keys: [
+        "*",
+        "angular-patterns",
+        "dotnet-conventions",
+        "python-conventions",
+        "web-*",
+      ],
     },
     {
       file: "security.md",
       dirs: ["agents", "plugin/assets/agents"],
-      keys: ["*", "angular-patterns", "dotnet-conventions", "python-conventions"],
+      keys: [
+        "*",
+        "angular-patterns",
+        "dotnet-conventions",
+        "python-conventions",
+      ],
     },
     {
       file: "test-engineer.md",
       dirs: ["agents", "plugin/assets/agents"],
-      keys: ["*", "angular-patterns", "dotnet-conventions", "python-conventions"],
+      keys: [
+        "*",
+        "angular-patterns",
+        "dotnet-conventions",
+        "python-conventions",
+      ],
     },
     {
       file: "deploy-helper.md",
@@ -217,7 +256,12 @@ describe("skill allowlist check — negative case (proves the check has teeth)",
   test("an allow of a skill that does not ship is reported", () => {
     expect(
       unshippedAllows(
-        { "*": "deny", "build-debug": "allow", "web-*": "allow", nope: "allow" },
+        {
+          "*": "deny",
+          "build-debug": "allow",
+          "web-*": "allow",
+          nope: "allow",
+        },
         shipped,
       ),
     ).toEqual(["nope"]);
@@ -236,6 +280,8 @@ describe("skill allowlist check — negative case (proves the check has teeth)",
     expect(isGlobPattern("web-*")).toBe(true);
     expect(isGlobPattern("web-theme")).toBe(false);
     expect(shipped.has("web-theme")).toBe(false);
-    expect(unshippedAllows({ "*": "deny", "web-theme": "allow" }, shipped)).toEqual(["web-theme"]);
+    expect(
+      unshippedAllows({ "*": "deny", "web-theme": "allow" }, shipped),
+    ).toEqual(["web-theme"]);
   });
 });

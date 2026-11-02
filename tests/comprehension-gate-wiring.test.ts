@@ -20,40 +20,56 @@ const QUICKSTART = readFileSync(join(REPO_ROOT, "QUICKSTART.md"), "utf-8");
 
 describe("comprehension-gate-wiring — Phase A close cycle", () => {
   test("step 6 Close classifies and announces before the progress.md overwrite", () => {
-    const close = ORCH.slice(ORCH.indexOf("6. **Close**"), ORCH.indexOf("## Core Rules"));
+    const close = ORCH.slice(
+      ORCH.indexOf("6. **Close**"),
+      ORCH.indexOf("## Core Rules"),
+    );
     expect(close).toMatch(/classify/i);
     expect(close).toMatch(/announce/);
-    expect(close.indexOf("classify")).toBeLessThan(close.indexOf("progress.md"));
+    expect(close.indexOf("classify")).toBeLessThan(
+      close.indexOf("progress.md"),
+    );
     expect(close).toMatch(/Slot A/);
     expect(close).toMatch(/enabled: false/);
   });
 
   test("classification trigger no longer depends on reviewer routing", () => {
     expect(ORCH).toContain(
-      "Before closing any completed task — whether or not code-reviewer/security was routed"
+      "Before closing any completed task — whether or not code-reviewer/security was routed",
     );
     expect(ORCH).not.toContain(
-      "After technical validation (code-reviewer and/or security pass) is complete"
+      "After technical validation (code-reviewer and/or security pass) is complete",
     );
   });
 
   test("closing rule and ARCHITECTURE.md agree on the HUMAN_OWNED outcome set", () => {
-    const rule = ORCH.slice(ORCH.indexOf("### Closing rule"), ORCH.indexOf("### Configuration"));
+    const rule = ORCH.slice(
+      ORCH.indexOf("### Closing rule"),
+      ORCH.indexOf("### Configuration"),
+    );
     expect(rule).toContain("TECHNICALLY_DONE");
     expect(rule).toContain("HUMAN_OWNED");
-    expect(rule).toMatch(/NONE \(announced\)[\s\S]*PASS[\s\S]*SKIPPED[\s\S]*DISABLED/);
+    expect(rule).toMatch(
+      /NONE \(announced\)[\s\S]*PASS[\s\S]*SKIPPED[\s\S]*DISABLED/,
+    );
 
     expect(ARCH).toContain("NONE (announced)");
-    const archSentence = ARCH.split(/\r?\n/).find((l) => l.includes("NONE (announced)"));
+    const archSentence = ARCH.split(/\r?\n/).find((l) =>
+      l.includes("NONE (announced)"),
+    );
     expect(archSentence).toBeDefined();
-    expect(archSentence).toMatch(/NONE \(announced\)[\s\S]*PASS[\s\S]*SKIPPED[\s\S]*DISABLED/);
+    expect(archSentence).toMatch(
+      /NONE \(announced\)[\s\S]*PASS[\s\S]*SKIPPED[\s\S]*DISABLED/,
+    );
   });
 });
 
 describe("session/docs surfaces (Phase C)", () => {
   test("AGENTS.md workflow examples classify before updating session memory", () => {
     // Split at heading boundaries so each Example section is its own slice.
-    const examples = AGENTS.split(/\r?\n(?=#{1,3} )/).filter((c) => /^### Example\b/i.test(c));
+    const examples = AGENTS.split(/\r?\n(?=#{1,3} )/).filter((c) =>
+      /^### Example\b/i.test(c),
+    );
     expect(examples.length).toBeGreaterThanOrEqual(2);
 
     for (const slice of examples) {

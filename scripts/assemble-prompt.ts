@@ -1,12 +1,12 @@
-import { promises as fs } from 'fs';
-import { join } from 'path';
-import { PromptCache } from './cache';
+import { promises as fs } from "fs";
+import { join } from "path";
+import { PromptCache } from "./cache";
 import {
   loadModelConfig,
   resolvePreset,
   ResolvedConfig,
   resolveModelValue,
-} from './resolve-model-preset';
+} from "./resolve-model-preset";
 
 /**
  * Stable Prefix Extractor
@@ -53,7 +53,7 @@ const cache = new PromptCache();
 export async function extractStablePrefix(
   rootDir: string = process.cwd(),
   useCache: boolean = true,
-  modelConfigPath?: string
+  modelConfigPath?: string,
 ): Promise<string[]> {
   // Try cache first (include model config in cache key for invalidation)
   if (useCache) {
@@ -63,16 +63,16 @@ export async function extractStablePrefix(
     }
   }
 
-  const agentsDir = join(rootDir, 'agents');
-  const extrasDir = join(rootDir, 'extras');
-  const agentsFile = join(rootDir, 'AGENTS.md');
+  const agentsDir = join(rootDir, "agents");
+  const extrasDir = join(rootDir, "extras");
+  const agentsFile = join(rootDir, "AGENTS.md");
 
   const result: string[] = [];
 
   // AGENTS.md first (when present)
   try {
     await fs.access(agentsFile);
-    result.push('AGENTS.md');
+    result.push("AGENTS.md");
   } catch (err) {
     console.error(`Error: AGENTS.md not found at ${agentsFile}`);
     throw err;
@@ -81,9 +81,9 @@ export async function extractStablePrefix(
   // agents/ directory, sorted ascending
   try {
     const agentFiles = (await fs.readdir(agentsDir))
-      .filter(file => file.endsWith('.md'))
+      .filter((file) => file.endsWith(".md"))
       .sort()
-      .map(file => `agents/${file}`);
+      .map((file) => `agents/${file}`);
     result.push(...agentFiles);
   } catch (err) {
     console.error(`Error reading agents/ directory: ${err}`);
@@ -92,12 +92,15 @@ export async function extractStablePrefix(
 
   // extras/ directory, sorted ascending (if exists)
   try {
-    const extrasExists = await fs.stat(extrasDir).then(() => true).catch(() => false);
+    const extrasExists = await fs
+      .stat(extrasDir)
+      .then(() => true)
+      .catch(() => false);
     if (extrasExists) {
       const extrasFiles = (await fs.readdir(extrasDir))
-        .filter(file => file.endsWith('.md'))
+        .filter((file) => file.endsWith(".md"))
         .sort()
-        .map(file => `extras/${file}`);
+        .map((file) => `extras/${file}`);
       result.push(...extrasFiles);
     }
   } catch (err) {
@@ -133,9 +136,13 @@ export interface AssembleResult {
 
 export async function assemblePrompt(
   rootDir: string = process.cwd(),
-  options: AssembleOptions = {}
+  options: AssembleOptions = {},
 ): Promise<AssembleResult> {
-  const { useCache = true, modelConfigPath = '.opencode/models.config.json', preset = null } = options;
+  const {
+    useCache = true,
+    modelConfigPath = ".opencode/models.config.json",
+    preset = null,
+  } = options;
 
   // Resolve model config (transparent fallback if config missing or invalid)
   let modelConfig: ResolvedConfig | null = null;
@@ -144,7 +151,11 @@ export async function assemblePrompt(
     modelConfig = resolvePreset(config, preset);
   } catch (err) {
     // If config doesn't exist or is invalid, that's OK — transparent fallback
-    if (err instanceof Error && (err.message.includes('Failed to read') || err.message.includes('Invalid JSON'))) {
+    if (
+      err instanceof Error &&
+      (err.message.includes("Failed to read") ||
+        err.message.includes("Invalid JSON"))
+    ) {
       modelConfig = null;
     } else {
       // Re-throw unexpected errors
@@ -153,7 +164,11 @@ export async function assemblePrompt(
   }
 
   // Extract stable prefix (with model config in cache key)
-  const stablePrefix = await extractStablePrefix(rootDir, useCache, modelConfigPath);
+  const stablePrefix = await extractStablePrefix(
+    rootDir,
+    useCache,
+    modelConfigPath,
+  );
 
   return { stablePrefix, modelConfig };
 }
@@ -162,9 +177,11 @@ export async function assemblePrompt(
 if (import.meta.main) {
   try {
     const result = await assemblePrompt();
-    console.log(result.stablePrefix.join('\n'));
+    console.log(result.stablePrefix.join("\n"));
     if (result.modelConfig) {
-      console.error(`[model-preset] Using preset: ${result.modelConfig.preset}`);
+      console.error(
+        `[model-preset] Using preset: ${result.modelConfig.preset}`,
+      );
     }
   } catch (err) {
     console.error(`Failed to extract stable prefix: ${err}`);

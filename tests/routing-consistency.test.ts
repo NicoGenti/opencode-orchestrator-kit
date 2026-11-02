@@ -40,11 +40,18 @@ function extractBacktickIds(tableSection: string): Set<string> {
   return ids;
 }
 
-const orchestratorMd = readFileSync(join(AGENTS_DIR, "orchestrator.md"), "utf-8");
+const orchestratorMd = readFileSync(
+  join(AGENTS_DIR, "orchestrator.md"),
+  "utf-8",
+);
 const agentsMd = readFileSync(join(REPO_ROOT, "AGENTS.md"), "utf-8");
 
-const routingTableIds = extractBacktickIds(extractSection(orchestratorMd, /##\s+Agent Routing\r?\n/));
-const rosterTableIds = extractBacktickIds(extractSection(agentsMd, /##\s+Runtime Subagent Roster\r?\n/));
+const routingTableIds = extractBacktickIds(
+  extractSection(orchestratorMd, /##\s+Agent Routing\r?\n/),
+);
+const rosterTableIds = extractBacktickIds(
+  extractSection(agentsMd, /##\s+Runtime Subagent Roster\r?\n/),
+);
 
 const agentIdsInAgents = readdirSync(AGENTS_DIR)
   .filter((f) => f.endsWith(".md") && f !== "orchestrator.md")
@@ -54,7 +61,9 @@ const agentIdsInExtras = existsSync(EXTRAS_DIR)
       .filter((f) => f.endsWith(".md"))
       .map((f) => f.replace(/\.md$/, ""))
   : [];
-const agentFiles = Array.from(new Set([...agentIdsInAgents, ...agentIdsInExtras])).sort();
+const agentFiles = Array.from(
+  new Set([...agentIdsInAgents, ...agentIdsInExtras]),
+).sort();
 
 function agentFileExists(id: string): boolean {
   return (
@@ -101,13 +110,22 @@ describe("routing consistency: no orphan agent files", () => {
 
 describe("routing consistency: the two tables agree with each other", () => {
   test("routing table and roster table list the same set of runtime IDs", () => {
-    expect(Array.from(routingTableIds).sort()).toEqual(Array.from(rosterTableIds).sort());
+    expect(Array.from(routingTableIds).sort()).toEqual(
+      Array.from(rosterTableIds).sort(),
+    );
   });
 });
 
 describe("routing consistency — negative case (proves the check has teeth)", () => {
   test("retired taxonomy-only names have no corresponding runtime agent file", () => {
-    const retiredNames = ["sisyphus", "metis", "momus", "explore", "fixer", "hephaestus"];
+    const retiredNames = [
+      "sisyphus",
+      "metis",
+      "momus",
+      "explore",
+      "fixer",
+      "hephaestus",
+    ];
     for (const name of retiredNames) {
       expect(agentFiles).not.toContain(name);
     }
@@ -154,12 +172,25 @@ describe("routing consistency — orchestrator.md prose (v0.6.6)", () => {
     // skill names referenced from prose (must exist as skills/<name>/SKILL.md)
     ["comprehension-workflow", "skill"] as const,
     // prose vocabulary / workflow-state words (not identifiers)
-    ...["allow", "ask", "complete", "draft", "in-progress", "outcome", "plan", "qa", "questions", "status", "task", "dci"].map(
-      (t) => [t, "vocab"] as const,
-    ),
+    ...[
+      "allow",
+      "ask",
+      "complete",
+      "draft",
+      "in-progress",
+      "outcome",
+      "plan",
+      "qa",
+      "questions",
+      "status",
+      "task",
+      "dci",
+    ].map((t) => [t, "vocab"] as const),
   ]);
 
-  const proseCandidates = Array.from(orchBody.matchAll(/`([a-z0-9-]+)`/g)).map((m) => m[1]);
+  const proseCandidates = Array.from(orchBody.matchAll(/`([a-z0-9-]+)`/g)).map(
+    (m) => m[1],
+  );
   const candidateSet = new Set(proseCandidates);
 
   test("prose contains at least one runtime id candidate", () => {
@@ -169,7 +200,9 @@ describe("routing consistency — orchestrator.md prose (v0.6.6)", () => {
   test("whitelisted skill-like prose tokens exist as real skills", () => {
     for (const [token, kind] of NON_AGENT_TOKENS) {
       if (kind === "skill") {
-        expect(existsSync(join(REPO_ROOT, "skills", token, "SKILL.md"))).toBe(true);
+        expect(existsSync(join(REPO_ROOT, "skills", token, "SKILL.md"))).toBe(
+          true,
+        );
       }
     }
   });
@@ -194,11 +227,20 @@ describe("routing consistency — orchestrator.md prose (v0.6.6)", () => {
   });
 
   test("no prose token names a retired runtime that is not an agent file", () => {
-    const retiredNames = ["sisyphus", "metis", "momus", "explore", "fixer", "hephaestus"];
+    const retiredNames = [
+      "sisyphus",
+      "metis",
+      "momus",
+      "explore",
+      "fixer",
+      "hephaestus",
+    ];
     for (const name of retiredNames) {
       // (?<![\w-]) / (?![\w-]): retired ids flagged only as standalone tokens —
       // a hyphenated compound like `developer-fixer` is not a retired name.
-      expect(orchBody.toLowerCase()).not.toMatch(new RegExp(`(?<![\\w-])${name}(?![\\w-])`, "i"));
+      expect(orchBody.toLowerCase()).not.toMatch(
+        new RegExp(`(?<![\\w-])${name}(?![\\w-])`, "i"),
+      );
     }
   });
 
@@ -208,12 +250,16 @@ describe("routing consistency — orchestrator.md prose (v0.6.6)", () => {
       expect(lower.includes(tier)).toBe(false);
     }
     expect(lower).not.toMatch(/\btier-(?:l|m|h)\b/);
-    expect(lower).not.toMatch(/tier (?:l|m|h) (?:classification|model|escalation)/);
+    expect(lower).not.toMatch(
+      /tier (?:l|m|h) (?:classification|model|escalation)/,
+    );
   });
 });
 
 describe("routing consistency — AGENTS.md roster prose (v0.6.5)", () => {
-  const rosterBody = agentsMd.slice(agentsMd.indexOf("## Runtime Subagent Roster"));
+  const rosterBody = agentsMd.slice(
+    agentsMd.indexOf("## Runtime Subagent Roster"),
+  );
 
   test("roster prose lists no Tier L/M/H tiers", () => {
     expect(rosterBody.toLowerCase()).not.toMatch(/\btier-[lmh]\b/);

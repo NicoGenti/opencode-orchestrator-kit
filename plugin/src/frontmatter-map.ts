@@ -33,7 +33,10 @@ function coerceScalar(value: string): FrontmatterScalar {
 }
 
 /** Ensure an inline-JSON map only carries string/boolean leaves. */
-function assertMap(node: unknown, source: string): asserts node is FrontmatterMap {
+function assertMap(
+  node: unknown,
+  source: string,
+): asserts node is FrontmatterMap {
   if (node === null || typeof node !== "object" || Array.isArray(node)) {
     throw new Error(`${source}: expected a map`);
   }
@@ -43,13 +46,19 @@ function assertMap(node: unknown, source: string): asserts node is FrontmatterMa
       assertMap(value, `${source}.${key}`);
       continue;
     }
-    throw new Error(`${source}.${key}: unsupported value (expected string, boolean or map)`);
+    throw new Error(
+      `${source}.${key}: unsupported value (expected string, boolean or map)`,
+    );
   }
 }
 
 /** Parse an indented block map (`key: value` / `key:` + nested block). */
 function parseBlockMap(text: string, source: string): FrontmatterMap {
-  const rows: Array<{ indent: number; key: string; value?: FrontmatterScalar }> = [];
+  const rows: Array<{
+    indent: number;
+    key: string;
+    value?: FrontmatterScalar;
+  }> = [];
   for (const rawLine of text.split(/\r?\n/)) {
     if (rawLine.trim() === "") continue;
     const indent = rawLine.length - rawLine.trimStart().length;
@@ -62,13 +71,21 @@ function parseBlockMap(text: string, source: string): FrontmatterMap {
     // ':' themselves ('pnpm test:*: allow') stay intact.
     const match = /^(.+?):\s+(.+)$/.exec(body);
     if (!match) {
-      throw new Error(`${source}: cannot parse '${body}' (expected 'key: value')`);
+      throw new Error(
+        `${source}: cannot parse '${body}' (expected 'key: value')`,
+      );
     }
-    rows.push({ indent, key: unquote(match[1]), value: coerceScalar(match[2]) });
+    rows.push({
+      indent,
+      key: unquote(match[1]),
+      value: coerceScalar(match[2]),
+    });
   }
 
   const root: FrontmatterMap = {};
-  const stack: Array<{ indent: number; node: FrontmatterMap }> = [{ indent: -1, node: root }];
+  const stack: Array<{ indent: number; node: FrontmatterMap }> = [
+    { indent: -1, node: root },
+  ];
   for (const row of rows) {
     while (stack.length > 0 && row.indent <= stack[stack.length - 1].indent) {
       stack.pop();
@@ -103,7 +120,9 @@ export function parseFrontmatterMap(
     try {
       parsed = JSON.parse(inline);
     } catch (error) {
-      throw new Error(`${key}: inline value is not JSON (${(error as Error).message})`);
+      throw new Error(
+        `${key}: inline value is not JSON (${(error as Error).message})`,
+      );
     }
     assertMap(parsed, key);
     return parsed;

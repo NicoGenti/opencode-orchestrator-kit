@@ -41,7 +41,10 @@ import { join } from "node:path";
 const REPO_ROOT = join(import.meta.dir, "..");
 const README = readFileSync(join(REPO_ROOT, "README.md"), "utf-8");
 const QUICKSTART = readFileSync(join(REPO_ROOT, "QUICKSTART.md"), "utf-8");
-const SETUP_NATIVE = readFileSync(join(REPO_ROOT, "docs", "SETUP-NATIVE.md"), "utf-8");
+const SETUP_NATIVE = readFileSync(
+  join(REPO_ROOT, "docs", "SETUP-NATIVE.md"),
+  "utf-8",
+);
 
 describe("README — Phase 3 acceptance: single responsibility table for the six required concerns", () => {
   /**
@@ -54,7 +57,9 @@ describe("README — Phase 3 acceptance: single responsibility table for the six
   function readRosterSection(): string {
     // Pull the "Agent roster" / "👥 Agent roster" heading and everything
     // up to the next ## heading.
-    const match = README.match(/^##\s+[^\n]*Agent roster[^\n]*\r?\n([\s\S]*?)(?=^##\s)/m);
+    const match = README.match(
+      /^##\s+[^\n]*Agent roster[^\n]*\r?\n([\s\S]*?)(?=^##\s)/m,
+    );
     if (!match) {
       throw new Error('README missing an "Agent roster" section.');
     }
@@ -132,7 +137,9 @@ describe("README — Phase 3 acceptance: extras are opt-in", () => {
     const optInMarkers = /opt[- ]in|explicit|--with-extras|off by default/i;
     const afterPc = README.slice(pcDoctorIdx, pcDoctorIdx + 1500);
     const afterWriter = README.slice(writerIdx, writerIdx + 1500);
-    expect(optInMarkers.test(afterPc) || optInMarkers.test(afterWriter)).toBe(true);
+    expect(optInMarkers.test(afterPc) || optInMarkers.test(afterWriter)).toBe(
+      true,
+    );
   });
 
   test("README describes librarian as opt-in", () => {
@@ -161,7 +168,8 @@ describe("README — Phase 3 acceptance: model setup points to .opencode/models.
     // The pre-Phase-3 line "Swap models per agent by editing the `model:`
     // field in each agent's frontmatter" MUST be gone. A positive framing
     // about .opencode/models.config.json must replace it.
-    const prohibited = /edit(?:ing)?\s+the\s+`?model:`?\s+field\s+in\s+each\s+agent/i;
+    const prohibited =
+      /edit(?:ing)?\s+the\s+`?model:`?\s+field\s+in\s+each\s+agent/i;
     expect(README).not.toMatch(prohibited);
   });
 
@@ -169,7 +177,8 @@ describe("README — Phase 3 acceptance: model setup points to .opencode/models.
     // Look for a "do not edit ... agent's ... model: ..." instruction,
     // which is how the README phrases the prohibition (the word
     // `frontmatter` may not appear in the same sentence as the prohibition).
-    const prohibition = /do\s+\*\*?not\*\*?\s+edit[^\n]*agent[^\n]*model|do\s+\*\*?not\*\*?\s+edit[^\n]*model[^\n]*field[^\n]*agent/i;
+    const prohibition =
+      /do\s+\*\*?not\*\*?\s+edit[^\n]*agent[^\n]*model|do\s+\*\*?not\*\*?\s+edit[^\n]*model[^\n]*field[^\n]*agent/i;
     expect(README).toMatch(prohibition);
   });
 
@@ -195,7 +204,8 @@ describe("QUICKSTART.md — Phase 3 acceptance: same constraints as README", () 
   });
 
   test("QUICKSTART does NOT instruct direct agent-frontmatter model edits", () => {
-    const prohibited = /edit(?:ing)?\s+the\s+`?model:`?\s+field\s+in\s+each\s+agent/i;
+    const prohibited =
+      /edit(?:ing)?\s+the\s+`?model:`?\s+field\s+in\s+each\s+agent/i;
     expect(QUICKSTART).not.toMatch(prohibited);
   });
 
@@ -222,12 +232,14 @@ describe("docs/SETUP-NATIVE.md — Phase 3 acceptance: same constraints as READM
   });
 
   test("SETUP-NATIVE does NOT instruct direct agent-frontmatter model edits", () => {
-    const prohibited = /edit(?:ing)?\s+the\s+`?model:`?\s+field\s+in\s+each\s+agent/i;
+    const prohibited =
+      /edit(?:ing)?\s+the\s+`?model:`?\s+field\s+in\s+each\s+agent/i;
     expect(SETUP_NATIVE).not.toMatch(prohibited);
   });
 
   test("SETUP-NATIVE has an explicit prohibition against direct agent-frontmatter edits", () => {
-    const prohibition = /do\s+\*\*?not\*\*?\s+edit[^\n]*agent[^\n]*model|do\s+\*\*?not\*\*?\s+edit[^\n]*model[^\n]*field[^\n]*agent/i;
+    const prohibition =
+      /do\s+\*\*?not\*\*?\s+edit[^\n]*agent[^\n]*model|do\s+\*\*?not\*\*?\s+edit[^\n]*model[^\n]*field[^\n]*agent/i;
     expect(SETUP_NATIVE).toMatch(prohibition);
   });
 
@@ -241,7 +253,9 @@ describe("docs/SETUP-NATIVE.md — Phase 3 acceptance: same constraints as READM
     // for unsupported OS environments. SETUP-NATIVE must at least mention
     // that the installer refuses unsupported OS and how to interpret the
     // resulting message.
-    expect(SETUP_NATIVE).toMatch(/supported (operating system|environment|shell)/i);
+    expect(SETUP_NATIVE).toMatch(
+      /supported (operating system|environment|shell)/i,
+    );
     expect(SETUP_NATIVE).toMatch(/Git Bash|MSYS|Cygwin/);
     expect(SETUP_NATIVE).toMatch(/Linux/);
     expect(SETUP_NATIVE).toMatch(/macOS/);
@@ -271,7 +285,11 @@ describe("Documentation — Phase 3 acceptance: cross-file consistency", () => {
     // not necessarily containing the literal word `frontmatter` in the
     // same sentence); QUICKSTART at minimum does not contradict them.
     expect(README).toMatch(/do\s+\*\*?not\*\*?\s+edit[^\n]*model[^\n]*agent/i);
-    expect(SETUP_NATIVE).toMatch(/do\s+\*\*?not\*\*?\s+edit[^\n]*model[^\n]*agent/i);
-    expect(QUICKSTART).not.toMatch(/edit(?:ing)?\s+the\s+`?model:`?\s+field\s+in\s+each\s+agent/i);
+    expect(SETUP_NATIVE).toMatch(
+      /do\s+\*\*?not\*\*?\s+edit[^\n]*model[^\n]*agent/i,
+    );
+    expect(QUICKSTART).not.toMatch(
+      /edit(?:ing)?\s+the\s+`?model:`?\s+field\s+in\s+each\s+agent/i,
+    );
   });
 });

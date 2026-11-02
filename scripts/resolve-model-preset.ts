@@ -1,5 +1,5 @@
-import { promises as fs } from 'fs';
-import { join, resolve, isAbsolute, normalize, sep } from 'path';
+import { promises as fs } from "fs";
+import { join, resolve, isAbsolute, normalize, sep } from "path";
 
 /**
  * Model-preset resolution module.
@@ -31,25 +31,30 @@ import { join, resolve, isAbsolute, normalize, sep } from 'path';
 
 /** Canonical five-token list, in canonical order. */
 export const TOKENS = [
-  'TIER_ROUTER',
-  'TIER_REASONING',
-  'TIER_CODE',
-  'TIER_FAST',
-  'TIER_REVIEW',
+  "TIER_ROUTER",
+  "TIER_REASONING",
+  "TIER_CODE",
+  "TIER_FAST",
+  "TIER_REVIEW",
 ] as const;
 
 /** Original three tiers that MUST be present in every valid preset. */
-export const REQUIRED_TOKENS = ['TIER_REASONING', 'TIER_CODE', 'TIER_FAST'] as const;
+export const REQUIRED_TOKENS = [
+  "TIER_REASONING",
+  "TIER_CODE",
+  "TIER_FAST",
+] as const;
 
 /**
  * Optional fallback chain used when an optional tier is missing from a preset.
  * Each key is a tier that may be omitted; the value is the tier to substitute
  * when resolving. Fallbacks are one-hop only and never chained.
  */
-export const TIER_FALLBACKS: Readonly<Record<string, (typeof TOKENS)[number]>> = {
-  TIER_ROUTER: 'TIER_REASONING',
-  TIER_REVIEW: 'TIER_CODE',
-};
+export const TIER_FALLBACKS: Readonly<Record<string, (typeof TOKENS)[number]>> =
+  {
+    TIER_ROUTER: "TIER_REASONING",
+    TIER_REVIEW: "TIER_CODE",
+  };
 
 export type TierName = (typeof TOKENS)[number];
 
@@ -97,7 +102,7 @@ function safeResolvePath(rootDir: string, relativePath: string): string {
  */
 export async function loadModelConfig(
   configPath: string,
-  rootDir: string = process.cwd()
+  rootDir: string = process.cwd(),
 ): Promise<ModelConfig> {
   // Security: resolve and validate path
   const absoluteConfigPath = isAbsolute(configPath)
@@ -106,24 +111,28 @@ export async function loadModelConfig(
 
   let raw: string;
   try {
-    raw = await fs.readFile(absoluteConfigPath, 'utf-8');
+    raw = await fs.readFile(absoluteConfigPath, "utf-8");
   } catch (err) {
-    throw new Error(`Failed to read model config at ${absoluteConfigPath}: ${err}`);
+    throw new Error(
+      `Failed to read model config at ${absoluteConfigPath}: ${err}`,
+    );
   }
 
   let config: any;
   try {
     config = JSON.parse(raw);
   } catch (err) {
-    throw new Error(`Invalid JSON in model config at ${absoluteConfigPath}: ${err}`);
+    throw new Error(
+      `Invalid JSON in model config at ${absoluteConfigPath}: ${err}`,
+    );
   }
 
   // Validate structure
-  if (typeof config !== 'object' || config === null) {
-    throw new Error('Model config must be a JSON object');
+  if (typeof config !== "object" || config === null) {
+    throw new Error("Model config must be a JSON object");
   }
 
-  if (!config.presets || typeof config.presets !== 'object') {
+  if (!config.presets || typeof config.presets !== "object") {
     throw new Error('Model config must contain a "presets" object');
   }
 
@@ -165,7 +174,10 @@ export function applyTierFallbacks(
  * @param tierMap - Map of tier names to concrete model IDs (with fallbacks applied)
  * @returns Resolved model ID, or null if value is not a known token
  */
-export function resolveValue(value: string, tierMap: Record<string, string>): string | null {
+export function resolveValue(
+  value: string,
+  tierMap: Record<string, string>,
+): string | null {
   for (const token of TOKENS) {
     const placeholder = `{{${token}}}`;
     if (value === placeholder) {
@@ -204,7 +216,10 @@ export function listPresets(config: ModelConfig): string[] {
  * @param presetName - Name of the preset
  * @returns Model tier map, or null if preset not found
  */
-export function getPreset(config: ModelConfig, presetName: string): Record<string, string> | null {
+export function getPreset(
+  config: ModelConfig,
+  presetName: string,
+): Record<string, string> | null {
   const preset = config.presets?.[presetName];
   if (!preset) {
     return null;
@@ -224,17 +239,20 @@ export function getPreset(config: ModelConfig, presetName: string): Record<strin
  * @returns ResolvedConfig with preset name and full tier map
  * @throws Error if preset is not found or required tiers are missing
  */
-export function resolvePreset(config: ModelConfig, presetName: string | null = null): ResolvedConfig {
+export function resolvePreset(
+  config: ModelConfig,
+  presetName: string | null = null,
+): ResolvedConfig {
   const targetPreset = presetName || config.default_preset;
   if (!targetPreset) {
-    throw new Error('No preset specified and no default_preset in config');
+    throw new Error("No preset specified and no default_preset in config");
   }
 
   const rawModels = getPreset(config, targetPreset);
   if (!rawModels) {
-    const available = listPresets(config).join(', ');
+    const available = listPresets(config).join(", ");
     throw new Error(
-      `Preset '${targetPreset}' not found. Available presets: ${available}`
+      `Preset '${targetPreset}' not found. Available presets: ${available}`,
     );
   }
 
@@ -249,7 +267,7 @@ export function resolvePreset(config: ModelConfig, presetName: string | null = n
   }
   if (missing.length > 0) {
     throw new Error(
-      `Preset '${targetPreset}' is missing required tier(s): ${missing.join(', ')}`
+      `Preset '${targetPreset}' is missing required tier(s): ${missing.join(", ")}`,
     );
   }
 
@@ -270,7 +288,7 @@ export function resolvePreset(config: ModelConfig, presetName: string | null = n
 export async function resolveModelValue(
   value: string,
   config: ModelConfig,
-  presetName: string | null = null
+  presetName: string | null = null,
 ): Promise<string> {
   if (!isTierToken(value)) {
     return value;
@@ -279,7 +297,9 @@ export async function resolveModelValue(
   const resolved = resolvePreset(config, presetName);
   const result = resolveValue(value, resolved.models);
   if (result === null) {
-    throw new Error(`Cannot resolve token ${value} with preset '${resolved.preset}'`);
+    throw new Error(
+      `Cannot resolve token ${value} with preset '${resolved.preset}'`,
+    );
   }
   return result;
 }
@@ -294,7 +314,10 @@ export function getDefaultPreset(config: ModelConfig): string | null {
 /**
  * Validate that a preset exists and has all required tiers.
  */
-export function validatePreset(config: ModelConfig, presetName: string): boolean {
+export function validatePreset(
+  config: ModelConfig,
+  presetName: string,
+): boolean {
   try {
     resolvePreset(config, presetName);
     return true;
@@ -313,16 +336,20 @@ export function validatePreset(config: ModelConfig, presetName: string): boolean
  * @returns ResolvedConfig or null if resolution should be skipped
  */
 export async function resolveModelConfig(
-  configPath: string = '.opencode/models.config.json',
+  configPath: string = ".opencode/models.config.json",
   rootDir: string = process.cwd(),
-  presetName: string | null = null
+  presetName: string | null = null,
 ): Promise<ResolvedConfig | null> {
   try {
     const config = await loadModelConfig(configPath, rootDir);
     return resolvePreset(config, presetName);
   } catch (err) {
     // If config doesn't exist or is invalid, return null (transparent fallback)
-    if (err instanceof Error && (err.message.includes('Failed to read') || err.message.includes('Invalid JSON'))) {
+    if (
+      err instanceof Error &&
+      (err.message.includes("Failed to read") ||
+        err.message.includes("Invalid JSON"))
+    ) {
       return null;
     }
     throw err;

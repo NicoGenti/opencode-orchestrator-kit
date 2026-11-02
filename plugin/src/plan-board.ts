@@ -26,7 +26,14 @@
  * payload JSON su stdout; senza `--json` gli errori di argomento aggiungono sullo stderr
  * un hint d'uso di una riga. Dipendenze: solo node:fs + node:path.
  */
-import { existsSync, readdirSync, readFileSync, renameSync, statSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  readdirSync,
+  readFileSync,
+  renameSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
 import { join } from "node:path";
 
 const COLUMNS = ["draft", "in-progress", "qa", "complete"] as const;
@@ -44,9 +51,24 @@ const SECTIONS = [
   "## Notes / Edge Cases",
 ] as const;
 
-const FM_KEYS = ["id", "title", "status", "created", "updated", "owner", "executor"] as const;
+const FM_KEYS = [
+  "id",
+  "title",
+  "status",
+  "created",
+  "updated",
+  "owner",
+  "executor",
+] as const;
 
-const COMPREHENSION_VALUES = ["none", "pass", "skipped", "fail", "disabled", "n/a"] as const;
+const COMPREHENSION_VALUES = [
+  "none",
+  "pass",
+  "skipped",
+  "fail",
+  "disabled",
+  "n/a",
+] as const;
 
 const ID_RE = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
 
@@ -65,7 +87,11 @@ type Hit = { column: string; name: string };
 type Item = { file: string; code: string; message: string };
 
 type Inspected = {
-  findings: Array<{ severity: "ERROR" | "WARN"; code: string; message: string }>;
+  findings: Array<{
+    severity: "ERROR" | "WARN";
+    code: string;
+    message: string;
+  }>;
   fm: Map<string, string> | null;
 };
 
@@ -78,7 +104,8 @@ const USAGE = [
   "  adopt --file NAME [--owner O] [--executor E] [--dry-run] [--root DIR] [--json]",
 ].join("\n");
 
-const USAGE_HINT = "uso: bun plugin/src/plan-board.ts <check|move|new|adopt> [flag] (vedi --help)";
+const USAGE_HINT =
+  "uso: bun plugin/src/plan-board.ts <check|move|new|adopt> [flag] (vedi --help)";
 
 function isColumn(value: string): value is Column {
   return (COLUMNS as readonly string[]).includes(value);
@@ -135,15 +162,29 @@ function isDirAt(path: string): boolean {
  * Chiave/valore divisi dal primo ':', righe vuote/commenti/senza ':' saltate,
  * valore = testo prima del primo '#', con trim.
  */
-function splitFrontmatter(text: string): { fm: Map<string, string> | null; body: string } {
+function splitFrontmatter(text: string): {
+  fm: Map<string, string> | null;
+  body: string;
+} {
   if (!text.startsWith("---")) return { fm: null, body: text };
   const m = FM_RE.exec(text);
   if (!m) return { fm: null, body: text };
   const fm = new Map<string, string>();
   for (const line of m[1].split(/\r\n|\r|\n/)) {
-    if (line.trim() === "" || line.trimStart().startsWith("#") || !line.includes(":")) continue;
+    if (
+      line.trim() === "" ||
+      line.trimStart().startsWith("#") ||
+      !line.includes(":")
+    )
+      continue;
     const colon = line.indexOf(":");
-    fm.set(line.slice(0, colon).trim(), line.slice(colon + 1).split("#")[0].trim());
+    fm.set(
+      line.slice(0, colon).trim(),
+      line
+        .slice(colon + 1)
+        .split("#")[0]
+        .trim(),
+    );
   }
   return { fm, body: text.slice(m[0].length) };
 }
@@ -153,10 +194,18 @@ function renderFrontmatter(fm: Map<string, string>, newline = "\n"): string {
   const keys: string[] = [];
   for (const k of FM_KEYS) if (fm.has(k)) keys.push(k);
   const extras: string[] = [];
-  for (const k of fm.keys()) if (!(FM_KEYS as readonly string[]).includes(k)) extras.push(k);
+  for (const k of fm.keys())
+    if (!(FM_KEYS as readonly string[]).includes(k)) extras.push(k);
   extras.sort(cmp);
   keys.push(...extras);
-  return "---" + newline + keys.map((k) => `${k}: ${fm.get(k) ?? ""}`).join(newline) + newline + "---" + newline;
+  return (
+    "---" +
+    newline +
+    keys.map((k) => `${k}: ${fm.get(k) ?? ""}`).join(newline) +
+    newline +
+    "---" +
+    newline
+  );
 }
 
 /** Solo il livello piu' alto di ogni colonna: file reali (symlink seguiti), senza `.gitkeep`, per nome. */
@@ -166,7 +215,9 @@ function boardFiles(root: string): Record<string, string[]> {
     let names: string[] = [];
     try {
       names = readdirSync(join(root, col))
-        .filter((name) => name !== ".gitkeep" && isFileAt(join(root, col, name)))
+        .filter(
+          (name) => name !== ".gitkeep" && isFileAt(join(root, col, name)),
+        )
         .sort(cmp);
     } catch {
       // directory assente: come nel python, glob su directory mancante non produce nulla
@@ -184,7 +235,8 @@ function findPlan(root: string, ident: string): Hit[] {
   for (const col of COLUMNS) {
     for (const name of files[col]) {
       const stem = stemOf(name);
-      if (stem === id || stem.startsWith(id + "-")) hits.push({ column: col, name });
+      if (stem === id || stem.startsWith(id + "-"))
+        hits.push({ column: col, name });
     }
   }
   return hits;
@@ -205,7 +257,11 @@ function inspectFile(root: string, column: string, name: string): Inspected {
   const stem = stemOf(name);
   const pid = fm.get("id") ?? "";
   if (pid === "") {
-    findings.push({ severity: "ERROR", code: "missing-id", message: "frontmatter senza `id`" });
+    findings.push({
+      severity: "ERROR",
+      code: "missing-id",
+      message: "frontmatter senza `id`",
+    });
   } else if (!idMatches(pid, stem)) {
     findings.push({
       severity: "ERROR",
@@ -222,14 +278,28 @@ function inspectFile(root: string, column: string, name: string): Inspected {
     });
   }
   if (!ID_RE.test(pid || "x")) {
-    findings.push({ severity: "ERROR", code: "id-not-slug-safe", message: `id '${pid}' non slug-safe` });
+    findings.push({
+      severity: "ERROR",
+      code: "id-not-slug-safe",
+      message: `id '${pid}' non slug-safe`,
+    });
   }
   for (const section of SECTIONS) {
     if (!body.includes(section)) {
-      findings.push({ severity: "WARN", code: "missing-section", message: `sezione mancante: ${section}` });
+      findings.push({
+        severity: "WARN",
+        code: "missing-section",
+        message: `sezione mancante: ${section}`,
+      });
     }
   }
-  for (const key of ["title", "created", "updated", "owner", "executor"] as const) {
+  for (const key of [
+    "title",
+    "created",
+    "updated",
+    "owner",
+    "executor",
+  ] as const) {
     if ((fm.get(key) ?? "") === "") {
       findings.push({
         severity: "WARN",
@@ -242,7 +312,8 @@ function inspectFile(root: string, column: string, name: string): Inspected {
     findings.push({
       severity: "WARN",
       code: "missing-comprehension",
-      message: "nessun esito di comprensione registrato (chiave `comprehension` assente)",
+      message:
+        "nessun esito di comprensione registrato (chiave `comprehension` assente)",
     });
   }
   return { findings, fm };
@@ -252,12 +323,22 @@ function failPayload(code: string, message: string): Payload {
   return { ok: false, code, message };
 }
 
-type PlanEntry = { file: string; id: string; status: string; comprehension: string };
+type PlanEntry = {
+  file: string;
+  id: string;
+  status: string;
+  comprehension: string;
+};
 
 function cmdCheck(root: string): Payload {
   const errors: Item[] = [];
   const warnings: Item[] = [];
-  const plans: Record<Column, PlanEntry[]> = { draft: [], "in-progress": [], qa: [], complete: [] };
+  const plans: Record<Column, PlanEntry[]> = {
+    draft: [],
+    "in-progress": [],
+    qa: [],
+    complete: [],
+  };
   const seen = new Map<string, string[]>();
   const rootExists = isDirAt(root);
   if (!rootExists) {
@@ -271,12 +352,20 @@ function cmdCheck(root: string): Payload {
   for (const col of COLUMNS) {
     const columnDir = join(root, col);
     if (rootExists && !isDirAt(columnDir)) {
-      warnings.push({ file: columnDir, code: "missing-column", message: `colonna mancante: ${col}` });
+      warnings.push({
+        file: columnDir,
+        code: "missing-column",
+        message: `colonna mancante: ${col}`,
+      });
     }
     for (const name of files[col]) {
       const path = join(root, col, name);
       if (suffixOf(name).toLowerCase() !== ".md") {
-        warnings.push({ file: path, code: "unexpected-file", message: "file non .md presente in una colonna" });
+        warnings.push({
+          file: path,
+          code: "unexpected-file",
+          message: "file non .md presente in una colonna",
+        });
         continue;
       }
       const inspected = inspectFile(root, col, name);
@@ -294,7 +383,11 @@ function cmdCheck(root: string): Payload {
         seen.set(pid, acc);
       }
       for (const finding of inspected.findings) {
-        const item: Item = { file: path, code: finding.code, message: finding.message };
+        const item: Item = {
+          file: path,
+          code: finding.code,
+          message: finding.message,
+        };
         (finding.severity === "ERROR" ? errors : warnings).push(item);
       }
     }
@@ -309,11 +402,23 @@ function cmdCheck(root: string): Payload {
       });
     }
   }
-  const payload: Payload = { ok: errors.length === 0, action: "check", root, errors, warnings, plans };
+  const payload: Payload = {
+    ok: errors.length === 0,
+    action: "check",
+    root,
+    errors,
+    warnings,
+    plans,
+  };
   return payload;
 }
 
-function updateStatus(path: string, fm: Map<string, string>, status: string, comprehension: string | null): string {
+function updateStatus(
+  path: string,
+  fm: Map<string, string>,
+  status: string,
+  comprehension: string | null,
+): string {
   const text = readFileSync(path, "utf-8");
   const newline = text.includes("\r\n") ? "\r\n" : "\n";
   const { body } = splitFrontmatter(text);
@@ -324,18 +429,31 @@ function updateStatus(path: string, fm: Map<string, string>, status: string, com
   return renderFrontmatter(updated, newline) + body;
 }
 
-function cmdMove(root: string, ident: string, to: string, dryRun: boolean, comprehension: string | null): Payload {
+function cmdMove(
+  root: string,
+  ident: string,
+  to: string,
+  dryRun: boolean,
+  comprehension: string | null,
+): Payload {
   if (!isColumn(to)) {
-    return failPayload("bad-column", `colonna '${to}' non valida (usare: ${COLUMNS.join(", ")})`);
+    return failPayload(
+      "bad-column",
+      `colonna '${to}' non valida (usare: ${COLUMNS.join(", ")})`,
+    );
   }
   const hits = findPlan(root, ident);
   if (hits.length === 0) {
-    return failPayload("plan-not-found", `nessun piano '${ident}' nelle colonne di ${root}`);
+    return failPayload(
+      "plan-not-found",
+      `nessun piano '${ident}' nelle colonne di ${root}`,
+    );
   }
   if (hits.length > 1) {
     return failPayload(
       "plan-ambiguous",
-      `'${ident}' presente in piu' colonne: ` + hits.map((h) => `${h.column}/${h.name}`).join(", "),
+      `'${ident}' presente in piu' colonne: ` +
+        hits.map((h) => `${h.column}/${h.name}`).join(", "),
     );
   }
   const hit = hits[0];
@@ -346,7 +464,10 @@ function cmdMove(root: string, ident: string, to: string, dryRun: boolean, compr
   }
   const { fm } = splitFrontmatter(readFileSync(srcPath, "utf-8"));
   if (fm === null) {
-    return failPayload("legacy-requires-adopt", `'${hit.name}' non ha frontmatter: esegui prima \`adopt\``);
+    return failPayload(
+      "legacy-requires-adopt",
+      `'${hit.name}' non ha frontmatter: esegui prima \`adopt\``,
+    );
   }
   if (!idMatches(fm.get("id") ?? "", stem)) {
     // python: fm.get("id") interpolato; senza chiave id stampa "None"
@@ -381,7 +502,11 @@ function cmdMove(root: string, ident: string, to: string, dryRun: boolean, compr
     dry_run: dryRun,
   };
   if (!dryRun) {
-    writeFileSync(srcPath, updateStatus(srcPath, fm, to, comprehension), "utf-8");
+    writeFileSync(
+      srcPath,
+      updateStatus(srcPath, fm, to, comprehension),
+      "utf-8",
+    );
     renameSync(srcPath, dstPath);
     payload["verified"] = isFileAt(dstPath) && !existsSync(srcPath);
   }
@@ -402,15 +527,23 @@ function cmdNew(
     return failPayload("bad-column", `colonna '${column}' non valida`);
   }
   if (!ID_RE.test(ident)) {
-    return failPayload("bad-id", `id '${ident}' non slug-safe (ammessi [A-Za-z0-9._-])`);
+    return failPayload(
+      "bad-id",
+      `id '${ident}' non slug-safe (ammessi [A-Za-z0-9._-])`,
+    );
   }
   if (!isFileAt(bodyFile)) {
     return failPayload("body-missing", `body file non trovato: ${bodyFile}`);
   }
   const body = readFileSync(bodyFile, "utf-8");
-  const missing = (SECTIONS as readonly string[]).filter((section) => !body.includes(section));
+  const missing = (SECTIONS as readonly string[]).filter(
+    (section) => !body.includes(section),
+  );
   if (missing.length > 0) {
-    return failPayload("body-incomplete", "sezioni mancanti nel body: " + missing.join(", "));
+    return failPayload(
+      "body-incomplete",
+      "sezioni mancanti nel body: " + missing.join(", "),
+    );
   }
   const dstPath = join(root, column, `${ident}.md`);
   if (existsSync(dstPath)) {
@@ -418,7 +551,10 @@ function cmdNew(
   }
   const dup = findPlan(root, ident);
   if (dup.length > 0) {
-    return failPayload("duplicate-id", `'${ident}' esiste gia' in ${dup[0].column}`);
+    return failPayload(
+      "duplicate-id",
+      `'${ident}' esiste gia' in ${dup[0].column}`,
+    );
   }
   if (!dryRun && !isDirAt(join(root, column))) {
     // deviazione dal python: colonna assente non fa esplodere la write con un traceback
@@ -442,16 +578,29 @@ function cmdNew(
     dry_run: dryRun,
   };
   if (!dryRun) {
-    writeFileSync(dstPath, renderFrontmatter(fm) + "\n" + body.replace(/^\n+/, ""), "utf-8");
+    writeFileSync(
+      dstPath,
+      renderFrontmatter(fm) + "\n" + body.replace(/^\n+/, ""),
+      "utf-8",
+    );
     payload["verified"] = isFileAt(dstPath);
   }
   return payload;
 }
 
-function cmdAdopt(root: string, name: string, owner: string, executor: string, dryRun: boolean): Payload {
+function cmdAdopt(
+  root: string,
+  name: string,
+  owner: string,
+  executor: string,
+  dryRun: boolean,
+): Payload {
   const hits = findPlan(root, name);
   if (hits.length === 0) {
-    return failPayload("plan-not-found", `nessun piano '${name}' nelle colonne di ${root}`);
+    return failPayload(
+      "plan-not-found",
+      `nessun piano '${name}' nelle colonne di ${root}`,
+    );
   }
   if (hits.length > 1) {
     return failPayload("plan-ambiguous", `'${name}' presente in piu' colonne`);
@@ -460,7 +609,10 @@ function cmdAdopt(root: string, name: string, owner: string, executor: string, d
   const path = join(root, hit.column, hit.name);
   const { fm, body } = splitFrontmatter(readFileSync(path, "utf-8"));
   if (fm !== null) {
-    return failPayload("already-has-frontmatter", `'${hit.name}' ha gia' un frontmatter`);
+    return failPayload(
+      "already-has-frontmatter",
+      `'${hit.name}' ha gia' un frontmatter`,
+    );
   }
   const stem = stemOf(hit.name);
   if (!ID_RE.test(stem)) {
@@ -493,13 +645,19 @@ function cmdAdopt(root: string, name: string, owner: string, executor: string, d
       {
         file: path,
         code: "derived-frontmatter",
-        message: "title/owner/executor dedotti: verifica il frontmatter dopo l'adopt",
+        message:
+          "title/owner/executor dedotti: verifica il frontmatter dopo l'adopt",
       },
     ],
   };
   if (!dryRun) {
-    writeFileSync(path, renderFrontmatter(derived) + "\n" + body.replace(/^\n+/, ""), "utf-8");
-    payload["verified"] = splitFrontmatter(readFileSync(path, "utf-8")).fm !== null;
+    writeFileSync(
+      path,
+      renderFrontmatter(derived) + "\n" + body.replace(/^\n+/, ""),
+      "utf-8",
+    );
+    payload["verified"] =
+      splitFrontmatter(readFileSync(path, "utf-8")).fm !== null;
   }
   return payload;
 }
@@ -526,7 +684,10 @@ const REQUIRED_FLAGS: Record<Command, readonly string[]> = {
   adopt: ["file"],
 };
 
-type ParseError = { code: "bad-argument" | "missing-argument"; message: string };
+type ParseError = {
+  code: "bad-argument" | "missing-argument";
+  message: string;
+};
 type Parsed = { values: Map<string, string>; error?: ParseError };
 
 /**
@@ -551,15 +712,33 @@ function parseCommandArgs(command: Command, tokens: string[]): Parsed {
       }
       if ((VALUE_FLAGS[command] as readonly string[]).includes(name)) {
         if (i + 1 >= tokens.length) {
-          return { values, error: { code: "missing-argument", message: `valore mancante per il flag '--${name}'` } };
+          return {
+            values,
+            error: {
+              code: "missing-argument",
+              message: `valore mancante per il flag '--${name}'`,
+            },
+          };
         }
         values.set(name, tokens[i + 1]);
         i += 2;
         continue;
       }
-      return { values, error: { code: "bad-argument", message: `flag non riconosciuto: '${token}'` } };
+      return {
+        values,
+        error: {
+          code: "bad-argument",
+          message: `flag non riconosciuto: '${token}'`,
+        },
+      };
     }
-    return { values, error: { code: "bad-argument", message: `argomento non riconosciuto: '${token}'` } };
+    return {
+      values,
+      error: {
+        code: "bad-argument",
+        message: `argomento non riconosciuto: '${token}'`,
+      },
+    };
   }
   for (const required of REQUIRED_FLAGS[command]) {
     if (!values.has(required)) {
@@ -574,7 +753,10 @@ function parseCommandArgs(command: Command, tokens: string[]): Parsed {
   }
   if (command === "move") {
     const comprehension = values.get("comprehension");
-    if (comprehension !== undefined && !(COMPREHENSION_VALUES as readonly string[]).includes(comprehension)) {
+    if (
+      comprehension !== undefined &&
+      !(COMPREHENSION_VALUES as readonly string[]).includes(comprehension)
+    ) {
       return {
         values,
         error: {
@@ -593,14 +775,26 @@ function runPlanBoardInner(argv: string[]): PlanBoardResult {
     return {
       ok: false,
       asJson,
-      payload: failPayload("missing-argument", "nessun comando: usare check|move|new|adopt (vedi --help)"),
+      payload: failPayload(
+        "missing-argument",
+        "nessun comando: usare check|move|new|adopt (vedi --help)",
+      ),
     };
   }
   const first = argv[0] as string;
   if (first === "--help" || first === "-h") {
-    return { ok: true, asJson, payload: { ok: true, action: "help", usage: USAGE } };
+    return {
+      ok: true,
+      asJson,
+      payload: { ok: true, action: "help", usage: USAGE },
+    };
   }
-  if (first !== "check" && first !== "move" && first !== "new" && first !== "adopt") {
+  if (
+    first !== "check" &&
+    first !== "move" &&
+    first !== "new" &&
+    first !== "adopt"
+  ) {
     return {
       ok: false,
       asJson,
@@ -613,18 +807,29 @@ function runPlanBoardInner(argv: string[]): PlanBoardResult {
   const command = first as Command;
   const parsed = parseCommandArgs(command, argv.slice(1));
   if (parsed.error !== undefined) {
-    return { ok: false, asJson, payload: failPayload(parsed.error.code, parsed.error.message) };
+    return {
+      ok: false,
+      asJson,
+      payload: failPayload(parsed.error.code, parsed.error.message),
+    };
   }
   const values = parsed.values;
   const rootValue = values.get("root");
-  const root = rootValue === undefined ? "plan" : rootValue === "" ? "." : rootValue; // python: Path("") e' "."
+  const root =
+    rootValue === undefined ? "plan" : rootValue === "" ? "." : rootValue; // python: Path("") e' "."
   const dryRun = values.has("dry-run");
   let payload: Payload;
   if (command === "check") {
     payload = cmdCheck(root);
   } else if (command === "move") {
     const comprehension = values.get("comprehension");
-    payload = cmdMove(root, values.get("id") ?? "", values.get("to") ?? "", dryRun, comprehension ?? null);
+    payload = cmdMove(
+      root,
+      values.get("id") ?? "",
+      values.get("to") ?? "",
+      dryRun,
+      comprehension ?? null,
+    );
   } else if (command === "new") {
     payload = cmdNew(
       root,
@@ -656,7 +861,10 @@ export function runPlanBoard(argv: string[]): PlanBoardResult {
     return {
       ok: false,
       asJson: argv.includes("--json"),
-      payload: failPayload("internal-error", err instanceof Error ? err.message : String(err)),
+      payload: failPayload(
+        "internal-error",
+        err instanceof Error ? err.message : String(err),
+      ),
     };
   }
 }
@@ -665,10 +873,12 @@ function firstLine(payload: Payload): string {
   if (payload["ok"] === true) return "ok";
   const code = payload["code"];
   if (typeof code === "string" && code !== "") {
-    return ("FAIL " + code + " " + (typeof payload["message"] === "string" ? payload["message"] : "")).replace(
-      /\s+$/,
-      "",
-    );
+    return (
+      "FAIL " +
+      code +
+      " " +
+      (typeof payload["message"] === "string" ? payload["message"] : "")
+    ).replace(/\s+$/, "");
   }
   // python: i payload di `check` non hanno `code` -> riga "FAIL" sola (poi le righe ERROR)
   return "FAIL";
@@ -678,10 +888,16 @@ function firstLine(payload: Payload): string {
  * poi due spazi prima di ERROR/WARN e due spazi dopo il codice e il file. */
 function formatHuman(payload: Payload): string {
   const lines = [firstLine(payload)];
-  const errors = Array.isArray(payload["errors"]) ? (payload["errors"] as Item[]) : [];
-  const warnings = Array.isArray(payload["warnings"]) ? (payload["warnings"] as Item[]) : [];
-  for (const e of errors) lines.push(`  ERROR ${e.code}  ${e.file}  ${e.message}`);
-  for (const w of warnings) lines.push(`  WARN  ${w.code}  ${w.file}  ${w.message}`);
+  const errors = Array.isArray(payload["errors"])
+    ? (payload["errors"] as Item[])
+    : [];
+  const warnings = Array.isArray(payload["warnings"])
+    ? (payload["warnings"] as Item[])
+    : [];
+  for (const e of errors)
+    lines.push(`  ERROR ${e.code}  ${e.file}  ${e.message}`);
+  for (const w of warnings)
+    lines.push(`  WARN  ${w.code}  ${w.file}  ${w.message}`);
   return lines.join("\n");
 }
 
@@ -705,7 +921,9 @@ if (import.meta.main) {
     }
     process.exit(result.ok ? 0 : 1);
   } catch (err) {
-    process.stderr.write(`internal-error: ${err instanceof Error ? err.stack ?? err.message : String(err)}\n`);
+    process.stderr.write(
+      `internal-error: ${err instanceof Error ? (err.stack ?? err.message) : String(err)}\n`,
+    );
     process.exit(1);
   }
 }

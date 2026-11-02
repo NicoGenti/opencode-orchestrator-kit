@@ -22,13 +22,32 @@ import { describe, expect, test } from "bun:test";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import {
-  EXAMPLES, TASK_EXAMPLES, RECALL_EXAMPLES, makeTaskEvent, makeRecallEvent,
-  validateTaskEvent, validateRecallEvent, validateEventLine, sameResearchId,
-  slotForTaskIndex, nextSlot, SLOT_BEHAVIOR, gateRequiresCoach,
-  isValidResearchId, isLegacyResearchId, makeResearchId,
-  isValidEvaluationId, makeEvaluationId, MAKE_EVALUATION_ID_NOTE,
-  MAKE_RESEARCH_ID_NOTE, validDCI, GATE_TYPES,
-  TASK_FIELDS, RECALL_FIELDS, SCHEMA_VERSION, FORBIDDEN,
+  EXAMPLES,
+  TASK_EXAMPLES,
+  RECALL_EXAMPLES,
+  makeTaskEvent,
+  makeRecallEvent,
+  validateTaskEvent,
+  validateRecallEvent,
+  validateEventLine,
+  sameResearchId,
+  slotForTaskIndex,
+  nextSlot,
+  SLOT_BEHAVIOR,
+  gateRequiresCoach,
+  isValidResearchId,
+  isLegacyResearchId,
+  makeResearchId,
+  isValidEvaluationId,
+  makeEvaluationId,
+  MAKE_EVALUATION_ID_NOTE,
+  MAKE_RESEARCH_ID_NOTE,
+  validDCI,
+  GATE_TYPES,
+  TASK_FIELDS,
+  RECALL_FIELDS,
+  SCHEMA_VERSION,
+  FORBIDDEN,
 } from "./contract-fields.ts";
 
 const SINK = join(import.meta.dir, "..", ".context", "research-dataset.jsonl");
@@ -48,57 +67,125 @@ describe("research-mode — DatasetEventV1 schema (v0.6.4)", () => {
   describe("DatasetEventV1 invariant — explicit field-list freeze (v0.6.5)", () => {
     test("TASK_FIELDS are exactly these, in this order, no more no less", () => {
       expect([...TASK_FIELDS]).toEqual([
-        "event", "schema_version", "research_id", "date", "plan", "slot", "task_type",
-        "gate_type", "duration_min", "agent_calls", "input_tokens", "output_tokens",
-        "user_confidence", "evaluator_confidence", "dci_immediate", "retries", "skipped",
-        "bugfix_ref", "tokens_source",
+        "event",
+        "schema_version",
+        "research_id",
+        "date",
+        "plan",
+        "slot",
+        "task_type",
+        "gate_type",
+        "duration_min",
+        "agent_calls",
+        "input_tokens",
+        "output_tokens",
+        "user_confidence",
+        "evaluator_confidence",
+        "dci_immediate",
+        "retries",
+        "skipped",
+        "bugfix_ref",
+        "tokens_source",
       ]);
     });
 
     test("RECALL_FIELDS are exactly these, in this order", () => {
       expect([...RECALL_FIELDS]).toEqual([
-        "event", "schema_version", "research_id", "date", "dci_delayed",
-        "evaluator_confidence", "retries", "skipped",
+        "event",
+        "schema_version",
+        "research_id",
+        "date",
+        "dci_delayed",
+        "evaluator_confidence",
+        "retries",
+        "skipped",
       ]);
     });
 
     test("FORBIDDEN is exactly this set", () => {
-      expect(new Set(FORBIDDEN)).toEqual(new Set([
-        "ts", "session_id", "task_id", "user_conf", "dci1", "gap", "src",
-        "confidence_delta", "escalations", "questions_count", "alternation",
-      ]));
+      expect(new Set(FORBIDDEN)).toEqual(
+        new Set([
+          "ts",
+          "session_id",
+          "task_id",
+          "user_conf",
+          "dci1",
+          "gap",
+          "src",
+          "confidence_delta",
+          "escalations",
+          "questions_count",
+          "alternation",
+        ]),
+      );
     });
   });
 
   test("legacy extras and session identifiers are forbidden anywhere in the log", () => {
-    for (const f of ["ts", "session_id", "task_id", "user_conf", "dci1", "gap",
-                     "src", "confidence_delta", "escalations", "questions_count",
-                     "alternation"]) {
+    for (const f of [
+      "ts",
+      "session_id",
+      "task_id",
+      "user_conf",
+      "dci1",
+      "gap",
+      "src",
+      "confidence_delta",
+      "escalations",
+      "questions_count",
+      "alternation",
+    ]) {
       expect(FORBIDDEN.has(f)).toBe(true);
     }
     const errs = validateTaskEvent(makeTaskEvent({ ts: 123, user_conf: 5 }));
     expect(errs.some((m) => m.includes("unknown field: ts"))).toBe(true);
     expect(errs.some((m) => m.includes("forbidden field: ts"))).toBe(true);
-    expect(errs.some((m) => m.includes("forbidden field: user_conf"))).toBe(true);
+    expect(errs.some((m) => m.includes("forbidden field: user_conf"))).toBe(
+      true,
+    );
   });
 
   test("dci_delayed is retired as a task field (the delayed reading is a recall event)", () => {
     const errs = validateTaskEvent(makeTaskEvent({ dci_delayed: "DCI=2/4" }));
-    expect(errs.some((m) => m.includes("dci_delayed is not a task field"))).toBe(true);
+    expect(
+      errs.some((m) => m.includes("dci_delayed is not a task field")),
+    ).toBe(true);
   });
 });
 
 describe("research-mode — research_id uniqueness + correlation", () => {
   test("format res-YYYYMMDD-HHMMSS-32hex is validated deterministically (v0.6.6)", () => {
-    expect(isValidResearchId("res-20261007-143000-3f9a7c2e1b08d54fa6e3c70b92d1846a")).toBe(true);
-    expect(isValidResearchId("res-20261007-143000-3F9A7C2E1B08D54FA6E3C70B92D1846A")).toBe(false); // uppercase not canonical (lowercase only)
-    expect(isValidResearchId("res-2026100-143000-3f9a7c2e1b08d54fa6e3c70b92d1846a")).toBe(false); // wrong date length
-    expect(isValidResearchId("res-20261007-1430001-3f9a7c2e1b08d54fa6e3c70b92d1846a")).toBe(false); // wrong time length
+    expect(
+      isValidResearchId("res-20261007-143000-3f9a7c2e1b08d54fa6e3c70b92d1846a"),
+    ).toBe(true);
+    expect(
+      isValidResearchId("res-20261007-143000-3F9A7C2E1B08D54FA6E3C70B92D1846A"),
+    ).toBe(false); // uppercase not canonical (lowercase only)
+    expect(
+      isValidResearchId("res-2026100-143000-3f9a7c2e1b08d54fa6e3c70b92d1846a"),
+    ).toBe(false); // wrong date length
+    expect(
+      isValidResearchId(
+        "res-20261007-1430001-3f9a7c2e1b08d54fa6e3c70b92d1846a",
+      ),
+    ).toBe(false); // wrong time length
     expect(isValidResearchId("res-20261007-143000")).toBe(false); // legacy format: rejected
-    expect(isValidResearchId("res-20261007-143000-g1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6")).toBe(false); // not hex
-    expect(isValidResearchId("res-20261007-143000-3f9a7c2e1b08d54fa6e3c70b92d1846")).toBe(false); // 31 hex chars
-    expect(isValidResearchId("res-20261007-143000-3f9a7c2e1b08d54fa6e3c70b92d1846aa")).toBe(false); // 33 hex chars
-    expect(isValidResearchId("task-20261007-143000-3f9a7c2e1b08d54fa6e3c70b92d1846a")).toBe(false); // wrong prefix
+    expect(
+      isValidResearchId("res-20261007-143000-g1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6"),
+    ).toBe(false); // not hex
+    expect(
+      isValidResearchId("res-20261007-143000-3f9a7c2e1b08d54fa6e3c70b92d1846"),
+    ).toBe(false); // 31 hex chars
+    expect(
+      isValidResearchId(
+        "res-20261007-143000-3f9a7c2e1b08d54fa6e3c70b92d1846aa",
+      ),
+    ).toBe(false); // 33 hex chars
+    expect(
+      isValidResearchId(
+        "task-20261007-143000-3f9a7c2e1b08d54fa6e3c70b92d1846a",
+      ),
+    ).toBe(false); // wrong prefix
     expect(isValidResearchId(20261007)).toBe(false);
   });
 
@@ -132,14 +219,36 @@ describe("research-mode — research_id uniqueness + correlation", () => {
   });
 
   test("two events with the SAME plan but distinct research_ids both validate (multi-evaluation)", () => {
-    expect(validateTaskEvent(makeTaskEvent({ research_id: makeResearchId({ timestamp: "20261007-150000" }), plan: "0007" }))).toEqual([]);
-    expect(validateTaskEvent(makeTaskEvent({ research_id: makeResearchId({ timestamp: "20261007-150000" }), plan: "0007" }))).toEqual([]); // same second, same plan, distinct id
+    expect(
+      validateTaskEvent(
+        makeTaskEvent({
+          research_id: makeResearchId({ timestamp: "20261007-150000" }),
+          plan: "0007",
+        }),
+      ),
+    ).toEqual([]);
+    expect(
+      validateTaskEvent(
+        makeTaskEvent({
+          research_id: makeResearchId({ timestamp: "20261007-150000" }),
+          plan: "0007",
+        }),
+      ),
+    ).toEqual([]); // same second, same plan, distinct id
   });
 
   test("a recall event ties to its task through the SAME research_id", () => {
     expect(sameResearchId(TASK_EXAMPLES[1], RECALL_EXAMPLES[0])).toBe(true);
     expect(sameResearchId(TASK_EXAMPLES[0], RECALL_EXAMPLES[0])).toBe(false);
-    expect(sameResearchId({ ...TASK_EXAMPLES[1], research_id: makeResearchId({ timestamp: "20261007-000000" }) }, RECALL_EXAMPLES[0])).toBe(false);
+    expect(
+      sameResearchId(
+        {
+          ...TASK_EXAMPLES[1],
+          research_id: makeResearchId({ timestamp: "20261007-000000" }),
+        },
+        RECALL_EXAMPLES[0],
+      ),
+    ).toBe(false);
   });
 });
 
@@ -152,7 +261,11 @@ describe("research-mode — evaluation_id identity (v0.6.7)", () => {
     expect(isValidEvaluationId(a)).toBe(true);
     expect(isValidEvaluationId(b)).toBe(true);
     expect(isValidResearchId(a)).toBe(false); // evaluation_id ≠ research_id: never a dataset key
-    expect(isValidEvaluationId("res-20261007-150000-3f9a7c2e1b08d54fa6e3c70b92d1846a")).toBe(false);
+    expect(
+      isValidEvaluationId(
+        "res-20261007-150000-3f9a7c2e1b08d54fa6e3c70b92d1846a",
+      ),
+    ).toBe(false);
     expect(isValidEvaluationId("ev-20261007-150000")).toBe(false); // bare timestamp: rejected
     expect(MAKE_EVALUATION_ID_NOTE).toMatch(/128 ?bits/i);
     expect(MAKE_EVALUATION_ID_NOTE).toMatch(/CSPRNG|crypto/i);
@@ -162,7 +275,14 @@ describe("research-mode — evaluation_id identity (v0.6.7)", () => {
 
 describe("research-mode — deterministic A/B slot routing", () => {
   test("alternation: even index = A, odd index = B", () => {
-    expect([0, 1, 2, 3, 4, 5].map(slotForTaskIndex)).toEqual(["A", "B", "A", "B", "A", "B"]);
+    expect([0, 1, 2, 3, 4, 5].map(slotForTaskIndex)).toEqual([
+      "A",
+      "B",
+      "A",
+      "B",
+      "A",
+      "B",
+    ]);
   });
 
   test("rejects negative / non-integer indices", () => {
@@ -178,11 +298,18 @@ describe("research-mode — deterministic A/B slot routing", () => {
 
   test("SLOT_BEHAVIOR: A = control (no classification/gate/coach), B = treatment", () => {
     expect(SLOT_BEHAVIOR.A).toMatchObject({
-      classification: false, gate: false, gateType: "n/a",
-      coachCalls: 0, calibration: false, skippedPossible: false,
+      classification: false,
+      gate: false,
+      gateType: "n/a",
+      coachCalls: 0,
+      calibration: false,
+      skippedPossible: false,
     });
     expect(SLOT_BEHAVIOR.B).toMatchObject({
-      classification: true, gate: true, calibration: true, skippedPossible: true,
+      classification: true,
+      gate: true,
+      calibration: true,
+      skippedPossible: true,
     });
     expect(typeof SLOT_BEHAVIOR.B.gateType).toBe("string");
   });
@@ -204,26 +331,49 @@ describe("research-mode — slot A: control, no comprehension overhead", () => {
   test("control ≠ user skip: slot A records skipped=false and rejects skipped=true", () => {
     expect(TASK_EXAMPLES[0].skipped).toBe(false);
     expect(SLOT_BEHAVIOR.A.skippedPossible).toBe(false);
-    const errs = validateTaskEvent(makeTaskEvent({
-      slot: "A", gate_type: "n/a", user_confidence: "n/a",
-      evaluator_confidence: "n/a", dci_immediate: "n/a", retries: 0, skipped: true,
-    }));
+    const errs = validateTaskEvent(
+      makeTaskEvent({
+        slot: "A",
+        gate_type: "n/a",
+        user_confidence: "n/a",
+        evaluator_confidence: "n/a",
+        dci_immediate: "n/a",
+        retries: 0,
+        skipped: true,
+      }),
+    );
     expect(errs).toContain("slot A never records a user skip (control ≠ skip)");
   });
 
   test("any classification attempt on slot A is rejected", () => {
-    const errs = validateTaskEvent(makeTaskEvent({
-      slot: "A", gate_type: "LIGHT", user_confidence: "n/a",
-      evaluator_confidence: "n/a", dci_immediate: "n/a", retries: 0, skipped: false,
-    }));
+    const errs = validateTaskEvent(
+      makeTaskEvent({
+        slot: "A",
+        gate_type: "LIGHT",
+        user_confidence: "n/a",
+        evaluator_confidence: "n/a",
+        dci_immediate: "n/a",
+        retries: 0,
+        skipped: false,
+      }),
+    );
     expect(errs).toContain("slot A records gate_type n/a");
   });
 
   test("slot A stays valid with real delegation work (agent_calls faithful)", () => {
-    expect(validateTaskEvent(makeTaskEvent({
-      slot: "A", gate_type: "n/a", user_confidence: "n/a",
-      evaluator_confidence: "n/a", dci_immediate: "n/a", retries: 0, skipped: false,
-    }))).toEqual([]);
+    expect(
+      validateTaskEvent(
+        makeTaskEvent({
+          slot: "A",
+          gate_type: "n/a",
+          user_confidence: "n/a",
+          evaluator_confidence: "n/a",
+          dci_immediate: "n/a",
+          retries: 0,
+          skipped: false,
+        }),
+      ),
+    ).toEqual([]);
     expect(TASK_EXAMPLES[0].agent_calls).toBe(2); // control used subagents → NOT 0
     expect(TASK_EXAMPLES[0].agent_calls).toBeGreaterThan(0);
   });
@@ -252,42 +402,81 @@ describe("research-mode — slot B: classification + gate enabled", () => {
   });
 
   test("NONE classification: no calibration, no reading, nothing to skip", () => {
-    expect(validateTaskEvent(makeTaskEvent({
-      gate_type: "NONE", user_confidence: "n/a", evaluator_confidence: "n/a",
-      dci_immediate: "n/a", retries: 0, skipped: false,
-    }))).toEqual([]);
+    expect(
+      validateTaskEvent(
+        makeTaskEvent({
+          gate_type: "NONE",
+          user_confidence: "n/a",
+          evaluator_confidence: "n/a",
+          dci_immediate: "n/a",
+          retries: 0,
+          skipped: false,
+        }),
+      ),
+    ).toEqual([]);
     const badNone = makeTaskEvent({
-      gate_type: "NONE", user_confidence: "n/a", evaluator_confidence: "n/a",
-      dci_immediate: "n/a", retries: 1, skipped: false,
+      gate_type: "NONE",
+      user_confidence: "n/a",
+      evaluator_confidence: "n/a",
+      dci_immediate: "n/a",
+      retries: 1,
+      skipped: false,
     });
     expect(validateTaskEvent(badNone)).toContain("NONE: no retries");
   });
 
   test("gate without skip requires a real calibration + evaluation + DCI0 reading", () => {
-    const errs = validateTaskEvent(makeTaskEvent({
-      gate_type: "LIGHT", user_confidence: "n/a", evaluator_confidence: 4,
-      dci_immediate: "DCI=4/4", retries: 0, skipped: false,
-    }));
-    expect(errs.some((m) => m.includes("user_confidence must be 1-5"))).toBe(true);
+    const errs = validateTaskEvent(
+      makeTaskEvent({
+        gate_type: "LIGHT",
+        user_confidence: "n/a",
+        evaluator_confidence: 4,
+        dci_immediate: "DCI=4/4",
+        retries: 0,
+        skipped: false,
+      }),
+    );
+    expect(errs.some((m) => m.includes("user_confidence must be 1-5"))).toBe(
+      true,
+    );
   });
 });
 
 describe("research-mode — skipped gate semantics (a user skip is not the control)", () => {
   test("DEEP + user skip: no verdict, no reading; user_confidence is unconstrained", () => {
-    expect(validateTaskEvent(makeTaskEvent({
-      gate_type: "DEEP", skipped: true, dci_immediate: "n/a", evaluator_confidence: "n/a",
-    }))).toEqual([]);
-    expect(validateTaskEvent(makeTaskEvent({
-      gate_type: "DEEP", skipped: true, dci_immediate: "n/a", evaluator_confidence: "n/a",
-      user_confidence: "n/a",
-    }))).toEqual([]);
+    expect(
+      validateTaskEvent(
+        makeTaskEvent({
+          gate_type: "DEEP",
+          skipped: true,
+          dci_immediate: "n/a",
+          evaluator_confidence: "n/a",
+        }),
+      ),
+    ).toEqual([]);
+    expect(
+      validateTaskEvent(
+        makeTaskEvent({
+          gate_type: "DEEP",
+          skipped: true,
+          dci_immediate: "n/a",
+          evaluator_confidence: "n/a",
+          user_confidence: "n/a",
+        }),
+      ),
+    ).toEqual([]);
   });
 
   test("a skip must also void the reading: skipped LIGHT with a DCI reading is invalid", () => {
-    const errs = validateTaskEvent(makeTaskEvent({
-      gate_type: "LIGHT", skipped: true, dci_immediate: "DCI=4/4",
-      evaluator_confidence: "n/a", retries: 0,
-    }));
+    const errs = validateTaskEvent(
+      makeTaskEvent({
+        gate_type: "LIGHT",
+        skipped: true,
+        dci_immediate: "DCI=4/4",
+        evaluator_confidence: "n/a",
+        retries: 0,
+      }),
+    );
     expect(errs.some((m) => m.includes("SKIPPED: no reading"))).toBe(true);
   });
 });
@@ -298,21 +487,38 @@ describe("research-mode — metric truthfulness", () => {
     expect(TASK_EXAMPLES[1].agent_calls).toBe(4);
     expect(validateTaskEvent(makeTaskEvent({ agent_calls: 0 }))).toEqual([]); // zero delegations is legitimate
     expect(validateTaskEvent(makeTaskEvent({ agent_calls: 7 }))).toEqual([]);
-    expect(validateTaskEvent(makeTaskEvent({ agent_calls: -1 })))
-      .toContain("agent_calls must be a non-negative integer (count of ALL subagent delegations)");
-    expect(validateTaskEvent(makeTaskEvent({ agent_calls: 2.5 }))
-      .some((m) => m.includes("agent_calls"))).toBe(true);
-    expect(validateTaskEvent(makeTaskEvent({ agent_calls: "3" }))
-      .some((m) => m.includes("agent_calls"))).toBe(true);
+    expect(validateTaskEvent(makeTaskEvent({ agent_calls: -1 }))).toContain(
+      "agent_calls must be a non-negative integer (count of ALL subagent delegations)",
+    );
+    expect(
+      validateTaskEvent(makeTaskEvent({ agent_calls: 2.5 })).some((m) =>
+        m.includes("agent_calls"),
+      ),
+    ).toBe(true);
+    expect(
+      validateTaskEvent(makeTaskEvent({ agent_calls: "3" })).some((m) =>
+        m.includes("agent_calls"),
+      ),
+    ).toBe(true);
   });
 
   test("user_confidence and evaluator_confidence are independent, separately-rated fields", () => {
-    expect(validateTaskEvent(makeTaskEvent({ user_confidence: 3, evaluator_confidence: 5 }))).toEqual([]);
-    expect(validateTaskEvent(makeTaskEvent({ user_confidence: 5, evaluator_confidence: 5 }))).toEqual([]);
-    expect(validateTaskEvent(makeTaskEvent({ user_confidence: 6 })))
-      .toContain("user_confidence must be 1-5 or n/a");
-    expect(validateTaskEvent(makeTaskEvent({ evaluator_confidence: 0 })))
-      .toContain("evaluator_confidence must be 1-5 or n/a");
+    expect(
+      validateTaskEvent(
+        makeTaskEvent({ user_confidence: 3, evaluator_confidence: 5 }),
+      ),
+    ).toEqual([]);
+    expect(
+      validateTaskEvent(
+        makeTaskEvent({ user_confidence: 5, evaluator_confidence: 5 }),
+      ),
+    ).toEqual([]);
+    expect(validateTaskEvent(makeTaskEvent({ user_confidence: 6 }))).toContain(
+      "user_confidence must be 1-5 or n/a",
+    );
+    expect(
+      validateTaskEvent(makeTaskEvent({ evaluator_confidence: 0 })),
+    ).toContain("evaluator_confidence must be 1-5 or n/a");
   });
 
   test("only DCI=n/m readings count (even denominator 2-8)", () => {
@@ -345,19 +551,42 @@ describe("research-mode — recall: a NEW append-only event (no row rewriting)",
   });
 
   test("the delayed DCI1 is a fresh, independent reading", () => {
-    expect(validateRecallEvent(makeRecallEvent({ dci_delayed: "DCI=5/6", evaluator_confidence: 2 }))).toEqual([]);
-    expect(validateRecallEvent(makeRecallEvent({ dci_delayed: "DCI=1/4", evaluator_confidence: 1 }))).toEqual([]);
+    expect(
+      validateRecallEvent(
+        makeRecallEvent({ dci_delayed: "DCI=5/6", evaluator_confidence: 2 }),
+      ),
+    ).toEqual([]);
+    expect(
+      validateRecallEvent(
+        makeRecallEvent({ dci_delayed: "DCI=1/4", evaluator_confidence: 1 }),
+      ),
+    ).toEqual([]);
   });
 
   test("skipped recall: no reading, no verdict — everything numeric is n/a", () => {
-    expect(validateRecallEvent(makeRecallEvent({
-      skipped: true, dci_delayed: "n/a", evaluator_confidence: "n/a",
-    }))).toEqual([]);
-    expect(validateRecallEvent(makeRecallEvent({
-      skipped: true, dci_delayed: "n/a", evaluator_confidence: 3,
-    }))).toContain("skipped recall: evaluator_confidence must be n/a");
-    expect(validateRecallEvent(makeRecallEvent({ skipped: false, dci_delayed: "n/a" })))
-      .toContain("non-skipped recall: dci_delayed must be a DCI reading");
+    expect(
+      validateRecallEvent(
+        makeRecallEvent({
+          skipped: true,
+          dci_delayed: "n/a",
+          evaluator_confidence: "n/a",
+        }),
+      ),
+    ).toEqual([]);
+    expect(
+      validateRecallEvent(
+        makeRecallEvent({
+          skipped: true,
+          dci_delayed: "n/a",
+          evaluator_confidence: 3,
+        }),
+      ),
+    ).toContain("skipped recall: evaluator_confidence must be n/a");
+    expect(
+      validateRecallEvent(
+        makeRecallEvent({ skipped: false, dci_delayed: "n/a" }),
+      ),
+    ).toContain("non-skipped recall: dci_delayed must be a DCI reading");
   });
 });
 
@@ -390,7 +619,9 @@ describe("research-mode — dispatch + contract-doc examples", () => {
     expect(validateEventLine(TASK_EXAMPLES[1])).toEqual([]);
     expect(validateEventLine(RECALL_EXAMPLES[0])).toEqual([]);
     expect(validateEventLine({})).toEqual(["event must be 'task' or 'recall'"]);
-    expect(validateEventLine({ event: "tuple" })).toEqual(["event must be 'task' or 'recall'"]);
+    expect(validateEventLine({ event: "tuple" })).toEqual([
+      "event must be 'task' or 'recall'",
+    ]);
   });
 
   test("the normative examples in command/research-mode.md satisfy the typed contract", () => {
@@ -402,7 +633,9 @@ describe("research-mode — dispatch + contract-doc examples", () => {
 describe("research-mode — the real sink is a valid append-only event log", () => {
   test(".context/research-dataset.jsonl (when present) holds only valid v0.6.6 events", () => {
     if (!existsSync(SINK)) return; // fresh install: sink is created on first research session
-    const lines = readFileSync(SINK, "utf8").split("\n").filter((l) => l.trim() !== "");
+    const lines = readFileSync(SINK, "utf8")
+      .split("\n")
+      .filter((l) => l.trim() !== "");
     const taskIds = new Set<string>();
     for (const line of lines) {
       const ev = JSON.parse(line) as Record<string, unknown>; // every line is one JSON object
@@ -422,15 +655,22 @@ describe("research-mode — the real sink is a valid append-only event log", () 
 describe("research-mode — v0.6.7 correlation finalization pins (E)", () => {
   test("append-safe records: multiple evaluations of the same plan have negligible collision probability and never overwrite each other (path-keyed by evaluation_id)", () => {
     const planId = "0007"; // v0.6.7: kept for prose only — record paths went flat below
-    const recordPathFor = (id: string) => join(".context", "comprehension", `${id}.md`);
-    const ids = [makeEvaluationId({ timestamp: "20261007-150000" }), makeEvaluationId({ timestamp: "20261007-150000" }), makeEvaluationId({ timestamp: "20261007-150100" })];
+    const recordPathFor = (id: string) =>
+      join(".context", "comprehension", `${id}.md`);
+    const ids = [
+      makeEvaluationId({ timestamp: "20261007-150000" }),
+      makeEvaluationId({ timestamp: "20261007-150000" }),
+      makeEvaluationId({ timestamp: "20261007-150100" }),
+    ];
     expect(ids[0]).not.toBe(ids[1]); // same second, two evaluations → distinct paths
     expect(ids[1]).not.toBe(ids[2]);
     const paths = new Set(ids.map(recordPathFor));
     expect(paths.size).toBe(ids.length); // one path per evaluation, never overwritten
     for (const id of ids) {
       expect(isValidEvaluationId(id)).toBe(true);
-      expect(recordPathFor(id)).toBe(join(".context", "comprehension", `${id}.md`));
+      expect(recordPathFor(id)).toBe(
+        join(".context", "comprehension", `${id}.md`),
+      );
     }
   });
 
@@ -447,10 +687,15 @@ describe("research-mode — v0.6.7 correlation finalization pins (E)", () => {
     };
     const selectedRecord = records[secondEval]; // the user's selection pins one specific evaluation_id
     const storedId = selectedRecord.split("research_id: ")[1]!.trim();
-    const recallEvent = makeRecallEvent({ research_id: storedId, plan: planId });
+    const recallEvent = makeRecallEvent({
+      research_id: storedId,
+      plan: planId,
+    });
     expect(recallEvent.research_id).toBe(secondTask); // copied verbatim from the SELECTED record
     expect(recallEvent.research_id).not.toBe(firstTask);
-    expect(sameResearchId({ research_id: secondTask } as never, recallEvent)).toBe(true);
+    expect(
+      sameResearchId({ research_id: secondTask } as never, recallEvent),
+    ).toBe(true);
     expect(storedId).not.toBe(firstTask); // no ambiguous plan-only lookup: each record carries its own task's research_id
   });
 
@@ -469,8 +714,12 @@ describe("research-mode — v0.6.7 correlation finalization pins (E)", () => {
       expect(legacyRefs).toBeNull(); // no bare legacy timestamp format remains in live docs
     }
     // and the validator is exactly the documented format
-    expect(isValidResearchId("res-20261007-143000-3f9a7c2e1b08d54fa6e3c70b92d1846a")).toBe(true);
-    expect(isValidResearchId("res-20261007-143000-3f9a7c2e1b08d54fa6e3c70b92d1846")).toBe(false);
+    expect(
+      isValidResearchId("res-20261007-143000-3f9a7c2e1b08d54fa6e3c70b92d1846a"),
+    ).toBe(true);
+    expect(
+      isValidResearchId("res-20261007-143000-3f9a7c2e1b08d54fa6e3c70b92d1846"),
+    ).toBe(false);
   });
 
   test("evaluation_id: bare timestamp forms are rejected; the CSPRNG suffix stays valid (v0.6.7)", () => {

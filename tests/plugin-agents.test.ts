@@ -362,13 +362,16 @@ describe("agent registration (permissions, Phase 5)", () => {
   test("(j) orchestrator cannot edit application code but keeps session-memory writes", async () => {
     const harness = makeHarness({ models: REGISTRY_FULL });
     await setup(harness);
-    const rules = harness.editor.updates.get("orchestrator")!.permissions as PermissionRule[];
+    const rules = harness.editor.updates.get("orchestrator")!
+      .permissions as PermissionRule[];
     expect(resolveEffect(rules, "edit", "src/app.ts")).toBe("deny");
     expect(resolveEffect(rules, "edit", ".context/progress.md")).toBe("allow");
     expect(resolveEffect(rules, "edit", ".context/decisions.md")).toBe("allow");
     expect(resolveEffect(rules, "shell", "git status --short")).toBe("allow");
     expect(resolveEffect(rules, "shell", "rm -rf .")).toBe("deny");
-    expect(resolveEffect(rules, "webfetch", "https://example.com")).toBe("deny");
+    expect(resolveEffect(rules, "webfetch", "https://example.com")).toBe(
+      "deny",
+    );
   });
 
   test("(k) only plan-writer may edit under the board root", async () => {
@@ -383,7 +386,9 @@ describe("agent registration (permissions, Phase 5)", () => {
         "edit",
         "plan/qa/13-example.md",
       );
-      expect(`${id}=${effect}`).toBe(id === "plan-writer" ? "plan-writer=allow" : `${id}=deny`);
+      expect(`${id}=${effect}`).toBe(
+        id === "plan-writer" ? "plan-writer=allow" : `${id}=deny`,
+      );
     }
   });
 });

@@ -11,7 +11,13 @@ describe("templates/models.config.json — preset freellmapi", () => {
     const cfg = JSON.parse(readFileSync(TPL, "utf-8"));
     const p = cfg.presets.freellmapi;
     expect(p).toBeDefined();
-    for (const t of ["TIER_ROUTER", "TIER_REASONING", "TIER_CODE", "TIER_FAST", "TIER_REVIEW"]) {
+    for (const t of [
+      "TIER_ROUTER",
+      "TIER_REASONING",
+      "TIER_CODE",
+      "TIER_FAST",
+      "TIER_REVIEW",
+    ]) {
       expect(p.models[t]).toMatch(/^freellmapi\//);
     }
     expect(p.models.TIER_CODE).toBe("freellmapi/auto:smart");
@@ -29,8 +35,18 @@ describe("templates/models.config.json — preset freellmapi", () => {
   });
 
   test("validate-models.sh accetta freellmapi", () => {
-    const r = spawnSync("bash", [join(REPO, "scripts", "validate-models.sh"),
-      "--config", TPL, "--preset", "freellmapi", "--skip-agents"], { encoding: "utf-8" });
+    const r = spawnSync(
+      "bash",
+      [
+        join(REPO, "scripts", "validate-models.sh"),
+        "--config",
+        TPL,
+        "--preset",
+        "freellmapi",
+        "--skip-agents",
+      ],
+      { encoding: "utf-8" },
+    );
     // Deviazione dal piano (Windows host, autorizzata in oneshot): il validator
     // usa i repr python per gli env-value; su python.exe/pipe i valori escono
     // 'freellmapi'\r (quotes+CR), percio' la stringa esatta

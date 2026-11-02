@@ -62,12 +62,12 @@ preset's concrete model ID.
 
 Useful flags:
 
-| Flag | Effect |
-| --- | --- |
-| `--symlink` | Symlink instead of copy (lets `git pull` update consumers). |
-| `--with-extras` | Also install `extras/` (`pc-doctor`, `writer`). Off by default — these are explicit opt-in. |
-| `--with-examples` | Also install `skills/examples/`. Off by default. |
-| `--skip-validation` | Skip the model-profile validator. Not recommended. |
+| Flag                | Effect                                                                                      |
+| ------------------- | ------------------------------------------------------------------------------------------- |
+| `--symlink`         | Symlink instead of copy (lets `git pull` update consumers).                                 |
+| `--with-extras`     | Also install `extras/` (`pc-doctor`, `writer`). Off by default — these are explicit opt-in. |
+| `--with-examples`   | Also install `skills/examples/`. Off by default.                                            |
+| `--skip-validation` | Skip the model-profile validator. Not recommended.                                          |
 
 ## Configure your provider mapping
 

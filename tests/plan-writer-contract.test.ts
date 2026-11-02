@@ -84,7 +84,9 @@ describe("plan-writer — definizione dell'agente", () => {
 
   test("dichiara l'unicita' dell'owner e il divieto di spostamenti a mano", () => {
     const b = body(read(AGENT_PATH));
-    expect(b).toContain("only agent authorized to create, move or normalise a plan file");
+    expect(b).toContain(
+      "only agent authorized to create, move or normalise a plan file",
+    );
     expect(b).toContain("Never hand-craft a move");
     expect(b).toContain("plan-board-standing-v1");
   });
@@ -149,9 +151,11 @@ describe("plan-writer — documentazione del board", () => {
 
 describe("plan-writer — negativo (la verifica ha denti)", () => {
   test("un corpo senza il tool e senza gli stati non soddisfa le asserzioni", () => {
-    const fake = "# Agent: altro\n\n## Purpose\n\nSposta i piani a mano con `mv`.\n";
+    const fake =
+      "# Agent: altro\n\n## Purpose\n\nSposta i piani a mano con `mv`.\n";
     expect(fake).not.toContain("scripts/plan-board.py");
-    for (const state of STATES) expect(fake.includes(`**${state}**`)).toBe(false);
+    for (const state of STATES)
+      expect(fake.includes(`**${state}**`)).toBe(false);
   });
 
   test("un orchestrator senza la riga di routing non soddisfa l'asserzione", () => {

@@ -199,7 +199,9 @@ describe("opencode-orchestrator-kit plugin skeleton", () => {
         prompt: { text: "ignored" },
         delivery: "queue",
       });
-      expect(typeof (returned as { then?: unknown } | undefined)?.then).toBe("function");
+      expect(typeof (returned as { then?: unknown } | undefined)?.then).toBe(
+        "function",
+      );
       await returned;
       expect(prompts.at(-1)?.text).toBe(source?.body);
       expect(prompts.at(-1)?.sessionID).toBe("ses_skeleton");

@@ -1,7 +1,10 @@
 import { describe, expect, test } from "bun:test";
 
 import { collectPackagedAgents } from "../plugin/src/agents.ts";
-import { resolveEffect, type PermissionRule } from "../plugin/src/permissions.ts";
+import {
+  resolveEffect,
+  type PermissionRule,
+} from "../plugin/src/permissions.ts";
 
 /**
  * Effective shell permission for every packaged agent, including extras.
@@ -126,7 +129,9 @@ describe("permission matrix", () => {
     expect(statusAt).toBeGreaterThan(denyAt);
     for (const resource of DEAD_GIT_ALLOWS) {
       expect(
-        shell.some((rule) => rule.resource === resource && rule.effect === "allow"),
+        shell.some(
+          (rule) => rule.resource === resource && rule.effect === "allow",
+        ),
       ).toBe(false);
     }
     for (const command of [
@@ -160,13 +165,15 @@ describe("permission matrix", () => {
 
   test("explorer and librarian do not allow generic pipes", () => {
     for (const id of ["explorer", "librarian"] as const) {
-      const resources = new Set(shellRules(byId(id).permissions).map((rule) => rule.resource));
+      const resources = new Set(
+        shellRules(byId(id).permissions).map((rule) => rule.resource),
+      );
       for (const pattern of PIPE_PATTERNS) {
         expect(resources.has(pattern)).toBe(false);
       }
-      expect(resolveEffect(byId(id).permissions, "shell", "rm -rf ~ | head -1")).not.toBe(
-        "allow",
-      );
+      expect(
+        resolveEffect(byId(id).permissions, "shell", "rm -rf ~ | head -1"),
+      ).not.toBe("allow");
     }
   });
 
@@ -188,7 +195,9 @@ describe("permission matrix", () => {
         );
         expect(denyAt).toBeGreaterThan(allowAt);
       }
-      expect(resolveEffect(byId(id).permissions, "shell", "find . -delete")).toBe("deny");
+      expect(
+        resolveEffect(byId(id).permissions, "shell", "find . -delete"),
+      ).toBe("deny");
       expect(
         resolveEffect(byId(id).permissions, "shell", "find . -exec rm {} \\;"),
       ).toBe("deny");
@@ -203,7 +212,9 @@ describe("permission matrix", () => {
           (rule) => rule.resource === "gh api *" && rule.effect === "ask",
         ),
       ).toBe(true);
-      expect(resolveEffect(rules, "shell", "gh api -X DELETE repos/x")).toBe("ask");
+      expect(resolveEffect(rules, "shell", "gh api -X DELETE repos/x")).toBe(
+        "ask",
+      );
     }
   });
 
@@ -212,7 +223,9 @@ describe("permission matrix", () => {
     expect(resolveEffect(rules, "shell", "git diff HEAD")).toBe("deny");
     expect(resolveEffect(rules, "shell", "ls src")).toBe("allow");
     expect(resolveEffect(rules, "shell", "rg TODO")).toBe("allow");
-    expect(resolveEffect(rules, "skill", "comprehension-workflow")).toBe("deny");
+    expect(resolveEffect(rules, "skill", "comprehension-workflow")).toBe(
+      "deny",
+    );
     expect(resolveEffect(rules, "subagent", "developer-fixer")).toBe("deny");
   });
 
@@ -223,10 +236,15 @@ describe("permission matrix", () => {
   });
 
   test("oracle, test-engineer, writer, and security cannot spawn", () => {
-    for (const id of ["oracle", "test-engineer", "writer", "security"] as const) {
-      expect(resolveEffect(byId(id).permissions, "subagent", "developer-fixer")).toBe(
-        "deny",
-      );
+    for (const id of [
+      "oracle",
+      "test-engineer",
+      "writer",
+      "security",
+    ] as const) {
+      expect(
+        resolveEffect(byId(id).permissions, "subagent", "developer-fixer"),
+      ).toBe("deny");
     }
   });
 });

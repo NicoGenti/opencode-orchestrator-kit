@@ -46,7 +46,10 @@ function harness() {
       transform: async (cb: (e: unknown) => void) => {
         cb({
           get: (id: string) => agents.get(id),
-          update: (id: string, fn: (agent: Record<string, unknown>) => void) => {
+          update: (
+            id: string,
+            fn: (agent: Record<string, unknown>) => void,
+          ) => {
             const agent = agents.get(id) ?? { id, name: id, mode: "primary" };
             fn(agent);
             agents.set(id, agent);
@@ -95,14 +98,18 @@ describe("CommandDefinition.execute (OpenCode 2.2)", () => {
         prompt: { text: "argomenti ignorati" },
         delivery: "queue",
       });
-      expect(typeof (returned as { then?: unknown } | undefined)?.then).toBe("function");
+      expect(typeof (returned as { then?: unknown } | undefined)?.then).toBe(
+        "function",
+      );
       await returned;
 
       expect(prompts).toHaveLength(1);
       expect(prompts[0]?.sessionID).toBe("ses_probe");
       expect(prompts[0]?.delivery).toBe("queue");
       expect(prompts[0]?.text).toBe(packaged.body);
-      expect(switched).toEqual([{ sessionID: "ses_probe", agent: "orchestrator" }]);
+      expect(switched).toEqual([
+        { sessionID: "ses_probe", agent: "orchestrator" },
+      ]);
     });
   }
 
@@ -113,7 +120,8 @@ describe("CommandDefinition.execute (OpenCode 2.2)", () => {
     };
     const warned: string[] = [];
     const original = console.warn;
-    console.warn = (...args: unknown[]) => void warned.push(args.map(String).join(" "));
+    console.warn = (...args: unknown[]) =>
+      void warned.push(args.map(String).join(" "));
 
     try {
       await plugin.setup(ctx as never);

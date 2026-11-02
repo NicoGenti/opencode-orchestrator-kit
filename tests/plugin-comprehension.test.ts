@@ -87,7 +87,8 @@ const TEMPLATE_CONFIG = JSON.parse(
  * the module may type it precisely (readonly literals); tests read the values
  * through this cast so the assertions do not depend on the declared shape.
  */
-const defaultConfig = DEFAULT_COMPREHENSION_CONFIG as unknown as ComprehensionConfig;
+const defaultConfig =
+  DEFAULT_COMPREHENSION_CONFIG as unknown as ComprehensionConfig;
 
 // ── throwaway root management (never the real repo .context/) ──
 
@@ -285,7 +286,9 @@ describe("formatters", () => {
         outcome: "FAIL",
         userConf: 3,
       }),
-    ).toBe("2026-10-23T10:00:00.000Z mode=DEEP DCI=6/8 evaluator_conf=4 outcome=FAIL user_conf=3");
+    ).toBe(
+      "2026-10-23T10:00:00.000Z mode=DEEP DCI=6/8 evaluator_conf=4 outcome=FAIL user_conf=3",
+    );
   });
 
   test("formatImmediateRow emits the SKIPPED variant with verbatim n/a fields", () => {
@@ -298,7 +301,9 @@ describe("formatters", () => {
         outcome: "SKIPPED",
         userConf: "n/a",
       }),
-    ).toBe("2026-10-23T10:00:00.000Z mode=LIGHT DCI=skipped evaluator_conf=n/a outcome=SKIPPED user_conf=n/a");
+    ).toBe(
+      "2026-10-23T10:00:00.000Z mode=LIGHT DCI=skipped evaluator_conf=n/a outcome=SKIPPED user_conf=n/a",
+    );
   });
 
   test("formatRecallRow emits the dci1 row byte-for-byte (pipes, spacing, type=dci1)", () => {
@@ -313,7 +318,9 @@ describe("formatters", () => {
         dci: "6/8",
         outcome: "RETRY",
       }),
-    ).toBe("2026-10-25 | plan=0013 | type=dci1 | src=stored | retry=1 | user_conf=5 | evaluator_conf=4 | DCI=6/8 | outcome=RETRY");
+    ).toBe(
+      "2026-10-25 | plan=0013 | type=dci1 | src=stored | retry=1 | user_conf=5 | evaluator_conf=4 | DCI=6/8 | outcome=RETRY",
+    );
 
     expect(
       formatRecallRow({
@@ -326,13 +333,16 @@ describe("formatters", () => {
         dci: "skipped",
         outcome: "SKIPPED",
       }),
-    ).toBe("2026-10-25 | plan=0007 | type=dci1 | src=reconstructed | retry=0 | user_conf=n/a | evaluator_conf=n/a | DCI=skipped | outcome=SKIPPED");
+    ).toBe(
+      "2026-10-25 | plan=0007 | type=dci1 | src=reconstructed | retry=0 | user_conf=n/a | evaluator_conf=n/a | DCI=skipped | outcome=SKIPPED",
+    );
   });
 });
 
 describe("appendComprehensionLog", () => {
   test("first call creates the file with the header on line 1 and the row on line 2", () => {
-    const row = "2026-10-23T10:00:00.000Z mode=DEEP DCI=6/8 evaluator_conf=4 outcome=FAIL user_conf=3";
+    const row =
+      "2026-10-23T10:00:00.000Z mode=DEEP DCI=6/8 evaluator_conf=4 outcome=FAIL user_conf=3";
     const result = appendComprehensionLog(tempRoot, row);
     expect(result).toEqual({
       ok: true,
@@ -345,8 +355,16 @@ describe("appendComprehensionLog", () => {
   });
 
   test("later calls append only — the header appears exactly once", () => {
-    appendComprehensionLog(tempRoot, "2026-10-23T10:00:00.000Z mode=DEEP DCI=6/8 evaluator_conf=4 outcome=FAIL user_conf=3");
-    expect(appendComprehensionLog(tempRoot, "2026-10-23T11:00:00.000Z mode=LIGHT DCI=5/8 evaluator_conf=3 outcome=PASS user_conf=2")).toEqual({
+    appendComprehensionLog(
+      tempRoot,
+      "2026-10-23T10:00:00.000Z mode=DEEP DCI=6/8 evaluator_conf=4 outcome=FAIL user_conf=3",
+    );
+    expect(
+      appendComprehensionLog(
+        tempRoot,
+        "2026-10-23T11:00:00.000Z mode=LIGHT DCI=5/8 evaluator_conf=3 outcome=PASS user_conf=2",
+      ),
+    ).toEqual({
       ok: true,
       path: comprehensionLogPath(tempRoot),
     });
@@ -467,8 +485,12 @@ describe("dataset event validation parity", () => {
   });
 
   test("a FORBIDDEN key fails", () => {
-    expect(validateTaskEvent(makeTaskEvent({ session_id: "ses-xyz" })).length).toBeGreaterThan(0);
-    expect(validateRecallEvent(makeRecallEvent({ src: "stored" })).length).toBeGreaterThan(0);
+    expect(
+      validateTaskEvent(makeTaskEvent({ session_id: "ses-xyz" })).length,
+    ).toBeGreaterThan(0);
+    expect(
+      validateRecallEvent(makeRecallEvent({ src: "stored" })).length,
+    ).toBeGreaterThan(0);
   });
 
   test("an uppercase-hex research_id fails", () => {
@@ -476,11 +498,15 @@ describe("dataset event validation parity", () => {
       /[0-9a-f]{32}$/,
       (hex) => hex.toUpperCase(),
     );
-    expect(validateTaskEvent(makeTaskEvent({ research_id: uppercaseHex })).length).toBeGreaterThan(0);
+    expect(
+      validateTaskEvent(makeTaskEvent({ research_id: uppercaseHex })).length,
+    ).toBeGreaterThan(0);
   });
 
   test("an invalid gate_type value fails", () => {
-    expect(validateTaskEvent(makeTaskEvent({ gate_type: "huge" })).length).toBeGreaterThan(0);
+    expect(
+      validateTaskEvent(makeTaskEvent({ gate_type: "huge" })).length,
+    ).toBeGreaterThan(0);
   });
 
   test("slot A with gate_type NONE violates the slot invariant", () => {
@@ -500,8 +526,14 @@ describe("createResearchRecorder: disabled", () => {
   test("appendTask/appendRecall/validateFile are no-ops that touch no filesystem", () => {
     const recorder = createResearchRecorder(tempRoot, false);
     expect(recorder.enabled).toBe(false);
-    expect(recorder.appendTask(makeTaskEvent())).toEqual({ ok: true, noop: true });
-    expect(recorder.appendRecall(makeRecallEvent())).toEqual({ ok: true, noop: true });
+    expect(recorder.appendTask(makeTaskEvent())).toEqual({
+      ok: true,
+      noop: true,
+    });
+    expect(recorder.appendRecall(makeRecallEvent())).toEqual({
+      ok: true,
+      noop: true,
+    });
     expect(recorder.validateFile()).toEqual({ ok: true, noop: true });
     // Still empty: no files created, no .context dir, no mkdir whatsoever.
     expect(readdirSync(tempRoot)).toEqual([]);
@@ -559,7 +591,10 @@ describe("createResearchRecorder: enabled", () => {
     recorder.appendTask(task);
     const before = readFileSync(datasetPath(tempRoot), "utf-8");
     const badRecall = recorder.appendRecall(
-      makeRecallEvent({ research_id: task.research_id, dci_delayed: "DCI=11/8" }),
+      makeRecallEvent({
+        research_id: task.research_id,
+        dci_delayed: "DCI=11/8",
+      }),
     );
     expect(badRecall.ok).toBe(false);
     expect(badRecall.noop).toBe(false);
@@ -594,25 +629,39 @@ describe("dataset privacy", () => {
       makeTaskEvent({ tokens_source: "exact" }),
     ];
     for (const event of samples) {
-      const keys = Object.keys(JSON.parse(JSON.stringify(event)) as Record<string, unknown>);
+      const keys = Object.keys(
+        JSON.parse(JSON.stringify(event)) as Record<string, unknown>,
+      );
       expect(
         keys.filter((key) => !(TASK_FIELDS as readonly string[]).includes(key)),
       ).toEqual([]);
       expect(
-        keys.filter((key) => (FORBIDDEN_FIELDS as readonly string[]).includes(key)),
+        keys.filter((key) =>
+          (FORBIDDEN_FIELDS as readonly string[]).includes(key),
+        ),
       ).toEqual([]);
     }
   });
 
   test("valid recall events serialize carrying only contract fields, never FORBIDDEN keys", () => {
-    const samples = [...RECALL_EXAMPLES, makeRecallEvent(), makeRecallEvent({ retries: 1 })];
+    const samples = [
+      ...RECALL_EXAMPLES,
+      makeRecallEvent(),
+      makeRecallEvent({ retries: 1 }),
+    ];
     for (const event of samples) {
-      const keys = Object.keys(JSON.parse(JSON.stringify(event)) as Record<string, unknown>);
+      const keys = Object.keys(
+        JSON.parse(JSON.stringify(event)) as Record<string, unknown>,
+      );
       expect(
-        keys.filter((key) => !(RECALL_FIELDS as readonly string[]).includes(key)),
+        keys.filter(
+          (key) => !(RECALL_FIELDS as readonly string[]).includes(key),
+        ),
       ).toEqual([]);
       expect(
-        keys.filter((key) => (FORBIDDEN_FIELDS as readonly string[]).includes(key)),
+        keys.filter((key) =>
+          (FORBIDDEN_FIELDS as readonly string[]).includes(key),
+        ),
       ).toEqual([]);
     }
   });

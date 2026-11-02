@@ -66,9 +66,10 @@ function runWithExports(
   exportLines: string[],
 ): SpawnSyncReturns<string> {
   const cmd = shq(scriptPath);
-  const body = exportLines.length > 0
-    ? `${exportLines.join("\n")}\n${cmd}\nexit\n`
-    : `${cmd}\nexit\n`;
+  const body =
+    exportLines.length > 0
+      ? `${exportLines.join("\n")}\n${cmd}\nexit\n`
+      : `${cmd}\nexit\n`;
   return spawnSync("bash", [], {
     encoding: "utf-8",
     input: body,

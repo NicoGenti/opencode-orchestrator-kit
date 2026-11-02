@@ -18,7 +18,9 @@ const REQUIRED_KEYS = ["name", "description"] as const;
 function extractFrontmatter(raw: string): string {
   const match = raw.match(/^---\r?\n([\s\S]*?)\r?\n---/);
   if (!match) {
-    throw new Error("No YAML frontmatter block found (expected leading '---' ... '---').");
+    throw new Error(
+      "No YAML frontmatter block found (expected leading '---' ... '---').",
+    );
   }
   return match[1];
 }
@@ -37,7 +39,9 @@ function topLevelValue(frontmatter: string, key: string): string | null {
  * The skill name (used for the "name" frontmatter assertion) is derived from
  * the immediate parent directory of each SKILL.md.
  */
-function collectSkillFiles(dir: string): Array<{ path: string; skillName: string }> {
+function collectSkillFiles(
+  dir: string,
+): Array<{ path: string; skillName: string }> {
   const results: Array<{ path: string; skillName: string }> = [];
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
     const fullPath = join(dir, entry.name);
@@ -73,7 +77,7 @@ describe("skill frontmatter schema", () => {
         });
       }
 
-      test("\"name\" matches the containing folder name", () => {
+      test('"name" matches the containing folder name', () => {
         const fm = extractFrontmatter(raw);
         expect(topLevelValue(fm, "name")).toBe(skillName);
       });
@@ -87,14 +91,27 @@ describe("skill frontmatter schema", () => {
 });
 
 describe("skill frontmatter schema — negative case (proves the check has teeth)", () => {
-  test("a fixture missing \"name\" fails validation", () => {
-    const badFixture = ["---", "description: a skill with no name", "---", "", "# Body"].join("\n");
+  test('a fixture missing "name" fails validation', () => {
+    const badFixture = [
+      "---",
+      "description: a skill with no name",
+      "---",
+      "",
+      "# Body",
+    ].join("\n");
     const fm = extractFrontmatter(badFixture);
     expect(hasTopLevelKey(fm, "name")).toBe(false);
   });
 
   test("a fixture whose name does not match its folder would fail the folder-match check", () => {
-    const fixture = ["---", "name: wrong-name", "description: mismatched", "---", "", "# Body"].join("\n");
+    const fixture = [
+      "---",
+      "name: wrong-name",
+      "description: mismatched",
+      "---",
+      "",
+      "# Body",
+    ].join("\n");
     const fm = extractFrontmatter(fixture);
     expect(topLevelValue(fm, "name")).not.toBe("expected-folder-name");
   });
