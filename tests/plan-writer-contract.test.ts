@@ -184,3 +184,11 @@ describe("plan-writer — permessi V2 reali (shell patterns e staging)", () => {
     ]) expect(resolveEffect(agent.permissions, "shell", command)).toBe("allow");
   });
 });
+
+describe("plan-writer — documentazione del contratto (staging + Code Mode)", () => {
+  test("la documentazione cita lo staging body e la via Code Mode", () => {
+    expect(read(AGENT_PATH)).toContain("plan-body-");
+    expect(read(AGENT_PATH)).toContain("Code Mode");
+    expect(read(AGENTS_MD_PATH)).toContain("plan-body-");
+  });
+});

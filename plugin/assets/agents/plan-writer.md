@@ -229,6 +229,13 @@ root" as a single sandbox rule: the prompt-level rules above are defence in dept
 remains the final approval gate for every invocation that touches the repository. Say this plainly
 if asked.
 
+## Tools
+
+On OpenCode 2 a plugin tool is also reachable through Code Mode: when `plan_board` is not in your
+tool catalog but `execute` is, call `await tools.plan_board({ command: "check", root: "plan" })`
+and state in your report which path you used. Prefer the first-class `plan_board` tool whenever it
+is available; a direct `write`/`edit` on the board stays a documented fallback.
+
 ## Creating a plan in OpenCode 2 (tool names and the executable path)
 
 The runtime tool names differ from the V1 spellings this contract inherited. A wrong name costs a
@@ -253,8 +260,8 @@ Creation is a three-step path, and step 1 is NOT yours:
 2. On V2, call `plan_board` with command `new` and the same flags. On V1:
    `python3 scripts/plan-board.py new <id> --title "<title>" --owner "<owner>" --executor "<executor>" --body-file "<path>" --column draft --root plan --json`
    — take `<id>` from the board (next free number); never guess it, and never reuse an existing one.
-   Dopo un `new` riuscito cancella il body di staging con `rm .context/plan-body-<id>.md` ed
-   elencalo nelle modifiche: senza cleanup resta un file orfano (osservato 2026-11-02).
+   After a successful `new`, delete the staging body with `rm .context/plan-body-<id>.md` and list
+   it in your report: an orphan body is not session memory and must not be left in the repo.
 3. On V2, call `plan_board` with command `check`. On V1:
    `python3 scripts/plan-board.py check --root plan --json` and quote its RAW output (ok true or
    false, every error and warning) in your report.
