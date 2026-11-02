@@ -23,10 +23,12 @@ permission:
     "*": deny
   bash:
     "*": deny
-    python */plan-board.py *: allow
-    python3 */plan-board.py *: allow
+    python *plan-board.py *: allow
+    python3 *plan-board.py *: allow
+    py -3 *plan-board.py *: allow
     ls *: allow
     cat *: allow
+    rm .context/plan-body-*.md: allow
   task:
     "*": deny
   skill:
@@ -80,6 +82,11 @@ or `Edit`, and never hand-write frontmatter.
 port of `scripts/plan-board.py` and takes the same commands (`check`, `move`, `new`, `adopt`) and
 the same flags. Standing authorization is unchanged: `check`, and `move` of an already-conforming
 file, need no fresh approval; `new`, `adopt`, body edits, deletion and rename do.
+
+Se `plan_board` non compare nel catalogo ma esiste il tool `execute`, il host lo espone in Code
+Mode: chiamalo come `await tools.plan_board({ command: "check", root: "plan" })` e segnalalo.
+Il tool e' la via normale per check/move/new/adopt; la scrittura diretta sulla board resta un
+fallback di contratto e va dichiarata nel report. Su Windows usa `python`, non `python3`.
 
 **V1 (copy-based installer, or V2 when `plan_board` is not registered).** Run:
 
@@ -246,6 +253,8 @@ Creation is a three-step path, and step 1 is NOT yours:
 2. On V2, call `plan_board` with command `new` and the same flags. On V1:
    `python3 scripts/plan-board.py new <id> --title "<title>" --owner "<owner>" --executor "<executor>" --body-file "<path>" --column draft --root plan --json`
    — take `<id>` from the board (next free number); never guess it, and never reuse an existing one.
+   Dopo un `new` riuscito cancella il body di staging con `rm .context/plan-body-<id>.md` ed
+   elencalo nelle modifiche: senza cleanup resta un file orfano (osservato 2026-11-02).
 3. On V2, call `plan_board` with command `check`. On V1:
    `python3 scripts/plan-board.py check --root plan --json` and quote its RAW output (ok true or
    false, every error and warning) in your report.
