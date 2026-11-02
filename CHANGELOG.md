@@ -6,8 +6,15 @@ All notable changes to this project are documented in this file. The format foll
 
 ### Added
 
+- **`bun run sync-assets`**: regenerates `plugin/assets/` from `agents/`, `extras/`, `skills/`, and the three packaged commands (`command/start-session.md`, `command/recall.md`, `command/research-mode.md`). `--check` exits non-zero when the mirror has drifted. The plugin `prepack` script runs the writer, and `tests/plugin-assets-parity.test.ts` tells contributors to run `bun run sync-assets` when a copy drifts.
 - **Design-first bootstrap (plan 0001)**: the session bootstrap now checks for a design-rules artifact (`.context/DESIGN-RULES.md`, root `ARCHITECTURE.md`, or root `DESIGN-RULES.md`); on a new/empty repo the `profiler` asks for the project goal and seeds `.context/DESIGN-RULES.md` from the user's answers, while existing artifacts are detected and reported for user-approved normalization only.
 - **Web-kit UI & Delivery section**: `templates/design-rules.md` and the profiler's inline design-rules draft gain `## UI & Delivery` (DR-UI-1…13). The profiler fills it only when the user states the project is a web-kit site; otherwise the section stays empty, and the template comment says to delete it when web-kit does not apply.
+
+### Changed
+
+- **CI quality gates**: `.github/workflows/test.yml` now runs `bun run typecheck`, `bun run lint`, and `bun run format:check` in addition to `bun test`. The job installs Python 3.12 and aliases `python` to `python3` when `python` is not already on `PATH` (the freellmapi profile tests invoke `python`).
+- **Typecheck and lint coverage**: `tsconfig.json` and `eslint.config.js` now include `tests/` and `scripts/*.ts`. Tests keep a targeted override that turns off `@typescript-eslint/no-explicit-any` for subprocess JSON; scripts stay on the recommended rule.
+- **Formatting**: one Prettier pass so `bun run format:check` is clean. `extras/`, `agents/`, `skills/`, and the packaged agent and skill mirrors stay in `.prettierignore`: Prettier rewrites an unquoted `model: {{TIER_*}}` YAML scalar into a flow mapping, and formatting only one side of a mirror would fail `tests/plugin-assets-parity.test.ts`. `plan/` stays ignored because `scripts/plan-board.py` parses that frontmatter.
 
 ### Fixed
 
