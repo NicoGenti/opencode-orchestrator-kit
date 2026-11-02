@@ -184,9 +184,14 @@ Select `@orchestrator` (or set it as your default agent), then run **`/start-ses
 
 ```bash
 bun install
-bun test        # test suite
-bun run lint    # ESLint
+bun run typecheck       # tsc, including tests/ and scripts/*.ts
+bun run lint            # ESLint, including tests/ and scripts/*.ts
+bun run format:check    # Prettier
+bun test                # test suite
+bun run sync-assets     # refresh plugin/assets after editing agents, extras, skills, or the packaged commands
 ```
+
+`plugin/assets/` is generated. After changing `agents/`, `extras/`, `skills/`, or `command/start-session.md`, `command/recall.md`, or `command/research-mode.md`, run `bun run sync-assets` (or `bun run sync-assets --check` to fail when the mirror has drifted). The plugin `prepack` script runs the same copy. Do not edit the packaged copies by hand.
 
 Changes are tracked in `CHANGELOG.md`.
 
