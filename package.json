@@ -13,6 +13,7 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "format:check": "prettier --check .",
+    "sync-assets": "bun scripts/sync-assets.ts",
     "bun:audit": "bun test && bun run lint"
   },
   "dependencies": {

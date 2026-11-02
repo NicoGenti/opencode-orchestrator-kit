@@ -14,5 +14,8 @@
   ],
   "peerDependencies": {
     "@opencode/plugin": "^2.1.0"
+  },
+  "scripts": {
+    "prepack": "bun ../scripts/sync-assets.ts"
   }
 }

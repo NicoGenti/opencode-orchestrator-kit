@@ -88,6 +88,9 @@ const packagedFiles = collectAllFiles(ASSETS_DIR)
   .map((path) => relative(ASSETS_DIR, path).split(sep).join("/"))
   .sort();
 
+const SYNC_HINT =
+  "Run `bun run sync-assets` to regenerate plugin/assets from command/, skills/, agents/, and extras/.";
+
 describe("plugin/assets packaging parity", () => {
   test("the addressable sources cover 3 commands, 15 agents and 2 extras", () => {
     expect(commandBindings).toHaveLength(3);
@@ -96,9 +99,16 @@ describe("plugin/assets packaging parity", () => {
   });
 
   test("the assets tree mirrors the repo sources exactly (no extras, none missing)", () => {
-    expect(packagedFiles).toEqual(
-      bindings.map((binding) => binding.assetRel).sort(),
-    );
+    const expected = bindings.map((binding) => binding.assetRel).sort();
+    if (
+      packagedFiles.length !== expected.length ||
+      packagedFiles.some((file, index) => file !== expected[index])
+    ) {
+      throw new Error(
+        `plugin/assets does not match the source tree. ${SYNC_HINT}\npackaged: ${packagedFiles.join(", ")}\nexpected: ${expected.join(", ")}`,
+      );
+    }
+    expect(packagedFiles).toEqual(expected);
   });
 
   test("no out-of-scope command file is packaged", () => {
@@ -141,6 +151,11 @@ describe("plugin/assets packaging parity", () => {
       const same =
         normalizeEol(readFileSync(packaged, "utf-8")) ===
         normalizeEol(readFileSync(binding.source, "utf-8"));
+      if (!same) {
+        throw new Error(
+          `plugin/assets/${binding.assetRel} is not byte-identical to its source. ${SYNC_HINT}`,
+        );
+      }
       expect(same).toBe(true);
     }
   });
