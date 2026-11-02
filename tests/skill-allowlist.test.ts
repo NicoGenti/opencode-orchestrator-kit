@@ -66,7 +66,7 @@ function collectShippedSkillNames(): Set<string> {
 
 /**
  * Reserved prefixes. README "Companion kits" and CONTRIBUTING name the same
- * two: `web-*` (web-kit) and `project-*` (a consuming project's own skills).
+ * two: `web-*` (web-stack skill packs) and `project-*` (a consuming project's own skills).
  */
 const RESERVED_SKILL_GLOBS = new Set(["web-*", "project-*"]);
 

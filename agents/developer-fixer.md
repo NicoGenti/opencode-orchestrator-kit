@@ -91,7 +91,7 @@ You are a unified implementation agent that operates in one of two modes, select
 - `dev-cleanup` — safe cleanup of build caches and dev artifacts.
 - `structural-search` — ast-grep queries when a textual search is not enough.
 - `angular-patterns`, `dotnet-conventions`, `python-conventions` — stack conventions. Load the one that matches the project before implementing.
-- `web-*` — web-kit skills (`web-theme`, `web-brand`, `web-scaffold-landing`, `web-scaffold-shop`, `web-scaffold-admin`, `web-deploy`). Load the one that matches the task on a web-kit project. The `web-*` prefix is reserved for that kit.
+- `web-*` — a web-stack skill pack. The prefix is reserved for those packs. Load the skill that matches the task. Example names: `web-theme`, `web-brand`, `web-scaffold-landing`, `web-scaffold-shop`, `web-scaffold-admin`, `web-deploy`.
 - `project-*` — a skill shipped by the consuming project under the reserved prefix. Load it when the task names it.
 
 Load a skill with `skill({ name: "<skill-name>" })` before applying it.
