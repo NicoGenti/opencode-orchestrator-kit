@@ -3,7 +3,7 @@ import { join } from "node:path";
 
 import { assetsDir } from "./assets";
 import type { ModelRef } from "./runtime/opencode-plugin";
-import { parseFrontmatterMap } from "./frontmatter-map";
+import { parseFrontmatterMap, parseFrontmatterScalar } from "./frontmatter-map";
 import {
   assertKitPermissionInvariants,
   kitInvariantRules,
@@ -76,30 +76,6 @@ export function parseModelRef(value: string): ModelRef {
   };
 }
 
-/** Top-level scalar (inline text or a `>-` folded block) from frontmatter. */
-function frontmatterScalar(
-  frontmatter: string,
-  key: string,
-): string | undefined {
-  const inline = new RegExp(`^${key}:[ \\t]+(\\S.*)$`, "m").exec(frontmatter);
-  if (inline) {
-    return inline[1].trim();
-  }
-  const block = new RegExp(
-    `^${key}:[ \\t]*>-[ \\t]*\\r?\\n((?:[ \\t]+[^\\r\\n]*\\r?\\n?)+)`,
-    "m",
-  ).exec(frontmatter);
-  if (block) {
-    return block[1]
-      .split(/\r?\n/)
-      .map((line) => line.trim())
-      .filter(Boolean)
-      .join(" ")
-      .trim();
-  }
-  return undefined;
-}
-
 export interface ParsedAgentFrontmatter {
   description: string;
   mode: AgentMode;
@@ -121,9 +97,9 @@ export function parseAgentFile(
   if (!match) {
     throw new Error(`${source} has no frontmatter block`);
   }
-  const description = frontmatterScalar(match[1], "description");
-  const mode = frontmatterScalar(match[1], "mode");
-  const model = frontmatterScalar(match[1], "model");
+  const description = parseFrontmatterScalar(match[1], "description");
+  const mode = parseFrontmatterScalar(match[1], "mode");
+  const model = parseFrontmatterScalar(match[1], "model");
   if (!description || !mode || !model) {
     throw new Error(
       `${source} frontmatter needs top-level description, mode and model`,

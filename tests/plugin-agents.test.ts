@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { collectPackagedAgents } from "../plugin/src/agents.ts";
+import { parseFrontmatterScalar } from "../plugin/src/frontmatter-map.ts";
 import { resolveEffect } from "../plugin/src/permissions.ts";
 import type { PermissionRule } from "../plugin/src/permissions.ts";
 import { TierConfigError, resolveTierMap } from "../plugin/src/tiers.ts";
@@ -46,25 +47,12 @@ function sourceScalar(sourceRel: string, key: string): string {
   if (!fm) {
     throw new Error(`${sourceRel} has no frontmatter block`);
   }
-  const inline = new RegExp(`^${key}:[ \\t]+(\\S.*)$`, "m").exec(fm[1]);
-  if (inline) {
-    return inline[1].trim();
+  const value = parseFrontmatterScalar(fm[1], key);
+  if (value === undefined) {
+    throw new Error(`${sourceRel} frontmatter has no "${key}"`);
   }
-  const block = new RegExp(
-    `^${key}:[ \\t]*>-[ \\t]*\\r?\\n((?:[ \\t]+[^\\r\\n]*\\r?\\n?)+)`,
-    "m",
-  ).exec(fm[1]);
-  if (block) {
-    return block[1]
-      .split(/\r?\n/)
-      .map((line) => line.trim())
-      .filter(Boolean)
-      .join(" ")
-      .trim();
-  }
-  throw new Error(`${sourceRel} frontmatter has no "${key}"`);
+  return value;
 }
-
 interface FakeAgentEditor {
   updates: Map<string, Record<string, unknown>>;
   updateIds: string[];
@@ -228,6 +216,23 @@ describe("agent registration (defaults)", () => {
       );
       expect(agent!.mode).toBe(sourceScalar(packaged.source, "mode"));
     }
+  });
+
+  test("(c3) nessuna description registrata e' il marcatore YAML folded", async () => {
+    const harness = makeHarness({
+      options: { withExtras: true },
+      models: REGISTRY_FULL,
+    });
+    await setup(harness);
+
+    const broken = [...harness.editor.updates.entries()]
+      .filter(([, agent]) => {
+        const desc = String(agent.description ?? "").trim();
+        return desc.startsWith(">-") || desc.startsWith("|") || desc.length < 20;
+      })
+      .map(([id]) => id);
+
+    expect(broken).toEqual([]);
   });
 
   test("(c2) spot-check known tier mappings", async () => {
