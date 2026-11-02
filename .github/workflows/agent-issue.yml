@@ -55,8 +55,14 @@ jobs:
     # The agent step receives OPENCODE_API_KEY and no GitHub token.
     env:
       ISSUE: ${{ github.event.issue.number }}
-      MODEL: opencode/mimo-v2.6-flash-free
-      KIT_SHA: dbd41c7cd9eb411c31203530b0e5fbea800c03ff
+      # Repository variables (Settings → Secrets and variables → Actions → Variables):
+      #   AGENT_MODEL    OpenCode model id passed to `opencode run -m`.
+      #                  Unset → opencode/mimo-v2.6-flash-free.
+      #   AGENT_KIT_SHA  Full commit of the kit to install for the run.
+      #                  Unset → github.sha (this checkout). Set it only when
+      #                  the installed kit must differ from the workflow commit.
+      MODEL: ${{ vars.AGENT_MODEL != '' && vars.AGENT_MODEL || 'opencode/mimo-v2.6-flash-free' }}
+      KIT_SHA: ${{ vars.AGENT_KIT_SHA != '' && vars.AGENT_KIT_SHA || github.sha }}
       BASE: ${{ github.event.repository.default_branch }}
       OPENCODE_PERMISSION: '{"*":"allow","shell":"allow","webfetch":"deny","question":"deny"}'
       # Text of the "/agent ..." comment (empty for label-triggered runs). Passed via env, never interpolated into scripts.
@@ -80,21 +86,31 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Fetch the kit at the pinned commit
+      - name: Select the kit source (this checkout, or AGENT_KIT_SHA)
         run: |
           set -euo pipefail
-          git init -q /tmp/kit
-          git -C /tmp/kit remote add origin https://github.com/NicoGenti/opencode-orchestrator-kit
-          git -C /tmp/kit fetch -q --depth 1 origin "$KIT_SHA"
-          git -C /tmp/kit checkout -q FETCH_HEAD
-          test "$(git -C /tmp/kit rev-parse HEAD)" = "$KIT_SHA"
+          # Default KIT_SHA is github.sha, which is this checkout. A repository
+          # variable AGENT_KIT_SHA pins a different commit on purpose.
+          if [ "$KIT_SHA" = "$GITHUB_SHA" ]; then
+            KIT_SRC="$GITHUB_WORKSPACE"
+            echo "kit source: this checkout ($KIT_SHA)"
+          else
+            git init -q /tmp/kit
+            git -C /tmp/kit remote add origin https://github.com/NicoGenti/opencode-orchestrator-kit
+            git -C /tmp/kit fetch -q --depth 1 origin "$KIT_SHA"
+            git -C /tmp/kit checkout -q FETCH_HEAD
+            KIT_SRC=/tmp/kit
+            echo "kit source: pinned commit $KIT_SHA (repository variable AGENT_KIT_SHA)"
+          fi
+          test "$(git -C "$KIT_SRC" rev-parse HEAD)" = "$KIT_SHA"
+          echo "KIT_SRC=$KIT_SRC" >> "$GITHUB_ENV"
           echo "kit HEAD verified: $KIT_SHA"
       - name: Build the CI model profile (install.sh seeds it only if missing)
         run: |
           set -euo pipefail
           python - <<'PY'
           import json, os, pathlib
-          tpl = json.loads(pathlib.Path("/tmp/kit/templates/models.config.json").read_text(encoding="utf-8"))
+          tpl = json.loads(pathlib.Path(os.environ["KIT_SRC"], "templates/models.config.json").read_text(encoding="utf-8"))
           ci = json.loads(pathlib.Path(".github/agent/ci-free.json").read_text(encoding="utf-8"))
           tpl.setdefault("presets", {}).update(ci)
           tpl["default_preset"] = "ci-free"
@@ -106,7 +122,7 @@ jobs:
       - name: Install the kit globally (ephemeral, validation skipped)
         run: |
           set -euo pipefail
-          bash /tmp/kit/install.sh --skip-validation global
+          bash "$KIT_SRC/install.sh" --skip-validation global
           test -f "$HOME/.config/opencode/AGENTS.md"
           test -f "$HOME/.config/opencode/agents/orchestrator.md"
           if grep -rq "{{TIER_" "$HOME/.config/opencode/agents"; then
