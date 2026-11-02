@@ -141,16 +141,26 @@ describe("V1 -> V2 translation", () => {
       { action: "shell", resource: "*", effect: "deny" },
       {
         action: "shell",
-        resource: "python */plan-board.py *",
+        resource: "python *plan-board.py *",
         effect: "allow",
       },
       {
         action: "shell",
-        resource: "python3 */plan-board.py *",
+        resource: "python3 *plan-board.py *",
+        effect: "allow",
+      },
+      {
+        action: "shell",
+        resource: "py -3 *plan-board.py *",
         effect: "allow",
       },
       { action: "shell", resource: "ls *", effect: "allow" },
       { action: "shell", resource: "cat *", effect: "allow" },
+      {
+        action: "shell",
+        resource: "rm .context/plan-body-*.md",
+        effect: "allow",
+      },
       { action: "subagent", resource: "*", effect: "deny" },
       { action: "skill", resource: "*", effect: "deny" },
     ]);

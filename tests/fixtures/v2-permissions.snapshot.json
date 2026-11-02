@@ -1692,12 +1692,17 @@
     },
     {
       "action": "shell",
-      "resource": "python */plan-board.py *",
+      "resource": "python *plan-board.py *",
       "effect": "allow"
     },
     {
       "action": "shell",
-      "resource": "python3 */plan-board.py *",
+      "resource": "python3 *plan-board.py *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "py -3 *plan-board.py *",
       "effect": "allow"
     },
     {
@@ -1708,6 +1713,11 @@
     {
       "action": "shell",
       "resource": "cat *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "rm .context/plan-body-*.md",
       "effect": "allow"
     },
     {

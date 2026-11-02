@@ -18,8 +18,10 @@ import type { PermissionRule } from "../plugin/src/permissions.ts";
  *   name `subagent` do not change the translated rules.
  * - agents/developer-fixer.md — skill `project-*` allow.
  * - agents/code-reviewer.md — skill `project-*` allow.
- * - agents/plan-writer.md — shell `python3 *\/plan-board.py *` allow.
- *   The existing `python` allow is unchanged.
+ * - agents/plan-writer.md — shell patterns aligned to the real commands:
+ *   `python *plan-board.py *`, `python3 *plan-board.py *`, `py -3 *plan-board.py *`
+ *   (the previous glob form never matched `python scripts/plan-board.py`) plus
+ *   `rm .context/plan-body-*.md` for the staging-body cleanup.
  * - agents/oracle.md — removed `{ action: "query", resource: "*", effect: "allow" }`.
  *   `query` is not a V1 or V2 permission action.
  * - agents/librarian.md — removed `{ action: "check_diagnostics", resource: "*", effect: "deny" }`.
@@ -101,20 +103,20 @@ describe("V2 permission translation snapshot", () => {
         effect: "allow",
       }),
     ).toBe(true);
-    expect(
-      has("agents/plan-writer.md", {
-        action: "shell",
-        resource: "python3 */plan-board.py *",
-        effect: "allow",
-      }),
-    ).toBe(true);
-    expect(
-      has("agents/plan-writer.md", {
-        action: "shell",
-        resource: "python */plan-board.py *",
-        effect: "allow",
-      }),
-    ).toBe(true);
+    for (const resource of [
+      "python *plan-board.py *",
+      "python3 *plan-board.py *",
+      "py -3 *plan-board.py *",
+      "rm .context/plan-body-*.md",
+    ]) {
+      expect(
+        has("agents/plan-writer.md", {
+          action: "shell",
+          resource,
+          effect: "allow",
+        }),
+      ).toBe(true);
+    }
     expect(
       has("agents/orchestrator.md", {
         action: "subagent",
