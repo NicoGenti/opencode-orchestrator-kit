@@ -42,14 +42,15 @@ permission:
     deno *: allow
     make *: allow
     cmake *: allow
-    git checkout *: allow
-    git add *: allow
-    git commit *: allow
-    git branch *: allow
-    git push *: allow
-    git rm *: allow
-    git merge *: allow
-    git ls-tree *: allow
+    npx *: ask
+    dotnet *: ask
+    ng *: ask
+    docker build: ask
+    docker build *: ask
+    bash */scripts/*.sh: ask
+    bash */scripts/*.sh *: ask
+    sh */scripts/*.sh: ask
+    sh */scripts/*.sh *: ask
     git *: deny
     git status *: allow
     git diff *: allow

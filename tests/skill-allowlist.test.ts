@@ -188,6 +188,16 @@ describe("agent skill allowlists name only shipped skills", () => {
       keys: ["*"],
     },
     {
+      file: "comprehension-coach.md",
+      dirs: ["agents", "plugin/assets/agents"],
+      keys: ["*"],
+    },
+    {
+      file: "plan-writer.md",
+      dirs: ["agents", "plugin/assets/agents"],
+      keys: ["*"],
+    },
+    {
       file: "pc-doctor.md",
       dirs: ["extras", "plugin/assets/extras"],
       keys: ["*", "dev-cleanup"],

@@ -21,6 +21,10 @@ permission:
     sed *: deny
     /tmp/*: allow
     find *: allow
+    find *-delete*: deny
+    find *-exec*: deny
+    find *-execdir*: deny
+    find *-ok*: deny
     grep *: deny
     rg *: allow
     sg *: allow
@@ -38,12 +42,6 @@ permission:
     git show *: allow
     git ls-files *: allow
     git rev-parse *: allow
-    "* | grep *": allow
-    "* | head *": allow
-    "* | tail *": allow
-    "* | sort *": allow
-    "* | wc *": allow
-    find * | *: allow
   skill:
     "*": deny
     structural-search: allow

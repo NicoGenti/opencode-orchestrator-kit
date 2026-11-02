@@ -4,6 +4,7 @@ mode: subagent
 model: {{TIER_FAST}}
 temperature: 0.4
 permission:
+  task: deny
   bash:
     "*": ask
     sed *: deny
