@@ -168,9 +168,10 @@ export const BOARD_ROOT_PATTERN = "plan/*.md";
 
 /**
  * Kit-level rules appended AFTER the frontmatter translation. Appended last, so
- * no agent-declared `allow` can weaken them (last match wins). V1 frontmatter
- * was looser than the AGENTS.md contract: it let every agent write `plan/**`
- * and even gave the orchestrator `plan/**` write access — Phase 5 closes that.
+ * no agent-declared `allow` can weaken them (last match wins). Source
+ * frontmatter now denies plan-board markdown for every agent except
+ * plan-writer (V1 and the translated rules agree). The appended deny stays
+ * so a later allow cannot reopen the board.
  */
 export function kitInvariantRules(agentId: string): PermissionRule[] {
   if (agentId === BOARD_ROOT_OWNER) return [];

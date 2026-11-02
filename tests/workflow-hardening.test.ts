@@ -263,7 +263,7 @@ describe("workflow-hardening — W9 hard boundary (v0.6.2)", () => {
       /\*\*Hard boundary\*\*: both sinks \(this log, `\.context\/research-dataset\.jsonl`\) are append-only/,
     );
     expect(ORCH).toMatch(
-      /Sanctioned writes: session memory; plan metadata; comprehension records; comprehension telemetry; research telemetry/,
+      /Sanctioned writes: session memory; comprehension records; comprehension telemetry; research telemetry/,
     );
     expect(ORCH).toMatch(
       /Direct writes are limited to sanctioned categories only/,

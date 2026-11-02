@@ -7,6 +7,8 @@ tools: {}
 permission:
   task: deny
   edit: deny
+  write:
+    "plan/**/*.md": deny
   query: allow
   bash:
     "*": ask

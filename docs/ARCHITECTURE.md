@@ -46,7 +46,7 @@ Classify cognitive relevance (orchestrator, no coach call)
          (comprehension-coach)
 ```
 
-The Orchestrator itself never touches application code, dependencies, or configuration. Its own write permissions are limited to three session-memory files and `plan/**/*.md` file moves — everything else is delegated.
+The Orchestrator itself never touches application code, dependencies, configuration, or the plan board. Its own write permissions are limited to session-memory files under `.context/`. Plan files (`plan/**/*.md`) belong to `plan-writer` — everything else is delegated.
 
 ## Human-in-the-loop confirmation gate
 
