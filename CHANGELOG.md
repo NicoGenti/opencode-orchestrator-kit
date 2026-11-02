@@ -4,6 +4,8 @@ All notable changes to this project are documented in this file. The format foll
 
 ## [Unreleased]
 
+## [1.0.0] — 2026-11-02
+
 ### Added
 
 - **npm release workflow**: `.github/workflows/release.yml` runs only on tags `v*`. It installs dependencies, runs `bun test`, `bun run typecheck`, `bun run lint`, `bun run format:check`, and `bun run sync-assets --check`, checks that the tag (without the leading `v`) equals `plugin/package.json`'s version, then runs `npm publish --provenance --access public` from `plugin/` with the `NPM_TOKEN` secret and `id-token: write`. It does not run on pull requests, so it can merge before the secret exists. npm publication of `opencode-orchestrator-kit` stays pending until the first such tag.
