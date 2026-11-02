@@ -135,6 +135,7 @@ export function executePlanBoardTool(input: unknown): string {
  * Registers the native `plan_board` tool through `ctx.tool.transform`.
  * Returns true iff registered; when the host does not expose `ctx.tool` the
  * registration degrades silently to keep setup successful.
+ * Registers a first-class tool (options.codemode === false); Code Mode would hide it behind the execute sandbox.
  */
 export function registerPlanBoardTool(ctx: PluginContext): boolean {
   if (typeof ctx.tool?.transform !== "function") {
@@ -143,6 +144,11 @@ export function registerPlanBoardTool(ctx: PluginContext): boolean {
   ctx.tool.transform((editor) => {
     editor.add({
       name: PLAN_BOARD_TOOL_NAME,
+      // OpenCode 2 espone i tool dei plugin SOLO in Code Mode (`execute` -> `tools.plan_board`)
+      // finche' non si passa `codemode: false`. Senza questa opzione il tool non compare nel
+      // catalogo dell'agente (sessione 2026-11-02: 11 chiamate execute + 1 "No tool named plan_board").
+      // Non impostare `permission: "edit"`: la standing authorization copre check/move.
+      options: { codemode: false },
       description: PLAN_BOARD_TOOL_DESCRIPTION,
       input: PLAN_BOARD_TOOL_INPUT,
       execute: executePlanBoardTool,

@@ -227,6 +227,11 @@ describe("registrazione del tool nativo plan_board", () => {
     expect(tools[0].name).toBe("plan_board");
   });
 
+  test("(h) il tool e' esposto fuori da Code Mode (options.codemode === false)", () => {
+    expect(tools).toHaveLength(1);
+    expect(tools[0].options).toEqual({ codemode: false });
+  });
+
   test("description documenta l'autorizzazione standing e i codici di uscita (0 ok, 1 bloccante)", () => {
     const description = tools[0].description as string;
     expect(typeof description).toBe("string");
