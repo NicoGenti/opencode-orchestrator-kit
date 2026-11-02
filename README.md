@@ -210,16 +210,16 @@ Select `@orchestrator` (or set it as your default agent), then run **`/start-ses
 
 ## Companion kits
 
-### web-kit
+Companion repositories are optional. This kit runs on its own. A third-party kit plugs in by installing skills and commands where OpenCode already looks; it does not need a change here unless it wants a new allowlist entry.
 
-[web-kit](https://github.com/NicoGenti/web-kit) is a separate repository. This kit does not vendor its skills or its UI rules.
+### Extension contract
 
-- The skill-name prefix **`web-*` is reserved** for web-kit skills (`web-theme`, `web-brand`, `web-scaffold-landing`, `web-scaffold-shop`, `web-scaffold-admin`, `web-deploy`). Agent allowlists use that glob, so a third-party skill named `web-…` would be enabled for every agent that allows `web-*`. Do not use the prefix for anything else.
-- Install web-kit skills on OpenCode's skills path, one directory per skill: `.opencode/skills/<name>/SKILL.md`, with the frontmatter `name` equal to `<name>` ([Skills](https://opencode.ai/v2/docs/skills)). The plugin does not register them; the `skill` tool loads whatever OpenCode discovers on that path.
-- **`/new-site` is a web-kit command**, not one of this kit's four commands. This plugin does not register it.
-- Agents whose `permission.skill` map allows `web-*`: `orchestrator`, `oracle`, `developer-fixer`, `code-reviewer`, and `deploy-helper`.
-- `developer-fixer` **asks** before web-kit build and scaffold commands: `npx`, `dotnet`, `ng`, `docker build`, and `bash` or `sh` scripts under a skill `scripts/` directory. That is what lets `/new-site` run without a blanket shell allow.
-- The DR-UI-1…13 list in `templates/design-rules.md` is a copy of web-kit `docs/design-rules-ui.md` on `main`. The file's header names that source. `bun run check-design-rules` fetches the raw file and diffs the rules section. [`.github/workflows/check-design-rules.yml`](.github/workflows/check-design-rules.yml) runs that check every Monday and on `workflow_dispatch`, and fails on drift. It is not part of the pull-request test workflow, and `bun test` does not call the network.
+- **Skills path.** Put each skill at `.opencode/skills/<name>/SKILL.md` with frontmatter `name` equal to `<name>` ([Skills](https://opencode.ai/v2/docs/skills)). This plugin does not register those skills. The `skill` tool loads whatever OpenCode discovers on that path.
+- **`web-*` is reserved** for web-stack skill packs (theme, brand, scaffold, deploy, and similar). Agents that allow the glob: `orchestrator`, `oracle`, `developer-fixer`, `code-reviewer`, and `deploy-helper`. A skill named `web-…` is enabled for those agents, so project skills and unrelated packs use another prefix. One example of the shape is `web-theme` or `web-deploy`.
+- **`project-*` is reserved** for the consuming project's own skills. `orchestrator`, `developer-fixer`, and `code-reviewer` already allow it. Other agents need an allowlist edit before they can load a `project-*` skill.
+- **Shell asks.** `developer-fixer` asks before `npx`, `dotnet`, `ng`, `docker build`, and `bash` or `sh` scripts under a skill `scripts/` directory. A companion can ship those commands under that ask, with the shell catch-all still deny.
+- **Commands.** A companion registers its own commands in OpenCode (a site scaffolder is one example). This plugin registers `/start-session`, `/recall`, `/research-mode`, and `/close-session`.
+- **Design-rules template.** `templates/design-rules.md` is a starting point, including an optional UI section. Copy it and customize or delete sections. This repository does not fetch or pin an upstream copy.
 
 ### Adding a skill
 
@@ -230,11 +230,11 @@ Every shipped agent starts `permission.skill` with `"*": deny`. OpenCode then lo
 1. Add `skills/<name>/SKILL.md`. The frontmatter `name` is the allowlist key (`skills/examples/` included).
 2. Add that name to the `permission.skill` map of each agent that should load it, after `"*": deny`.
 3. Run `bun run sync-assets` so `plugin/assets/` matches.
-4. `tests/skill-allowlist.test.ts` fails when an `allow` or `ask` names a skill that does not ship here. `deny` entries, the `"*"` catch-all, and globs are not required to name a shipped skill. A glob that matches **zero** shipped skills is legal only for a documented reserved prefix: `web-*` (web-kit, above) and `project-*` (below).
+4. `tests/skill-allowlist.test.ts` fails when an `allow` or `ask` names a skill that does not ship here. `deny` entries, the `"*"` catch-all, and globs are not required to name a shipped skill. A glob that matches **zero** shipped skills is legal only for a documented reserved prefix: `web-*` and `project-*`.
 
 **In a project that uses the kit**
 
-Name the skill `project-<something>` (directory and frontmatter `name`). `project-*` is reserved and already allowlisted for `orchestrator`, `developer-fixer`, and `code-reviewer`, so those agents can load the project's own skills without an edit to this kit. Other agents still need an allowlist entry. Do not use the `web-*` prefix for a project skill.
+Name the skill `project-<something>` (directory and frontmatter `name`). `orchestrator`, `developer-fixer`, and `code-reviewer` already allow that prefix. Other agents still need an allowlist entry. Leave `web-*` for a web-stack skill pack.
 
 ## Development
 

@@ -93,7 +93,7 @@ Cite the rule (number or heading) and the file:line for each finding. Treat a vi
 ## Skills I Consume
 
 - `angular-patterns`, `dotnet-conventions`, `python-conventions` — load the one that matches the stack before reviewing that code.
-- `web-*` — web-kit skills. Load `web-theme` when checking DR-UI rules and `web-deploy` when checking delivery rules. The `web-*` prefix is reserved for that kit.
+- `web-*` — a web-stack skill pack. The prefix is reserved for those packs. Load the theme skill when checking DR-UI rules and the deploy skill when checking delivery rules.
 - `project-*` — a skill shipped by the consuming project under the reserved prefix. Load it when the review depends on it.
 
 Load a skill with `skill({ name: "<skill-name>" })` before applying it.

@@ -153,7 +153,7 @@ that does not ship. `deny` entries and the `"*"` catch-all do not have to.
 A glob that matches zero shipped skills is allowed only for a documented
 reserved prefix:
 
-- `web-*` — reserved for [web-kit](https://github.com/NicoGenti/web-kit). Do not use it for a skill in this repo or in a consuming project. See the README section "Companion kits".
+- `web-*` — reserved for web-stack skill packs (theme, scaffold, deploy, and similar). Do not use it for a skill in this repo or for a consuming project's own skill. See the README section "Companion kits".
 - `project-*` — reserved so a consuming project can add its own skills without editing this kit. `orchestrator`, `developer-fixer`, and `code-reviewer` already allow it.
 
 A glob that matches at least one shipped skill (for example `build-*`, which matches `build-debug`) does not need to be reserved.
