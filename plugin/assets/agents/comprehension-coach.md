@@ -11,6 +11,22 @@ permission:
   read: allow
   glob: allow
   grep: allow
+  bash:
+    "*": deny
+    sed *: deny
+    find *: allow
+    find *-delete*: deny
+    find *-exec*: deny
+    find *-execdir*: deny
+    find *-ok*: deny
+    grep *: deny
+    rg *: allow
+    ls *: allow
+    head *: allow
+    tail *: allow
+    wc *: allow
+  skill:
+    "*": deny
 ---
 
 # Comprehension Coach

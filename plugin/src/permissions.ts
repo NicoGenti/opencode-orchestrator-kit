@@ -203,18 +203,79 @@ export function resolveEffect(
 const BOARD_SAMPLE = "plan/qa/13-example.md";
 /** Sample application path used to probe the orchestrator invariant. */
 const APP_SAMPLE = "src/app.ts";
+/**
+ * Actions whose host default is allow-everything when the agent declares no
+ * `resource: "*"` rule. V1 names are `bash` / `task`; the translated rules
+ * use the V2 names below. A global `{action:"*", resource:"*"}` rule counts.
+ */
+const CATCH_ALL_ACTIONS = ["shell", "skill", "subagent"] as const;
+/** Subagent id used to prove a read-only agent cannot delegate implementation. */
+const IMPLEMENTOR = "developer-fixer";
+
+/**
+ * Last rule that catches every resource of `action`. A global `action: "*"`
+ * rule matches every action; a later action-specific `resource: "*"` rule
+ * overrides it, because resolution is last-match-wins.
+ */
+function lastCatchAll(rules: PermissionRule[], action: string): PermissionRule | undefined {
+  let found: PermissionRule | undefined;
+  for (const rule of rules) {
+    if (rule.resource !== "*") continue;
+    if (rule.action === action || rule.action === "*") found = rule;
+  }
+  return found;
+}
+
+function invariantError(agentId: string, detail: string): Error {
+  return new Error(
+    `[opencode-orchestrator-kit] permission invariant violated for '${agentId}': ${detail}`,
+  );
+}
+
+/**
+ * Every agent must declare a catch-all for shell, skill, and subagent. Without
+ * one, OpenCode's host default allows the action. An explicit `allow` catch-all
+ * is the same hole. The orchestrator is the only agent whose subagent catch-all
+ * may be `allow`, because it is the router.
+ */
+function assertDeclaredCatchAlls(agentId: string, rules: PermissionRule[]): void {
+  for (const action of CATCH_ALL_ACTIONS) {
+    const catchAll = lastCatchAll(rules, action);
+    if (!catchAll) {
+      throw invariantError(
+        agentId,
+        `no catch-all rule for '${action}' (resource '*'); the host default would allow it`,
+      );
+    }
+    const routerMayAllow = agentId === "orchestrator" && action === "subagent";
+    if (catchAll.effect === "allow" && !routerMayAllow) {
+      throw invariantError(
+        agentId,
+        `'${action}' catch-all is 'allow'; declare 'deny' or 'ask'`,
+      );
+    }
+  }
+}
 
 /**
  * Fail-fast guard run once per agent before registration: the kit must never
  * ship an agent that can edit application code (orchestrator) or plan files
- * (everyone but the board owner).
+ * (everyone but the board owner), that relies on the host allow-everything
+ * default for shell, skill, or subagent, or that lets a non-router spawn
+ * `developer-fixer` (which would bypass a read-only permission surface).
  */
 export function assertKitPermissionInvariants(agentId: string, rules: PermissionRule[]): void {
+  assertDeclaredCatchAlls(agentId, rules);
   const expectations: Array<{ action: string; resource: string; effect: PermissionEffect }> = [
     {
       action: "edit",
       resource: BOARD_SAMPLE,
       effect: agentId === BOARD_ROOT_OWNER ? "allow" : "deny",
+    },
+    {
+      action: "subagent",
+      resource: IMPLEMENTOR,
+      effect: agentId === "orchestrator" ? "allow" : "deny",
     },
   ];
   if (agentId === "orchestrator") {
@@ -223,9 +284,9 @@ export function assertKitPermissionInvariants(agentId: string, rules: Permission
   for (const expectation of expectations) {
     const actual = resolveEffect(rules, expectation.action, expectation.resource);
     if (actual !== expectation.effect) {
-      throw new Error(
-        `[opencode-orchestrator-kit] permission invariant violated for '${agentId}': ` +
-          `${expectation.action} on '${expectation.resource}' resolved to '${actual}', expected '${expectation.effect}'`,
+      throw invariantError(
+        agentId,
+        `${expectation.action} on '${expectation.resource}' resolved to '${actual}', expected '${expectation.effect}'`,
       );
     }
   }

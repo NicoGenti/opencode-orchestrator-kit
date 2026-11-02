@@ -36,6 +36,10 @@ permission:
     "*": deny
     npx repomix *: allow
     find *: allow
+    find *-delete*: deny
+    find *-exec*: deny
+    find *-execdir*: deny
+    find *-ok*: deny
     ls *: allow
     cat *: allow
     head *: allow

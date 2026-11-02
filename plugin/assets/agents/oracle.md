@@ -5,6 +5,7 @@ model: {{TIER_REASONING}}
 temperature: 0.5
 tools: {}
 permission:
+  task: deny
   edit: deny
   query: allow
   bash:
@@ -18,6 +19,10 @@ permission:
     git ls-files *: allow
     git blame *: allow
     find *: allow
+    find *-delete*: deny
+    find *-exec*: deny
+    find *-execdir*: deny
+    find *-ok*: deny
     grep *: deny
     rg *: allow
     ls *: allow

@@ -73,7 +73,16 @@ registration if an invariant does not hold:
   may touch the plan board (`AGENTS.md`, "Plan Board Lifecycle");
 - `orchestrator` denies `edit` on application code, because it routes work
   instead of doing it. This also removes the `plan/**` write access V1 gave it,
-  which contradicted `AGENTS.md`.
+  which contradicted `AGENTS.md`;
+- every agent declares a catch-all (`resource: "*"`, or a global `action: "*"`)
+  for `shell`, `skill`, and `subagent`. The catch-all effect must be `deny` or
+  `ask`. The orchestrator is the only agent whose `subagent` catch-all may be
+  `allow`, because it is the router. Without that rule the host default allows
+  the action;
+- every agent other than `orchestrator` denies `subagent` on `developer-fixer`,
+  so a read-only agent cannot delegate its way out of its own limits. The
+  planner may still spawn `explorer` (an explicit exception after its
+  subagent deny).
 
 ## Verification
 
@@ -84,5 +93,6 @@ bun run typecheck && bun run lint
 ```
 
 `tests/plugin-permissions.test.ts` pins the exact rule list for `orchestrator`
-(24 translation rules) and `plan-writer` (8), the global fallback of `security`,
+(24 translation rules) and `plan-writer` (9), the global fallback of `security`,
 the globstar normalisation, and the resolved effect of every packaged agent.
+`tests/permission-matrix.test.ts` resolves dangerous shell commands per agent.

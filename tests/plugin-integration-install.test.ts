@@ -33,7 +33,7 @@
  *  2. empty fixture repo — 3 commands, 9 skills, 15 agents (17 with
  *     `withExtras: true`), 1 `plan_board` tool, orchestrator the only
  *     `primary`, per-agent models resolved from the bundled preset tiers,
- *     V2 permissions on every agent (orchestrator 25 rules, plan-writer 8);
+ *     V2 permissions on every agent (orchestrator 25 rules, plan-writer 9);
  *  3. existing fixture repo — a user-defined agent colliding with a kit id
  *     wins and is not overwritten, the other kit agents still register, and
  *     NOT A SINGLE FILE is written into the repo (the `.opencode/agents/`
@@ -974,7 +974,7 @@ describe("plugin activation — empty fixture repo", () => {
     });
   });
 
-  test("every agent carries V2 permissions (orchestrator 25 rules, plan-writer 8)", async () => {
+  test("every agent carries V2 permissions (orchestrator 25 rules, plan-writer 9)", async () => {
     const repo = makeEmptyFixture({ withExtras: true });
     const harness = await setupPackedPlugin(readKitOptions(repo));
 
@@ -1000,7 +1000,7 @@ describe("plugin activation — empty fixture repo", () => {
     );
 
     const planWriter = harness.agents.get("plan-writer")!.permissions!;
-    expect(planWriter).toHaveLength(8);
+    expect(planWriter).toHaveLength(9);
     expect(resolveEffect(planWriter, "edit", "plan/qa/13-example.md")).toBe(
       "allow",
     );

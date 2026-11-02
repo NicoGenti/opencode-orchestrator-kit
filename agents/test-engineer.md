@@ -7,6 +7,7 @@ model: {{TIER_CODE}}
 temperature: 0.3
 tools: {}
 permission:
+  task: deny
   edit:
     "*.test.*": ask
     "*.spec.*": ask

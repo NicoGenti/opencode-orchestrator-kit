@@ -27,7 +27,7 @@ permission:
     gh workflow view *: allow
     gh run list *: allow
     gh run view *: allow
-    gh api *: allow
+    gh api *: ask
     vercel --version: allow
     vercel ls *: allow
     netlify --version: allow

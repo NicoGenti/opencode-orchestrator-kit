@@ -29,8 +29,12 @@ permission:
     gh search issues *: allow
     gh search repos *: allow
     gh repo view *: allow
-    gh api *: allow
+    gh api *: ask
     find *: allow
+    find *-delete*: deny
+    find *-exec*: deny
+    find *-execdir*: deny
+    find *-ok*: deny
     grep *: deny
     rg *: allow
     ls *: allow
@@ -39,11 +43,6 @@ permission:
     tail *: allow
     wc *: allow
     sort *: allow
-    "* | grep *": allow
-    "* | head *": allow
-    "* | tail *": allow
-    "* | sort *": allow
-    "* | wc *": allow
   webfetch: allow
   skill:
     "*": deny

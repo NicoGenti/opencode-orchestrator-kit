@@ -21,6 +21,10 @@ permission:
     "*": deny
     /tmp/*: allow
     find *: allow
+    find *-delete*: deny
+    find *-exec*: deny
+    find *-execdir*: deny
+    find *-ok*: deny
     rg *: allow
     ls *: allow
     head *: allow

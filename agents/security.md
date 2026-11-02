@@ -11,7 +11,7 @@ permission:
   glob: allow
   grep: allow
   list: allow
-  task: allow
+  task: deny
   todowrite: allow
   webfetch: allow
   websearch: allow

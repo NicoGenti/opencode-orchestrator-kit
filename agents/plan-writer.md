@@ -28,6 +28,8 @@ permission:
     cat *: allow
   task:
     "*": deny
+  skill:
+    "*": deny
 ---
 # Agent: plan-writer
 

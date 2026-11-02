@@ -119,6 +119,7 @@ describe("V1 -> V2 translation", () => {
       { action: "shell", resource: "ls *", effect: "allow" },
       { action: "shell", resource: "cat *", effect: "allow" },
       { action: "subagent", resource: "*", effect: "deny" },
+      { action: "skill", resource: "*", effect: "deny" },
     ]);
   });
 
@@ -202,6 +203,59 @@ describe("kit permission invariants", () => {
     expect(() => assertKitPermissionInvariants("plan-writer", rules)).not.toThrow();
     expect(resolveEffect(rules, "edit", "plan/qa/13-example.md")).toBe("allow");
     expect(resolveEffect(rules, "edit", "src/app.ts")).toBe("deny");
+  });
+
+  test("a missing shell, skill, or subagent catch-all is rejected", () => {
+    const base: PermissionRule[] = [
+      { action: "edit", resource: "plan/*.md", effect: "deny" },
+      { action: "shell", resource: "*", effect: "deny" },
+      { action: "skill", resource: "*", effect: "deny" },
+      { action: "subagent", resource: "*", effect: "deny" },
+    ];
+    expect(() => assertKitPermissionInvariants("developer-fixer", base)).not.toThrow();
+    for (const action of ["shell", "skill", "subagent"] as const) {
+      const stripped = base.filter((rule) => rule.action !== action);
+      expect(() => assertKitPermissionInvariants("developer-fixer", stripped)).toThrow(
+        new RegExp(`no catch-all rule for '${action}'`),
+      );
+    }
+  });
+
+  test("a global deny counts as the catch-all for shell, skill, and subagent", () => {
+    const rules: PermissionRule[] = [
+      { action: "*", resource: "*", effect: "deny" },
+      { action: "edit", resource: "plan/*.md", effect: "deny" },
+    ];
+    expect(() => assertKitPermissionInvariants("security", rules)).not.toThrow();
+  });
+
+  test("an allow catch-all for shell is rejected", () => {
+    const rules: PermissionRule[] = [
+      { action: "edit", resource: "plan/*.md", effect: "deny" },
+      { action: "shell", resource: "*", effect: "allow" },
+      { action: "skill", resource: "*", effect: "deny" },
+      { action: "subagent", resource: "*", effect: "deny" },
+    ];
+    expect(() => assertKitPermissionInvariants("explorer", rules)).toThrow(/catch-all is 'allow'/);
+  });
+
+  test("only the orchestrator may spawn developer-fixer", () => {
+    const denied: PermissionRule[] = [
+      { action: "edit", resource: "*", effect: "deny" },
+      { action: "shell", resource: "*", effect: "deny" },
+      { action: "skill", resource: "*", effect: "deny" },
+      { action: "subagent", resource: "*", effect: "deny" },
+      { action: "subagent", resource: "developer-fixer", effect: "allow" },
+    ];
+    expect(() => assertKitPermissionInvariants("oracle", denied)).toThrow(/developer-fixer/);
+    const router: PermissionRule[] = [
+      { action: "edit", resource: "*", effect: "deny" },
+      { action: "shell", resource: "*", effect: "deny" },
+      { action: "skill", resource: "*", effect: "deny" },
+      { action: "subagent", resource: "*", effect: "allow" },
+    ];
+    expect(() => assertKitPermissionInvariants("orchestrator", router)).not.toThrow();
+    expect(resolveEffect(router, "subagent", "developer-fixer")).toBe("allow");
   });
 });
 
