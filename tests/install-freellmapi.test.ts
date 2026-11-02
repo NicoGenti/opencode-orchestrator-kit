@@ -68,11 +68,10 @@ maybe("install-freellmapi.sh", () => {
       expect(t).not.toMatch(/\{\{TIER_/);
       expect(t).not.toMatch(/^model:/m);
     }
-    const extras = readdirSync(join(opencode, "extras")).filter((f) =>
-      f.endsWith(".md"),
-    );
-    for (const f of extras) {
-      const t = readFileSync(join(opencode, "extras", f), "utf-8");
+    // OpenCode loads agents/ only. --with-extras must land in that directory.
+    expect(existsSync(join(opencode, "extras"))).toBe(false);
+    for (const f of ["pc-doctor.md", "writer.md"]) {
+      const t = readFileSync(join(opencode, "agents", f), "utf-8");
       expect(t).not.toMatch(/\{\{TIER_/);
       expect(t).not.toMatch(/^model:/m);
     }

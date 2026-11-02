@@ -8,8 +8,9 @@
 #   ./install.sh global                        # copy into ~/.config/opencode/ (all projects)
 #   ./install.sh studio <profile>              # copy into an OpenCode Studio profile directory
 #   ./install.sh --symlink ...                 # same targets, but symlink instead of copy (keeps kit updatable via git pull)
-#   ./install.sh --with-extras ...             # also install extras/ directory (pc-doctor, writer)
-#   ./install.sh --with-examples ...           # also install skills/examples/ directory
+#   ./install.sh --with-extras ...             # also install pc-doctor and writer into agents/
+#   ./install.sh --with-examples ...           # also install skills/examples/ (excluded from the base copy)
+#   ./install.sh --upgrade ...                 # overwrite kit-managed files (alias: --force); default is non-destructive
 #   ./install.sh --yes ...                     # opt in to non-interactive consent (Phase 2 will use this for package managers)
 #
 # Phase 1 model portability:
@@ -18,9 +19,11 @@
 #   the active preset. Validation failure aborts the install before any files are
 #   written to the target directory.
 #   After copying, the installer runs scripts/apply-model-preset.py against the
-#   target's models.config.json and agents/ (and extras/ with --with-extras) to
+#   target's models.config.json and agents/ to
 #   resolve every {{TIER_*}} token in agent frontmatter to a concrete
-#   provider/model ID. Without this step OpenCode rejects the config at startup
+#   provider/model ID. --with-extras copies extras/*.md into agents/ (OpenCode
+#   loads {agent,agents}/**/*.md only; it does not load an extras/ directory).
+#   Without this step OpenCode rejects the config at startup
 #   ("Configuration is invalid ... model").
 #
 # Comprehension gate config: seeded leave-if-exists from templates/comprehension.config.json.
@@ -59,6 +62,7 @@ MODE="copy"
 TARGET=""
 WITH_EXTRAS=false
 WITH_EXAMPLES=false
+UPGRADE=false
 SKIP_VALIDATION=false
 # Phase 1 --yes flag. Set only via the command line; never read from the
 # environment, env vars, or any other source. Used by require_python_prereq
@@ -148,6 +152,10 @@ while [[ $# -gt 0 ]]; do
       WITH_EXAMPLES=true
       shift
       ;;
+    --upgrade|--force)
+      UPGRADE=true
+      shift
+      ;;
     --symlink)
       MODE="symlink"
       TARGET="${2:-}"
@@ -184,11 +192,15 @@ if [[ "${1:-}" != "--symlink" ]]; then
 fi
 
 usage() {
-  echo "Usage: $0 [--symlink] [--with-extras] [--with-examples] [--skip-validation] [--yes] {project|global|studio <profile-name>}"
+  echo "Usage: $0 [--symlink] [--with-extras] [--with-examples] [--upgrade|--force] [--skip-validation] [--yes] {project|global|studio <profile-name>}"
   echo ""
   echo "Options:"
-  echo "  --with-extras       Install extras/ directory (pc-doctor, writer)"
-  echo "  --with-examples     Install skills/examples/ directory (language-specific skill examples)"
+  echo "  --with-extras       Install pc-doctor and writer into agents/ (OpenCode does not load extras/)"
+  echo "  --with-examples     Install skills/examples/ (language-specific skill examples)"
+  echo "  --upgrade, --force  Overwrite kit-managed files. Each replaced file or symlink is moved to"
+  echo "                      <path>.kit-backup first. Directories are refreshed file by file so files"
+  echo "                      the kit does not ship are left in place. Default is non-destructive:"
+  echo "                      existing destinations are skipped."
   echo "  --skip-validation   Skip the Phase 1 model-profile validator (not recommended)"
   echo "  --yes               Opt in to non-interactive consent for prerequisite installation"
   echo "                      (Phase 1 prints manual instructions only; Phase 2 will use this"
@@ -203,19 +215,168 @@ usage() {
   exit 1
 }
 
-link_or_copy() {
+# Place $src at $dst. Existing destinations are left untouched unless --upgrade
+# (--force) is set. An upgrade moves the previous file, directory, or symlink
+# to <dst>.kit-backup (or a timestamped name when that backup already exists)
+# and then copies or symlinks the kit file. A real directory is refreshed one
+# child at a time so paths the kit does not ship are kept.
+backup_dest() {
+  local dst="$1"
+  local bak="${dst}.kit-backup"
+  local n=1
+  if [[ -e "$bak" || -L "$bak" ]]; then
+    bak="${dst}.kit-backup.$(date +%Y%m%d%H%M%S)"
+    while [[ -e "$bak" || -L "$bak" ]]; do
+      bak="${dst}.kit-backup.$(date +%Y%m%d%H%M%S).${n}"
+      n=$((n + 1))
+    done
+  fi
+  mv "$dst" "$bak"
+  echo "  ~ backed up $dst -> $bak"
+}
+
+place_new() {
   local src="$1" dst="$2"
   mkdir -p "$(dirname "$dst")"
-  if [[ -e "$dst" ]]; then
-    echo "  ! Skipping existing: $dst (remove it first if you want to overwrite)"
-    return
-  fi
   if [[ "$MODE" == "symlink" ]]; then
     ln -s "$src" "$dst"
     echo "  + symlinked $dst -> $src"
   else
     cp -R "$src" "$dst"
     echo "  + copied $dst"
+  fi
+}
+
+link_or_copy() {
+  local src="$1" dst="$2"
+  if [[ -e "$dst" || -L "$dst" ]]; then
+    if [[ "$UPGRADE" != "true" ]]; then
+      echo "  ! Skipping existing: $dst (remove it first, or re-run with --upgrade / --force)"
+      return 0
+    fi
+    if [[ "$MODE" == "symlink" && -L "$dst" ]] && [[ "$(readlink "$dst")" == "$src" ]]; then
+      echo "  = symlink already current: $dst"
+      return 0
+    fi
+    # Copy-mode directories are merged. A symlink is never followed: replacing
+    # it avoids writing through a link into the kit checkout.
+    if [[ "$MODE" != "symlink" && -d "$src" && ! -L "$src" && -d "$dst" && ! -L "$dst" ]]; then
+      echo "  > Upgrading directory $dst"
+      local entry name
+      for entry in "$src"/*; do
+        [[ -e "$entry" || -L "$entry" ]] || continue
+        name="$(basename "$entry")"
+        link_or_copy "$entry" "$dst/$name"
+      done
+      return 0
+    fi
+    if [[ "$MODE" != "symlink" && -f "$src" && ! -L "$src" && -f "$dst" && ! -L "$dst" ]] && cmp -s "$src" "$dst"; then
+      echo "  = unchanged $dst"
+      return 0
+    fi
+    backup_dest "$dst"
+  fi
+  place_new "$src" "$dst"
+}
+
+# skills/examples/ is not part of the base copy. --with-examples is the only
+# way to install it. Symlink mode links each skill directory rather than the
+# whole skills/ tree, so the examples exclusion still holds.
+install_skills() {
+  local base="$1"
+  local src="$KIT_DIR/skills"
+  local dst="$base/skills"
+  local entry name
+
+  if [[ -L "$dst" ]]; then
+    if [[ "$UPGRADE" != "true" ]]; then
+      echo "  ! Skipping existing: $dst (remove it first, or re-run with --upgrade / --force)"
+      return 0
+    fi
+    backup_dest "$dst"
+  fi
+  if [[ ! -d "$dst" ]]; then
+    mkdir -p "$dst"
+    echo "  + created $dst"
+  fi
+
+  for entry in "$src"/*; do
+    [[ -e "$entry" || -L "$entry" ]] || continue
+    name="$(basename "$entry")"
+    if [[ "$name" == "examples" ]]; then
+      continue
+    fi
+    link_or_copy "$entry" "$dst/$name"
+  done
+
+  if [[ "$WITH_EXAMPLES" == "true" ]]; then
+    if [[ -d "$src/examples" ]]; then
+      link_or_copy "$src/examples" "$dst/examples"
+    else
+      echo "  ! skills/examples/ not found in the kit; nothing to install"
+    fi
+  elif [[ -e "$dst/examples" || -L "$dst/examples" ]]; then
+    echo "  > Leaving existing skills/examples/ in place (pass --with-examples --upgrade to refresh it)"
+  else
+    echo "  > Skipping skills/examples/ (pass --with-examples to install it)"
+  fi
+}
+
+# OpenCode discovers agents from {agent,agents}/**/*.md inside the config
+# directory. It does not load extras/. --with-extras therefore copies or
+# links extras/*.md into agents/. Symlink mode cannot drop those files inside
+# a single agents/ symlink without writing into this checkout, so that
+# combination materialises agents/ as a directory of per-file symlinks.
+install_extra_files() {
+  local base="$1"
+  local dst="$base/agents"
+  local entry
+  if [[ -L "$dst" ]]; then
+    echo "  ! Refusing to write extras through the agents symlink $dst." >&2
+    echo "    OpenCode loads only agents/*.md. Re-run with --upgrade so extras" >&2
+    echo "    can be placed in a real agents/ directory." >&2
+    return 1
+  fi
+  mkdir -p "$dst"
+  for entry in "$KIT_DIR/extras"/*.md; do
+    [[ -e "$entry" || -L "$entry" ]] || continue
+    link_or_copy "$entry" "$dst/$(basename "$entry")"
+  done
+  echo "  > Installed opt-in extras into ${dst}/ (OpenCode loads agents/, not extras/)."
+}
+
+install_agents_per_file() {
+  local base="$1"
+  local dst="$base/agents"
+  local entry
+  if [[ -L "$dst" ]]; then
+    if [[ "$UPGRADE" != "true" ]]; then
+      echo "  ! Cannot add extras inside the agents symlink $dst." >&2
+      echo "    Re-run with --upgrade to replace it with per-file links." >&2
+      return 1
+    fi
+    backup_dest "$dst"
+  fi
+  if [[ ! -d "$dst" ]]; then
+    mkdir -p "$dst"
+    echo "  + created $dst"
+  fi
+  for entry in "$KIT_DIR/agents"/*; do
+    [[ -e "$entry" || -L "$entry" ]] || continue
+    link_or_copy "$entry" "$dst/$(basename "$entry")"
+  done
+  install_extra_files "$base"
+}
+
+install_agents() {
+  local base="$1"
+  if [[ "$WITH_EXTRAS" == "true" && "$MODE" == "symlink" ]]; then
+    install_agents_per_file "$base"
+    return 0
+  fi
+  link_or_copy "$KIT_DIR/agents" "$base/agents"
+  if [[ "$WITH_EXTRAS" == "true" ]]; then
+    install_extra_files "$base"
   fi
 }
 
@@ -306,14 +467,8 @@ install_into() {
   echo "Installing OpenCode Orchestrator Kit into: $base"
   link_or_copy "$KIT_DIR/AGENTS.md"       "$base/AGENTS.md"
   link_or_copy "$KIT_DIR/CONTRIBUTING.md" "$base/CONTRIBUTING.md"
-  link_or_copy "$KIT_DIR/agents"          "$base/agents"
-  if [[ "$WITH_EXTRAS" == "true" ]]; then
-    link_or_copy "$KIT_DIR/extras"        "$base/extras"
-  fi
-  link_or_copy "$KIT_DIR/skills"          "$base/skills"
-  if [[ "$WITH_EXAMPLES" == "true" ]]; then
-    link_or_copy "$KIT_DIR/skills/examples" "$base/skills/examples"
-  fi
+  install_agents "$base"
+  install_skills "$base"
   link_or_copy "$KIT_DIR/command"         "$base/command"
 }
 
@@ -371,10 +526,14 @@ resolve_model_tokens() {
     "$py" "$(kit_native_path "${KIT_DIR}/scripts/apply-model-preset.py")" \
       --config "$config" --agents-dir "${base}/agents"
   fi
-  if [[ "$WITH_EXTRAS" == "true" && -d "${base}/extras" ]]; then
-    echo "  > Resolving model tiers in ${base}/extras/*.md from ${config}..."
-    "$py" "$(kit_native_path "${KIT_DIR}/scripts/apply-model-preset.py")" \
-      --config "$config" --agents-dir "${base}/extras"
+  if [[ -d "${base}/extras" ]]; then
+    echo "  ! Note: OpenCode does not load agents from ${base}/extras/."
+    echo "    pc-doctor and writer are installed into ${base}/agents/ when --with-extras is set."
+    if [[ "$WITH_EXTRAS" == "true" ]]; then
+      echo "  > Resolving model tiers in legacy ${base}/extras/*.md from ${config}..."
+      "$py" "$(kit_native_path "${KIT_DIR}/scripts/apply-model-preset.py")" \
+        --config "$config" --agents-dir "${base}/extras"
+    fi
   fi
 }
 
