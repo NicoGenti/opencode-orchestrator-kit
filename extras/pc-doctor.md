@@ -10,6 +10,9 @@ permission:
   webfetch: ask
   edit:
     "*": ask
+    "plan/**/*.md": deny
+  write:
+    "plan/**/*.md": deny
   bash:
     "*": ask
     set: allow

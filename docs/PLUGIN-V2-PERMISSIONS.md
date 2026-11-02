@@ -72,8 +72,9 @@ registration if an invariant does not hold:
 - every agent other than `plan-writer` denies `edit` on `plan/*.md` — nobody else
   may touch the plan board (`AGENTS.md`, "Plan Board Lifecycle");
 - `orchestrator` denies `edit` on application code, because it routes work
-  instead of doing it. This also removes the `plan/**` write access V1 gave it,
-  which contradicted `AGENTS.md`;
+  instead of doing it. Source frontmatter denies `plan/**/*.md` as well
+  (`"plan/**/*.md":"deny"`), matching `AGENTS.md`; the appended rule still
+  closes the board for every non-owner so a later allow cannot reopen it;
 - every agent declares a catch-all (`resource: "*"`, or a global `action: "*"`)
   for `shell`, `skill`, and `subagent`. The catch-all effect must be `deny` or
   `ask`. The orchestrator is the only agent whose `subagent` catch-all may be
@@ -93,6 +94,9 @@ bun run typecheck && bun run lint
 ```
 
 `tests/plugin-permissions.test.ts` pins the exact rule list for `orchestrator`
-(24 translation rules) and `plan-writer` (9), the global fallback of `security`,
-the globstar normalisation, and the resolved effect of every packaged agent.
+(24 translation rules; the composed list stays 25 because the kit appends the
+same plan-board deny last) and `plan-writer` (9), the global fallback of
+`security`, the globstar normalisation, and the resolved effect of every
+packaged agent. The same file asserts the plan-board deny from frontmatter
+alone, without `kitInvariantRules`.
 `tests/permission-matrix.test.ts` resolves dangerous shell commands per agent.

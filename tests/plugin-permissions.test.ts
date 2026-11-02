@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { parseFrontmatterMap } from "../plugin/src/frontmatter-map.ts";
@@ -116,7 +116,7 @@ describe("V1 -> V2 translation", () => {
         resource: ".context/research-dataset.jsonl",
         effect: "allow",
       },
-      { action: "edit", resource: "plan/*.md", effect: "allow" },
+      { action: "edit", resource: "plan/*.md", effect: "deny" },
       { action: "edit", resource: ".context/decisions.md", effect: "allow" },
       { action: "edit", resource: ".context/issues.md", effect: "allow" },
       { action: "shell", resource: "*", effect: "deny" },
@@ -352,6 +352,27 @@ describe("packaged agent manifest permissions", () => {
     });
     expect(resolveEffect(rules, "edit", "src/app.ts")).toBe("deny");
     expect(resolveEffect(rules, "edit", ".context/progress.md")).toBe("allow");
+  });
+
+  test("source frontmatter alone denies the plan board except for plan-writer", () => {
+    const dirs = ["agents", "extras"] as const;
+    const files = dirs.flatMap((dir) =>
+      readdirSync(join(ROOT, dir))
+        .filter((name) => name.endsWith(".md"))
+        .map((name) => `${dir}/${name}`),
+    );
+    expect(files.length).toBeGreaterThan(0);
+    for (const rel of files) {
+      const id = rel.slice(rel.lastIndexOf("/") + 1, -3);
+      const effect = resolveEffect(
+        rulesOf(rel),
+        "edit",
+        "plan/qa/13-example.md",
+      );
+      expect(`${id}=${effect}`).toBe(
+        id === "plan-writer" ? "plan-writer=allow" : `${id}=deny`,
+      );
+    }
   });
 
   test("plan-writer is the only agent allowed to edit plan files", () => {

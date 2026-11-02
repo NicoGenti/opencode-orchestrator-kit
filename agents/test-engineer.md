@@ -16,6 +16,9 @@ permission:
     "tests/**": ask
     "__tests__/**": ask
     "*": deny
+    "plan/**/*.md": deny
+  write:
+    "plan/**/*.md": deny
   bash:
     "*": ask
     sed *: deny

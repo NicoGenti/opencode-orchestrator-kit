@@ -17,6 +17,10 @@ tools:
 permission:
   task: deny
   webfetch: ask
+  edit:
+    "plan/**/*.md": deny
+  write:
+    "plan/**/*.md": deny
   bash:
     "*": deny
     rm *: ask

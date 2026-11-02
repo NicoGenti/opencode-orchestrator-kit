@@ -12,6 +12,8 @@ tools:
 permission:
   task: deny
   edit: deny
+  write:
+    "plan/**/*.md": deny
   read: allow
   webfetch: ask
   code-review-graph_detect_changes_tool: allow

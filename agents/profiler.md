@@ -31,6 +31,9 @@ permission:
     "plan/qa/.gitkeep": allow
     "plan/complete/.gitkeep": allow
     "*": deny
+    "plan/**/*.md": deny
+  edit:
+    "plan/**/*.md": deny
   question: ask
   bash:
     "*": deny

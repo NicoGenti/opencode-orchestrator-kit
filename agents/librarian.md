@@ -10,6 +10,8 @@ permission:
   check_diagnostics: deny
   task: deny
   edit: deny
+  write:
+    "plan/**/*.md": deny
   todowrite: deny
   bash:
     "*": ask

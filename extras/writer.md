@@ -5,6 +5,10 @@ model: {{TIER_FAST}}
 temperature: 0.4
 permission:
   task: deny
+  edit:
+    "plan/**/*.md": deny
+  write:
+    "plan/**/*.md": deny
   bash:
     "*": ask
     sed *: deny

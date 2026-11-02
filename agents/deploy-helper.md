@@ -15,6 +15,9 @@ permission:
     "package.json": ask
     "*.md": ask
     "*": ask
+    "plan/**/*.md": deny
+  write:
+    "plan/**/*.md": deny
   bash:
     "*": ask
     node --version: allow
