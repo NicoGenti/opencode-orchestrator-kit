@@ -17,20 +17,27 @@
 
 ### Plugin (OpenCode 2 — recommended)
 
-With the `opencode-orchestrator-kit` plugin on OpenCode 2 (requires `@opencode/plugin` `^2.1.0`), agents, commands and skills are registered at runtime — nothing is copied into your project's `.opencode/` directory:
+With the `opencode-orchestrator-kit` plugin on OpenCode 2 (requires `@opencode/plugin` `^2.1.0`), agents, commands and skills are registered at runtime — nothing is copied into your project's `.opencode/` directory.
 
-```json
+**npm publication is pending** until the first `v*` tag. Until then, point `plugins` at a local checkout of `plugin/` (or install from git). The config key is `plugins`, and options use `{ "package", "options" }` ([Plugins](https://opencode.ai/v2/docs/plugins)):
+
+```jsonc
 {
+  "$schema": "https://opencode.ai/config.json",
   "plugins": [
     {
-      "package": "opencode-orchestrator-kit",
-      "options": { "preset": "<preset>", "withExtras": false }
-    }
-  ]
+      "package": "/absolute/path/to/opencode-orchestrator-kit/plugin",
+      "options": { "preset": "generic", "withExtras": false },
+    },
+  ],
 }
 ```
 
-Pick a `preset` (the bundled presets mirror `templates/models.config.json`; a preset whose tier values are all `placeholder/*` fails fast with a `TierConfigError`). Your own configuration always wins over the plugin registration. Then start:
+```sh
+opencode plugin add 'github:NicoGenti/opencode-orchestrator-kit#main::path:plugin'
+```
+
+After that package is on npm, replace the local path with `"package": "opencode-orchestrator-kit"`. Pick a `preset` (the bundled presets mirror `templates/models.config.json`; a preset whose tier values are all `placeholder/*` fails fast with a `TierConfigError`). Your own configuration always wins over the plugin registration. Then start:
 
 ```bash
 opencode
@@ -62,12 +69,13 @@ preset's concrete model ID.
 
 Useful flags:
 
-| Flag                | Effect                                                                                      |
-| ------------------- | ------------------------------------------------------------------------------------------- |
-| `--symlink`         | Symlink instead of copy (lets `git pull` update consumers).                                 |
-| `--with-extras`     | Also install `extras/` (`pc-doctor`, `writer`). Off by default — these are explicit opt-in. |
-| `--with-examples`   | Also install `skills/examples/`. Off by default.                                            |
-| `--skip-validation` | Skip the model-profile validator. Not recommended.                                          |
+| Flag                   | Effect                                                                                                               |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `--symlink`            | Symlink instead of copy (lets `git pull` update consumers).                                                          |
+| `--with-extras`        | Install `pc-doctor` and `writer` into `agents/`. Off by default — explicit opt-in. OpenCode does not load `extras/`. |
+| `--with-examples`      | Install `skills/examples/`. Off by default; the base copy excludes it.                                               |
+| `--upgrade`, `--force` | Overwrite kit-managed files, keeping a `.kit-backup`. Default skips existing paths.                                  |
+| `--skip-validation`    | Skip the model-profile validator. Not recommended.                                                                   |
 
 ## Configure your provider mapping
 
