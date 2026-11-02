@@ -121,7 +121,9 @@ describe("contract parity", () => {
   });
 
   test("FORBIDDEN_FIELDS sorted-equals the contract FORBIDDEN keys", () => {
-    expect([...FORBIDDEN_FIELDS].sort()).toEqual([...FORBIDDEN].sort());
+    const actual: string[] = [...FORBIDDEN_FIELDS].sort();
+    const expected: string[] = [...FORBIDDEN].sort();
+    expect(actual).toEqual(expected);
   });
 });
 
@@ -179,7 +181,9 @@ describe("gate and slot helpers", () => {
 
 describe("loadComprehensionConfig", () => {
   test("DEFAULT_COMPREHENSION_CONFIG equals templates/comprehension.config.json", () => {
-    expect(DEFAULT_COMPREHENSION_CONFIG).toEqual(TEMPLATE_CONFIG);
+    expect(DEFAULT_COMPREHENSION_CONFIG).toEqual(
+      TEMPLATE_CONFIG as unknown as typeof DEFAULT_COMPREHENSION_CONFIG,
+    );
     expect(Object.keys(DEFAULT_COMPREHENSION_CONFIG)).toEqual([
       "comprehension",
       "recall",
@@ -224,7 +228,7 @@ describe("loadComprehensionConfig", () => {
 
     const expected = structuredClone(TEMPLATE_CONFIG);
     expected.comprehension.light.questions = 3;
-    expect(result.config).toEqual(expected);
+    expect(result.config).toEqual(expected as unknown as typeof result.config);
   });
 
   test("an invalid JSON file resolves to the defaults with exactly one warning", () => {
@@ -547,6 +551,8 @@ describe("createResearchRecorder: enabled", () => {
     expect(recorder.enabled).toBe(true);
     const result = recorder.validateFile();
     expect(result.ok).toBe(true);
+    expect(result.noop).toBe(false);
+    if (result.noop) throw new Error("expected a dataset file check");
     expect(result.lines).toBe(0);
   });
 
@@ -575,8 +581,9 @@ describe("createResearchRecorder: enabled", () => {
 
     const check = recorder.validateFile();
     expect(check.ok).toBe(true);
+    if (check.noop) throw new Error("expected a dataset file check");
     expect(check.lines).toBe(2);
-    expect(check.errors ?? []).toEqual([]);
+    expect(check.errors).toEqual([]);
   });
 
   test("an invalid event appends nothing (file absent or unchanged)", () => {
@@ -584,6 +591,7 @@ describe("createResearchRecorder: enabled", () => {
     const bad = recorder.appendTask(makeTaskEvent({ gate_type: "huge" }));
     expect(bad.ok).toBe(false);
     expect(bad.noop).toBe(false);
+    if (bad.ok) throw new Error("expected an append error");
     expect(typeof bad.error).toBe("string");
     expect(existsSync(datasetPath(tempRoot))).toBe(false);
 
@@ -598,6 +606,7 @@ describe("createResearchRecorder: enabled", () => {
     );
     expect(badRecall.ok).toBe(false);
     expect(badRecall.noop).toBe(false);
+    if (badRecall.ok) throw new Error("expected an append error");
     expect(typeof badRecall.error).toBe("string");
     expect(readFileSync(datasetPath(tempRoot), "utf-8")).toBe(before);
   });
@@ -613,9 +622,9 @@ describe("createResearchRecorder: enabled", () => {
 
     const result = createResearchRecorder(tempRoot, true).validateFile();
     expect(result.ok).toBe(false);
-    const errors = result.errors ?? [];
-    expect(errors).toHaveLength(1);
-    expect(String(errors[0]).startsWith("2: ")).toBe(true);
+    if (result.noop) throw new Error("expected a dataset file check");
+    expect(result.errors).toHaveLength(1);
+    expect(result.errors[0]?.startsWith("2: ")).toBe(true);
   });
 });
 

@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, test } from "bun:test";
 import { chmodSync, existsSync } from "node:fs";
-import { spawnSync, SpawnSyncReturns } from "node:child_process";
+import { spawnSync, type SpawnSyncReturns } from "node:child_process";
 import { join, resolve } from "node:path";
 
 /**

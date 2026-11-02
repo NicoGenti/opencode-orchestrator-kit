@@ -654,7 +654,7 @@ describe("research-mode — the real sink is a valid append-only event log", () 
 
 describe("research-mode — v0.6.7 correlation finalization pins (E)", () => {
   test("append-safe records: multiple evaluations of the same plan have negligible collision probability and never overwrite each other (path-keyed by evaluation_id)", () => {
-    const planId = "0007"; // v0.6.7: kept for prose only — record paths went flat below
+    // v0.6.7: record paths are keyed by evaluation id, not by plan id.
     const recordPathFor = (id: string) =>
       join(".context", "comprehension", `${id}.md`);
     const ids = [

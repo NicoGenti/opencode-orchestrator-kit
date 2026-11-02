@@ -110,12 +110,20 @@ try {
       ],
     },
     agent: {
-      transform: async (callback) => {
+      transform: async (
+        callback: (
+          editor: ReturnType<typeof noopAgentEditor>,
+        ) => void | Promise<void>,
+      ) => {
         await callback(noopAgentEditor());
       },
     },
     command: {
-      transform: (callback) => {
+      transform: (
+        callback: (editor: {
+          add: (entry: Record<string, unknown>) => void;
+        }) => void,
+      ) => {
         void callback({
           add: (entry: Record<string, unknown>) => {
             commands.push(entry);
@@ -133,7 +141,11 @@ try {
       },
     },
     skill: {
-      transform: (callback) => {
+      transform: (
+        callback: (editor: {
+          add: (entry: Record<string, unknown>) => void;
+        }) => void,
+      ) => {
         void callback({
           add: (entry: Record<string, unknown>) => {
             skills.push(entry);
@@ -142,7 +154,11 @@ try {
       },
     },
     tool: {
-      transform: (callback: (editor: { add(): void }) => void) => {
+      transform: (
+        callback: (editor: {
+          add: (entry: Record<string, unknown>) => void;
+        }) => void,
+      ) => {
         void callback({
           add: (entry: Record<string, unknown>) => {
             tools.push(entry);

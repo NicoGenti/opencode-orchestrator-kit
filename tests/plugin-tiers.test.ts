@@ -272,7 +272,9 @@ describe("TierConfigError: unknown preset", () => {
 
 describe("bundled config parity", () => {
   test("the bundled config deep-equals templates/models.config.json", () => {
-    expect(BUNDLED_MODEL_CONFIG).toEqual(TEMPLATE_CONFIG);
+    expect(BUNDLED_MODEL_CONFIG).toEqual(
+      TEMPLATE_CONFIG as unknown as typeof BUNDLED_MODEL_CONFIG,
+    );
   });
 
   test("resolveTierMap equals resolvePreset for the resolvable presets", () => {

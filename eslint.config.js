@@ -48,4 +48,28 @@ export default tseslint.config(
       globals: { ...globals.node },
     },
   },
+  {
+    // Kit scripts are Node/Bun programs. They share the recommended
+    // TypeScript rules with plugin sources; React rules stay on the site.
+    files: ["scripts/**/*.ts"],
+    extends: [js.configs.recommended, ...tseslint.configs.recommended],
+    languageOptions: {
+      ecmaVersion: 2022,
+      globals: { ...globals.node },
+    },
+  },
+  {
+    // Tests parse subprocess JSON and fixture payloads. `no-explicit-any`
+    // stays on for scripts and application code; tests keep the rest of the
+    // recommended set and opt out of that one rule only.
+    files: ["tests/**/*.ts"],
+    extends: [js.configs.recommended, ...tseslint.configs.recommended],
+    languageOptions: {
+      ecmaVersion: 2022,
+      globals: { ...globals.node },
+    },
+    rules: {
+      "@typescript-eslint/no-explicit-any": "off",
+    },
+  },
 );

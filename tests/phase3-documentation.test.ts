@@ -117,7 +117,7 @@ describe("README — Phase 3 acceptance: extras are opt-in", () => {
     // The previous README had a line like "copy `agents/`, `extras/`, ..."
     // in the quickstart. The replacement MUST NOT instruct users to copy
     // extras/ in the default path.
-    const defaultCopyPattern = /copy\s+[`'\"]?[a-z\/\s,]*extras[`'\"]?/i;
+    const defaultCopyPattern = /copy\s+[`'"]?[a-z/\s,]*extras[`'"]?/i;
     expect(README).not.toMatch(defaultCopyPattern);
   });
 
@@ -199,7 +199,7 @@ describe("QUICKSTART.md — Phase 3 acceptance: same constraints as README", () 
   });
 
   test("QUICKSTART does NOT instruct copying extras/ by default", () => {
-    const defaultCopyPattern = /copy\s+[`'\"]?[a-z\/\s,]*extras[`'\"]?/i;
+    const defaultCopyPattern = /copy\s+[`'"]?[a-z/\s,]*extras[`'"]?/i;
     expect(QUICKSTART).not.toMatch(defaultCopyPattern);
   });
 
@@ -227,7 +227,7 @@ describe("docs/SETUP-NATIVE.md — Phase 3 acceptance: same constraints as READM
   });
 
   test("SETUP-NATIVE does NOT instruct copying extras/ by default", () => {
-    const defaultCopyPattern = /copy\s+[`'\"]?[a-z\/\s,]*extras[`'\"]?/i;
+    const defaultCopyPattern = /copy\s+[`'"]?[a-z/\s,]*extras[`'"]?/i;
     expect(SETUP_NATIVE).not.toMatch(defaultCopyPattern);
   });
 

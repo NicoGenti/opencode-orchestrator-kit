@@ -1,14 +1,8 @@
 import { describe, expect, test, beforeAll, afterAll } from "bun:test";
-import {
-  existsSync,
-  mkdtempSync,
-  mkdirSync,
-  writeFileSync,
-  rmSync,
-  readFileSync,
-} from "node:fs";
-import { join, resolve } from "node:path";
+import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
+import { join } from "node:path";
 import { tmpdir } from "node:os";
+import type { ModelConfig } from "../scripts/resolve-model-preset.ts";
 
 // Import the model-preset resolution module
 const {
@@ -123,8 +117,9 @@ describe("resolve-model-preset.ts — canonical five-token list", () => {
       TIER_REVIEW: "TIER_CODE",
     });
     // Fallback targets must be required tiers (no chained fallbacks).
+    const required: readonly string[] = REQUIRED_TOKENS;
     for (const target of Object.values(TIER_FALLBACKS)) {
-      expect(REQUIRED_TOKENS).toContain(target);
+      expect(required).toContain(target);
     }
   });
 
@@ -326,7 +321,9 @@ describe("resolve-model-preset.ts — model-preset resolution", () => {
   });
 
   test("getPreset returns null when preset has no models field", () => {
-    const config = { presets: { "empty-preset": {} } };
+    const config = {
+      presets: { "empty-preset": {} },
+    } as unknown as ModelConfig;
     expect(getPreset(config, "empty-preset")).toEqual({});
   });
 

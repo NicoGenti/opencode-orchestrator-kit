@@ -6,18 +6,6 @@ const REPO_ROOT = join(import.meta.dir, "..");
 const CONFIG_PATH = join(REPO_ROOT, "templates/comprehension.config.json");
 const ORCHESTRATOR_PATH = join(REPO_ROOT, "agents/orchestrator.md");
 
-/** Returns the content of the "Configuration and precedence" subsection. */
-function extractConfigSection(raw: string): string {
-  const lines = raw.split(/\r?\n/);
-  const start = lines.findIndex(
-    (l) => l.trim() === "### Configuration and precedence",
-  );
-  if (start === -1)
-    throw new Error("Configuration and precedence section not found");
-  const end = lines.findIndex((l, i) => i > start && /^## /.test(l.trim()));
-  return lines.slice(start, end === -1 ? undefined : end).join("\n");
-}
-
 /** Tiny validator matching the spec described in orchestrator.md. */
 interface ComprehensionConfig {
   comprehension?: {
@@ -70,12 +58,13 @@ function validate(cfg: unknown): { valid: boolean; errors: string[] } {
       errors.push("deep.escalationTier must be string");
   }
   if (c.context) {
-    if (c.context.maxDiffLines !== undefined) {
-      if (
-        !Number.isInteger(c.context.maxDiffLines) ||
-        c.context.maxDiffLines < 0
-      )
-        errors.push("context.maxDiffLines must be non-negative integer");
+    if (c.context.maxDiffLines === undefined) {
+      errors.push("context.maxDiffLines is required");
+    } else if (
+      !Number.isInteger(c.context.maxDiffLines) ||
+      c.context.maxDiffLines < 0
+    ) {
+      errors.push("context.maxDiffLines must be non-negative integer");
     }
     if (c.context.unifiedContextLines !== undefined) {
       if (
@@ -95,7 +84,7 @@ function validate(cfg: unknown): { valid: boolean; errors: string[] } {
   if (c.evaluation) {
     if (c.evaluation.maxRetries !== undefined) {
       if (
-        !Number.isInteger(c.Evaluation?.maxRetries) ||
+        !Number.isInteger(c.evaluation.maxRetries) ||
         c.evaluation.maxRetries < 0
       )
         errors.push("evaluation.maxRetries must be non-negative integer");

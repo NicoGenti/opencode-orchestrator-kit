@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { readdirSync, readFileSync, statSync } from "node:fs";
-import { basename, dirname, join } from "node:path";
+import { readdirSync, readFileSync } from "node:fs";
+import { basename, join } from "node:path";
 
 /**
  * Schema-validation tests for skills/<name>/SKILL.md frontmatter.

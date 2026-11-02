@@ -160,15 +160,21 @@ type RunResult = {
   stderr: string;
 };
 
+function asText(value: string | Buffer | null | undefined): string {
+  if (typeof value === "string") return value;
+  if (value == null) return "";
+  return value.toString("utf-8");
+}
+
 function toResult(r: ReturnType<typeof spawnSync>): RunResult {
-  const stdout = r.stdout ?? "";
+  const stdout = asText(r.stdout);
   let json: any = null;
   try {
     json = JSON.parse(stdout);
   } catch {
     json = null;
   }
-  return { status: r.status, json, stdout, stderr: r.stderr ?? "" };
+  return { status: r.status, json, stdout, stderr: asText(r.stderr) };
 }
 
 function runPy(args: string[], root: string): RunResult {
@@ -305,7 +311,7 @@ maybe("plan-board parity python <-> typescript", () => {
 
   test("[5] new reale (non dry-run), poi check sul risultato", () => {
     const body = writeBody(BODY_OK);
-    const makeArgs = (root: string) => [
+    const makeArgs = () => [
       "new",
       "--id",
       "9001-demo",
@@ -319,8 +325,8 @@ maybe("plan-board parity python <-> typescript", () => {
       body,
     ];
     const [pyRoot, tsRoot] = makePairedRoots(() => {});
-    const py = runPy(makeArgs(pyRoot), pyRoot);
-    const ts = runTs(makeArgs(tsRoot), tsRoot);
+    const py = runPy(makeArgs(), pyRoot);
+    const ts = runTs(makeArgs(), tsRoot);
     expectParity(py, ts, pyRoot, tsRoot, "new");
     expect(py.json?.verified).toBe(true);
     const pyCheck = runPy(["check"], pyRoot);
@@ -398,7 +404,7 @@ maybe("plan-board parity python <-> typescript", () => {
   test("[9] new --dry-run: nessun file scritto ma payload di parita'", () => {
     const body = writeBody(BODY_OK);
     const [pyRoot, tsRoot] = makePairedRoots();
-    const makeArgs = (root: string) => [
+    const makeArgs = () => [
       "new",
       "--id",
       "9005-dry",
@@ -412,8 +418,8 @@ maybe("plan-board parity python <-> typescript", () => {
       body,
       "--dry-run",
     ];
-    const py = runPy(makeArgs(pyRoot), pyRoot);
-    const ts = runTs(makeArgs(tsRoot), tsRoot);
+    const py = runPy(makeArgs(), pyRoot);
+    const ts = runTs(makeArgs(), tsRoot);
     expectParity(py, ts, pyRoot, tsRoot, "new dry-run");
     expect(py.json?.dry_run).toBe(true);
     expect(existsSync(join(pyRoot, "draft", "9005-dry.md"))).toBe(false);
