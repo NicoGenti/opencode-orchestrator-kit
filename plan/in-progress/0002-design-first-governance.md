@@ -1,22 +1,22 @@
 ---
 id: 0002-design-first-governance
 title: Design-first governance - rules template, oracle research, compliance checks
-status: draft
+status: in-progress
 created: 2026-10-28
-updated: 2026-10-28
+updated: 2026-11-02
 owner: NicoGenti
 executor: perplexity-github-mcp
 ---
 
 ## Phase Checklist
 
-- [ ] Phase A: DESIGN-RULES template and guide (canonical sections)
-- [ ] Phase B: Align profiler seeding with the template headings
-- [ ] Phase C: Orchestrator routing for design rules (new project and existing file)
-- [ ] Phase D: Oracle research and proposal contract
-- [ ] Phase E: Planner input and code-reviewer compliance checklist
+- [x] Phase A: DESIGN-RULES template and guide (canonical sections)
+- [x] Phase B: Align profiler seeding with the template headings
+- [x] Phase C: Orchestrator routing for design rules (new project and existing file)
+- [x] Phase D: Oracle research and proposal contract
+- [x] Phase E: Planner input and code-reviewer compliance checklist
 - [ ] Phase F: Contract tests
-- [ ] Phase G: Provider tool-use smoke checklist (docs only)
+- [x] Phase G: Provider tool-use smoke checklist (docs only)
 - [ ] Phase H: Docs and changelog
 
 ## Goal
