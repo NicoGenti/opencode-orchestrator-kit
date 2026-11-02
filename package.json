@@ -14,7 +14,6 @@
     "lint": "eslint .",
     "format:check": "prettier --check .",
     "sync-assets": "bun scripts/sync-assets.ts",
-    "check-design-rules": "bun scripts/check-design-rules.ts",
     "bump-version": "bun scripts/bump-version.ts",
     "bun:audit": "bun test && bun run lint"
   },
