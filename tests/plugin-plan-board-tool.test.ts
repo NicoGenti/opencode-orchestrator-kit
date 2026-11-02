@@ -250,6 +250,12 @@ describe("registrazione del tool nativo plan_board", () => {
     }
   });
 
+  test("(i) la description del tool non contiene il refuso '***' e nomina check", () => {
+    const description = String(tools[0].description ?? "");
+    expect(description).not.toContain("***");
+    expect(description).toContain("`check`");
+  });
+
   test("input schema: enum allineate a comandi, colonne e comprehension", () => {
     const input = tools[0].input as Record<string, any>;
     expect(input.type).toBe("object");
