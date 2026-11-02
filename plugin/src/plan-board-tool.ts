@@ -124,16 +124,22 @@ function planBoardArgv(input: unknown): string[] {
 
 /**
  * Tool implementation: runs the pure port (which never throws) and resolves to
- * its JSON payload as a pretty-printed string.
+ * the host's tool-result shape.
  *
- * MUST be async: the OpenCode 2 host calls `execute(input).then(...)`, so a
- * synchronous return value makes every call fail with
- * `t(s).then is not a function` (observed live on 2026-11-02 in the session
- * "Restyle Petalo palette Enrica": 9 plan_board calls, all failed this way).
+ * The OpenCode 2 host does `execute(input).then(...)` and then reads
+ * `"output" in result` / `result.content`: a bare value (string or promise of
+ * a string) fails with `t(s).then is not a function` or `a is not an Object`.
+ * The documented shape for a tool without an output schema is
+ * `{ content: [{ type: "text", text }] }` plus optional `metadata`
+ * (session "Restyle Petalo palette Enrica", 2026-11-02).
  */
-export async function executePlanBoardTool(input: unknown): Promise<string> {
+export async function executePlanBoardTool(
+  input: unknown,
+): Promise<{ content: Array<{ type: "text"; text: string }> }> {
   const { payload } = runPlanBoard(planBoardArgv(input));
-  return JSON.stringify(payload, null, 2);
+  return {
+    content: [{ type: "text", text: JSON.stringify(payload, null, 2) }],
+  };
 }
 
 /**

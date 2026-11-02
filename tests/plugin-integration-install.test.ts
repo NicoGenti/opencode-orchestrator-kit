@@ -900,9 +900,9 @@ describe("plugin activation — empty fixture repo", () => {
     }
     const execute = harness.tools[0].execute as (
       input: unknown,
-    ) => Promise<string>;
+    ) => Promise<{ content: Array<{ type: string; text: string }> }>;
     const payload = JSON.parse(
-      await execute({ command: "check", root: board }),
+      (await execute({ command: "check", root: board })).content[0].text,
     ) as {
       ok: boolean;
       action: string;

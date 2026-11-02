@@ -137,12 +137,14 @@ await setupPromise;
 
 type ToolInput = Record<string, unknown>;
 
-/** Guida il tool attraverso execute() e parsa la STRING JSON di ritorno. */
+/** Guida il tool attraverso execute() ed estrae il payload JSON dai content parts. */
 async function runTool(input: ToolInput): Promise<any> {
-  const execute = tools[0].execute as (input: ToolInput) => Promise<unknown>;
+  const execute = tools[0].execute as (
+    input: ToolInput,
+  ) => Promise<{ content: Array<{ type: string; text: string }> }>;
   const result = await execute(input);
-  expect(typeof result).toBe("string");
-  return JSON.parse(result as string);
+  expect(Array.isArray(result.content)).toBe(true);
+  return JSON.parse(result.content.map((part) => part.text).join(""));
 }
 
 const boards: string[] = [];
@@ -287,12 +289,14 @@ describe("registrazione del tool nativo plan_board", () => {
     await returned;
   });
 
-  test("execute e' una funzione e ritorna una STRING (payload JSON, non un oggetto)", async () => {
+  test("execute risolve a { content: [{ type: 'text', text }] } con il payload JSON", async () => {
     expect(typeof tools[0].execute).toBe("function");
-    const execute = tools[0].execute as (input: ToolInput) => Promise<unknown>;
+    const execute = tools[0].execute as (
+      input: ToolInput,
+    ) => Promise<{ content: Array<{ type: string; text: string }> }>;
     const result = await execute({});
-    expect(typeof result).toBe("string");
-    expect(JSON.parse(result as string).ok).toBe(false);
+    expect(result.content[0].type).toBe("text");
+    expect(JSON.parse(result.content[0].text).ok).toBe(false);
   });
 });
 
