@@ -1,7 +1,19 @@
 {
   "name": "opencode-orchestrator-kit",
   "version": "1.0.0",
-  "description": "OpenCode 2 plugin packaging the opencode-orchestrator-kit: the orchestrator routing workflow, plan-board tooling, session-memory rules, the kit skills and the /start-session command.",
+  "description": "OpenCode plugin that routes coding work across specialist agents. Registers the orchestrator workflow, plan-board tooling, session-memory rules, kit skills, and the /start-session, /recall, /research-mode, and /close-session commands.",
+  "homepage": "https://nicogenti.github.io/opencode-orchestrator-kit/",
+  "keywords": [
+    "opencode",
+    "opencode-plugin",
+    "opencode-agents",
+    "ai-agents",
+    "multi-agent",
+    "orchestrator",
+    "coding-agent",
+    "llm",
+    "developer-tools"
+  ],
   "license": "MIT",
   "repository": {
     "type": "git",

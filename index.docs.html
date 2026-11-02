@@ -4,12 +4,11 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>
-      OpenCode Orchestrator Kit — Cost-aware multi-agent orchestrator for
-      OpenCode CLI
+      OpenCode Plugin: Multi-Agent Orchestrator for AI Coding Agents
     </title>
     <meta
       name="description"
-      content="One router, 14 specialists, zero application code touched by the router. A cost-aware multi-agent orchestrator kit for the OpenCode CLI. MIT licensed."
+      content="OpenCode plugin on npm. opencode-orchestrator-kit routes each coding task to specialist AI agents so the router never edits your code."
     />
     <link
       rel="canonical"
@@ -31,11 +30,11 @@
     <meta property="og:site_name" content="OpenCode Orchestrator Kit" />
     <meta
       property="og:title"
-      content="OpenCode Orchestrator Kit — Cost-aware multi-agent orchestrator for OpenCode CLI"
+      content="OpenCode Plugin: Multi-Agent Orchestrator for AI Coding Agents"
     />
     <meta
       property="og:description"
-      content="One router, 14 specialists, zero application code touched by the router. A cost-aware multi-agent orchestrator kit for the OpenCode CLI. MIT licensed."
+      content="Install the OpenCode orchestrator plugin from npm. One router delegates to specialist coding agents, keeps context small, and stays out of your repository."
     />
     <meta
       property="og:url"
@@ -43,39 +42,41 @@
     />
     <meta
       property="og:image"
-      content="https://nicogenti.github.io/opencode-orchestrator-kit/og-image.png"
+      content="https://nicogenti.github.io/opencode-orchestrator-kit/og-image.jpg"
     />
+    <meta property="og:image:type" content="image/jpeg" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta
       property="og:image:alt"
-      content="OpenCode Orchestrator Kit — one router, 14 specialists"
+      content="OpenCode Orchestrator Kit — a multi-agent orchestrator plugin for OpenCode"
     />
 
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta
       name="twitter:image"
-      content="https://nicogenti.github.io/opencode-orchestrator-kit/og-image.png"
+      content="https://nicogenti.github.io/opencode-orchestrator-kit/og-image.jpg"
     />
     <meta
       name="twitter:image:alt"
-      content="OpenCode Orchestrator Kit — one router, 14 specialists"
+      content="OpenCode Orchestrator Kit — a multi-agent orchestrator plugin for OpenCode"
     />
     <meta
       name="twitter:title"
-      content="OpenCode Orchestrator Kit — Cost-aware multi-agent orchestrator for OpenCode CLI"
+      content="OpenCode Plugin: Multi-Agent Orchestrator for AI Coding Agents"
     />
     <meta
       name="twitter:description"
-      content="One router, 14 specialists, zero application code touched by the router. A cost-aware multi-agent orchestrator kit for the OpenCode CLI. MIT licensed."
+      content="Multi-agent orchestrator plugin for OpenCode, published on npm as opencode-orchestrator-kit. Specialists do the work; the router only delegates."
     />
 
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
-      rel="stylesheet"
+      rel="preload"
+      href="/opencode-orchestrator-kit/fonts/inter-latin.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
     />
 
     <script type="application/ld+json">
@@ -87,19 +88,20 @@
             "@id": "https://nicogenti.github.io/opencode-orchestrator-kit/#app",
             "name": "OpenCode Orchestrator Kit",
             "alternateName": "opencode-orchestrator-kit",
-            "description": "One router, 14 specialists, zero application code touched by the router. A cost-aware multi-agent orchestrator kit for the OpenCode CLI.",
+            "description": "OpenCode plugin on npm that routes each coding task to a specialist AI agent. The router never edits your application code.",
             "applicationCategory": "DeveloperApplication",
             "applicationSubCategory": "Command Line Tool",
             "operatingSystem": "macOS, Linux, Windows",
-            "softwareVersion": "1.0.0",
+            "softwareVersion": "__KIT_VERSION__",
+            "dateModified": "__DATE_MODIFIED__",
             "url": "https://nicogenti.github.io/opencode-orchestrator-kit/",
-            "downloadUrl": "https://github.com/NicoGenti/opencode-orchestrator-kit",
-            "installUrl": "https://github.com/NicoGenti/opencode-orchestrator-kit#quickstart",
+            "downloadUrl": "https://www.npmjs.com/package/opencode-orchestrator-kit",
+            "installUrl": "https://github.com/NicoGenti/opencode-orchestrator-kit#install-on-opencode-2-plugin--recommended",
             "codeRepository": "https://github.com/NicoGenti/opencode-orchestrator-kit",
             "license": "https://opensource.org/licenses/MIT",
             "isAccessibleForFree": true,
-            "image": "https://nicogenti.github.io/opencode-orchestrator-kit/og-image.png",
-            "screenshot": "https://nicogenti.github.io/opencode-orchestrator-kit/og-image.png",
+            "image": "https://nicogenti.github.io/opencode-orchestrator-kit/og-image.jpg",
+            "screenshot": "https://nicogenti.github.io/opencode-orchestrator-kit/og-image.jpg",
             "offers": {
               "@type": "Offer",
               "price": "0",
@@ -119,11 +121,12 @@
           {
             "@type": "SoftwareSourceCode",
             "name": "OpenCode Orchestrator Kit",
-            "description": "Cost-aware multi-agent orchestrator kit for the OpenCode CLI: one router agent delegating to 14 specialist agents.",
+            "description": "OpenCode plugin that routes coding work across specialist agents, with plan-board tooling and session commands.",
             "url": "https://nicogenti.github.io/opencode-orchestrator-kit/",
             "codeRepository": "https://github.com/NicoGenti/opencode-orchestrator-kit",
-            "programmingLanguage": "Markdown",
-            "runtimePlatform": "OpenCode CLI",
+            "programmingLanguage": "TypeScript",
+            "runtimePlatform": "OpenCode",
+            "dateModified": "__DATE_MODIFIED__",
             "license": "https://opensource.org/licenses/MIT",
             "author": {
               "@type": "Person",
@@ -139,6 +142,52 @@
     </script>
   </head>
   <body>
+    <noscript>
+      <div
+        style="
+          margin: 0;
+          padding: 1.5rem;
+          background: #0a0a0f;
+          color: #fff;
+          font-family: Inter, system-ui, sans-serif;
+        "
+      >
+        <p>
+          <strong>OpenCode Orchestrator Kit</strong> v__KIT_VERSION__ is an
+          OpenCode plugin on npm. It routes each coding task to a specialist AI
+          agent. The router never edits your application code.
+        </p>
+        <pre
+          style="
+            overflow-x: auto;
+            padding: 1rem;
+            background: #1e293b;
+            color: #67e8f9;
+          "
+        >
+{ "package": "opencode-orchestrator-kit", "options": { "preset": "generic", "withExtras": false } }</pre
+        >
+        <p>
+          <a href="https://www.npmjs.com/package/opencode-orchestrator-kit"
+            >npm package</a
+          >
+          ·
+          <a
+            href="https://github.com/NicoGenti/opencode-orchestrator-kit/releases/tag/v__KIT_VERSION__"
+            >v__KIT_VERSION__ release</a
+          >
+          ·
+          <a
+            href="https://github.com/NicoGenti/opencode-orchestrator-kit/blob/main/CHANGELOG.md"
+            >Changelog</a
+          >
+          ·
+          <a href="https://github.com/NicoGenti/opencode-orchestrator-kit"
+            >GitHub</a
+          >
+        </p>
+      </div>
+    </noscript>
     <div id="root"></div>
     <script type="module" src="/docs-src/main.tsx"></script>
   </body>
