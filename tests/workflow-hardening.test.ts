@@ -251,6 +251,7 @@ describe("workflow-hardening — W8 P0 frontend permissions (v0.6.2)", () => {
     const fm = ORCH.slice(0, ORCH.indexOf("\n---", 4));
     const em = fm.match(/"edit":\s*\{([\s\S]*?)\}/);
     expect(em).not.toBeNull();
+    if (em === null) throw new Error("orchestrator edit permission missing");
     expect(em[1]).toContain('".context/comprehension-log.md":"allow"');
     expect(em[1]).not.toContain('".context/research-dataset.jsonl"');
   });

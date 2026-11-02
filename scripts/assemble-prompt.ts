@@ -4,8 +4,7 @@ import { PromptCache } from "./cache";
 import {
   loadModelConfig,
   resolvePreset,
-  ResolvedConfig,
-  resolveModelValue,
+  type ResolvedConfig,
 } from "./resolve-model-preset";
 
 /**

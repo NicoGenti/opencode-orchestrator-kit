@@ -11,7 +11,7 @@ import { join, relative, sep } from "node:path";
 
 import plugin from "../plugin/src/index.ts";
 import { collectPackagedAgents } from "../plugin/src/agents.ts";
-import { assetsDir, readAsset } from "../plugin/src/assets.ts";
+import { assetsDir } from "../plugin/src/assets.ts";
 import { TierConfigError, resolveTierMap } from "../plugin/src/tiers.ts";
 import { runPlanBoard } from "../plugin/src/plan-board.ts";
 

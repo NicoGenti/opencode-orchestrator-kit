@@ -1,7 +1,6 @@
 import { describe, expect, test, beforeAll, afterAll } from "bun:test";
 import {
   mkdtempSync,
-  mkdirSync,
   readdirSync,
   readFileSync,
   writeFileSync,

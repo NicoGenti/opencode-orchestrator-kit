@@ -1,5 +1,5 @@
 import { promises as fs } from "fs";
-import { join, resolve, isAbsolute, normalize, sep } from "path";
+import { resolve, isAbsolute, normalize, sep } from "path";
 
 /**
  * Model-preset resolution module.
@@ -118,7 +118,7 @@ export async function loadModelConfig(
     );
   }
 
-  let config: any;
+  let config: unknown;
   try {
     config = JSON.parse(raw);
   } catch (err) {
@@ -132,11 +132,12 @@ export async function loadModelConfig(
     throw new Error("Model config must be a JSON object");
   }
 
-  if (!config.presets || typeof config.presets !== "object") {
+  const record = config as Record<string, unknown>;
+  if (!record.presets || typeof record.presets !== "object") {
     throw new Error('Model config must contain a "presets" object');
   }
 
-  return config as ModelConfig;
+  return record as unknown as ModelConfig;
 }
 
 /**

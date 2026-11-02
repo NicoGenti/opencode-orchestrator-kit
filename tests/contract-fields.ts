@@ -226,7 +226,7 @@ export type RecallEvent = {
 };
 
 /** Fields forbidden by the dataset schema (v0.6.0 extras + session identifiers). */
-export const FORBIDDEN = new Set([
+export const FORBIDDEN = new Set<string>([
   "ts",
   "session_id",
   "task_id",

@@ -8,7 +8,7 @@ import {
 } from "node:fs";
 import { join, resolve } from "node:path";
 import { tmpdir } from "node:os";
-import { spawnSync, SpawnSyncReturns } from "node:child_process";
+import { spawnSync, type SpawnSyncReturns } from "node:child_process";
 
 /**
  * install.sh — model-token resolution.

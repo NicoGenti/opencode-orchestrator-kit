@@ -1,13 +1,12 @@
 import { describe, expect, test, beforeAll, afterAll } from "bun:test";
 import {
-  existsSync,
   mkdtempSync,
   mkdirSync,
   writeFileSync,
   rmSync,
   utimesSync,
 } from "node:fs";
-import { join, resolve } from "node:path";
+import { join } from "node:path";
 import { tmpdir } from "node:os";
 
 // Import the cache module (will fail until implemented)
@@ -15,7 +14,7 @@ const { PromptCache } = await import("../scripts/cache.ts");
 
 describe("cache.ts — PromptCache", () => {
   let tempDir: string;
-  let cache: PromptCache;
+  let cache: InstanceType<typeof PromptCache>;
 
   beforeAll(() => {
     tempDir = mkdtempSync(join(tmpdir(), "cache-test-"));

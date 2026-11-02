@@ -232,7 +232,7 @@ function packInto(tmpDir: string): PackResult {
     const log = `${result.stdout ?? ""}${result.stderr ?? ""}`;
     if (result.error) {
       throw new Error(
-        `npm pack failed: ${result.error.code ?? result.error.message}\n${log}`,
+        `npm pack failed: ${"code" in result.error ? String(result.error.code) : result.error.message}\n${log}`,
       );
     }
     if (result.status !== 0) {
@@ -787,14 +787,20 @@ describe("packaged artifact — offline pack and self-containment", () => {
   });
 
   test("the packed assets are the repo-root sources (content-identical)", () => {
-    const bindings: Array<[string, string]> = [
-      ...COMMAND_NAMES.map((name) => [
+    const bindings = [
+      ...COMMAND_NAMES.map((name): [string, string] => [
         `command/${name}.md`,
         `assets/commands/${name}.md`,
       ]),
-      ...AGENT_IDS.map((id) => [`agents/${id}.md`, `assets/agents/${id}.md`]),
-      ...EXTRA_IDS.map((id) => [`extras/${id}.md`, `assets/extras/${id}.md`]),
-      ...SKILL_IDS.map((id) => [
+      ...AGENT_IDS.map((id): [string, string] => [
+        `agents/${id}.md`,
+        `assets/agents/${id}.md`,
+      ]),
+      ...EXTRA_IDS.map((id): [string, string] => [
+        `extras/${id}.md`,
+        `assets/extras/${id}.md`,
+      ]),
+      ...SKILL_IDS.map((id): [string, string] => [
         `skills/${id}/SKILL.md`,
         `assets/skills/${id}/SKILL.md`,
       ]),

@@ -135,7 +135,9 @@ describe("telemetry isolation — start-session + docs policy (v0.4.0)", () => {
     expect(gitignore).not.toMatch(/^\.context\/$/m);
     expect(gitignore).not.toMatch(/^plan\/$/m);
     expect(gitignore).toMatch(/^\.context\/comprehension-log\.md$/m);
-    expect(gitignore).toMatch(/^\.context\/research-dataset\.jsonl$/m);
+    expect(gitignore).toMatch(
+      new RegExp(`^${RESEARCH_DATASET_PATH.replace(/[.]/g, "\\.")}$`, "m"),
+    );
   });
 
   test("start-session: step 2 lists only the three memory files (log never loaded in steps)", () => {
@@ -155,7 +157,7 @@ describe("telemetry isolation — start-session + docs policy (v0.4.0)", () => {
 
 describe("telemetry-writer — P0 research dataset sink (v0.6.2)", () => {
   test("research dataset is listed as an orchestrator metric sink with append-only handling", () => {
-    expect(RAW_ORCHESTRATOR).toContain(".context/research-dataset.jsonl");
+    expect(RAW_ORCHESTRATOR).toContain(RESEARCH_DATASET_PATH);
     const hard = RAW_ORCHESTRATOR.indexOf("Hard boundary");
     expect(hard).toBeGreaterThan(-1);
     expect(RAW_ORCHESTRATOR.slice(hard, hard + 600)).toContain("append-only");
