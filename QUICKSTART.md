@@ -19,25 +19,27 @@
 
 With the `opencode-orchestrator-kit` plugin on OpenCode 2 (requires `@opencode/plugin` `^2.1.0`), agents, commands and skills are registered at runtime — nothing is copied into your project's `.opencode/` directory.
 
-**npm publication is pending** until the first `v*` tag. Until then, point `plugins` at a local checkout of `plugin/` (or install from git). The config key is `plugins`, and options use `{ "package", "options" }` ([Plugins](https://opencode.ai/v2/docs/plugins)):
+The package is published on npm (`1.0.0`). The config key is `plugins`, and options use `{ "package", "options" }` ([Plugins](https://opencode.ai/v2/docs/plugins)):
 
 ```jsonc
 {
   "$schema": "https://opencode.ai/config.json",
   "plugins": [
     {
-      "package": "/absolute/path/to/opencode-orchestrator-kit/plugin",
+      "package": "opencode-orchestrator-kit",
       "options": { "preset": "generic", "withExtras": false },
     },
   ],
 }
 ```
 
+A local checkout uses the same object form with `"package": "/absolute/path/to/opencode-orchestrator-kit/plugin"`. A git install, including the `plugin/` subdirectory, is:
+
 ```sh
 opencode plugin add 'github:NicoGenti/opencode-orchestrator-kit#main::path:plugin'
 ```
 
-After that package is on npm, replace the local path with `"package": "opencode-orchestrator-kit"`. Pick a `preset` (the bundled presets mirror `templates/models.config.json`; a preset whose tier values are all `placeholder/*` fails fast with a `TierConfigError`). Your own configuration always wins over the plugin registration. Then start:
+Pick a `preset` (the bundled presets mirror `templates/models.config.json`; a preset whose tier values are all `placeholder/*` fails fast with a `TierConfigError`). Your own configuration always wins over the plugin registration. Then start:
 
 ```bash
 opencode
@@ -78,6 +80,9 @@ Useful flags:
 | `--skip-validation`    | Skip the model-profile validator. Not recommended.                                                                   |
 
 ## Configure your provider mapping
+
+On the plugin path, tier resolution is the `preset` option above. The steps in
+this section are for the legacy installer.
 
 Edit `.opencode/models.config.json` (or copy `templates/models.config.json` over it
 first):

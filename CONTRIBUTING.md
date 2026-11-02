@@ -106,13 +106,12 @@ stay excluded because `scripts/plan-board.py` parses their frontmatter.
 is also the latest released heading in `CHANGELOG.md` (`## [Unreleased]` does
 not count). `tests/version-sync.test.ts` fails when the three drift.
 
-Do not tag or publish from a feature branch. npm publication is pending until
-the first `v*` tag. `.github/workflows/release.yml` runs only on tags matching
-`v*`, so merging the workflow does not publish and does not require
-`NPM_TOKEN` to exist yet. Pushing a tag does require that secret (an npm
-automation token with permission to publish `opencode-orchestrator-kit`). The
-workflow also sets `id-token: write` so `npm publish --provenance` can use
-GitHub's OIDC token.
+Do not tag or publish from a feature branch. `opencode-orchestrator-kit` is
+published on npm (1.0.0). `.github/workflows/release.yml` runs only on tags
+matching `v*`, so merging the workflow does not publish. Pushing a tag
+requires the `NPM_TOKEN` secret (an npm automation token with permission to
+publish `opencode-orchestrator-kit`). The workflow also sets
+`id-token: write` so `npm publish --provenance` can use GitHub's OIDC token.
 
 1. On a branch, run `bun run bump-version <x.y.z>`. The script sets both
    package manifests to that version, turns the `[Unreleased]` heading into

@@ -1,8 +1,8 @@
 # Publishes plugin/ to npm when a v* tag is pushed.
 # Does not run on pull requests or on pushes to main, so it is safe to merge
-# before the NPM_TOKEN secret exists. Creating the secret is required only
-# when the first tag is pushed. The tag (without the leading v) must equal
-# plugin/package.json "version".
+# without publishing. opencode-orchestrator-kit 1.0.0 is already on npm; a
+# later tag still needs the NPM_TOKEN secret. The tag (without the leading v)
+# must equal plugin/package.json "version".
 
 name: Release
 

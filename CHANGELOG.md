@@ -4,6 +4,11 @@ All notable changes to this project are documented in this file. The format foll
 
 ## [Unreleased]
 
+### Changed
+
+- **OpenCode 2 install path**: README, QUICKSTART, `docs/MIGRATION-V1-V2.md`, `docs/SETUP-NATIVE.md`, and CONTRIBUTING describe the published npm package `opencode-orchestrator-kit` (1.0.0) as the primary OpenCode 2 install. The `plugins` entry keeps the documented object form `{ "package", "options" }`. A local `plugin/` directory and `opencode plugin add 'github:NicoGenti/opencode-orchestrator-kit#main::path:plugin'` stay as alternatives. `install.sh` stays the legacy v1 path. The release workflow comment records that 1.0.0 is already on npm and that a later tag still needs `NPM_TOKEN`.
+- **Plan 13 stays in `qa`**: `plan/qa/13-migrare-il-kit-al-plugin-opencode-2` was checked against its completion line (npm release v0.7.0 or v1.0.0, green CI, updated CHANGELOG, and a `v1` branch for the old installer). `opencode-orchestrator-kit@1.0.0` is published (tag `v1.0.0` at `9bc59b4`; the Release workflow on that tag succeeded; `## [1.0.0]` is in this changelog). The `v1` branch is absent (`origin` has only `main`), so that line is still unmet and the plan was not moved. Issue #13 remains open. Standing authorization covers `check` and `move` only, so the plan body was left unchanged.
+
 ## [1.0.0] — 2026-11-02
 
 ### Added
