@@ -1,0 +1,2271 @@
+{
+  "agents/build-helper.md": [
+    {
+      "action": "subagent",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
+      "action": "webfetch",
+      "resource": "*",
+      "effect": "ask"
+    },
+    {
+      "action": "edit",
+      "resource": "*",
+      "effect": "ask"
+    },
+    {
+      "action": "edit",
+      "resource": "tsconfig*.json",
+      "effect": "ask"
+    },
+    {
+      "action": "edit",
+      "resource": "vite.config.*",
+      "effect": "ask"
+    },
+    {
+      "action": "edit",
+      "resource": "webpack.config.*",
+      "effect": "ask"
+    },
+    {
+      "action": "edit",
+      "resource": "rollup.config.*",
+      "effect": "ask"
+    },
+    {
+      "action": "edit",
+      "resource": ".babelrc*",
+      "effect": "ask"
+    },
+    {
+      "action": "edit",
+      "resource": "babel.config.*",
+      "effect": "ask"
+    },
+    {
+      "action": "edit",
+      "resource": "postcss.config.*",
+      "effect": "ask"
+    },
+    {
+      "action": "edit",
+      "resource": "*.scss",
+      "effect": "ask"
+    },
+    {
+      "action": "edit",
+      "resource": "*.css",
+      "effect": "ask"
+    },
+    {
+      "action": "edit",
+      "resource": "package.json",
+      "effect": "ask"
+    },
+    {
+      "action": "edit",
+      "resource": "*.md",
+      "effect": "ask"
+    },
+    {
+      "action": "edit",
+      "resource": "plan/*.md",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "*",
+      "effect": "ask"
+    },
+    {
+      "action": "shell",
+      "resource": "node --version",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "npm --version",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "pnpm --version",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "npx tsc *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "npx vite *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "npx webpack *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "npx eslint *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "npx prettier *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "git status",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "git log *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "git diff *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "where *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "Get-ChildItem *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "Get-Content *",
+      "effect": "allow"
+    },
+    {
+      "action": "skill",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
+      "action": "skill",
+      "resource": "build-debug",
+      "effect": "allow"
+    },
+    {
+      "action": "skill",
+      "resource": "npm-debug",
+      "effect": "allow"
+    },
+    {
+      "action": "skill",
+      "resource": "dev-cleanup",
+      "effect": "allow"
+    }
+  ],
+  "agents/code-reviewer.md": [
+    {
+      "action": "subagent",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
+      "action": "edit",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
+      "action": "edit",
+      "resource": "plan/*.md",
+      "effect": "deny"
+    },
+    {
+      "action": "read",
+      "resource": "*",
+      "effect": "allow"
+    },
+    {
+      "action": "webfetch",
+      "resource": "*",
+      "effect": "ask"
+    },
+    {
+      "action": "code-review-graph_detect_changes_tool",
+      "resource": "*",
+      "effect": "allow"
+    },
+    {
+      "action": "code-review-graph_get_review_context_tool",
+      "resource": "*",
+      "effect": "allow"
+    },
+    {
+      "action": "code-review-graph_get_impact_radius_tool",
+      "resource": "*",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "/tmp/*",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "find *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "find *-delete*",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "find *-exec*",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "find *-execdir*",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "find *-ok*",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "rg *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "ls *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "head *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "tail *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "wc *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "sort *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "git status *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "git diff *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "git log *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "git show *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "git ls-files *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "git rev-parse *",
+      "effect": "allow"
+    },
+    {
+      "action": "skill",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
+      "action": "skill",
+      "resource": "angular-patterns",
+      "effect": "allow"
+    },
+    {
+      "action": "skill",
+      "resource": "dotnet-conventions",
+      "effect": "allow"
+    },
+    {
+      "action": "skill",
+      "resource": "python-conventions",
+      "effect": "allow"
+    },
+    {
+      "action": "skill",
+      "resource": "web-*",
+      "effect": "allow"
+    },
+    {
+      "action": "skill",
+      "resource": "project-*",
+      "effect": "allow"
+    }
+  ],
+  "agents/comprehension-coach.md": [
+    {
+      "action": "subagent",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
+      "action": "edit",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
+      "action": "webfetch",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
+      "action": "read",
+      "resource": "*",
+      "effect": "allow"
+    },
+    {
+      "action": "glob",
+      "resource": "*",
+      "effect": "allow"
+    },
+    {
+      "action": "grep",
+      "resource": "*",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "sed *",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "find *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "find *-delete*",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "find *-exec*",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "find *-execdir*",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "find *-ok*",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "grep *",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "rg *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "ls *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "head *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "tail *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "wc *",
+      "effect": "allow"
+    },
+    {
+      "action": "skill",
+      "resource": "*",
+      "effect": "deny"
+    }
+  ],
+  "agents/deploy-helper.md": [
+    {
+      "action": "subagent",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
+      "action": "webfetch",
+      "resource": "*",
+      "effect": "ask"
+    },
+    {
+      "action": "edit",
+      "resource": "*",
+      "effect": "ask"
+    },
+    {
+      "action": "edit",
+      "resource": ".github/workflows/*.yml",
+      "effect": "ask"
+    },
+    {
+      "action": "edit",
+      "resource": "vercel.json",
+      "effect": "ask"
+    },
+    {
+      "action": "edit",
+      "resource": "netlify.toml",
+      "effect": "ask"
+    },
+    {
+      "action": "edit",
+      "resource": "package.json",
+      "effect": "ask"
+    },
+    {
+      "action": "edit",
+      "resource": "*.md",
+      "effect": "ask"
+    },
+    {
+      "action": "edit",
+      "resource": "plan/*.md",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "*",
+      "effect": "ask"
+    },
+    {
+      "action": "shell",
+      "resource": "node --version",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "npm --version",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "pnpm --version",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "git status",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "git log *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "git diff *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "gh workflow list",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "gh workflow view *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "gh run list *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "gh run view *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "gh api *",
+      "effect": "ask"
+    },
+    {
+      "action": "shell",
+      "resource": "vercel --version",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "vercel ls *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "netlify --version",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "netlify status",
+      "effect": "allow"
+    },
+    {
+      "action": "skill",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
+      "action": "skill",
+      "resource": "github-actions-cicd",
+      "effect": "allow"
+    },
+    {
+      "action": "skill",
+      "resource": "npm-debug",
+      "effect": "allow"
+    },
+    {
+      "action": "skill",
+      "resource": "dev-cleanup",
+      "effect": "allow"
+    },
+    {
+      "action": "skill",
+      "resource": "web-*",
+      "effect": "allow"
+    }
+  ],
+  "agents/developer-fixer.md": [
+    {
+      "action": "subagent",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
+      "action": "webfetch",
+      "resource": "*",
+      "effect": "ask"
+    },
+    {
+      "action": "edit",
+      "resource": "plan/*.md",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "rm *",
+      "effect": "ask"
+    },
+    {
+      "action": "shell",
+      "resource": "/tmp/*",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "npm *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "pnpm *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "pnpm test:*",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "yarn *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "bun *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "node *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "cargo *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "rustup *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "go *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "python *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "python3 *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "pip *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "pip3 *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "poetry *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "uv *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "pytest *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "mypy *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "ruff *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "deno *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "make *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "cmake *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "npx *",
+      "effect": "ask"
+    },
+    {
+      "action": "shell",
+      "resource": "dotnet *",
+      "effect": "ask"
+    },
+    {
+      "action": "shell",
+      "resource": "ng *",
+      "effect": "ask"
+    },
+    {
+      "action": "shell",
+      "resource": "docker build",
+      "effect": "ask"
+    },
+    {
+      "action": "shell",
+      "resource": "docker build *",
+      "effect": "ask"
+    },
+    {
+      "action": "shell",
+      "resource": "bash */scripts/*.sh",
+      "effect": "ask"
+    },
+    {
+      "action": "shell",
+      "resource": "bash */scripts/*.sh *",
+      "effect": "ask"
+    },
+    {
+      "action": "shell",
+      "resource": "sh */scripts/*.sh",
+      "effect": "ask"
+    },
+    {
+      "action": "shell",
+      "resource": "sh */scripts/*.sh *",
+      "effect": "ask"
+    },
+    {
+      "action": "shell",
+      "resource": "git *",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "git status *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "git diff *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "git log *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "git show *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "git ls-files *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "git rev-parse *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "git describe *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "git shortlog *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "git tag -l *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "git config --get *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "git config --list *",
+      "effect": "allow"
+    },
+    {
+      "action": "skill",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
+      "action": "skill",
+      "resource": "build-debug",
+      "effect": "allow"
+    },
+    {
+      "action": "skill",
+      "resource": "npm-debug",
+      "effect": "allow"
+    },
+    {
+      "action": "skill",
+      "resource": "dev-cleanup",
+      "effect": "allow"
+    },
+    {
+      "action": "skill",
+      "resource": "structural-search",
+      "effect": "allow"
+    },
+    {
+      "action": "skill",
+      "resource": "angular-patterns",
+      "effect": "allow"
+    },
+    {
+      "action": "skill",
+      "resource": "dotnet-conventions",
+      "effect": "allow"
+    },
+    {
+      "action": "skill",
+      "resource": "python-conventions",
+      "effect": "allow"
+    },
+    {
+      "action": "skill",
+      "resource": "web-*",
+      "effect": "allow"
+    },
+    {
+      "action": "skill",
+      "resource": "project-*",
+      "effect": "allow"
+    }
+  ],
+  "agents/explorer.md": [
+    {
+      "action": "subagent",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
+      "action": "edit",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
+      "action": "edit",
+      "resource": "plan/*.md",
+      "effect": "deny"
+    },
+    {
+      "action": "webfetch",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
+      "action": "code-review-graph_get_minimal_context_tool",
+      "resource": "*",
+      "effect": "allow"
+    },
+    {
+      "action": "code-review-graph_query_graph_tool",
+      "resource": "*",
+      "effect": "allow"
+    },
+    {
+      "action": "code-review-graph_semantic_search_nodes_tool",
+      "resource": "*",
+      "effect": "allow"
+    },
+    {
+      "action": "code-review-graph_get_architecture_overview_tool",
+      "resource": "*",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "*",
+      "effect": "ask"
+    },
+    {
+      "action": "shell",
+      "resource": "sed *",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "/tmp/*",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "find *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "find *-delete*",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "find *-exec*",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "find *-execdir*",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "find *-ok*",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "grep *",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "rg *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "sg *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "ast-grep *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "ls *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "cat *",
+      "effect": "ask"
+    },
+    {
+      "action": "shell",
+      "resource": "head *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "tail *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "wc *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "sort *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "git *",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "git status *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "git diff *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "git log *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "git show *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "git ls-files *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "git rev-parse *",
+      "effect": "allow"
+    },
+    {
+      "action": "skill",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
+      "action": "skill",
+      "resource": "structural-search",
+      "effect": "allow"
+    }
+  ],
+  "agents/librarian.md": [
+    {
+      "action": "subagent",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
+      "action": "edit",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
+      "action": "edit",
+      "resource": "plan/*.md",
+      "effect": "deny"
+    },
+    {
+      "action": "todowrite",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "*",
+      "effect": "ask"
+    },
+    {
+      "action": "shell",
+      "resource": "sed *",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "git status*",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "git diff*",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "git log*",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "git show*",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "git ls-files*",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "git blame*",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "git rev-parse*",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "git describe*",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "git shortlog*",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "git config --get*",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "git config --list*",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "gh search code *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "gh search issues *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "gh search repos *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "gh repo view *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "gh api *",
+      "effect": "ask"
+    },
+    {
+      "action": "shell",
+      "resource": "find *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "find *-delete*",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "find *-exec*",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "find *-execdir*",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "find *-ok*",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "grep *",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "rg *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "ls *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "cat *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "head *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "tail *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "wc *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "sort *",
+      "effect": "allow"
+    },
+    {
+      "action": "webfetch",
+      "resource": "*",
+      "effect": "allow"
+    },
+    {
+      "action": "skill",
+      "resource": "*",
+      "effect": "deny"
+    }
+  ],
+  "agents/npm-helper.md": [
+    {
+      "action": "subagent",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
+      "action": "webfetch",
+      "resource": "*",
+      "effect": "ask"
+    },
+    {
+      "action": "edit",
+      "resource": "*",
+      "effect": "ask"
+    },
+    {
+      "action": "edit",
+      "resource": "package.json",
+      "effect": "ask"
+    },
+    {
+      "action": "edit",
+      "resource": "package-lock.json",
+      "effect": "ask"
+    },
+    {
+      "action": "edit",
+      "resource": ".npmrc",
+      "effect": "ask"
+    },
+    {
+      "action": "edit",
+      "resource": "*.md",
+      "effect": "ask"
+    },
+    {
+      "action": "edit",
+      "resource": "plan/*.md",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "*",
+      "effect": "ask"
+    },
+    {
+      "action": "shell",
+      "resource": "node --version",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "npm --version",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "npm config *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "npm ls *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "npm view *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "npm doctor",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "npm cache verify",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "npm explain *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "pnpm --version",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "pnpm ls *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "yarn --version",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "git status",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "git log *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "where *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "Get-ChildItem *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "Get-Content *",
+      "effect": "allow"
+    },
+    {
+      "action": "skill",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
+      "action": "skill",
+      "resource": "npm-debug",
+      "effect": "allow"
+    },
+    {
+      "action": "skill",
+      "resource": "dev-cleanup",
+      "effect": "allow"
+    }
+  ],
+  "agents/oracle.md": [
+    {
+      "action": "subagent",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
+      "action": "edit",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
+      "action": "edit",
+      "resource": "plan/*.md",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "*",
+      "effect": "ask"
+    },
+    {
+      "action": "shell",
+      "resource": "sed *",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "git *",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "git status *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "git diff *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "git log *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "git show *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "git ls-files *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "git blame *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "find *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "find *-delete*",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "find *-exec*",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "find *-execdir*",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "find *-ok*",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "grep *",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "rg *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "ls *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "cat *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "head *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "tail *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "wc *",
+      "effect": "allow"
+    },
+    {
+      "action": "webfetch",
+      "resource": "*",
+      "effect": "allow"
+    },
+    {
+      "action": "skill",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
+      "action": "skill",
+      "resource": "angular-patterns",
+      "effect": "allow"
+    },
+    {
+      "action": "skill",
+      "resource": "dotnet-conventions",
+      "effect": "allow"
+    },
+    {
+      "action": "skill",
+      "resource": "python-conventions",
+      "effect": "allow"
+    },
+    {
+      "action": "skill",
+      "resource": "web-*",
+      "effect": "allow"
+    }
+  ],
+  "agents/orchestrator.md": [
+    {
+      "action": "subagent",
+      "resource": "*",
+      "effect": "allow"
+    },
+    {
+      "action": "todowrite",
+      "resource": "*",
+      "effect": "allow"
+    },
+    {
+      "action": "read",
+      "resource": "*",
+      "effect": "allow"
+    },
+    {
+      "action": "glob",
+      "resource": "*",
+      "effect": "allow"
+    },
+    {
+      "action": "grep",
+      "resource": "*",
+      "effect": "allow"
+    },
+    {
+      "action": "webfetch",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
+      "action": "edit",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
+      "action": "edit",
+      "resource": ".context/progress.md",
+      "effect": "allow"
+    },
+    {
+      "action": "edit",
+      "resource": ".context/comprehension/*.md",
+      "effect": "allow"
+    },
+    {
+      "action": "edit",
+      "resource": ".context/comprehension-log.md",
+      "effect": "allow"
+    },
+    {
+      "action": "edit",
+      "resource": ".context/research-dataset.jsonl",
+      "effect": "allow"
+    },
+    {
+      "action": "edit",
+      "resource": "plan/*.md",
+      "effect": "deny"
+    },
+    {
+      "action": "edit",
+      "resource": ".context/decisions.md",
+      "effect": "allow"
+    },
+    {
+      "action": "edit",
+      "resource": ".context/issues.md",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "git status *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "git diff *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "git log *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "git show *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "ls *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "cat *",
+      "effect": "allow"
+    },
+    {
+      "action": "skill",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
+      "action": "skill",
+      "resource": "comprehension-workflow",
+      "effect": "allow"
+    },
+    {
+      "action": "skill",
+      "resource": "web-*",
+      "effect": "allow"
+    },
+    {
+      "action": "skill",
+      "resource": "project-*",
+      "effect": "allow"
+    }
+  ],
+  "agents/plan-writer.md": [
+    {
+      "action": "edit",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
+      "action": "edit",
+      "resource": "plan/*.md",
+      "effect": "allow"
+    },
+    {
+      "action": "webfetch",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "python */plan-board.py *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "python3 */plan-board.py *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "ls *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "cat *",
+      "effect": "allow"
+    },
+    {
+      "action": "subagent",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
+      "action": "skill",
+      "resource": "*",
+      "effect": "deny"
+    }
+  ],
+  "agents/planner.md": [
+    {
+      "action": "edit",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
+      "action": "edit",
+      "resource": ".context/plan-body-*.md",
+      "effect": "allow"
+    },
+    {
+      "action": "webfetch",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
+      "action": "subagent",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
+      "action": "subagent",
+      "resource": "explorer",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "git status *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "git diff *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "git log *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "git show *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "ls *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "cat *",
+      "effect": "allow"
+    },
+    {
+      "action": "skill",
+      "resource": "*",
+      "effect": "deny"
+    }
+  ],
+  "agents/profiler.md": [
+    {
+      "action": "subagent",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
+      "action": "webfetch",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
+      "action": "edit",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
+      "action": "edit",
+      "resource": ".opencode/PROJECT-PROFILE.md",
+      "effect": "allow"
+    },
+    {
+      "action": "edit",
+      "resource": ".context/progress.md",
+      "effect": "allow"
+    },
+    {
+      "action": "edit",
+      "resource": ".context/decisions.md",
+      "effect": "allow"
+    },
+    {
+      "action": "edit",
+      "resource": ".context/issues.md",
+      "effect": "allow"
+    },
+    {
+      "action": "edit",
+      "resource": ".context/DESIGN-RULES.md",
+      "effect": "allow"
+    },
+    {
+      "action": "edit",
+      "resource": ".context/repo-map.md",
+      "effect": "allow"
+    },
+    {
+      "action": "edit",
+      "resource": "plan/README.md",
+      "effect": "allow"
+    },
+    {
+      "action": "edit",
+      "resource": "plan/draft/.gitkeep",
+      "effect": "allow"
+    },
+    {
+      "action": "edit",
+      "resource": "plan/in-progress/.gitkeep",
+      "effect": "allow"
+    },
+    {
+      "action": "edit",
+      "resource": "plan/qa/.gitkeep",
+      "effect": "allow"
+    },
+    {
+      "action": "edit",
+      "resource": "plan/complete/.gitkeep",
+      "effect": "allow"
+    },
+    {
+      "action": "edit",
+      "resource": "plan/*.md",
+      "effect": "deny"
+    },
+    {
+      "action": "question",
+      "resource": "*",
+      "effect": "ask"
+    },
+    {
+      "action": "shell",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "npx repomix *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "find *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "find *-delete*",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "find *-exec*",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "find *-execdir*",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "find *-ok*",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "ls *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "cat *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "head *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "wc *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "git ls-files *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "git status *",
+      "effect": "allow"
+    },
+    {
+      "action": "skill",
+      "resource": "*",
+      "effect": "deny"
+    }
+  ],
+  "agents/security.md": [
+    {
+      "action": "*",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
+      "action": "read",
+      "resource": "*",
+      "effect": "allow"
+    },
+    {
+      "action": "glob",
+      "resource": "*",
+      "effect": "allow"
+    },
+    {
+      "action": "grep",
+      "resource": "*",
+      "effect": "allow"
+    },
+    {
+      "action": "list",
+      "resource": "*",
+      "effect": "allow"
+    },
+    {
+      "action": "subagent",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
+      "action": "todowrite",
+      "resource": "*",
+      "effect": "allow"
+    },
+    {
+      "action": "webfetch",
+      "resource": "*",
+      "effect": "allow"
+    },
+    {
+      "action": "websearch",
+      "resource": "*",
+      "effect": "allow"
+    },
+    {
+      "action": "question",
+      "resource": "*",
+      "effect": "ask"
+    },
+    {
+      "action": "code-review-graph_get_impact_radius_tool",
+      "resource": "*",
+      "effect": "allow"
+    },
+    {
+      "action": "code-review-graph_get_hub_nodes_tool",
+      "resource": "*",
+      "effect": "allow"
+    },
+    {
+      "action": "code-review-graph_get_bridge_nodes_tool",
+      "resource": "*",
+      "effect": "allow"
+    },
+    {
+      "action": "skill",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
+      "action": "skill",
+      "resource": "angular-patterns",
+      "effect": "allow"
+    },
+    {
+      "action": "skill",
+      "resource": "dotnet-conventions",
+      "effect": "allow"
+    },
+    {
+      "action": "skill",
+      "resource": "python-conventions",
+      "effect": "allow"
+    }
+  ],
+  "agents/test-engineer.md": [
+    {
+      "action": "subagent",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
+      "action": "edit",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
+      "action": "edit",
+      "resource": "*.test.*",
+      "effect": "ask"
+    },
+    {
+      "action": "edit",
+      "resource": "*.spec.*",
+      "effect": "ask"
+    },
+    {
+      "action": "edit",
+      "resource": "*_test.*",
+      "effect": "ask"
+    },
+    {
+      "action": "edit",
+      "resource": "test/**",
+      "effect": "ask"
+    },
+    {
+      "action": "edit",
+      "resource": "tests/**",
+      "effect": "ask"
+    },
+    {
+      "action": "edit",
+      "resource": "__tests__/**",
+      "effect": "ask"
+    },
+    {
+      "action": "edit",
+      "resource": "plan/*.md",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "*",
+      "effect": "ask"
+    },
+    {
+      "action": "shell",
+      "resource": "sed *",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "rm *",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "/tmp/*",
+      "effect": "allow"
+    },
+    {
+      "action": "skill",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
+      "action": "skill",
+      "resource": "angular-patterns",
+      "effect": "allow"
+    },
+    {
+      "action": "skill",
+      "resource": "dotnet-conventions",
+      "effect": "allow"
+    },
+    {
+      "action": "skill",
+      "resource": "python-conventions",
+      "effect": "allow"
+    }
+  ],
+  "extras/pc-doctor.md": [
+    {
+      "action": "subagent",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
+      "action": "webfetch",
+      "resource": "*",
+      "effect": "ask"
+    },
+    {
+      "action": "edit",
+      "resource": "*",
+      "effect": "ask"
+    },
+    {
+      "action": "edit",
+      "resource": "plan/*.md",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "*",
+      "effect": "ask"
+    },
+    {
+      "action": "shell",
+      "resource": "set",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "echo %*",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "where *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "Get-Command *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "Get-ChildItem *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "Get-Content *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "Get-Item *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "Get-Service *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "Get-Process *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "schtasks /query *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "reg query *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "[System.Environment]*",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "node --version",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "npm --version",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "pnpm --version",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "git status",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "git log *",
+      "effect": "allow"
+    },
+    {
+      "action": "skill",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
+      "action": "skill",
+      "resource": "dev-cleanup",
+      "effect": "allow"
+    }
+  ],
+  "extras/writer.md": [
+    {
+      "action": "subagent",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
+      "action": "edit",
+      "resource": "plan/*.md",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "*",
+      "effect": "ask"
+    },
+    {
+      "action": "shell",
+      "resource": "sed *",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "rm *",
+      "effect": "deny"
+    },
+    {
+      "action": "skill",
+      "resource": "*",
+      "effect": "deny"
+    }
+  ]
+}

@@ -38,6 +38,7 @@ Two consequences drive the translation (`plugin/src/permissions.ts`):
 | `write` | `edit` | V2 folds `edit`, `write` and `patch` into one action |
 | `edit` | `edit` | merged with the two above |
 | `read`, `glob`, `grep`, `webfetch`, `websearch`, `skill`, `question`, `execute` | same name | identity |
+| `list`, `todowrite`, `todoread` | same name | pass through; V2 has no permission action for them |
 | `code-review-graph_*`, `<server>_<tool>` | same name | MCP tools are matched as `<server>_<tool>` |
 | `*` | `*` | global fallback, emitted first |
 
@@ -56,8 +57,14 @@ leading `**/` removed) because a V2 `*` already crosses `/`. Without this,
   deny for the mapped action, emitted before the `permission` rules so those can
   refine it. `true` entries are no-ops (the default is enabled). No agent uses
   `false` today, so this branch is inert but tested.
-- `todowrite` / `todoread`: not V2 permission actions. They pass through as
+- `todowrite` / `todoread` / `list`: not V2 permission actions. They pass through as
   literal action strings and stay inert until the runtime defines them.
+- V1 frontmatter must use the V1 action names. `task` translates to `subagent`
+  and `bash` translates to `shell`. Writing the V2 name `subagent` (or `shell`)
+  in V1 frontmatter is rejected by `tests/agent-schema.test.ts`, as are unknown
+  keys such as `query` and `check_diagnostics`. An MCP id is
+  `<server>_<tool>` where the server name contains a hyphen
+  (`code-review-graph_get_hub_nodes_tool`).
 - `plan-writer` used to ask (`edit: ask`) for edits outside the board root; after
   folding it denies them. The kit contract only lets it touch the board root, so
   the stricter result is intended.
@@ -94,8 +101,8 @@ bun run typecheck && bun run lint
 ```
 
 `tests/plugin-permissions.test.ts` pins the exact rule list for `orchestrator`
-(24 translation rules; the composed list stays 25 because the kit appends the
-same plan-board deny last) and `plan-writer` (9), the global fallback of
+(25 translation rules; the composed list stays 26 because the kit appends the
+same plan-board deny last) and `plan-writer` (10), the global fallback of
 `security`, the globstar normalisation, and the resolved effect of every
 packaged agent. The same file asserts the plan-board deny from frontmatter
 alone, without `kitInvariantRules`.

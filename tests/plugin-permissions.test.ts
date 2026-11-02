@@ -91,7 +91,7 @@ describe("frontmatter map reader (YAML subset + inline JSON)", () => {
 });
 
 describe("V1 -> V2 translation", () => {
-  test("orchestrator (inline JSON) translates to exactly the expected rule list", () => {
+  test("orchestrator (YAML, V1 task name) translates to exactly the expected rule list", () => {
     expect(rulesOf("agents/orchestrator.md")).toEqual([
       { action: "subagent", resource: "*", effect: "allow" },
       { action: "todowrite", resource: "*", effect: "allow" },
@@ -129,6 +129,7 @@ describe("V1 -> V2 translation", () => {
       { action: "skill", resource: "*", effect: "deny" },
       { action: "skill", resource: "comprehension-workflow", effect: "allow" },
       { action: "skill", resource: "web-*", effect: "allow" },
+      { action: "skill", resource: "project-*", effect: "allow" },
     ]);
   });
 
@@ -141,6 +142,11 @@ describe("V1 -> V2 translation", () => {
       {
         action: "shell",
         resource: "python */plan-board.py *",
+        effect: "allow",
+      },
+      {
+        action: "shell",
+        resource: "python3 */plan-board.py *",
         effect: "allow",
       },
       { action: "shell", resource: "ls *", effect: "allow" },
@@ -344,7 +350,7 @@ describe("packaged agent manifest permissions", () => {
     );
     expect(orchestrator).toBeDefined();
     const rules = orchestrator!.permissions;
-    expect(rules).toHaveLength(25);
+    expect(rules).toHaveLength(26);
     expect(rules[rules.length - 1]).toEqual({
       action: "edit",
       resource: "plan/*.md",

@@ -156,6 +156,21 @@ describe("permission matrix", () => {
     }
   });
 
+  test("plan-writer allows python and python3 plan-board invocations only", () => {
+    const rules = byId("plan-writer").permissions;
+    for (const command of [
+      "python scripts/plan-board.py check --json",
+      "python3 scripts/plan-board.py check --root plan --json",
+      "python3 .opencode/scripts/plan-board.py move --id 1 --to qa --json",
+    ]) {
+      expect(resolveEffect(rules, "shell", command)).toBe("allow");
+    }
+    expect(resolveEffect(rules, "shell", "python3 -c print(1)")).toBe("deny");
+    expect(
+      resolveEffect(rules, "shell", "python scripts/other.py --json"),
+    ).toBe("deny");
+  });
+
   test("developer-fixer asks before web-kit build commands", () => {
     const rules = byId("developer-fixer").permissions;
     for (const command of WEB_KIT_COMMANDS) {

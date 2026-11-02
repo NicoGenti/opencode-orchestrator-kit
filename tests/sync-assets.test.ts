@@ -31,7 +31,8 @@ function writeFixture(root: string): void {
   writeFileSync(join(root, "command", "start-session.md"), "start\n");
   writeFileSync(join(root, "command", "recall.md"), "recall\n");
   writeFileSync(join(root, "command", "research-mode.md"), "research\n");
-  writeFileSync(join(root, "command", "close-session.md"), "not packaged\n");
+  writeFileSync(join(root, "command", "close-session.md"), "close\n");
+  writeFileSync(join(root, "command", "not-packaged.md"), "not packaged\n");
   writeFileSync(join(root, "skills", "demo", "SKILL.md"), "skill\n");
   writeFileSync(join(root, "agents", "orchestrator.md"), "agent\n");
   writeFileSync(join(root, "extras", "writer.md"), "extra\n");
@@ -90,8 +91,14 @@ describe("sync-assets", () => {
       ).toBe("extra\n");
       expect(existsSync(stale)).toBe(false);
       expect(
-        existsSync(
+        readFileSync(
           join(root, "plugin", "assets", "commands", "close-session.md"),
+          "utf-8",
+        ),
+      ).toBe("close\n");
+      expect(
+        existsSync(
+          join(root, "plugin", "assets", "commands", "not-packaged.md"),
         ),
       ).toBe(false);
 

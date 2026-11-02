@@ -11,7 +11,9 @@ import {
  * Every agent's `permission.skill` allowlist (agents/*.md, extras/*.md, and
  * the plugin/assets mirrors) may name only a skill that ships in skills/
  * — the `name:` frontmatter of each SKILL.md, including skills/examples/ —
- * plus the `*` catch-all and glob patterns such as `web-*`.
+ * plus the `*` catch-all. A glob that matches zero shipped skills is legal
+ * only for a documented reserved prefix (`web-*`, `project-*`). A glob that
+ * matches at least one shipped skill is legal without being reserved.
  */
 
 const ROOT = join(import.meta.dir, "..");
@@ -62,14 +64,36 @@ function collectShippedSkillNames(): Set<string> {
   return names;
 }
 
+/**
+ * Reserved prefixes. README "Companion kits" and CONTRIBUTING name the same
+ * two: `web-*` (web-kit) and `project-*` (a consuming project's own skills).
+ */
+const RESERVED_SKILL_GLOBS = new Set(["web-*", "project-*"]);
+
 /** `web-*` is a glob. The bare `*` catch-all is not a skill-name glob. */
 function isGlobPattern(name: string): boolean {
   return name !== "*" && (name.includes("*") || name.includes("?"));
 }
 
+function globMatchesShipped(
+  pattern: string,
+  shipped: ReadonlySet<string>,
+): boolean {
+  const source = pattern
+    .replace(/[.+^${}()|[\]\\]/g, "\\$&")
+    .replace(/\*/g, ".*")
+    .replace(/\?/g, ".");
+  const expression = new RegExp(`^${source}$`);
+  for (const name of shipped) {
+    if (expression.test(name)) return true;
+  }
+  return false;
+}
+
 /**
  * Skill names granted with anything other than `deny` that are neither a
- * shipped skill nor a glob pattern.
+ * shipped skill nor an allowed glob. A zero-match glob is allowed only when
+ * it is a documented reserved prefix.
  */
 function unshippedAllows(
   skill: FrontmatterMap,
@@ -77,7 +101,14 @@ function unshippedAllows(
 ): string[] {
   const unknown: string[] = [];
   for (const [name, effect] of Object.entries(skill)) {
-    if (name === "*" || effect === "deny" || isGlobPattern(name)) continue;
+    if (name === "*" || effect === "deny") continue;
+    if (isGlobPattern(name)) {
+      if (RESERVED_SKILL_GLOBS.has(name) || globMatchesShipped(name, shipped)) {
+        continue;
+      }
+      unknown.push(name);
+      continue;
+    }
     if (!shipped.has(name)) unknown.push(name);
   }
   return unknown;
@@ -167,12 +198,13 @@ describe("agent skill allowlists name only shipped skills", () => {
         "dotnet-conventions",
         "python-conventions",
         "web-*",
+        "project-*",
       ],
     },
     {
       file: "orchestrator.md",
       dirs: ["agents", "plugin/assets/agents"],
-      keys: ["*", "comprehension-workflow", "web-*"],
+      keys: ["*", "comprehension-workflow", "web-*", "project-*"],
     },
     {
       file: "code-reviewer.md",
@@ -183,6 +215,7 @@ describe("agent skill allowlists name only shipped skills", () => {
         "dotnet-conventions",
         "python-conventions",
         "web-*",
+        "project-*",
       ],
     },
     {
@@ -267,13 +300,31 @@ describe("skill allowlist check — negative case (proves the check has teeth)",
     ).toEqual(["nope"]);
   });
 
-  test("deny entries, the * catch-all, and globs are not required to ship", () => {
+  test("deny entries, the * catch-all, and reserved or matching globs are not required to ship", () => {
     expect(
       unshippedAllows(
-        { "*": "deny", ghost: "deny", "web-*": "allow", "build-debug": "ask" },
+        {
+          "*": "deny",
+          ghost: "deny",
+          "web-*": "allow",
+          "project-*": "allow",
+          "build-*": "allow",
+          "build-debug": "ask",
+        },
         shipped,
       ),
     ).toEqual([]);
+  });
+
+  test("a glob that matches zero shipped skills is rejected unless it is a reserved prefix", () => {
+    expect(unshippedAllows({ "*": "deny", "foo-*": "allow" }, shipped)).toEqual(
+      ["foo-*"],
+    );
+    expect(RESERVED_SKILL_GLOBS.has("web-*")).toBe(true);
+    expect(RESERVED_SKILL_GLOBS.has("project-*")).toBe(true);
+    expect(globMatchesShipped("web-*", shipped)).toBe(false);
+    expect(globMatchesShipped("project-*", shipped)).toBe(false);
+    expect(globMatchesShipped("build-*", shipped)).toBe(true);
   });
 
   test("a specific web-kit skill name is not a glob and does not ship here", () => {
