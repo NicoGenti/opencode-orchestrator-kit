@@ -99,6 +99,46 @@ into a flow mapping, which destroys the install-time tier token, and formatting
 only one side of a mirror would break the parity test. Plan files under `plan/`
 stay excluded because `scripts/plan-board.py` parses their frontmatter.
 
+## Releasing this repository
+
+`package.json` and `plugin/package.json` carry the same version. That version
+is also the latest released heading in `CHANGELOG.md` (`## [Unreleased]` does
+not count). `tests/version-sync.test.ts` fails when the three drift.
+
+Do not tag or publish from a feature branch. npm publication is pending until
+the first `v*` tag. `.github/workflows/release.yml` runs only on tags matching
+`v*`, so merging the workflow does not publish and does not require
+`NPM_TOKEN` to exist yet. Pushing a tag does require that secret (an npm
+automation token with permission to publish `opencode-orchestrator-kit`). The
+workflow also sets `id-token: write` so `npm publish --provenance` can use
+GitHub's OIDC token.
+
+1. On a branch, run `bun run bump-version <x.y.z>`. The script sets both
+   package manifests to that version, turns the `[Unreleased]` heading into
+   `## [x.y.z] — <UTC date>`, and leaves a fresh empty `[Unreleased]`. It does
+   not create a tag and does not publish.
+2. Open a pull request with that change. CI runs `bun test`, `bun run
+   typecheck`, `bun run lint`, and `bun run format:check`.
+3. Merge to `main`.
+4. Tag the merge commit `v<x.y.z>` (the tag, without the leading `v`, must
+   equal `plugin/package.json`'s `version`) and push the tag. The release
+   workflow repeats the quality gates, runs `bun run sync-assets --check`,
+   checks the tag, and publishes `plugin/` with `npm publish --provenance
+   --access public`.
+
+## Agent issue workflow
+
+`.github/workflows/agent-issue.yml` installs the kit that the issue agent runs
+with. `AGENT_KIT_SHA` and `AGENT_MODEL` are repository Actions variables
+(Settings, Secrets and variables, Actions, Variables), not secrets.
+
+- `AGENT_KIT_SHA` — full commit to install. When the variable is unset, the
+  workflow uses `github.sha` and installs from the checkout. Set it only to
+  install a different commit than the one the workflow checked out. The old
+  hardcoded commit from before v0.7.0 is not used.
+- `AGENT_MODEL` — model id passed to `opencode run -m`. When unset, the
+  workflow uses `opencode/mimo-v2.6-flash-free`.
+
 ## Tests
 
 - MUST run the project's existing test suite when a change affects behavior.

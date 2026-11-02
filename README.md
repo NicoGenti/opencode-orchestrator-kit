@@ -20,7 +20,7 @@ The kit splits the work into a routing layer and a roster of specialists:
 - **Exploration starts from a repo map.** The `profiler` generates a compact `.context/repo-map.md` (hard 300-line budget) that the `explorer` reads before broad searches, reducing whole-file reads and token waste.
 - **It adapts to any repository.** On first run the `profiler` agent detects the stack (or interviews you for an empty repo) and scaffolds `.context/` (memory) and `plan/` (kanban).
 
-On **OpenCode 2** the kit installs as the `opencode-orchestrator-kit` plugin: agents, commands and skills are registered at runtime — nothing is written into your project's `.opencode/` directory. The native copy-based installer still works and remains supported, but it is **deprecated in favor of the plugin** on OpenCode 2 (the `default` profile it ships references provider IDs that are not yours — see the _Choose your model profile_ step). Optional notes for [OpenCode Studio](https://github.com/Microck/opencode-studio) users are in `docs/SETUP-OPENCODE-STUDIO.md`.
+On **OpenCode 2** the kit is the `opencode-orchestrator-kit` plugin: agents, commands and skills are registered at runtime — nothing is written into your project's `.opencode/` directory. **npm publication is pending until the first tagged release** (`v*`); until that tag exists, install from a local checkout or from git (below). The native copy-based installer still works and remains supported, but it is **deprecated in favor of the plugin** on OpenCode 2 (the `default` profile it ships references provider IDs that are not yours — see the _Choose your model profile_ step). Optional notes for [OpenCode Studio](https://github.com/Microck/opencode-studio) users are in `docs/SETUP-OPENCODE-STUDIO.md`.
 
 ## How a request flows
 
@@ -75,16 +75,43 @@ Full contracts, permissions and model fallbacks are in each `agents/*.md` file (
 
 ## Install on OpenCode 2 (plugin — recommended)
 
-With the plugin, tier resolution happens at runtime from `plugin/src/tiers.ts` presets — there is no `{{TIER_*}}` substitution at install time. Add the plugin to your `opencode.json`:
+With the plugin, tier resolution happens at runtime from `plugin/src/tiers.ts` presets — there is no `{{TIER_*}}` substitution at install time.
 
-```json
+**npm publication is pending.** `opencode-orchestrator-kit` is not on the npm registry until the first `v*` tag is pushed (see `.github/workflows/release.yml` and the release steps in `CONTRIBUTING.md`). Until then, do not use `"package": "opencode-orchestrator-kit"` — that name 404s. Use a local directory or a git install. OpenCode 2 loads plugins from the `plugins` array in `opencode.json` or `opencode.jsonc` ([Plugins](https://opencode.ai/v2/docs/plugins)). A string entry is a package name or a local directory. Pass options with the object form `{ "package", "options" }`. Local paths must be directories (a path to a single file is skipped). Relative paths resolve from the config file that contains the entry.
+
+Local directory (the config shape checked against the OpenCode 2 docs):
+
+```jsonc
 {
+  "$schema": "https://opencode.ai/config.json",
+  "plugins": [
+    {
+      "package": "/absolute/path/to/opencode-orchestrator-kit/plugin",
+      "options": { "preset": "generic", "withExtras": false },
+    },
+  ],
+}
+```
+
+The same docs accept a git package spec on `opencode plugin add`, including a subdirectory selector, because this plugin lives in `plugin/` and not at the repository root:
+
+```sh
+opencode plugin add 'github:NicoGenti/opencode-orchestrator-kit#main::path:plugin'
+```
+
+That command writes a package entry. Set `preset` and `withExtras` with the object form above if the generated entry has no `options`. The docs do not show a git spec inside a `package` field example; they do show git specs as `plugin add` arguments and state that startup checks unpinned npm and Git plugins. This repository has not executed that install against a live OpenCode binary.
+
+After the first tagged release publishes the package, the npm name uses the same object form:
+
+```jsonc
+{
+  "$schema": "https://opencode.ai/config.json",
   "plugins": [
     {
       "package": "opencode-orchestrator-kit",
-      "options": { "preset": "<preset>", "withExtras": false }
-    }
-  ]
+      "options": { "preset": "<preset>", "withExtras": false },
+    },
+  ],
 }
 ```
 
@@ -125,14 +152,15 @@ From the repo root:
 
 The installer seeds `.opencode/models.config.json` from `templates/models.config.json`, runs the model-profile validator before writing any file, then resolves every `{{TIER_*}}` token in the installed agents to concrete model IDs.
 
-| Flag                | Effect                                                                                        |
-| ------------------- | --------------------------------------------------------------------------------------------- |
-| `--symlink`         | Symlink instead of installing plain files, so `git pull` in this repo updates every consumer. |
-| `--with-extras`     | Also install `extras/` (`pc-doctor`, `writer`). Off by default.                               |
-| `--with-examples`   | Also install `skills/examples/` (language-specific skill examples). Off by default.           |
-| `--skip-validation` | Skip the model-profile validator. Not recommended, emergency recovery only.                   |
+| Flag                   | Effect                                                                                                               |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `--symlink`            | Symlink instead of installing plain files, so `git pull` in this repo updates every consumer.                        |
+| `--with-extras`        | Install `pc-doctor` and `writer` into `agents/`. Off by default. OpenCode does not load an `extras/` directory.      |
+| `--with-examples`      | Install `skills/examples/`. Off by default; the base copy excludes that directory.                                   |
+| `--upgrade`, `--force` | Overwrite kit-managed files. Each replaced path is moved to `<path>.kit-backup` first. Default skips existing paths. |
+| `--skip-validation`    | Skip the model-profile validator. Not recommended, emergency recovery only.                                          |
 
-Without the installer, the manual path covers the same five items: `AGENTS.md`, `CONTRIBUTING.md`, `agents/`, `skills/` and `command/`. Place them where OpenCode looks (project root, or `~/.config/opencode/` for global). `extras/` is not part of the manual default.
+Without the installer, the manual path covers the same five items: `AGENTS.md`, `CONTRIBUTING.md`, `agents/`, `skills/` (without `skills/examples/`) and `command/`. Place them where OpenCode looks (project root, or `~/.config/opencode/` for global). To opt in by hand, copy `pc-doctor.md` and `writer.md` from `extras/` into `agents/`. Copy `skills/examples/` only when you want the language examples.
 
 ### 3. Choose your model profile
 
@@ -173,7 +201,7 @@ Select `@orchestrator` (or set it as your default agent), then run **`/start-ses
 ## Customizing
 
 - **Swap providers per tier** by editing `.opencode/models.config.json` and setting `default_preset` to the profile you want.
-- **Opt into extras** with `./install.sh --with-extras` to also install `pc-doctor` and `writer`.
+- **Opt into extras** with `./install.sh --with-extras` to install `pc-doctor` and `writer` into `agents/`. Re-run with `--upgrade` (or `--force`) to refresh kit files that are already installed.
 - **Add project-specific skills** under `skills/<name>/SKILL.md`; the orchestrator loads them on demand via the `skill` tool.
 - **Optional structural search:** if `ast-grep` (`sg`) is installed, the `explorer` can use it for structural queries; see `skills/structural-search/SKILL.md`.
 - **Measure token impact:** follow the A/B protocol in [`docs/BENCHMARK-TOKEN-USAGE.md`](docs/BENCHMARK-TOKEN-USAGE.md) to compare exploration with and without the repo map.

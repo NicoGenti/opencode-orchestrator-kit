@@ -28,18 +28,23 @@ One asset does not carry over: the plugin registers 3 of the kit's 4 commands (`
 
 ## Step by step
 
-1. Open the target project's `opencode.json` and add the plugin:
+1. Open the target project's `opencode.json` (or `opencode.jsonc`) and add the plugin. The OpenCode 2 key is `plugins`. Options use the object form `{ "package", "options" }` ([Plugins](https://opencode.ai/v2/docs/plugins)).
 
-   ```json
+   **npm publication is pending** until the first `v*` tag, so the npm name is not installable yet. Use a local directory (or `opencode plugin add 'github:NicoGenti/opencode-orchestrator-kit#main::path:plugin'`):
+
+   ```jsonc
    {
+     "$schema": "https://opencode.ai/config.json",
      "plugins": [
        {
-         "package": "opencode-orchestrator-kit",
+         "package": "/absolute/path/to/opencode-orchestrator-kit/plugin",
          "options": { "preset": "default", "withExtras": false }
        }
      ]
    }
    ```
+
+   After the package is published, `"package": "opencode-orchestrator-kit"` replaces the local path. The options stay the same.
 
 2. If you previously ran `./install.sh project`, optionally delete the V1 copies that the plugin now supersedes: `.opencode/agents/`, `.opencode/skills/`, `.opencode/command/` (keep `.opencode/models.config.json` if you still use the v1 path elsewhere, and keep `.context/` and `plan/` — those are data, not assets). Remove `AGENTS.md` only if you moved the kit content global.
 
