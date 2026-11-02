@@ -1,9 +1,9 @@
 ---
 id: 0001-design-first-bootstrap
 title: Design-first bootstrap for architecture design rules
-status: draft
+status: qa
 created: 2026-10-27
-updated: 2026-10-27
+updated: 2026-11-02
 owner: NicoGenti
 executor: perplexity-github-mcp
 ---
