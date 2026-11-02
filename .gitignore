@@ -3,8 +3,9 @@ node_modules/
 .pnp
 .pnp.js
 
-# Build output (Vite static site — uploaded by CI, never committed)
-site/
+# Build output (Vite static site — uploaded by CI, never committed).
+# Anchored to the repo root so source under src/site/ is not ignored.
+/site/
 .vite/
 dist/
 build/

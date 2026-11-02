@@ -18,10 +18,11 @@ import { join } from "node:path";
  * Per its own header comment, this script:
  *   1. Renames `site/index.docs.html` (Vite's build output for `index.docs.html`,
  *      see vite.docs.config.ts's `outDir: "site"` / `rollupOptions.input`) to
- *      `site/index.html` so GitHub Pages serves it as the SPA entry point.
- *   2. Copies that same file to `site/404.html` so client-side routes resolve
- *      through GitHub Pages' SPA fallback.
- *   3. Exits non-zero with a clear error if `site/index.docs.html` is missing
+ *      `site/index.html` so GitHub Pages serves the landing page.
+ *   2. Writes a distinct noindex `site/404.html` that links home. The site has
+ *      no client-side router, so the 404 page is not a second copy of home.
+ *   3. Writes `site/sitemap.xml` with today's UTC lastmod.
+ *   4. Exits non-zero with a clear error if `site/index.docs.html` is missing
  *      (i.e. the Vite build hasn't run yet).
  *
  * Rather than re-deriving these internals, this suite copies the real script
@@ -55,7 +56,7 @@ afterEach(() => {
 });
 
 describe("scripts/prepare-pages.mjs — happy path", () => {
-  test("renames site/index.docs.html to site/index.html and copies it to site/404.html", () => {
+  test("renames site/index.docs.html to site/index.html and writes a distinct noindex 404 plus sitemap", () => {
     const sandbox = makeSandbox();
     mkdirSync(join(sandbox, "site"), { recursive: true });
     writeFileSync(
@@ -69,6 +70,7 @@ describe("scripts/prepare-pages.mjs — happy path", () => {
     expect(existsSync(join(sandbox, "site", "index.docs.html"))).toBe(false);
     expect(existsSync(join(sandbox, "site", "index.html"))).toBe(true);
     expect(existsSync(join(sandbox, "site", "404.html"))).toBe(true);
+    expect(existsSync(join(sandbox, "site", "sitemap.xml"))).toBe(true);
 
     const indexContent = readFileSync(
       join(sandbox, "site", "index.html"),
@@ -78,8 +80,18 @@ describe("scripts/prepare-pages.mjs — happy path", () => {
       join(sandbox, "site", "404.html"),
       "utf-8",
     );
+    const sitemap = readFileSync(join(sandbox, "site", "sitemap.xml"), "utf-8");
+    const today = new Date().toISOString().slice(0, 10);
     expect(indexContent).toBe("<html>built docs</html>");
-    expect(notFoundContent).toBe(indexContent);
+    expect(notFoundContent).not.toBe(indexContent);
+    expect(notFoundContent).toContain('name="robots" content="noindex"');
+    expect(notFoundContent).toContain(
+      "https://nicogenti.github.io/opencode-orchestrator-kit/",
+    );
+    expect(sitemap).toContain(`<lastmod>${today}</lastmod>`);
+    expect(sitemap).toContain(
+      "<loc>https://nicogenti.github.io/opencode-orchestrator-kit/</loc>",
+    );
   });
 
   test("prints the written file paths on success", () => {
@@ -92,6 +104,7 @@ describe("scripts/prepare-pages.mjs — happy path", () => {
     expect(result.stdout).toContain("prepare-pages:");
     expect(result.stdout).toContain("index.html");
     expect(result.stdout).toContain("404.html");
+    expect(result.stdout).toContain("sitemap.xml");
   });
 });
 

@@ -1,7 +1,7 @@
 {
   "name": "OpenCode Orchestrator Kit",
   "short_name": "Orchestrator Kit",
-  "description": "One router, 14 specialists, zero application code touched by the router. A cost-aware multi-agent orchestrator kit for the OpenCode CLI.",
+  "description": "OpenCode plugin that routes each coding task to a specialist agent. The router never edits your application code.",
   "id": "./",
   "start_url": "./",
   "scope": "./",

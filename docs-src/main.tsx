@@ -1,13 +1,22 @@
 import { StrictMode } from "react";
-import { createRoot } from "react-dom/client";
+import { createRoot, hydrateRoot } from "react-dom/client";
 
 import { LandingPage } from "@/components/landing/LandingPage";
 import "@/styles.css";
 
-const el = document.getElementById("root")!;
+const el = document.getElementById("root");
+if (!el) {
+  throw new Error("Missing #root");
+}
 
-createRoot(el).render(
+const app = (
   <StrictMode>
     <LandingPage />
-  </StrictMode>,
+  </StrictMode>
 );
+
+if (el.childElementCount > 0) {
+  hydrateRoot(el, app);
+} else {
+  createRoot(el).render(app);
+}
