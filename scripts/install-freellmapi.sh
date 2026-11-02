@@ -151,7 +151,16 @@ copy_kit_component() {
 copy_kit_component "$KIT_DIR/AGENTS.md"       "$OPENCODE_DIR/AGENTS.md"
 copy_kit_component "$KIT_DIR/CONTRIBUTING.md" "$OPENCODE_DIR/CONTRIBUTING.md"
 copy_kit_component "$KIT_DIR/agents"          "$OPENCODE_DIR/agents"
-[[ "$WITH_EXTRAS" == true ]] && copy_kit_component "$KIT_DIR/extras" "$OPENCODE_DIR/extras"
+# OpenCode loads {agent,agents}/**/*.md only. extras/ is not an agent directory,
+# so opt-in agents are copied into agents/ (same rule as install.sh).
+if [[ "$WITH_EXTRAS" == true ]]; then
+  mkdir -p "$OPENCODE_DIR/agents"
+  for entry in "$KIT_DIR/extras"/*.md; do
+    [[ -e "$entry" ]] || continue
+    copy_kit_component "$entry" "$OPENCODE_DIR/agents/$(basename "$entry")"
+  done
+  echo "  > Installed opt-in extras into $OPENCODE_DIR/agents/ (OpenCode does not load extras/)."
+fi
 copy_kit_component "$KIT_DIR/skills"          "$OPENCODE_DIR/skills"
 copy_kit_component "$KIT_DIR/command"         "$OPENCODE_DIR/command"
 if [[ -d "$OPENCODE_DIR/agents" ]]; then
@@ -160,7 +169,8 @@ if [[ -d "$OPENCODE_DIR/agents" ]]; then
     --config "$TARGET_PROFILE" --agents-dir "$OPENCODE_DIR/agents"
 fi
 if [[ "$WITH_EXTRAS" == true && -d "$OPENCODE_DIR/extras" ]]; then
-  echo "  > Resolving model tiers in $OPENCODE_DIR/extras/*.md from $TARGET_PROFILE..."
+  echo "  ! Note: OpenCode does not load agents from $OPENCODE_DIR/extras/."
+  echo "  > Resolving model tiers in legacy $OPENCODE_DIR/extras/*.md from $TARGET_PROFILE..."
   "$PY" "$(native "$KIT_DIR/scripts/apply-model-preset.py")" \
     --config "$TARGET_PROFILE" --agents-dir "$OPENCODE_DIR/extras"
 fi
@@ -170,6 +180,7 @@ copy_kit_component "$KIT_DIR/CONTRIBUTING.md" "$PROJECT_NATIVE/CONTRIBUTING.md"
 # 3) provider + mappa agent nel config di progetto, e strip del `model:` dal frontmatter
 AGENT_DIRS=(--agents-dir "$OPENCODE_DIR/agents")
 if [[ "$WITH_EXTRAS" == true && -d "$OPENCODE_DIR/extras" ]]; then
+  # Legacy layout only. New installs place pc-doctor.md and writer.md in agents/.
   AGENT_DIRS+=(--agents-dir "$OPENCODE_DIR/extras")
 fi
 EXTRA_PY=()
@@ -330,5 +341,5 @@ echo
 echo "Profilo FreeLLMAPI pronto in $OPENCODE_DIR"
 echo "  avvio:    cd $PROJECT_NATIVE && opencode2"
 echo "  headless: $OC2_SHIM run -m freellmapi/auto:smart \"...\"  (run --agent ignora la mappa: serve -m)"
-echo "  rollback: rm -rf $OPENCODE_DIR/agents $OPENCODE_DIR/extras $OPENCODE_DIR/skills $OPENCODE_DIR/command $OPENCODE_DIR/models.config.json $OPENCODE_DIR/opencode.jsonc $PROJECT_NATIVE/AGENTS.md $PROJECT_NATIVE/CONTRIBUTING.md"
+echo "  rollback: rm -rf $OPENCODE_DIR/agents $OPENCODE_DIR/skills $OPENCODE_DIR/command $OPENCODE_DIR/models.config.json $OPENCODE_DIR/opencode.jsonc $PROJECT_NATIVE/AGENTS.md $PROJECT_NATIVE/CONTRIBUTING.md"
 exit $fail

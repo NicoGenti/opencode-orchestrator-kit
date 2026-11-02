@@ -51,19 +51,26 @@ Useful flags:
 | Flag | Effect |
 | --- | --- |
 | `--symlink` | Symlink instead of copy (lets `git pull` update consumers). |
-| `--with-extras` | Also install `extras/` — `pc-doctor` and `writer`. Off by default; only add them if you actually need Windows-local triage or docs generation. |
+| `--with-extras` | Also install `pc-doctor` and `writer` into `agents/`. Off by default; only add them if you actually need Windows-local triage or docs generation. OpenCode loads `{agent,agents}/**/*.md` and does not load an `extras/` directory. |
 | `--with-examples` | Also install `skills/examples/` (language-specific skill examples). Off by default. |
 | `--skip-validation` | Skip the Phase 1 model-profile validator. Not recommended. |
 
-`extras/` is **not** installed by default. If you do not pass `--with-extras`,
-`pc-doctor` and `writer` are simply absent; the orchestrator routes around them
-without erroring.
+`pc-doctor` and `writer` are **not** installed by default. If you do not pass
+`--with-extras`, they are simply absent; the orchestrator routes around them
+without erroring. The flag copies those two files into `agents/`. Leaving them
+in a top-level `extras/` directory does not register them: OpenCode's agent
+loader scans `{agent,agents}/**/*.md` only
+([Agents](https://opencode.ai/v2/docs/agents/)).
 
 If you cannot use the installer, the manual path is the same five items it copies
-by default: `AGENTS.md`, `CONTRIBUTING.md`, `agents/`, `skills/`, and `command/`.
-Place them where OpenCode looks (project root for project-only, or
-`~/.config/opencode/` for global). `extras/` is **not** part of the manual default
-either — copy it manually only if you want the opt-in specialists.
+by default: `AGENTS.md`, `CONTRIBUTING.md`, `agents/`, `skills/` (without
+`skills/examples/`), and `command/`. Place them where OpenCode looks (project
+root for project-only, or `~/.config/opencode/` for global). To opt in by hand,
+copy `pc-doctor.md` and `writer.md` from `extras/` into that `agents/`
+directory. Pass `--with-examples` (or copy `skills/examples/` yourself) for the
+language-specific skill examples. `--upgrade` (alias `--force`) overwrites
+kit-managed files and keeps a `.kit-backup`; the default re-run skips existing
+paths.
 
 Use `--symlink` instead of a plain copy if you want `git pull` in the kit's clone
 to update every project/profile that uses it:
@@ -138,9 +145,10 @@ tier-resolution rules and fallback chains.
   `.opencode/models.config.json`, replace any `placeholder/*` value with a real
   provider/model ID, save, and re-run `./install.sh project`. Or pass
   `--skip-validation` only if you accept running with broken tiers.
-- **Orchestrator tries to write code directly**: check its `permission` block in
-  `agents/orchestrator.md` — it should deny `write`/`edit` on everything except
-  the three `.context/*.md` files and `plan/**/*.md`.
+- **Orchestrator tries to write code or plan files directly**: check its
+  `permission` block in `agents/orchestrator.md` — it should deny `write`/`edit`
+  on everything except the session-memory files under `.context/`, including an
+  explicit deny of `plan/**/*.md`. The plan board belongs to `plan-writer`.
 - **`profiler` doesn't run on first use**: confirm `.opencode/PROJECT-PROFILE.md`
   genuinely doesn't exist yet; the bootstrap check is skipped once it's present,
   by design (idempotent, runs once per repo).

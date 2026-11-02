@@ -179,11 +179,14 @@ Exit codes:
 - Pass `--skip-validation` to bypass the check (not recommended).
 
 After copying, `install.sh` runs `scripts/apply-model-preset.py` against the
-target's `models.config.json` and `agents/` (plus `extras/` when
-`--with-extras` is set) to rewrite every `{{TIER_*}}` model line to the active
-preset's concrete ID. This step is required: OpenCode rejects literal tier
-tokens at startup (`Configuration is invalid ... Expected string | undefined,
-got {...} model`).
+target's `models.config.json` and `agents/` to rewrite every `{{TIER_*}}` model
+line to the active preset's concrete ID. `--with-extras` copies `pc-doctor.md`
+and `writer.md` into `agents/` first (OpenCode does not load an `extras/`
+directory), so those files are resolved with the rest of the roster. A leftover
+`extras/` directory from an older install is not loaded; when `--with-extras`
+is set, the installer still resolves tokens there and says so. This step is
+required: OpenCode rejects literal tier tokens at startup
+(`Configuration is invalid ... Expected string | undefined, got {...} model`).
 
 This closes the installation-time leakage gap: a profile with unresolved
 placeholders or unknown preset names is no longer silently installed.
