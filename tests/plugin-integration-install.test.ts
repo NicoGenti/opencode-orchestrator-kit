@@ -876,7 +876,7 @@ describe("plugin activation — empty fixture repo", () => {
       expect(harness.prompts.at(-1)?.text).toBe(body);
       expect(harness.prompts.at(-1)?.sessionID).toBe("ses_fixture");
       expect(harness.prompts.at(-1)?.delivery).toBe("queue");
-      const declaredAgent = /^agent:[ 	]*(.+)$/m.exec(
+      const declaredAgent = new RegExp("^agent:[\\t]*(.+)$", "m").exec(
         shipped.match(/^---[\s\S]*?---/)?.[0] ?? "",
       )?.[1];
       expect(harness.switched.at(-1)).toEqual({
