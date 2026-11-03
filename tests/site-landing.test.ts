@@ -35,8 +35,8 @@ describe("landing roster is derived from agent frontmatter", () => {
     expect(roster.extras.map((agent) => agent.name).sort()).toEqual(
       extraFiles.map((file) => file.name).sort(),
     );
-    expect(roster.primaryCount).toBe(1);
-    expect(roster.specialistCount).toBe(roster.coreCount - 1);
+    expect(roster.primaryCount).toBe(2);
+    expect(roster.specialistCount).toBe(roster.coreCount - 2);
     expect(coreAgents.map((agent) => agent.name)).toContain("plan-writer");
     expect(coreAgents.map((agent) => agent.name)).toContain(
       "comprehension-coach",
