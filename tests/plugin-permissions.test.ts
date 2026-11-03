@@ -455,3 +455,18 @@ describe("MCP default deny — le allowlist dichiarate sono reali", () => {
     }
   });
 });
+
+describe("tool surface documentata per explorer e planner", () => {
+  const body = (rel: string) => readFileSync(join(ROOT, rel), "utf-8");
+  test("explorer: il grafo e' la PRIMA chiamata e la mappa tools e' documentata", () => {
+    const t = body("agents/explorer.md");
+    expect(t).toContain("it is the FIRST tool call of any exploration");
+    expect(t).toContain('tools["code-review-graph"].get_minimal_context_tool');
+    expect(t).toContain('"Unknown tool \'shell\'"');
+  });
+  test("planner: dichiara l'assenza di ls/sed nativi e i limiti di shell", () => {
+    const t = body("agents/planner.md");
+    expect(t).toContain("You have no native `ls` and no `sed`");
+    expect(t).toContain("restricted to `ls`, `cat` and read-only git commands");
+  });
+});

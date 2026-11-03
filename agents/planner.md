@@ -92,6 +92,10 @@ You MUST NOT:
   is fine (that's what the Phase Checklist and per-phase delegation are for); a large plan *file* mixing unrelated
   features is not.
 
+## Tool Surface
+
+- You have no native `ls` and no `sed`: listing is `glob`, searching is `grep`, reading is `read`. A `shell` call is available but restricted to `ls`, `cat` and read-only git commands — anything else is denied, so guessing a command costs an iteration for nothing.
+
 ## Output Discipline
 
 You MUST:

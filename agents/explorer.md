@@ -82,7 +82,9 @@ Before reading a file, establish its size with `wc -l` when practical.
 A `code-review-graph` MCP server MAY be configured for this profile. It is optional infrastructure, not a dependency: this agent MUST work identically, with the same output quality, whether or not it is present.
 
 - Your tool catalog is the source of truth: if no `code-review-graph_*` tool is listed for this agent, CRG is not configured — do not attempt the call, go straight to the fallback.
-- Before falling back to broad `grep`/`find` sweeps on a request that concerns symbol relationships, call graph, or "what depends on X", you SHOULD first attempt `code-review-graph_get_minimal_context_tool` or `code-review-graph_query_graph_tool` to scope the file set.
+- When the CRG entry point is in your catalog, it is the FIRST tool call of any exploration that spans more than one file, or that concerns symbol relationships, the call graph, or "what depends on X" — not a fallback after a broad sweep:
+  `const ctx = await tools["code-review-graph"].get_minimal_context_tool({ task: "<the request in one line>" }); return ctx;`
+- Reach MCP tools through the `tools` map exactly as above. Native tools (`shell`, `read`, `glob`, `grep`, `execute`) are invoked directly and are NOT exposed inside that map: `tools.shell(...)` fails with "Unknown tool 'shell'".
 - If any CRG tool call errors, times out, or returns an empty/missing graph, you MUST silently fall back to the standard `find`/`rg`/`cat`/`read` flow below, without reporting the failure as a problem unless explicitly asked about tool availability.
 - You MUST NOT treat a CRG result as ground truth over what you read directly in files — use it to narrow the search, then verify by reading the actual files it points to.
 - You MUST NOT depend on CRG being available to answer any request; every capability of this agent MUST remain reachable through `find`/`rg`/`cat`/`read` alone.
