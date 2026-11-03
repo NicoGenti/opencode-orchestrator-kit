@@ -31,6 +31,11 @@ import type { PermissionRule } from "../plugin/src/permissions.ts";
  *   `code-review-graph` MCP family by default, so a declared per-tool allow
  *   still wins (last match) while any undeclared tool of the family (e.g.
  *   `apply_refactor_tool`) resolves to `deny` instead of the host default.
+ * - Three per-tool CRG allows on top of that family deny:
+ *   `build_or_update_graph_tool` (allow) for agents/explorer.md and
+ *   agents/code-reviewer.md — the stale-graph rebuild — and
+ *   `get_minimal_context_tool` (allow) for agents/orchestrator.md, the
+ *   read-only entry point. The write tool `apply_refactor_tool` stays deny.
  *
  * Every other agent translates to the same rule list as before.
  */
@@ -112,6 +117,27 @@ describe("V2 permission translation snapshot", () => {
       has("agents/code-reviewer.md", {
         action: "skill",
         resource: "project-*",
+        effect: "allow",
+      }),
+    ).toBe(true);
+    expect(
+      has("agents/explorer.md", {
+        action: "code-review-graph_build_or_update_graph_tool",
+        resource: "*",
+        effect: "allow",
+      }),
+    ).toBe(true);
+    expect(
+      has("agents/code-reviewer.md", {
+        action: "code-review-graph_build_or_update_graph_tool",
+        resource: "*",
+        effect: "allow",
+      }),
+    ).toBe(true);
+    expect(
+      has("agents/orchestrator.md", {
+        action: "code-review-graph_get_minimal_context_tool",
+        resource: "*",
         effect: "allow",
       }),
     ).toBe(true);

@@ -100,6 +100,11 @@ describe("V1 -> V2 translation", () => {
       { action: "read", resource: "*", effect: "allow" },
       { action: "glob", resource: "*", effect: "allow" },
       { action: "grep", resource: "*", effect: "allow" },
+      {
+        action: "code-review-graph_get_minimal_context_tool",
+        resource: "*",
+        effect: "allow",
+      },
       { action: "webfetch", resource: "*", effect: "deny" },
       { action: "edit", resource: "*", effect: "deny" },
       { action: "edit", resource: ".context/progress.md", effect: "allow" },
@@ -380,7 +385,7 @@ describe("packaged agent manifest permissions", () => {
     );
     expect(orchestrator).toBeDefined();
     const rules = orchestrator!.permissions;
-    expect(rules).toHaveLength(27);
+    expect(rules).toHaveLength(28);
     expect(rules[rules.length - 1]).toEqual({
       action: "edit",
       resource: "plan/*.md",
@@ -438,16 +443,22 @@ describe("MCP default deny — le allowlist dichiarate sono reali", () => {
   });
   test("explorer: allow solo i quattro dichiarati, deny il resto", () => {
     for (const t of ["get_minimal_context_tool", "query_graph_tool", "semantic_search_nodes_tool", "get_architecture_overview_tool"]) declared("agents/explorer.md", t, "allow");
-    declared("agents/explorer.md", "build_or_update_graph_tool", "deny");
+    declared("agents/explorer.md", "build_or_update_graph_tool", "allow");
     declared("agents/explorer.md", "apply_refactor_tool", "deny");
   });
   test("code-reviewer: allow i tre dichiarati, deny il resto", () => {
     for (const t of ["detect_changes_tool", "get_review_context_tool", "get_impact_radius_tool"]) declared("agents/code-reviewer.md", t, "allow");
+    declared("agents/code-reviewer.md", "build_or_update_graph_tool", "allow");
     declared("agents/code-reviewer.md", "apply_refactor_tool", "deny");
   });
   test("security: allow i tre dichiarati, deny apply_refactor", () => {
     for (const t of ["get_impact_radius_tool", "get_hub_nodes_tool", "get_bridge_nodes_tool"]) declared("agents/security.md", t, "allow");
     declared("agents/security.md", "apply_refactor_tool", "deny");
+  });
+  test("orchestrator: solo get_minimal_context_tool, nessun tool che scrive", () => {
+    declared("agents/orchestrator.md", "get_minimal_context_tool", "allow");
+    declared("agents/orchestrator.md", "build_or_update_graph_tool", "deny");
+    declared("agents/orchestrator.md", "apply_refactor_tool", "deny");
   });
   test("i tre agenti CRG dichiarano il catalogo come fonte di verita'", () => {
     for (const rel of ["agents/explorer.md", "agents/code-reviewer.md", "agents/security.md"]) {

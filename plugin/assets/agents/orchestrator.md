@@ -7,6 +7,7 @@ tools:
   read: true
   glob: true
   grep: true
+  code-review-graph_get_minimal_context_tool: true
   bash: true
 permission:
   task: allow
@@ -14,6 +15,7 @@ permission:
   read: allow
   glob: allow
   grep: allow
+  code-review-graph_get_minimal_context_tool: allow
   webfetch: deny
   patch: deny
   bash:

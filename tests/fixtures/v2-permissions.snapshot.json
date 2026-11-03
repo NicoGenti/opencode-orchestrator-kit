@@ -223,6 +223,11 @@
       "effect": "allow"
     },
     {
+      "action": "code-review-graph_build_or_update_graph_tool",
+      "resource": "*",
+      "effect": "allow"
+    },
+    {
       "action": "shell",
       "resource": "*",
       "effect": "deny"
@@ -956,6 +961,11 @@
       "effect": "allow"
     },
     {
+      "action": "code-review-graph_build_or_update_graph_tool",
+      "resource": "*",
+      "effect": "allow"
+    },
+    {
       "action": "shell",
       "resource": "*",
       "effect": "ask"
@@ -1615,6 +1625,11 @@
     },
     {
       "action": "grep",
+      "resource": "*",
+      "effect": "allow"
+    },
+    {
+      "action": "code-review-graph_get_minimal_context_tool",
       "resource": "*",
       "effect": "allow"
     },

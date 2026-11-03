@@ -62,7 +62,7 @@ describe("ctx.model.list(): forma 2.1 (array) e 2.2 ({location,data})", () => {
 
     expect(agents.size).toBe(15);
     expect((agents.get("orchestrator")?.permissions as unknown[]).length).toBe(
-      27,
+      28,
     );
     expect(agents.get("plan-writer")?.mode).toBe("subagent");
     expect(commands).toHaveLength(4);
@@ -77,7 +77,7 @@ describe("ctx.model.list(): forma 2.1 (array) e 2.2 ({location,data})", () => {
 
     expect(agents.size).toBe(15);
     expect((agents.get("orchestrator")?.permissions as unknown[]).length).toBe(
-      27,
+      28,
     );
   });
 });
