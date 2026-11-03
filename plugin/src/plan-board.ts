@@ -13,8 +13,8 @@
  * Deviazioni documentate dal python (argparse uscirebbe con exit 2 o traceback):
  *  - errori di argomento (subcomando/flag sconosciuto, flag richiesto assente, valore non
  *    ammesso) -> codici `missing-argument`/`bad-argument`, exit 1;
- *  - `move`/`new` non dry-run con colonna di destinazione assente su disco -> `missing-column`
- *    (python traceback), exit 1;
+ *  - `move`/`new` non dry-run con colonna di destinazione assente su disco -> la colonna viene
+ *    creata (`mkdir -p`) e l'operazione prosegue (python andrebbe in traceback);
  *  - eccezione inattesa -> payload {ok:false, code:"internal-error"}, exit 1: il tool non lancia mai.
  *
  * Il formato human e' byte-identico a `emit()`: "ok" su un payload ok, "FAIL <code> <message>"
@@ -28,6 +28,7 @@
  */
 import {
   existsSync,
+  mkdirSync,
   readdirSync,
   readFileSync,
   renameSync,
@@ -489,8 +490,10 @@ function cmdMove(
     );
   }
   if (!dryRun && !isDirAt(join(root, to))) {
-    // deviazione dal python: colonna assente non fa esplodere la write con un traceback
-    return failPayload("missing-column", `colonna mancante: ${to}`);
+    // deviazione dal python (che andrebbe in traceback): creiamo la colonna
+    // invece di fallire — una colonna vuota non versionata puo' sparire da un
+    // checkout, e il move non deve bloccarsi per questo.
+    mkdirSync(join(root, to), { recursive: true });
   }
   const payload: Payload = {
     ok: true,
@@ -557,8 +560,10 @@ function cmdNew(
     );
   }
   if (!dryRun && !isDirAt(join(root, column))) {
-    // deviazione dal python: colonna assente non fa esplodere la write con un traceback
-    return failPayload("missing-column", `colonna mancante: ${column}`);
+    // deviazione dal python (che andrebbe in traceback): creiamo la colonna
+    // invece di fallire — una colonna vuota non versionata puo' sparire da un
+    // checkout, e la creazione di una card non deve bloccarsi per questo.
+    mkdirSync(join(root, column), { recursive: true });
   }
   const fm = new Map<string, string>([
     ["id", ident],

@@ -563,3 +563,50 @@ describe("plan-board.ts — deviazioni documentate dalla migrazione", () => {
     expect(text).toContain("## Goal");
   });
 });
+
+describe("plan-board.ts — colonne create su richiesta", () => {
+  test("new in una colonna assente su disco la crea (niente missing-column)", () => {
+    const root = mkdtempSync(join(tmpdir(), "pb-ts-board-nodraft-"));
+    boards.push(root);
+    mkdirSync(join(root, "complete"), { recursive: true });
+
+    const r = run(
+      [
+        "new",
+        "--id",
+        "9010-autocol",
+        "--title",
+        "Auto column",
+        "--owner",
+        "plan-writer",
+        "--executor",
+        "developer-fixer",
+        "--column",
+        "draft",
+        "--body",
+        writeBody(BODY_OK),
+      ],
+      root,
+    );
+
+    expect(r.status).toBe(0);
+    expect(r.json?.ok).toBe(true);
+    expect(r.json?.verified).toBe(true);
+    expect(existsSync(join(root, "draft", "9010-autocol.md"))).toBe(true);
+  });
+
+  test("move verso una colonna assente su disco la crea (niente missing-column)", () => {
+    const root = mkdtempSync(join(tmpdir(), "pb-ts-board-noqa-"));
+    boards.push(root);
+    mkdirSync(join(root, "draft"), { recursive: true });
+    seedPlan(root, "draft", "9011-democol");
+
+    const r = run(["move", "--id", "9011-democol", "--to", "qa"], root);
+
+    expect(r.status).toBe(0);
+    expect(r.json?.ok).toBe(true);
+    expect(r.json?.verified).toBe(true);
+    expect(existsSync(join(root, "qa", "9011-democol.md"))).toBe(true);
+    expect(existsSync(join(root, "draft", "9011-democol.md"))).toBe(false);
+  });
+});
