@@ -77,7 +77,7 @@ Full contracts, permissions and model fallbacks are in each `agents/*.md` file (
 
 With the plugin, tier resolution happens at runtime from `plugin/src/tiers.ts` presets — there is no `{{TIER_*}}` substitution at install time.
 
-`opencode-orchestrator-kit` is published on npm (`1.0.0`, tag `v1.0.0`; later releases follow `.github/workflows/release.yml` and the steps in `CONTRIBUTING.md`). OpenCode 2 loads plugins from the `plugins` array in `opencode.json` or `opencode.jsonc` ([Plugins](https://opencode.ai/v2/docs/plugins)). A string entry is a package name or a local directory. Pass options with the object form `{ "package", "options" }`. Local paths must be directories (a path to a single file is skipped). Relative paths resolve from the config file that contains the entry.
+`opencode-orchestrator-kit` is published on npm (`1.0.1`, tag `v1.0.1`; later releases follow `.github/workflows/release.yml` and the steps in `CONTRIBUTING.md`). OpenCode 2 loads plugins from the `plugins` array in `opencode.json` or `opencode.jsonc` ([Plugins](https://opencode.ai/v2/docs/plugins)). A string entry is a package name or a local directory. Pass options with the object form `{ "package", "options" }`. Local paths must be directories (a path to a single file is skipped). Relative paths resolve from the config file that contains the entry.
 
 Primary install, the npm package:
 
@@ -185,6 +185,60 @@ opencode
 ```
 
 Select `@orchestrator` (or set it as your default agent), then run **`/start-session`** at the start of every new session. It delegates to `profiler` if there is no `PROJECT-PROFILE.md` or `plan/` structure yet, loads `.context/progress.md`, `decisions.md` and `issues.md`, and replies with a 3-4 line summary of the stack, current status and latest issue or decision, in the language you are speaking, before waiting for your next instruction. See `command/start-session.md`.
+
+## When to use the kit (and when not to)
+
+This kit is built for long development sessions: work that spans several phases, more than one agent, and often more than one day, where a plan board, shared `.context` memory and review gates keep the work auditable and resumable.
+
+It is **not** a faster way to run a small task.
+
+- **One question, one file, or anything that fits comfortably in a single context window → use OpenCode's built-in `Build` or `Plan` agent.** You get the answer without paying for orchestration.
+- **Multi-phase work, work you will resume tomorrow, or work you want reviewed before it lands → use this kit.** The plan board, the session memory and the delegation boundaries are the deliverable; the agent answers are the by-product.
+
+### What we measured on small tasks
+
+Both runs below are on purpose outside the kit's design envelope. They exist to show the boundary, not to advertise a saving: one run per configuration, same prompt per row, on 2026-11-03.
+
+**Research task** — `lalimentari` (116 files, 895 symbols): map the supplier purchase-order → stock-movement flow and answer as a short `file:line` report.
+
+| Configuration                                      | Agents | Tool calls | Input  | Output | Cache read | Answer                      |
+| -------------------------------------------------- | ------ | ---------- | ------ | ------ | ---------- | --------------------------- |
+| Built-in `Build` agent, no orchestration           | 1      | 21         | 41,263 | 4,470  | 245,664    | 5,277 chars, 30 `file:line` |
+| Kit, graph forbidden in the prompt                 | 2      | 50         | 73,937 | 18,786 | 604,288    | 5,804 chars, 37 `file:line` |
+| Kit, graph used (`get_minimal_context_tool` first) | 1      | 22         | 53,807 | 7,705  | 124,032    | 4,107 chars, 20 `file:line` |
+
+**Implementation task** — this repository at `f72ef01`, three identical git worktrees, same prompt: add a `stats` subcommand to the plan board in the TypeScript port (`plugin/src/plan-board.ts`, exposed by `plugin/src/plan-board-tool.ts`) and in the Python CLI (`scripts/plan-board.py`), fixed JSON contract, `check`/`move`/`new`/`adopt` unchanged, tool schema and tests updated. Every arm was graded from outside with the same harness: column counts on a seeded board, the `root-missing` exit path, `bun run typecheck`, `bun run lint`, and the three plan-board test suites.
+
+| Configuration                  | Sessions | Tool calls | Input   | Output  | Cache read | Files changed       | Acceptance |
+| ------------------------------ | -------- | ---------- | ------- | ------- | ---------- | ------------------- | ---------- |
+| Built-in `Build` agent, no kit | 1        | 51         | 87,896  | 17,085  | 2,680,832  | 7 (4 code, 3 tests) | pass       |
+| Kit, graph forbidden           | 4        | 125        | 225,608 | 66,638  | 6,137,984  | 11 (+CHANGELOG)     | pass       |
+| Kit, graph available and used  | 4        | 329        | 284,158 | 105,215 | 6,265,152  | 10 (+memory files)  | pass       |
+
+Read them as the cost of using the wrong tool for the job: all three configurations delivered, and the single built-in agent was the cheapest by a factor of two to three. That is the expected result for a task that fits in one context, and the reason the guidance above says to use `Build` or `Plan` for it.
+
+Two details worth keeping in mind if you do reach for the kit on a small task:
+
+- **The graph pays for a map, not for a build.** On the research task a single `get_minimal_context_tool` call let the orchestrator skip delegation and answer from 21 targeted lookups. On the implementation task the graph was called once and changed nothing: the work was in files that had to be edited anyway.
+- **Board and memory upkeep dominates.** The costliest arm spent 174 `plan_board` calls and rewrote `.context/progress.md` for a feature of about fifty lines. On a long session that upkeep is what keeps the work resumable; on a short one it is pure overhead.
+
+### What we have not measured
+
+Long, multi-session work — the workload this kit is designed for — is not measured here. The mechanism it leans on is measurable per session: the explorer returns a bounded summary instead of a growing transcript, the plan board carries the state between sessions, and `.context` memory means a resumed session does not re-read the repository. We will publish numbers for that regime when we have runs to back them; until then this section stays silent rather than extrapolating.
+
+To reproduce the runs above, keep the same prompt per configuration and read the per-session numbers (parent plus delegated children) from OpenCode's database:
+
+```bash
+python -c "import sqlite3,os;db=os.path.expanduser('~/.opencode2/data/opencode/opencode.db');
+c=sqlite3.connect(f'file:{db}?mode=ro',uri=True);
+q='''select s.agent, s.tokens_input, s.tokens_output, s.tokens_cache_read, s.parent_id
+       from session_v2 s
+      where s.title like ? or s.parent_id in (select id from session_v2 where title like ?)
+      order by s.time_created''';
+[print(r) for r in c.execute(q, ('EXP-%','EXP-%'))]"
+```
+
+Caveats, in the spirit of [`docs/BENCHMARK-TOKEN-USAGE.md`](docs/BENCHMARK-TOKEN-USAGE.md): two tasks, one run per configuration, models differ by tier (`minimax-m3.1-flash` for `explorer`, `deepseek-v4.1-flash` for the orchestrator), and both tasks fit in a single context window.
 
 ## Customizing
 
