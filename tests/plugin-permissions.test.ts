@@ -6,6 +6,7 @@ import { parseFrontmatterMap } from "../plugin/src/frontmatter-map.ts";
 import {
   assertKitPermissionInvariants,
   kitInvariantRules,
+  mapAction,
   mcpDefaultDenies,
   matchesPattern,
   normalizeResource,
@@ -393,6 +394,21 @@ describe("packaged agent manifest permissions", () => {
     });
     expect(resolveEffect(rules, "edit", "src/app.ts")).toBe("deny");
     expect(resolveEffect(rules, "edit", ".context/progress.md")).toBe("allow");
+  });
+
+  test("orchestrator-quick is a router: subagent allow, application edit deny, plan board deny", () => {
+    const rules = [
+      ...rulesOf("agents/orchestrator-quick.md"),
+      ...kitInvariantRules("orchestrator-quick"),
+    ];
+    expect(() =>
+      assertKitPermissionInvariants("orchestrator-quick", rules),
+    ).not.toThrow();
+    expect(resolveEffect(rules, "subagent", "developer-fixer")).toBe("allow");
+    expect(resolveEffect(rules, "edit", "src/app.ts")).toBe("deny");
+    expect(resolveEffect(rules, "edit", "plan/qa/13-example.md")).toBe("deny");
+    // V1 `write` is translated to the V2 `edit` action by the translator.
+    expect(resolveEffect(rules, mapAction("write"), "anything.ts")).toBe("deny");
   });
 
   test("source frontmatter alone denies the plan board except for plan-writer", () => {

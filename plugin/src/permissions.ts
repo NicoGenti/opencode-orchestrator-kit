@@ -317,11 +317,16 @@ function invariantError(agentId: string, detail: string): Error {
   );
 }
 
+/** Agents allowed to route work to specialists (the kit's routers). */
+const ROUTING_AGENTS: ReadonlySet<string> = new Set([
+  "orchestrator",
+  "orchestrator-quick",
+]);
+
 /**
  * Every agent must declare a catch-all for shell, skill, and subagent. Without
  * one, OpenCode's host default allows the action. An explicit `allow` catch-all
- * is the same hole. The orchestrator is the only agent whose subagent catch-all
- * may be `allow`, because it is the router.
+ * is the same hole. Only the kit's routers may allow the subagent catch-all.
  */
 function assertDeclaredCatchAlls(
   agentId: string,
@@ -335,7 +340,7 @@ function assertDeclaredCatchAlls(
         `no catch-all rule for '${action}' (resource '*'); the host default would allow it`,
       );
     }
-    const routerMayAllow = agentId === "orchestrator" && action === "subagent";
+    const routerMayAllow = ROUTING_AGENTS.has(agentId) && action === "subagent";
     if (catchAll.effect === "allow" && !routerMayAllow) {
       throw invariantError(
         agentId,
@@ -370,10 +375,10 @@ export function assertKitPermissionInvariants(
     {
       action: "subagent",
       resource: IMPLEMENTOR,
-      effect: agentId === "orchestrator" ? "allow" : "deny",
+      effect: ROUTING_AGENTS.has(agentId) ? "allow" : "deny",
     },
   ];
-  if (agentId === "orchestrator") {
+  if (ROUTING_AGENTS.has(agentId)) {
     expectations.push({ action: "edit", resource: APP_SAMPLE, effect: "deny" });
   }
   for (const expectation of expectations) {
