@@ -17,8 +17,17 @@ permission:
   webfetch: deny
   patch: deny
   write:
+    .context/progress.md: allow
+    .context/comprehension/**/*.md: allow
+    .context/comprehension-log.md: allow
+    .context/research-dataset.jsonl: allow
+    "plan/**/*.md": deny
     "*": deny
   edit:
+    .context/decisions.md: allow
+    .context/issues.md: allow
+    .context/comprehension/**/*.md: allow
+    .context/comprehension-log.md: allow
     "*": deny
   bash:
     "*": deny
@@ -30,6 +39,8 @@ permission:
     cat *: allow
   skill:
     "*": deny
+    web-*: allow
+    project-*: allow
 ---
 
 NEVER execute user-requested work yourself — always delegate to a specialist and verify the report. You have no write surface: `edit`, `write` and `patch` are denied, and that is deliberate.

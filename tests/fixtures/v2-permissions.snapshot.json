@@ -1639,6 +1639,41 @@
       "effect": "deny"
     },
     {
+      "action": "edit",
+      "resource": ".context/progress.md",
+      "effect": "allow"
+    },
+    {
+      "action": "edit",
+      "resource": ".context/comprehension/*.md",
+      "effect": "allow"
+    },
+    {
+      "action": "edit",
+      "resource": ".context/comprehension-log.md",
+      "effect": "allow"
+    },
+    {
+      "action": "edit",
+      "resource": ".context/research-dataset.jsonl",
+      "effect": "allow"
+    },
+    {
+      "action": "edit",
+      "resource": "plan/*.md",
+      "effect": "deny"
+    },
+    {
+      "action": "edit",
+      "resource": ".context/decisions.md",
+      "effect": "allow"
+    },
+    {
+      "action": "edit",
+      "resource": ".context/issues.md",
+      "effect": "allow"
+    },
+    {
       "action": "shell",
       "resource": "*",
       "effect": "deny"
@@ -1677,6 +1712,16 @@
       "action": "skill",
       "resource": "*",
       "effect": "deny"
+    },
+    {
+      "action": "skill",
+      "resource": "web-*",
+      "effect": "allow"
+    },
+    {
+      "action": "skill",
+      "resource": "project-*",
+      "effect": "allow"
     }
   ],
   "agents/orchestrator.md": [
