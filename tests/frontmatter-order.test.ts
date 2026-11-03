@@ -140,13 +140,14 @@ describe("frontmatter top-level ordering (Phase 1)", () => {
 describe("frontmatter top-level ordering — `mode: primary` invariant", () => {
   /**
    * Phase 2 resolved the pre-existing two-primary discrepancy between
-   * `agents/orchestrator.md` and `agents/security.md`. The session must
-   * have exactly one default entry point: `agents/orchestrator.md`. The
-   * test below asserts that `agents/orchestrator.md` is the sole
-   * `mode: primary` agent. AGENTS.md's "Single Primary Resolution (Phase 2)"
+   * `agents/orchestrator.md` and `agents/security.md` into a single default
+   * entry point. This change adds one *deliberate* alternate entry point
+   * back: `agents/orchestrator-quick.md`, the slim router for small tasks.
+   * `agents/orchestrator.md` stays the default; `orchestrator-quick` is
+   * opt-in via `/quick`. AGENTS.md's "Single Primary Resolution (Phase 2)"
    * section documents this contract.
    */
-  test("exactly one `mode: primary` agent (orchestrator only)", () => {
+  test("exactly two `mode: primary` agents (orchestrator, orchestrator-quick)", () => {
     const primaryMatches: string[] = [];
     for (const file of readdirSync(AGENTS_DIR).filter((f) =>
       f.endsWith(".md"),
@@ -174,7 +175,10 @@ describe("frontmatter top-level ordering — `mode: primary` invariant", () => {
       if (inFm) primaryMatches.push(`agents/${file}`);
     }
     primaryMatches.sort();
-    expect(primaryMatches).toEqual(["agents/orchestrator.md"]);
+    expect(primaryMatches).toEqual([
+      "agents/orchestrator-quick.md",
+      "agents/orchestrator.md",
+    ]);
   });
 });
 

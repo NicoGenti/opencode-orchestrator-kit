@@ -14,7 +14,7 @@ Most "AI does everything" setups burn tokens: one powerful model handles researc
 
 The kit splits the work into a routing layer and a roster of specialists:
 
-- **The orchestrator only routes.** It classifies the request, delegates and checkpoints. It cannot edit application code or run tests.
+- **The orchestrator only routes.** It classifies the request, delegates and checkpoints. It cannot edit application code or run tests. For small one-delegation tasks the opt-in `orchestrator-quick` (reach it with `/quick`) applies the same discipline without the plan board and the session memory.
 - **Models are matched to tasks.** Cheap or local models explore and bootstrap; stronger models are reserved for design, implementation and review.
 - **Context stays small.** Session memory is bullet-only and auto-archived past ~3k tokens, and multi-phase plans advance one phase at a time with fresh context.
 - **Exploration starts from a repo map.** The `profiler` generates a compact `.context/repo-map.md` (hard 300-line budget) that the `explorer` reads before broad searches, reducing whole-file reads and token waste.
@@ -40,7 +40,7 @@ Every delegation uses a 9-section task spec (Goal, Success Criteria, Scope, Safe
 
 ## Design decisions
 
-- **Routing is separated from execution.** `agents/orchestrator.md` is the only `mode: primary` agent and can only classify and delegate, so orchestration mistakes cannot silently change the codebase.
+- **Routing is separated from execution.** `agents/orchestrator.md` is the default `mode: primary` agent and can only classify and delegate, so orchestration mistakes cannot silently change the codebase. `agents/orchestrator-quick.md` is the opt-in alternate for small tasks, with the same write surface and a shorter cycle.
 - **Logical model tiers instead of hardcoded IDs.** Agents reference `{{TIER_ROUTER}}`, `{{TIER_REASONING}}`, `{{TIER_CODE}}`, `{{TIER_FAST}}` and `{{TIER_REVIEW}}`. Switching provider means editing one config file, and a validator runs before install.
 - **Plans are files, not chat history.** The kanban in `plan/` is the source of truth, so work is resumable and reviewable in Git.
 - **Technical review is separate from human comprehension.** `code-reviewer` and `security` verify the code; `comprehension-coach` checks that the developer understood it.
@@ -51,7 +51,8 @@ Every delegation uses a 9-section task spec (Goal, Success Criteria, Scope, Safe
 
 | Concern                                                 | Primary agent         | Notes                                                        |
 | ------------------------------------------------------- | --------------------- | ------------------------------------------------------------ |
-| **Orchestration** (routing, checkpointing)              | `orchestrator`        | Sole entry point. Never writes application code.             |
+| **Orchestration** (routing, checkpointing)              | `orchestrator`        | Default entry point. Never writes application code.          |
+| **Orchestration, small tasks** (one delegation)         | `orchestrator-quick`  | Opt-in via `/quick`. Same write surface, no plan board.      |
 | **Exploration** (codebase, file, symbol research)       | `explorer`            | Read-only.                                                   |
 | **Planning** (turns exploration into phased plans)      | `planner`             | Writes to `plan/draft/` only.                                |
 | **Plan board** (create, move, check, adopt plan files)  | `plan-writer`         | Sole owner of the board.                                     |
@@ -67,7 +68,7 @@ Full contracts, permissions and model fallbacks are in each `agents/*.md` file (
 
 | Tier               | Agents                                                                                                | Installed by default?                              |
 | ------------------ | ----------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
-| Core routing       | `orchestrator`, `profiler`, `explorer`, `oracle`, `planner`                                           | Yes                                                |
+| Core routing       | `orchestrator`, `orchestrator-quick`, `profiler`, `explorer`, `oracle`, `planner`                      | Yes                                                |
 | Core delivery      | `developer-fixer`, `test-engineer`, `code-reviewer`, `security`, `comprehension-coach`, `plan-writer` | Yes                                                |
 | Operations helpers | `build-helper`, `npm-helper`, `deploy-helper`                                                         | Yes (routed only on a matching failure)            |
 | Docs lookup        | `librarian`                                                                                           | Yes (routed only for remote documentation lookups) |
@@ -103,7 +104,7 @@ That command writes a package entry. Set `preset` and `withExtras` with the obje
 
 What the plugin registers at runtime (nothing is copied into `.opencode/`):
 
-- **15 agents** (+ `pc-doctor` and `writer` opt-in with `"withExtras": true`), from the same `agents/`/`extras/` contracts.
+- **16 agents** (+ `pc-doctor` and `writer` opt-in with `"withExtras": true`), from the same `agents/`/`extras/` contracts.
 - **4 commands** (`/start-session`, `/recall`, `/research-mode`, `/close-session`) and **9 skills**.
 - **One native tool, `plan_board`**, the TypeScript port of `scripts/plan-board.py`: standing authorization covers `check` and `move` of conforming plan files without approval; every other board operation (`new`, `adopt`, body edits, deletion, rename) needs per-request approval.
 - **Setup options**: `preset` (one of the five bundled presets: `default`, `freellmapi`, `generic`, `opencode-go-free`, `ollama`, all in the same format as `templates/models.config.json`; a preset whose tier values are all `placeholder/*` fails fast with a `TierConfigError`) and `withExtras` (default `false`).
