@@ -371,7 +371,7 @@ describe("kit permission invariants", () => {
 describe("packaged agent manifest permissions", () => {
   test("every packaged agent carries composed V2 rules and passes the invariants", () => {
     const agents = collectPackagedAgents(true);
-    expect(agents).toHaveLength(17);
+    expect(agents).toHaveLength(18);
     for (const agent of agents) {
       expect(agent.permissions.length).toBeGreaterThan(0);
       expect(() =>

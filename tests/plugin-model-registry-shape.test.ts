@@ -60,7 +60,7 @@ describe("ctx.model.list(): forma 2.1 (array) e 2.2 ({location,data})", () => {
 
     await plugin.setup(ctx as never);
 
-    expect(agents.size).toBe(15);
+    expect(agents.size).toBe(16);
     expect((agents.get("orchestrator")?.permissions as unknown[]).length).toBe(
       28,
     );
@@ -75,7 +75,7 @@ describe("ctx.model.list(): forma 2.1 (array) e 2.2 ({location,data})", () => {
 
     await plugin.setup(ctx as never);
 
-    expect(agents.size).toBe(15);
+    expect(agents.size).toBe(16);
     expect((agents.get("orchestrator")?.permissions as unknown[]).length).toBe(
       28,
     );

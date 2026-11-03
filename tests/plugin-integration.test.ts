@@ -55,6 +55,7 @@ const AGENT_IDS = [
   "npm-helper",
   "oracle",
   "orchestrator",
+  "orchestrator-quick",
   "plan-writer",
   "planner",
   "profiler",
@@ -211,23 +212,23 @@ describe("plugin integration — empty repo", () => {
     expect(snapshot(repo)).toEqual(["opencode.json"]);
   });
 
-  test("(1b) preset default: 15 agenti, orchestrator unico primary, tier risolti", async () => {
+  test("(1b) preset default: 16 agenti, orchestrator e orchestrator-quick primary, tier risolti", async () => {
     const repo = makeTmpRepo({ withExtras: false });
     const options = readKitOptions(repo);
     const { get, touched, warned } = await setupWith(options);
 
     expect(warned).toEqual([]); // registry completo: nessun segnale di tier mancante
 
-    // 15 agenti, nessun extra
-    expect(touched).toHaveLength(15);
+    // 16 agenti, nessun extra
+    expect(touched).toHaveLength(16);
     expect([...touched].sort()).toEqual(AGENT_IDS);
     for (const extra of EXTRA_IDS) {
       expect(touched.includes(extra)).toBe(false);
     }
 
-    // orchestrator e' l'unico primary
+    // orchestrator e orchestrator-quick sono i primary
     const primaries = touched.filter((id) => get(id)?.mode === "primary");
-    expect(primaries).toEqual(["orchestrator"]);
+    expect(primaries.sort()).toEqual(["orchestrator", "orchestrator-quick"]);
 
     // tutti i 5 tier della mappa default sono riferimenti concreti (non token},
     // non placeholder/*) e ogni agente registrato porta un ref di un tier reale.
@@ -285,7 +286,7 @@ describe("plugin integration — empty repo", () => {
 });
 
 describe("plugin integration — existing repo (user config wins)", () => {
-  test("(2) explorer pre-configurato intatto, 14 altri registrati, zero write", async () => {
+  test("(2) explorer pre-configurato intatto, 15 altri registrati, zero write", async () => {
     const repo = makeTmpRepo({ withExtras: false });
     const before = snapshot(repo);
     const userAgent = {
@@ -305,8 +306,8 @@ describe("plugin integration — existing repo (user config wins)", () => {
       ...userAgent,
     });
 
-    // upsert solo gli altri 14
-    expect(touched).toHaveLength(14);
+    // upsert solo gli altri 15
+    expect(touched).toHaveLength(15);
     expect(touched).not.toContain("explorer");
     expect([...touched].sort()).toEqual(
       AGENT_IDS.filter((id) => id !== "explorer"),
@@ -344,8 +345,8 @@ describe("plugin integration — publish sanity", () => {
       (f) => f.endsWith("SKILL.md"),
     );
     expect(skillFiles).toHaveLength(9);
-    expect(collectPackagedAgents(false).length).toBe(15);
-    expect(collectPackagedAgents(true).length).toBe(17);
+    expect(collectPackagedAgents(false).length).toBe(16);
+    expect(collectPackagedAgents(true).length).toBe(18);
     expect(
       existsSync(join(PLUGIN_DIR, "assets", "agents", "orchestrator.md")),
     ).toBe(true);

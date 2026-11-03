@@ -94,9 +94,9 @@ const SYNC_HINT =
   "Run `bun run sync-assets` to regenerate plugin/assets from command/, skills/, agents/, and extras/.";
 
 describe("plugin/assets packaging parity", () => {
-  test("the addressable sources cover 4 commands, 15 agents and 2 extras", () => {
+  test("the addressable sources cover 4 commands, 16 agents and 2 extras", () => {
     expect(commandBindings).toHaveLength(4);
-    expect(agentBindings).toHaveLength(15);
+    expect(agentBindings).toHaveLength(16);
     expect(extraBindings).toHaveLength(2);
   });
 
