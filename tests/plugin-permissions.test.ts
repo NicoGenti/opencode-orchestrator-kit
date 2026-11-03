@@ -449,4 +449,9 @@ describe("MCP default deny — le allowlist dichiarate sono reali", () => {
     for (const t of ["get_impact_radius_tool", "get_hub_nodes_tool", "get_bridge_nodes_tool"]) declared("agents/security.md", t, "allow");
     declared("agents/security.md", "apply_refactor_tool", "deny");
   });
+  test("i tre agenti CRG dichiarano il catalogo come fonte di verita'", () => {
+    for (const rel of ["agents/explorer.md", "agents/code-reviewer.md", "agents/security.md"]) {
+      expect(readFileSync(join(ROOT, rel), "utf-8")).toContain("Your tool catalog is the source of truth");
+    }
+  });
 });

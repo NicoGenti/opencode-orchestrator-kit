@@ -65,6 +65,7 @@ You MUST:
 
 A `code-review-graph` MCP server MAY be configured for this profile. Treat it as an accelerator, never a requirement: this agent MUST produce a complete, correct review with `git diff` + direct file reading alone if the graph is unavailable.
 
+- Your tool catalog is the source of truth: if no `code-review-graph_*` tool is listed for this agent, CRG is not configured — do not attempt the call, go straight to the fallback.
 - Before scoping which files to read in depth, you SHOULD call `code-review-graph_detect_changes_tool` and `code-review-graph_get_review_context_tool` to get the blast-radius and risk score of the current diff, then prioritize reading the files/symbols it flags as high-impact.
 - For findings that reference cross-file effects (e.g. "this change breaks callers elsewhere"), you SHOULD use `code-review-graph_get_impact_radius_tool` to confirm the actual caller/callee set before asserting impact, rather than guessing from naming conventions.
 - If a CRG tool errors, returns empty, or the server is not configured, you MUST fall back immediately to the standard flow: `git diff` + `git status` + reading the changed files and their obvious neighbors, without flagging this as a review blocker.
