@@ -992,7 +992,7 @@ describe("plugin activation — empty fixture repo", () => {
     });
   });
 
-  test("every agent carries V2 permissions (orchestrator 26 rules, plan-writer 12)", async () => {
+  test("every agent carries V2 permissions (orchestrator 27 rules, plan-writer 13)", async () => {
     const repo = makeEmptyFixture({ withExtras: true });
     const harness = await setupPackedPlugin(readKitOptions(repo));
 
@@ -1006,7 +1006,7 @@ describe("plugin activation — empty fixture repo", () => {
     }
 
     const orchestrator = harness.agents.get("orchestrator")!.permissions!;
-    expect(orchestrator).toHaveLength(26);
+    expect(orchestrator).toHaveLength(27);
     expect(orchestrator[orchestrator.length - 1]).toEqual({
       action: "edit",
       resource: "plan/*.md",
@@ -1018,7 +1018,7 @@ describe("plugin activation — empty fixture repo", () => {
     );
 
     const planWriter = harness.agents.get("plan-writer")!.permissions!;
-    expect(planWriter).toHaveLength(12);
+    expect(planWriter).toHaveLength(13);
     expect(resolveEffect(planWriter, "edit", "plan/qa/13-example.md")).toBe(
       "allow",
     );

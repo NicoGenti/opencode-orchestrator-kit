@@ -26,6 +26,11 @@ import type { PermissionRule } from "../plugin/src/permissions.ts";
  *   `query` is not a V1 or V2 permission action.
  * - agents/librarian.md — removed `{ action: "check_diagnostics", resource: "*", effect: "deny" }`.
  *   `check_diagnostics` is not a V1 or V2 permission action.
+ * - Every agent/extra — one prepended rule `{ action: "code-review-graph_*",
+ *   resource: "*", effect: "deny" }`: `mcpDefaultDenies()` denies the whole
+ *   `code-review-graph` MCP family by default, so a declared per-tool allow
+ *   still wins (last match) while any undeclared tool of the family (e.g.
+ *   `apply_refactor_tool`) resolves to `deny` instead of the host default.
  *
  * Every other agent translates to the same rule list as before.
  */
@@ -82,6 +87,13 @@ describe("V2 permission translation snapshot", () => {
           entry.resource === rule.resource &&
           entry.effect === rule.effect,
       );
+    expect(
+      has("agents/orchestrator.md", {
+        action: "code-review-graph_*",
+        resource: "*",
+        effect: "deny",
+      }),
+    ).toBe(true);
     expect(
       has("agents/orchestrator.md", {
         action: "skill",

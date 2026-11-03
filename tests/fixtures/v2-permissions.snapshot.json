@@ -1,6 +1,11 @@
 {
   "agents/build-helper.md": [
     {
+      "action": "code-review-graph_*",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
       "action": "subagent",
       "resource": "*",
       "effect": "deny"
@@ -173,6 +178,11 @@
   ],
   "agents/code-reviewer.md": [
     {
+      "action": "code-review-graph_*",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
       "action": "subagent",
       "resource": "*",
       "effect": "deny"
@@ -340,6 +350,11 @@
   ],
   "agents/comprehension-coach.md": [
     {
+      "action": "code-review-graph_*",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
       "action": "subagent",
       "resource": "*",
       "effect": "deny"
@@ -441,6 +456,11 @@
     }
   ],
   "agents/deploy-helper.md": [
+    {
+      "action": "code-review-graph_*",
+      "resource": "*",
+      "effect": "deny"
+    },
     {
       "action": "subagent",
       "resource": "*",
@@ -593,6 +613,11 @@
     }
   ],
   "agents/developer-fixer.md": [
+    {
+      "action": "code-review-graph_*",
+      "resource": "*",
+      "effect": "deny"
+    },
     {
       "action": "subagent",
       "resource": "*",
@@ -886,6 +911,11 @@
   ],
   "agents/explorer.md": [
     {
+      "action": "code-review-graph_*",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
       "action": "subagent",
       "resource": "*",
       "effect": "deny"
@@ -1062,6 +1092,11 @@
     }
   ],
   "agents/librarian.md": [
+    {
+      "action": "code-review-graph_*",
+      "resource": "*",
+      "effect": "deny"
+    },
     {
       "action": "subagent",
       "resource": "*",
@@ -1250,6 +1285,11 @@
   ],
   "agents/npm-helper.md": [
     {
+      "action": "code-review-graph_*",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
       "action": "subagent",
       "resource": "*",
       "effect": "deny"
@@ -1391,6 +1431,11 @@
     }
   ],
   "agents/oracle.md": [
+    {
+      "action": "code-review-graph_*",
+      "resource": "*",
+      "effect": "deny"
+    },
     {
       "action": "subagent",
       "resource": "*",
@@ -1544,6 +1589,11 @@
   ],
   "agents/orchestrator.md": [
     {
+      "action": "code-review-graph_*",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
       "action": "subagent",
       "resource": "*",
       "effect": "allow"
@@ -1671,6 +1721,11 @@
   ],
   "agents/plan-writer.md": [
     {
+      "action": "code-review-graph_*",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
       "action": "edit",
       "resource": "*",
       "effect": "deny"
@@ -1732,6 +1787,11 @@
     }
   ],
   "agents/planner.md": [
+    {
+      "action": "code-review-graph_*",
+      "resource": "*",
+      "effect": "deny"
+    },
     {
       "action": "edit",
       "resource": "*",
@@ -1799,6 +1859,11 @@
     }
   ],
   "agents/profiler.md": [
+    {
+      "action": "code-review-graph_*",
+      "resource": "*",
+      "effect": "deny"
+    },
     {
       "action": "subagent",
       "resource": "*",
@@ -1952,6 +2017,11 @@
   ],
   "agents/security.md": [
     {
+      "action": "code-review-graph_*",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
       "action": "*",
       "resource": "*",
       "effect": "deny"
@@ -2039,6 +2109,11 @@
   ],
   "agents/test-engineer.md": [
     {
+      "action": "code-review-graph_*",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
       "action": "subagent",
       "resource": "*",
       "effect": "deny"
@@ -2125,6 +2200,11 @@
     }
   ],
   "extras/pc-doctor.md": [
+    {
+      "action": "code-review-graph_*",
+      "resource": "*",
+      "effect": "deny"
+    },
     {
       "action": "subagent",
       "resource": "*",
@@ -2247,6 +2327,11 @@
     }
   ],
   "extras/writer.md": [
+    {
+      "action": "code-review-graph_*",
+      "resource": "*",
+      "effect": "deny"
+    },
     {
       "action": "subagent",
       "resource": "*",

@@ -6,6 +6,7 @@ import { parseFrontmatterMap } from "../plugin/src/frontmatter-map.ts";
 import {
   assertKitPermissionInvariants,
   kitInvariantRules,
+  mcpDefaultDenies,
   matchesPattern,
   normalizeResource,
   resolveEffect,
@@ -93,6 +94,7 @@ describe("frontmatter map reader (YAML subset + inline JSON)", () => {
 describe("V1 -> V2 translation", () => {
   test("orchestrator (YAML, V1 task name) translates to exactly the expected rule list", () => {
     expect(rulesOf("agents/orchestrator.md")).toEqual([
+      { action: "code-review-graph_*", resource: "*", effect: "deny" },
       { action: "subagent", resource: "*", effect: "allow" },
       { action: "todowrite", resource: "*", effect: "allow" },
       { action: "read", resource: "*", effect: "allow" },
@@ -135,6 +137,7 @@ describe("V1 -> V2 translation", () => {
 
   test("plan-writer (block YAML) folds write+edit into one edit bucket", () => {
     expect(rulesOf("agents/plan-writer.md")).toEqual([
+      { action: "code-review-graph_*", resource: "*", effect: "deny" },
       { action: "edit", resource: "*", effect: "deny" },
       { action: "edit", resource: "plan/*.md", effect: "allow" },
       { action: "webfetch", resource: "*", effect: "deny" },
@@ -168,8 +171,13 @@ describe("V1 -> V2 translation", () => {
 
   test("a top-level `*` key becomes the global fallback emitted first", () => {
     const rules = rulesOf("agents/security.md");
-    expect(rules[0]).toEqual({ action: "*", resource: "*", effect: "deny" });
-    expect(rules[1]).toEqual({
+    expect(rules[0]).toEqual({
+      action: "code-review-graph_*",
+      resource: "*",
+      effect: "deny",
+    });
+    expect(rules[1]).toEqual({ action: "*", resource: "*", effect: "deny" });
+    expect(rules[2]).toEqual({
       action: "read",
       resource: "*",
       effect: "allow",
@@ -181,13 +189,22 @@ describe("V1 -> V2 translation", () => {
       { read: "allow", bash: { "*": "deny", "ls *": "allow" } },
       { write: false, read: true },
     );
-    expect(rules[0]).toEqual({ action: "edit", resource: "*", effect: "deny" });
+    expect(rules[0]).toEqual({
+      action: "code-review-graph_*",
+      resource: "*",
+      effect: "deny",
+    });
     expect(rules[1]).toEqual({
+      action: "edit",
+      resource: "*",
+      effect: "deny",
+    });
+    expect(rules[2]).toEqual({
       action: "read",
       resource: "*",
       effect: "allow",
     });
-    expect(rules).toHaveLength(4);
+    expect(rules).toHaveLength(5);
   });
 
   test("collapses V1 globstar segments (V2 `*` already crosses `/`)", () => {
@@ -280,6 +297,7 @@ describe("kit permission invariants", () => {
 
   test("a missing shell, skill, or subagent catch-all is rejected", () => {
     const base: PermissionRule[] = [
+      ...mcpDefaultDenies(),
       { action: "edit", resource: "plan/*.md", effect: "deny" },
       { action: "shell", resource: "*", effect: "deny" },
       { action: "skill", resource: "*", effect: "deny" },
@@ -320,6 +338,7 @@ describe("kit permission invariants", () => {
 
   test("only the orchestrator may spawn developer-fixer", () => {
     const denied: PermissionRule[] = [
+      ...mcpDefaultDenies(),
       { action: "edit", resource: "*", effect: "deny" },
       { action: "shell", resource: "*", effect: "deny" },
       { action: "skill", resource: "*", effect: "deny" },
@@ -330,6 +349,7 @@ describe("kit permission invariants", () => {
       /developer-fixer/,
     );
     const router: PermissionRule[] = [
+      ...mcpDefaultDenies(),
       { action: "edit", resource: "*", effect: "deny" },
       { action: "shell", resource: "*", effect: "deny" },
       { action: "skill", resource: "*", effect: "deny" },
@@ -360,7 +380,7 @@ describe("packaged agent manifest permissions", () => {
     );
     expect(orchestrator).toBeDefined();
     const rules = orchestrator!.permissions;
-    expect(rules).toHaveLength(26);
+    expect(rules).toHaveLength(27);
     expect(rules[rules.length - 1]).toEqual({
       action: "edit",
       resource: "plan/*.md",
@@ -402,5 +422,31 @@ describe("packaged agent manifest permissions", () => {
         agent.id === "plan-writer" ? "plan-writer=allow" : `${agent.id}=deny`,
       );
     }
+  });
+});
+
+describe("MCP default deny — le allowlist dichiarate sono reali", () => {
+  const CRG = "code-review-graph";
+  const declared = (rel: string, tool: string, expected: "allow" | "deny") => {
+    expect(resolveEffect(rulesOf(rel), `${CRG}_${tool}`, "*")).toBe(expected);
+  };
+  test("ogni agente nega i tool CRG non dichiarati", () => {
+    for (const rel of ["agents/orchestrator.md", "agents/planner.md", "agents/developer-fixer.md", "agents/profiler.md"]) {
+      declared(rel, "apply_refactor_tool", "deny");
+      declared(rel, "get_review_context_tool", "deny");
+    }
+  });
+  test("explorer: allow solo i quattro dichiarati, deny il resto", () => {
+    for (const t of ["get_minimal_context_tool", "query_graph_tool", "semantic_search_nodes_tool", "get_architecture_overview_tool"]) declared("agents/explorer.md", t, "allow");
+    declared("agents/explorer.md", "build_or_update_graph_tool", "deny");
+    declared("agents/explorer.md", "apply_refactor_tool", "deny");
+  });
+  test("code-reviewer: allow i tre dichiarati, deny il resto", () => {
+    for (const t of ["detect_changes_tool", "get_review_context_tool", "get_impact_radius_tool"]) declared("agents/code-reviewer.md", t, "allow");
+    declared("agents/code-reviewer.md", "apply_refactor_tool", "deny");
+  });
+  test("security: allow i tre dichiarati, deny apply_refactor", () => {
+    for (const t of ["get_impact_radius_tool", "get_hub_nodes_tool", "get_bridge_nodes_tool"]) declared("agents/security.md", t, "allow");
+    declared("agents/security.md", "apply_refactor_tool", "deny");
   });
 });
