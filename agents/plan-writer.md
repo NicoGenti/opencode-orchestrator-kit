@@ -266,6 +266,10 @@ Creation is a three-step path, and step 1 is NOT yours:
    `python3 scripts/plan-board.py check --root plan --json` and quote its RAW output (ok true or
    false, every error and warning) in your report.
 
+Both calls return a JSON payload, and `ok: true` is the only success signal. On `ok: false` report
+the `code` and `message` verbatim and stop: never create or move the card by writing the file
+yourself to work around a failing tool.
+
 Both shell forms are allowlisted: `python3 */plan-board.py *`, and `python */plan-board.py *` where
 the `python` alias exists. A `permission.rejected: shell` therefore never means "shell is
 unavailable" — it means the command was outside that allowlist. Never report a permission problem

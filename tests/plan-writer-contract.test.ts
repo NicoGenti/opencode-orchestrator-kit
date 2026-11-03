@@ -191,4 +191,11 @@ describe("plan-writer — documentazione del contratto (staging + Code Mode)", (
     expect(read(AGENT_PATH)).toContain("Code Mode");
     expect(read(AGENTS_MD_PATH)).toContain("plan-body-");
   });
+
+  test("il contratto impone di verificare `ok: true` prima di dichiarare una card creata", () => {
+    expect(read(AGENT_PATH)).toContain("`ok: true` is the only success signal");
+    expect(read(ORCHESTRATOR_PATH)).toContain(
+      "succeeded ONLY when the payload reports ok: true",
+    );
+  });
 });
