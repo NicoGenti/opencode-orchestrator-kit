@@ -7,6 +7,7 @@ const SOURCE_COMMAND = join(ROOT, "command", "start-session.md");
 const SOURCE_RECALL = join(ROOT, "command", "recall.md");
 const SOURCE_RESEARCH_MODE = join(ROOT, "command", "research-mode.md");
 const SOURCE_CLOSE_SESSION = join(ROOT, "command", "close-session.md");
+const SOURCE_QUICK = join(ROOT, "command", "quick.md");
 const SOURCE_SKILLS = join(ROOT, "skills");
 const SOURCE_AGENTS = join(ROOT, "agents");
 const SOURCE_EXTRAS = join(ROOT, "extras");
@@ -57,6 +58,7 @@ const bindings: AssetBinding[] = [
   { source: SOURCE_RECALL, assetRel: "commands/recall.md" },
   { source: SOURCE_RESEARCH_MODE, assetRel: "commands/research-mode.md" },
   { source: SOURCE_CLOSE_SESSION, assetRel: "commands/close-session.md" },
+  { source: SOURCE_QUICK, assetRel: "commands/quick.md" },
   ...collectSkillSources(SOURCE_SKILLS).map((source) => ({
     source,
     assetRel: `skills/${relative(SOURCE_SKILLS, source).split(sep).join("/")}`,
@@ -94,8 +96,8 @@ const SYNC_HINT =
   "Run `bun run sync-assets` to regenerate plugin/assets from command/, skills/, agents/, and extras/.";
 
 describe("plugin/assets packaging parity", () => {
-  test("the addressable sources cover 4 commands, 16 agents and 2 extras", () => {
-    expect(commandBindings).toHaveLength(4);
+  test("the addressable sources cover 5 commands, 16 agents and 2 extras", () => {
+    expect(commandBindings).toHaveLength(5);
     expect(agentBindings).toHaveLength(16);
     expect(extraBindings).toHaveLength(2);
   });

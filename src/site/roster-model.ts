@@ -113,6 +113,7 @@ const CORE_GROUPS: ReadonlyArray<{
 
 const COMMAND_ORDER = [
   "start-session",
+  "quick",
   "recall",
   "research-mode",
   "close-session",

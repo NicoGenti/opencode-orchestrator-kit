@@ -4,6 +4,12 @@ All notable changes to this project are documented in this file. The format foll
 
 ## [Unreleased]
 
+### Added
+
+- **`orchestrator-quick`**: a second `mode: primary` agent (3,596-character prompt against the orchestrator's 23,961) for small tasks. Same read-only surface and the same kit invariants — it cannot edit application code, run the plan board or write `.context` — but its cycle is one classify, one delegation and one verification, with an explicit hand-back to `orchestrator` when the task needs more than one delegation, more than about five files, or must survive the session. `plugin/src/permissions.ts` now treats both routers through a `ROUTING_AGENTS` set instead of a hardcoded `"orchestrator"` in three places.
+- **`/quick`**: packaged command that switches the session to `orchestrator-quick` and states the working rules (one delegation, raw verification output, stop and escalate when the task grows). Five commands are registered at runtime.
+- **Small-task triage**: `agents/orchestrator.md` tells the full router to hand a one-file or plan-free request to `/quick` instead of running the multi-agent flow, citing the measured 2-3x cost.
+
 ## [1.0.1] — 2026-11-03
 
 ### Added

@@ -68,7 +68,7 @@ Full contracts, permissions and model fallbacks are in each `agents/*.md` file (
 
 | Tier               | Agents                                                                                                | Installed by default?                              |
 | ------------------ | ----------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
-| Core routing       | `orchestrator`, `orchestrator-quick`, `profiler`, `explorer`, `oracle`, `planner`                      | Yes                                                |
+| Core routing       | `orchestrator`, `orchestrator-quick`, `profiler`, `explorer`, `oracle`, `planner`                     | Yes                                                |
 | Core delivery      | `developer-fixer`, `test-engineer`, `code-reviewer`, `security`, `comprehension-coach`, `plan-writer` | Yes                                                |
 | Operations helpers | `build-helper`, `npm-helper`, `deploy-helper`                                                         | Yes (routed only on a matching failure)            |
 | Docs lookup        | `librarian`                                                                                           | Yes (routed only for remote documentation lookups) |
@@ -105,7 +105,7 @@ That command writes a package entry. Set `preset` and `withExtras` with the obje
 What the plugin registers at runtime (nothing is copied into `.opencode/`):
 
 - **16 agents** (+ `pc-doctor` and `writer` opt-in with `"withExtras": true`), from the same `agents/`/`extras/` contracts.
-- **4 commands** (`/start-session`, `/recall`, `/research-mode`, `/close-session`) and **9 skills**.
+- **5 commands** (`/start-session`, `/quick`, `/recall`, `/research-mode`, `/close-session`) and **9 skills**.
 - **One native tool, `plan_board`**, the TypeScript port of `scripts/plan-board.py`: standing authorization covers `check` and `move` of conforming plan files without approval; every other board operation (`new`, `adopt`, body edits, deletion, rename) needs per-request approval.
 - **Setup options**: `preset` (one of the five bundled presets: `default`, `freellmapi`, `generic`, `opencode-go-free`, `ollama`, all in the same format as `templates/models.config.json`; a preset whose tier values are all `placeholder/*` fails fast with a `TierConfigError`) and `withExtras` (default `false`).
 
@@ -261,7 +261,7 @@ Companion repositories are optional. This kit runs on its own. A third-party kit
 - **`web-*` is reserved** for web-stack skill packs (theme, brand, scaffold, deploy, and similar). Agents that allow the glob: `orchestrator`, `oracle`, `developer-fixer`, `code-reviewer`, and `deploy-helper`. A skill named `web-…` is enabled for those agents, so project skills and unrelated packs use another prefix. One example of the shape is `web-theme` or `web-deploy`.
 - **`project-*` is reserved** for the consuming project's own skills. `orchestrator`, `developer-fixer`, and `code-reviewer` already allow it. Other agents need an allowlist edit before they can load a `project-*` skill.
 - **Shell asks.** `developer-fixer` asks before `npx`, `dotnet`, `ng`, `docker build`, and `bash` or `sh` scripts under a skill `scripts/` directory. A companion can ship those commands under that ask, with the shell catch-all still deny.
-- **Commands.** A companion registers its own commands in OpenCode (a site scaffolder is one example). This plugin registers `/start-session`, `/recall`, `/research-mode`, and `/close-session`.
+- **Commands.** A companion registers its own commands in OpenCode (a site scaffolder is one example). This plugin registers `/start-session`, `/quick`, `/recall`, `/research-mode`, and `/close-session`.
 - **Design-rules template.** `templates/design-rules.md` is a starting point, including an optional UI section. Copy it and customize or delete sections. This repository does not fetch or pin an upstream copy.
 
 ### Adding a skill
@@ -290,7 +290,7 @@ bun test                # test suite
 bun run sync-assets     # refresh plugin/assets after editing agents, extras, skills, or the packaged commands
 ```
 
-`plugin/assets/` is generated. After changing `agents/`, `extras/`, `skills/`, or a packaged command (`command/start-session.md`, `command/recall.md`, `command/research-mode.md`, `command/close-session.md`), run `bun run sync-assets` (or `bun run sync-assets --check` to fail when the mirror has drifted). The plugin `prepack` script runs the same copy. Do not edit the packaged copies by hand.
+`plugin/assets/` is generated. After changing `agents/`, `extras/`, `skills/`, or a packaged command (`command/start-session.md`, `command/quick.md`, `command/recall.md`, `command/research-mode.md`, `command/close-session.md`), run `bun run sync-assets` (or `bun run sync-assets --check` to fail when the mirror has drifted). The plugin `prepack` script runs the same copy. Do not edit the packaged copies by hand.
 
 Changes are tracked in `CHANGELOG.md`.
 

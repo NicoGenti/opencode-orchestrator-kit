@@ -26,11 +26,11 @@
  * it instead of assuming it.
  *
  * Scenarios:
- *  1. packaged artifact — the tarball is exactly the expected 43 files, the
+ *  1. packaged artifact — the tarball is exactly the expected 45 files, the
  *     package declares zero runtime dependencies, `files`/`exports` cover
  *     everything registration needs, and the packed assets are the repo-root
  *     sources;
- *  2. empty fixture repo — 4 commands, 9 skills, 15 agents (17 with
+ *  2. empty fixture repo — 5 commands, 9 skills, 16 agents (18 with
  *     `withExtras: true`), 1 `plan_board` tool, orchestrator the only
  *     `primary`, per-agent models resolved from the bundled preset tiers,
  *     V2 permissions on every agent (orchestrator 26 rules, plan-writer 10);
@@ -104,16 +104,17 @@ const SKILL_IDS = [
   "structural-search",
 ] as const;
 
-/** The 4 kit commands. */
+/** The 5 kit commands. */
 const COMMAND_NAMES = [
   "start-session",
+  "quick",
   "recall",
   "research-mode",
   "close-session",
 ] as const;
 
 /**
- * The exact file surface of the published package (43 entries, relative to
+ * The exact file surface of the published package (45 entries, relative to
  * the package root). Any drift is a packaging change that must be reviewed
  * explicitly — the plugin is self-contained and ships nothing else.
  */
@@ -735,7 +736,7 @@ describe("packaged artifact — offline pack and self-containment", () => {
       expect(pack.log).toContain("opencode-orchestrator-kit-");
     }
     expect(packageFiles()).toEqual([...EXPECTED_PACKAGE_FILES].sort());
-    expect(packageFiles()).toHaveLength(44);
+    expect(packageFiles()).toHaveLength(45);
     if (extractedFiles !== null) {
       expect(extractedFiles).toEqual([...EXPECTED_PACKAGE_FILES].sort());
     }
@@ -838,7 +839,7 @@ describe("packaged artifact — offline pack and self-containment", () => {
 /* -------------------------------------------------------------------------- */
 
 describe("plugin activation — empty fixture repo", () => {
-  test("the packed plugin registers 4 commands, 9 skills and 1 plan_board tool", async () => {
+  test("the packed plugin registers 5 commands, 9 skills and 1 plan_board tool", async () => {
     const repo = makeEmptyFixture({ withExtras: false });
     const options = readKitOptions(repo);
     const harness = await setupPackedPlugin(options);
@@ -846,6 +847,7 @@ describe("plugin activation — empty fixture repo", () => {
     // Commands — the bodies come from the PACKED assets.
     expect(harness.commands.map((c) => String(c.name)).sort()).toEqual([
       "close-session",
+      "quick",
       "recall",
       "research-mode",
       "start-session",
@@ -874,9 +876,12 @@ describe("plugin activation — empty fixture repo", () => {
       expect(harness.prompts.at(-1)?.text).toBe(body);
       expect(harness.prompts.at(-1)?.sessionID).toBe("ses_fixture");
       expect(harness.prompts.at(-1)?.delivery).toBe("queue");
+      const declaredAgent = /^agent:[ 	]*(.+)$/m.exec(
+        shipped.match(/^---[\s\S]*?---/)?.[0] ?? "",
+      )?.[1];
       expect(harness.switched.at(-1)).toEqual({
         sessionID: "ses_fixture",
-        agent: "orchestrator",
+        agent: declaredAgent?.trim(),
       });
     }
 

@@ -262,6 +262,7 @@ describe("plugin integration — empty repo", () => {
 
     expect(commands.map((c) => String(c.name)).sort()).toEqual([
       "close-session",
+      "quick",
       "recall",
       "research-mode",
       "start-session",

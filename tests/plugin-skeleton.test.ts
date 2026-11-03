@@ -34,6 +34,7 @@ const repoSkillIds: string[] = collectSkillFiles(join(ROOT, "skills"))
 /** Repo-root command documents packaged by the plugin. */
 const COMMAND_NAMES = [
   "start-session",
+  "quick",
   "recall",
   "research-mode",
   "close-session",
@@ -189,10 +190,11 @@ describe("opencode-orchestrator-kit plugin skeleton", () => {
     expect(typeof plugin.setup).toBe("function");
   });
 
-  test("registers exactly four commands: start-session, recall, research-mode, close-session", () => {
-    expect(commands).toHaveLength(4);
+  test("registers exactly five commands: start-session, quick, recall, research-mode, close-session", () => {
+    expect(commands).toHaveLength(5);
     expect(commands.map((command) => String(command.name)).sort()).toEqual([
       "close-session",
+      "quick",
       "recall",
       "research-mode",
       "start-session",
@@ -227,9 +229,15 @@ describe("opencode-orchestrator-kit plugin skeleton", () => {
       await returned;
       expect(prompts.at(-1)?.text).toBe(source?.body);
       expect(prompts.at(-1)?.sessionID).toBe("ses_skeleton");
+      const declaredAgent = /^agent:[ 	]*(.+)$/m.exec(
+        readFileSync(
+          join(ROOT, "command", `${String(command.name)}.md`),
+          "utf-8",
+        ),
+      )?.[1];
       expect(switched.at(-1)).toEqual({
         sessionID: "ses_skeleton",
-        agent: "orchestrator",
+        agent: declaredAgent?.trim(),
       });
     }
   });

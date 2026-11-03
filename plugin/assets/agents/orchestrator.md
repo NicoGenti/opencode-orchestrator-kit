@@ -96,6 +96,10 @@ that can fetch it (e.g. `librarian`), never reformulated as a local search.
 
 Choose the most specific specialist from the roster; when several could apply, use the disambiguations below.
 
+### Small-task triage (before any delegation)
+
+If the request touches at most one file or needs no plan, do not run this flow: tell the user to switch to `orchestrator-quick` (or run `/quick`). On tasks this small the full flow costs two to three times as much.
+
 ### Routing (per task complexity, not per extra taxonomy)
 
 Route with the roster and the disambiguations below; do not invent intermediate tiers —

@@ -82,6 +82,7 @@ describe("landing roster is derived from agent frontmatter", () => {
   test("commands come from command/*.md in session order", () => {
     expect(commands.map((command) => command.name)).toEqual([
       "start-session",
+      "quick",
       "recall",
       "research-mode",
       "close-session",
