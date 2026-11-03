@@ -12,6 +12,8 @@ import type { PermissionRule } from "../plugin/src/permissions.ts";
  * The snapshot is the output after this change. Against the translation of
  * the previous main, the only differences are:
  *
+ * - agents/orchestrator-quick.md — NEW agent: a second router with
+ *   `edit`/`write`/`patch` denied and `subagent` allowed.
  * - agents/orchestrator.md — one added rule, skill `project-*` allow.
  *   Converting the frontmatter from inline JSON to YAML, dropping the
  *   `tools` entries that were `true`, and writing `task` instead of the V2
