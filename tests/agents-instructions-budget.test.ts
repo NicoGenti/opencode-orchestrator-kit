@@ -26,7 +26,7 @@ describe("agents instructions budget", () => {
   test("the assembler contract is not shipped in the always-on prompt", () => {
     expect(AGENTS).not.toContain("### Deterministic Enumeration Order");
     expect(AGENTS).not.toContain("### Boundary Baseline");
-    expect(CONTRIBUTING).toContain("## Prompt-assembly contract");
+    expect(CONTRIBUTING).toContain("## Prompt-Assembly Stable-Prefix Contract");
     expect(CONTRIBUTING).toContain("### Deterministic Enumeration Order");
   });
 

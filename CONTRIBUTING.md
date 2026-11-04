@@ -192,8 +192,6 @@ A glob that matches at least one shipped skill (for example `build-*`, which mat
 - MUST NOT leave documentation that contradicts the implemented behavior.
 - Documentation changes follow the same review and hygiene rules as code changes.
 
-## Prompt-assembly contract
-
 ## Prompt-Assembly Stable-Prefix Contract
 
 This section locks down the **repository-controlled stable prefix** of the prompt assembly. It is the contract that any future assembler implementation, cache key, or review tool MUST honor. It documents what is already enforced by the test suite; it does not introduce new behavior.
