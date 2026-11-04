@@ -126,18 +126,19 @@ publish `opencode-orchestrator-kit`). The workflow also sets
    checks the tag, and publishes `plugin/` with `npm publish --provenance
    --access public`.
 
-## Agent issue workflow
+## Continuous integration
 
-`.github/workflows/agent-issue.yml` installs the kit that the issue agent runs
-with. `AGENT_KIT_SHA` and `AGENT_MODEL` are repository Actions variables
-(Settings, Secrets and variables, Actions, Variables), not secrets.
+`.github/workflows/test.yml` runs on every pull request and on `main`:
+`bun test`, `bun run typecheck`, `bun run lint`, `bun run format:check`,
+`bun run sync-assets --check`, and `bun run build`. Those are the only
+workflows besides `deploy.yml` (Pages) and `release.yml` (tags): no workflow
+reacts to an issue, runs `opencode run`, or reads a model API key
+(`tests/no-github-automation.test.ts` enforces the full set). Dependency bumps
+arrive as Dependabot pull requests (`.github/dependabot.yml`) and go through
+the same gates.
 
-- `AGENT_KIT_SHA` — full commit to install. When the variable is unset, the
-  workflow uses `github.sha` and installs from the checkout. Set it only to
-  install a different commit than the one the workflow checked out. The old
-  hardcoded commit from before v0.7.0 is not used.
-- `AGENT_MODEL` — model id passed to `opencode run -m`. When unset, the
-  workflow uses `opencode/mimo-v2.6-flash-free`.
+The plan board in `plan/` is local to the repository: it is not mirrored into
+GitHub issues, and there are no `plan:*` labels to keep in sync.
 
 ## Adding a skill
 
