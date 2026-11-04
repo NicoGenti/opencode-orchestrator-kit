@@ -477,7 +477,7 @@ function Quickstart() {
 
   const onTabKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     const index = INSTALL_TABS.findIndex((tab) => tab.id === activeId);
-    let next = index;
+    let next: number;
     if (event.key === "ArrowRight") next = (index + 1) % INSTALL_TABS.length;
     else if (event.key === "ArrowLeft") {
       next = (index - 1 + INSTALL_TABS.length) % INSTALL_TABS.length;

@@ -115,6 +115,7 @@ export async function loadModelConfig(
   } catch (err) {
     throw new Error(
       `Failed to read model config at ${absoluteConfigPath}: ${err}`,
+      { cause: err },
     );
   }
 
@@ -124,6 +125,7 @@ export async function loadModelConfig(
   } catch (err) {
     throw new Error(
       `Invalid JSON in model config at ${absoluteConfigPath}: ${err}`,
+      { cause: err },
     );
   }
 

@@ -122,6 +122,7 @@ export function parseFrontmatterMap(
     } catch (error) {
       throw new Error(
         `${key}: inline value is not JSON (${(error as Error).message})`,
+        { cause: error },
       );
     }
     assertMap(parsed, key);

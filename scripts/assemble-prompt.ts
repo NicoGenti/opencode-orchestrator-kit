@@ -145,7 +145,7 @@ export async function assemblePrompt(
   } = options;
 
   // Resolve model config (transparent fallback if config missing or invalid)
-  let modelConfig: ResolvedConfig | null = null;
+  let modelConfig: ResolvedConfig | null;
   try {
     const config = await loadModelConfig(modelConfigPath, rootDir);
     modelConfig = resolvePreset(config, preset);

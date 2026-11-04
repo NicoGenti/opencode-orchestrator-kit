@@ -112,7 +112,7 @@ function run(args: string[], root: string): RunResult {
     },
   );
   const stdout = r.stdout ?? "";
-  let json: any = null;
+  let json: any;
   try {
     json = JSON.parse(stdout);
   } catch {
