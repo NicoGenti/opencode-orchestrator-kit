@@ -49,5 +49,11 @@ jobs:
       - name: Check formatting
         run: bun run format:check
 
+      - name: Check packaged assets are in sync
+        run: bun run sync-assets --check
+
+      - name: Build the docs site
+        run: bun run build
+
       - name: Run tests
         run: bun test
