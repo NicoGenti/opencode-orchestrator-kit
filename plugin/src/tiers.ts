@@ -162,7 +162,7 @@ export const BUNDLED_MODEL_CONFIG: BundledModelConfig = {
         TIER_REASONING: "ollama/beam:cloud",
         TIER_CODE: "ollama/deepseek-v4.1-flash:cloud",
         TIER_REVIEW: "ollama/glm-5.3:cloud",
-        TIER_FAST: "ollama/minimax-m3.1-flash:cloud",
+        TIER_FAST: "ollama/nemotron-3-nano:30b-cloud",
       },
     },
   },
