@@ -130,8 +130,8 @@ describe("telemetry isolation — start-session + docs policy (v0.4.0)", () => {
   });
 
   test(".gitignore: session memory and board are versioned, only telemetry stays untracked", () => {
-    // The cloud runner (label `agent:run`) reads and commits .context/ and plan/: they must not be
-    // ignored as whole directories, or the agent would work on files git cannot commit.
+    // A fresh clone carries .context/ and plan/ (the board and the memory the agents read):
+    // they must not be ignored as whole directories, or the board would be lost on checkout.
     expect(gitignore).not.toMatch(/^\.context\/$/m);
     expect(gitignore).not.toMatch(/^plan\/$/m);
     expect(gitignore).toMatch(/^\.context\/comprehension-log\.md$/m);

@@ -6,8 +6,8 @@ const REPO_ROOT = join(import.meta.dir, "..");
 
 /**
  * Contratto CI per l'issue #19: lo script `bun:audit` deve eseguire l'intera
- * suite di test seguito dal lint, in modo che CI e workflow agent eseguano
- * `bun run bun:audit` come controllo di fumo singolo.
+ * suite di test seguito dal lint, in modo che la CI possa eseguirlo come
+ * controllo di fumo singolo.
  */
 describe("bun:audit script", () => {
   test("package.json dichiara bun:audit = bun test && bun run lint", () => {
