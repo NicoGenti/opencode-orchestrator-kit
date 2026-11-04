@@ -95,28 +95,28 @@ After writing `PROJECT-PROFILE.md`, create only missing memory files:
 <!-- .context/progress.md -->
 # Progress
 
-## Stato attuale
-- (vuoto)
+## Current status
+- (empty)
 
-## Fatto
-- (vuoto)
+## Done
+- (empty)
 
-## Prossimi passi
-- (vuoto)
+## Next steps
+- (empty)
 ```
 
 ```markdown
 <!-- .context/decisions.md -->
 # Decisions
 
-<!-- Append laconico, formato: - YYYY-MM-DD: decisione — perché -->
+<!-- Laconic append, format: - YYYY-MM-DD: decision — why -->
 ```
 
 ```markdown
 <!-- .context/issues.md -->
 # Issues
 
-<!-- Append laconico, formato: - YYYY-MM-DD: problema — soluzione/stato -->
+<!-- Laconic append, format: - YYYY-MM-DD: problem — solution/status -->
 ```
 
 ## Plan Folder
