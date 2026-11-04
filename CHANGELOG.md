@@ -10,6 +10,10 @@ All notable changes to this project are documented in this file. The format foll
 - **`/quick`**: packaged command that switches the session to `orchestrator-quick` and states the working rules (one delegation, raw verification output, stop and escalate when the task grows). Five commands are registered at runtime.
 - **Small-task triage**: `agents/orchestrator.md` tells the full router to hand a one-file or plan-free request to `/quick` instead of running the multi-agent flow, citing the measured 2-3x cost.
 
+### Changed
+
+- **Orchestrator prompt trimmed to 22.652 characters** (was 23.961, against a 24.000 cap — 39 characters of headroom left): the six subsections `Context slicing` … `Research mode` no longer restate what `skills/comprehension-workflow/SKILL.md` and `command/{recall,research-mode}.md` already define as canonical; every contract sentence asserted by `tests/recall-command.test.ts`, `tests/telemetry-writer.test.ts` and `tests/comprehension-config.test.ts` is preserved verbatim. The budget guard W1 now covers all 18 agent prompts at current size + 5%, so a prompt can shrink freely and can only grow by editing the table on purpose.
+
 ### Removed
 
 - **GitHub automation beyond CI**: `.github/workflows/agent-issue.yml` (comment `/agent` and label `agent:run`) went away with its runner prompt (`.github/agent/agent-issue.md`) and CI model preset (`.github/agent/ci-free.json`); so did the plan-board issue mirror — `.github/workflows/plan-adopt.yml`, `.github/workflows/plan-sync.yml`, `scripts/issue_bridge.py` and the `plan:*` labels. The repository now runs only `test.yml`, `deploy.yml` and `release.yml`: code arrives through a normal pull request, and the board in `plan/` is local to the repository. `tests/no-github-automation.test.ts` fails if that set changes, if a workflow triggers on `issues`/`issue_comment`, runs `opencode run`, calls `gh issue`, reads `OPENCODE_API_KEY`, or uses a `plan:*` label. Dependabot (`.github/dependabot.yml`) covers the bun toolchain and GitHub Actions.
