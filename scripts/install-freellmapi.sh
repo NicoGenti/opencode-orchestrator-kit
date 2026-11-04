@@ -49,7 +49,7 @@ while [[ $# -gt 0 ]]; do
     --key)           API_KEY="${2:-}"; shift 2 ;;
     --base-url)      BASE_URL="${2:-}"; shift 2 ;;
     -h|--help)       usage ;;
-    -*)              echo "Flag sconosciuto: $1" >&2; usage ;;
+    -*)              echo "Unknown flag: $1" >&2; usage ;;
     *)               PROJECT="$1"; shift ;;
   esac
 done
@@ -309,7 +309,7 @@ for aid in (cfg.get("agent") or {}):
     pid = (a.get("model") or {}).get("providerID")
     if pid != "freellmapi":
         bad.append("%s=%s" % (aid, pid))
-print("  > agent mappati: %d | agenti enumerati: %d" % (len(cfg.get("agent") or {}), len(agents)))
+print("  > mapped agents: %d | enumerated agents: %d" % (len(cfg.get("agent") or {}), len(agents)))
 if missing:
     print("  FAIL: config agents not registered in opencode2: %s" % ", ".join(sorted(missing)))
     raise SystemExit(1)
@@ -321,14 +321,14 @@ PYEOF
 
   rm -f "$AGENTS_JSON" "$CFG_JSON"
 
-  # smoke reale (opzionale): run per-progetto mappato su freellmapi
+  # real smoke run (optional): per-project run mapped to freellmapi
   if [[ "$SMOKE" == true ]]; then
     smoke_out="$(( cd "$PROJECT_NATIVE" && env -u PWD "$OC2_SHIM" \
        run -m freellmapi/auto:smart "Respond with exactly: FREELMAPI_KIT_OK" ) 2>&1 || true)"
     if grep -q 'FREELMAPI_KIT_OK' <<<"$smoke_out"; then
       echo "  + smoke OK (freellmapi/auto:smart)"
     else
-      echo "  ! smoke fallito, ultime righe:"
+      echo "  ! smoke failed, last lines:"
       tail -5 <<<"$smoke_out"
       fail=1
     fi
