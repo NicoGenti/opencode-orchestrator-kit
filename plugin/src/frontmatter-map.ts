@@ -136,3 +136,33 @@ export function parseFrontmatterMap(
   }
   return parseBlockMap(blockLines.join("\n"), key);
 }
+
+/**
+ * Top-level scalar from a frontmatter block: inline value or folded/literal block
+ * (`>-`, `>`, `|-`, `|`). The inline pattern must NOT swallow the block marker:
+ * `description: >-` matched `(\S.*)` and returned ">-" (difetto osservato 2026-11-02).
+ */
+export function parseFrontmatterScalar(
+  frontmatter: string,
+  key: string,
+): string | undefined {
+  const escaped = key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const inline = new RegExp(`^${escaped}:[ \\t]+(\\S.*)$`, "m").exec(
+    frontmatter,
+  );
+  if (inline && !/^[>|][-+]?$/.test(inline[1].trim())) return inline[1].trim();
+  const block = new RegExp(
+    `^${escaped}:[ \\t]*([>|][-+]?)[ \\t]*\\r?\\n((?:[ \\t]+[^\\r\\n]*\\r?\\n?)+)`,
+    "m",
+  ).exec(frontmatter);
+  if (block) {
+    const joiner = block[1].startsWith("|") ? "\n" : " ";
+    return block[2]
+      .split(/\r?\n/)
+      .map((l) => l.trim())
+      .filter(Boolean)
+      .join(joiner)
+      .trim();
+  }
+  return undefined;
+}

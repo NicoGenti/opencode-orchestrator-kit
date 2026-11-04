@@ -36,7 +36,8 @@ const WARNING_PREFIX = "[opencode-orchestrator-kit]";
  *
  * Agent registration is an upsert guarded by `editor.get(id)`: user-configured
  * agents win. It never calls `editor.default(...)` — the user's startup agent
- * is NOT changed; orchestrator stays the only `mode: primary` kit agent.
+ * is NOT changed; orchestrator stays the default `mode: primary` kit agent;
+ * `orchestrator-quick` is the opt-in alternate.
  *
  * Phase 5 registers each agent's V2 `permissions` (ordered rules, last match
  * wins): the frontmatter translation lives in permissions.ts, the kit invariants

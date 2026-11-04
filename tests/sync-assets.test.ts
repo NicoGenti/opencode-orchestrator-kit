@@ -30,6 +30,7 @@ function writeFixture(root: string): void {
   mkdirSync(join(root, "extras"), { recursive: true });
   writeFileSync(join(root, "command", "start-session.md"), "start\n");
   writeFileSync(join(root, "command", "recall.md"), "recall\n");
+  writeFileSync(join(root, "command", "quick.md"), "recall\n");
   writeFileSync(join(root, "command", "research-mode.md"), "research\n");
   writeFileSync(join(root, "command", "close-session.md"), "close\n");
   writeFileSync(join(root, "command", "not-packaged.md"), "not packaged\n");

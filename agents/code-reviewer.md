@@ -9,6 +9,7 @@ tools:
   code-review-graph_detect_changes_tool: true
   code-review-graph_get_review_context_tool: true
   code-review-graph_get_impact_radius_tool: true
+  code-review-graph_build_or_update_graph_tool: true
 permission:
   task: deny
   edit: deny
@@ -19,6 +20,7 @@ permission:
   code-review-graph_detect_changes_tool: allow
   code-review-graph_get_review_context_tool: allow
   code-review-graph_get_impact_radius_tool: allow
+  code-review-graph_build_or_update_graph_tool: allow
   bash:
     "*": deny
     /tmp/*: allow
@@ -65,6 +67,9 @@ If CRG is unavailable, errors, or returns empty, proceed with `git diff`, `git s
 - Follow repository conventions before generic advice.
 - Separate required fixes from optional improvements.
 - Load the matching stack skill with `skill({ name })`: `angular-patterns`, `dotnet-conventions`, or `python-conventions`; load `web-*` or `project-*` skills when the review depends on them.
+
+- Your tool catalog is the source of truth: if no `code-review-graph_*` tool is listed for this agent, CRG is not configured — do not attempt the call, go straight to the fallback.
+- A CRG response with `status: not_ready` and `reason: stale_graph` means the graph was built at a different commit: call `build_or_update_graph_tool` once, retry, and fall back to `git diff` plus direct reads if it is still not ready.
 
 ## Design Rules
 

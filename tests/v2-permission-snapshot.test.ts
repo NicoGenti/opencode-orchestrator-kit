@@ -12,18 +12,32 @@ import type { PermissionRule } from "../plugin/src/permissions.ts";
  * The snapshot is the output after this change. Against the translation of
  * the previous main, the only differences are:
  *
+ * - agents/orchestrator-quick.md — NEW agent: a second router with
+ *   `edit`/`write`/`patch` denied and `subagent` allowed.
  * - agents/orchestrator.md — one added rule, skill `project-*` allow.
  *   Converting the frontmatter from inline JSON to YAML, dropping the
  *   `tools` entries that were `true`, and writing `task` instead of the V2
  *   name `subagent` do not change the translated rules.
  * - agents/developer-fixer.md — skill `project-*` allow.
  * - agents/code-reviewer.md — skill `project-*` allow.
- * - agents/plan-writer.md — shell `python3 *\/plan-board.py *` allow.
- *   The existing `python` allow is unchanged.
+ * - agents/plan-writer.md — shell patterns aligned to the real commands:
+ *   `python *plan-board.py *`, `python3 *plan-board.py *`, `py -3 *plan-board.py *`
+ *   (the previous glob form never matched `python scripts/plan-board.py`) plus
+ *   `rm .context/plan-body-*.md` for the staging-body cleanup.
  * - agents/oracle.md — removed `{ action: "query", resource: "*", effect: "allow" }`.
  *   `query` is not a V1 or V2 permission action.
  * - agents/librarian.md — removed `{ action: "check_diagnostics", resource: "*", effect: "deny" }`.
  *   `check_diagnostics` is not a V1 or V2 permission action.
+ * - Every agent/extra — one prepended rule `{ action: "code-review-graph_*",
+ *   resource: "*", effect: "deny" }`: `mcpDefaultDenies()` denies the whole
+ *   `code-review-graph` MCP family by default, so a declared per-tool allow
+ *   still wins (last match) while any undeclared tool of the family (e.g.
+ *   `apply_refactor_tool`) resolves to `deny` instead of the host default.
+ * - Three per-tool CRG allows on top of that family deny:
+ *   `build_or_update_graph_tool` (allow) for agents/explorer.md and
+ *   agents/code-reviewer.md — the stale-graph rebuild — and
+ *   `get_minimal_context_tool` (allow) for agents/orchestrator.md, the
+ *   read-only entry point. The write tool `apply_refactor_tool` stays deny.
  *
  * Every other agent translates to the same rule list as before.
  */
@@ -82,6 +96,13 @@ describe("V2 permission translation snapshot", () => {
       );
     expect(
       has("agents/orchestrator.md", {
+        action: "code-review-graph_*",
+        resource: "*",
+        effect: "deny",
+      }),
+    ).toBe(true);
+    expect(
+      has("agents/orchestrator.md", {
         action: "skill",
         resource: "project-*",
         effect: "allow",
@@ -102,19 +123,40 @@ describe("V2 permission translation snapshot", () => {
       }),
     ).toBe(true);
     expect(
-      has("agents/plan-writer.md", {
-        action: "shell",
-        resource: "python3 */plan-board.py *",
+      has("agents/explorer.md", {
+        action: "code-review-graph_build_or_update_graph_tool",
+        resource: "*",
         effect: "allow",
       }),
     ).toBe(true);
     expect(
-      has("agents/plan-writer.md", {
-        action: "shell",
-        resource: "python */plan-board.py *",
+      has("agents/code-reviewer.md", {
+        action: "code-review-graph_build_or_update_graph_tool",
+        resource: "*",
         effect: "allow",
       }),
     ).toBe(true);
+    expect(
+      has("agents/orchestrator.md", {
+        action: "code-review-graph_get_minimal_context_tool",
+        resource: "*",
+        effect: "allow",
+      }),
+    ).toBe(true);
+    for (const resource of [
+      "python *plan-board.py *",
+      "python3 *plan-board.py *",
+      "py -3 *plan-board.py *",
+      "rm .context/plan-body-*.md",
+    ]) {
+      expect(
+        has("agents/plan-writer.md", {
+          action: "shell",
+          resource,
+          effect: "allow",
+        }),
+      ).toBe(true);
+    }
     expect(
       has("agents/orchestrator.md", {
         action: "subagent",

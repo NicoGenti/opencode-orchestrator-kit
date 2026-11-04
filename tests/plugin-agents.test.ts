@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { collectPackagedAgents } from "../plugin/src/agents.ts";
+import { parseFrontmatterScalar } from "../plugin/src/frontmatter-map.ts";
 import { resolveEffect } from "../plugin/src/permissions.ts";
 import type { PermissionRule } from "../plugin/src/permissions.ts";
 import { TierConfigError, resolveTierMap } from "../plugin/src/tiers.ts";
@@ -21,6 +22,7 @@ const AGENT_IDS = [
   "npm-helper",
   "oracle",
   "orchestrator",
+  "orchestrator-quick",
   "plan-writer",
   "planner",
   "profiler",
@@ -46,25 +48,12 @@ function sourceScalar(sourceRel: string, key: string): string {
   if (!fm) {
     throw new Error(`${sourceRel} has no frontmatter block`);
   }
-  const inline = new RegExp(`^${key}:[ \\t]+(\\S.*)$`, "m").exec(fm[1]);
-  if (inline) {
-    return inline[1].trim();
+  const value = parseFrontmatterScalar(fm[1], key);
+  if (value === undefined) {
+    throw new Error(`${sourceRel} frontmatter has no "${key}"`);
   }
-  const block = new RegExp(
-    `^${key}:[ \\t]*>-[ \\t]*\\r?\\n((?:[ \\t]+[^\\r\\n]*\\r?\\n?)+)`,
-    "m",
-  ).exec(fm[1]);
-  if (block) {
-    return block[1]
-      .split(/\r?\n/)
-      .map((line) => line.trim())
-      .filter(Boolean)
-      .join(" ")
-      .trim();
-  }
-  throw new Error(`${sourceRel} frontmatter has no "${key}"`);
+  return value;
 }
-
 interface FakeAgentEditor {
   updates: Map<string, Record<string, unknown>>;
   updateIds: string[];
@@ -177,11 +166,11 @@ const REGISTRY_FULL = [
 ];
 
 describe("agent registration (defaults)", () => {
-  test("(a) default options register exactly the 15 agents by id", async () => {
+  test("(a) default options register exactly the 16 agents by id", async () => {
     const harness = makeHarness({ models: REGISTRY_FULL });
     const result = await setup(harness);
     await Promise.resolve(result);
-    expect(harness.editor.updateIds).toHaveLength(15);
+    expect(harness.editor.updateIds).toHaveLength(16);
     expect([...harness.editor.updateIds].sort()).toEqual(AGENT_IDS);
   });
 
@@ -191,7 +180,7 @@ describe("agent registration (defaults)", () => {
       models: REGISTRY_FULL,
     });
     await setup(harness);
-    expect(harness.editor.updateIds).toHaveLength(17);
+    expect(harness.editor.updateIds).toHaveLength(18);
     expect([...harness.editor.updateIds].sort()).toEqual(
       [...AGENT_IDS, ...EXTRA_IDS].sort(),
     );
@@ -230,6 +219,25 @@ describe("agent registration (defaults)", () => {
     }
   });
 
+  test("(c3) nessuna description registrata e' il marcatore YAML folded", async () => {
+    const harness = makeHarness({
+      options: { withExtras: true },
+      models: REGISTRY_FULL,
+    });
+    await setup(harness);
+
+    const broken = [...harness.editor.updates.entries()]
+      .filter(([, agent]) => {
+        const desc = String(agent.description ?? "").trim();
+        return (
+          desc.startsWith(">-") || desc.startsWith("|") || desc.length < 20
+        );
+      })
+      .map(([id]) => id);
+
+    expect(broken).toEqual([]);
+  });
+
   test("(c2) spot-check known tier mappings", async () => {
     const harness = makeHarness({ models: REGISTRY_FULL });
     await setup(harness);
@@ -251,7 +259,7 @@ describe("agent registration (defaults)", () => {
     });
   });
 
-  test("(d) exactly one primary agent and it is orchestrator", async () => {
+  test("(d) the primary agents are orchestrator and orchestrator-quick", async () => {
     const harness = makeHarness({
       options: { withExtras: true },
       models: REGISTRY_FULL,
@@ -260,9 +268,12 @@ describe("agent registration (defaults)", () => {
     const primaries = [...harness.editor.updates.entries()].filter(
       ([, agent]) => agent.mode === "primary",
     );
-    expect(primaries.map(([id]) => id)).toEqual(["orchestrator"]);
+    expect(primaries.map(([id]) => id).sort()).toEqual([
+      "orchestrator",
+      "orchestrator-quick",
+    ]);
     for (const [id, agent] of harness.editor.updates) {
-      if (id !== "orchestrator") {
+      if (id !== "orchestrator" && id !== "orchestrator-quick") {
         expect(agent.mode).toBe("subagent");
       }
     }
@@ -274,7 +285,7 @@ describe("agent registration (defaults)", () => {
       seededAgents: ["oracle"],
     });
     await setup(harness);
-    expect(harness.editor.updateIds).toHaveLength(14);
+    expect(harness.editor.updateIds).toHaveLength(15);
     expect(harness.editor.updateIds).not.toContain("oracle");
     expect(harness.editor.updates.has("oracle")).toBe(false);
   });
@@ -338,7 +349,7 @@ describe("model availability signaling", () => {
     } finally {
       captured.restore();
     }
-    expect(harness.editor.updateIds).toHaveLength(15);
+    expect(harness.editor.updateIds).toHaveLength(16);
     expect(captured.warnings).toHaveLength(1);
     expect(captured.warnings[0]).toContain("[opencode-orchestrator-kit]");
     expect(captured.warnings[0]).toContain("empty");

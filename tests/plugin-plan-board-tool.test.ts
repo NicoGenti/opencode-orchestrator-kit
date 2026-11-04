@@ -17,7 +17,8 @@ import plugin from "../plugin/src/index.ts";
  *
  * Suite scritta PRIMA dell'implementazione (TDD, passo 1): pinna il contratto
  * osservabile del tool — esattamente un tool `plan_board`, schema input allineato
- * alla CLI di plan-board, execute che ritorna una STRING JSON, comportamento
+ * alla CLI di plan-board, execute che ritorna una Promise risolta a una STRING
+ * JSON (il host fa `execute(input).then(...)`), comportamento
  * check/move/new/adopt su board usa-e-getta identico a plugin/src/plan-board.ts.
  *
  * Nessun caso tocca la board reale del repo: root e' sempre un path assoluto
@@ -136,12 +137,14 @@ await setupPromise;
 
 type ToolInput = Record<string, unknown>;
 
-/** Guida il tool attraverso execute() e parsa la STRING JSON di ritorno. */
+/** Guida il tool attraverso execute() ed estrae il payload JSON dai content parts. */
 async function runTool(input: ToolInput): Promise<any> {
-  const execute = tools[0].execute as (input: ToolInput) => Promise<unknown>;
+  const execute = tools[0].execute as (
+    input: ToolInput,
+  ) => Promise<{ content: Array<{ type: string; text: string }> }>;
   const result = await execute(input);
-  expect(typeof result).toBe("string");
-  return JSON.parse(result as string);
+  expect(Array.isArray(result.content)).toBe(true);
+  return JSON.parse(result.content.map((part) => part.text).join(""));
 }
 
 const boards: string[] = [];
@@ -227,6 +230,11 @@ describe("registrazione del tool nativo plan_board", () => {
     expect(tools[0].name).toBe("plan_board");
   });
 
+  test("(h) il tool e' esposto fuori da Code Mode (options.codemode === false)", () => {
+    expect(tools).toHaveLength(1);
+    expect(tools[0].options).toEqual({ codemode: false });
+  });
+
   test("description documenta l'autorizzazione standing e i codici di uscita (0 ok, 1 bloccante)", () => {
     const description = tools[0].description as string;
     expect(typeof description).toBe("string");
@@ -243,6 +251,12 @@ describe("registrazione del tool nativo plan_board", () => {
     ]) {
       expect(description).toContain(needle);
     }
+  });
+
+  test("(i) la description del tool non contiene il refuso '***' e nomina check", () => {
+    const description = String(tools[0].description ?? "");
+    expect(description).not.toContain("***");
+    expect(description).toContain("`check`");
   });
 
   test("input schema: enum allineate a comandi, colonne e comprehension", () => {
@@ -269,12 +283,20 @@ describe("registrazione del tool nativo plan_board", () => {
     expect(input.properties.dryRun.type).toBe("boolean");
   });
 
-  test("execute e' una funzione e ritorna una STRING (payload JSON, non un oggetto)", async () => {
+  test("(j) execute ritorna una Promise: il host chiama `.then` sul valore", async () => {
+    const returned = (tools[0].execute as (input: ToolInput) => unknown)({});
+    expect(typeof (returned as { then?: unknown }).then).toBe("function");
+    await returned;
+  });
+
+  test("execute risolve a { content: [{ type: 'text', text }] } con il payload JSON", async () => {
     expect(typeof tools[0].execute).toBe("function");
-    const execute = tools[0].execute as (input: ToolInput) => Promise<unknown>;
+    const execute = tools[0].execute as (
+      input: ToolInput,
+    ) => Promise<{ content: Array<{ type: string; text: string }> }>;
     const result = await execute({});
-    expect(typeof result).toBe("string");
-    expect(JSON.parse(result as string).ok).toBe(false);
+    expect(result.content[0].type).toBe("text");
+    expect(JSON.parse(result.content[0].text).ok).toBe(false);
   });
 });
 

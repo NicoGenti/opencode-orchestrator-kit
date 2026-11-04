@@ -123,18 +123,30 @@ function planBoardArgv(input: unknown): string[] {
 }
 
 /**
- * Tool implementation: runs the pure port (which never throws) and returns
- * its JSON payload as a pretty-printed string.
+ * Tool implementation: runs the pure port (which never throws) and resolves to
+ * the host's tool-result shape.
+ *
+ * The OpenCode 2 host does `execute(input).then(...)` and then reads
+ * `"output" in result` / `result.content`: a bare value (string or promise of
+ * a string) fails with `t(s).then is not a function` or `a is not an Object`.
+ * The documented shape for a tool without an output schema is
+ * `{ content: [{ type: "text", text }] }` plus optional `metadata`
+ * (session "Restyle Petalo palette Enrica", 2026-11-02).
  */
-export function executePlanBoardTool(input: unknown): string {
+export async function executePlanBoardTool(
+  input: unknown,
+): Promise<{ content: Array<{ type: "text"; text: string }> }> {
   const { payload } = runPlanBoard(planBoardArgv(input));
-  return JSON.stringify(payload, null, 2);
+  return {
+    content: [{ type: "text", text: JSON.stringify(payload, null, 2) }],
+  };
 }
 
 /**
  * Registers the native `plan_board` tool through `ctx.tool.transform`.
  * Returns true iff registered; when the host does not expose `ctx.tool` the
  * registration degrades silently to keep setup successful.
+ * Registers a first-class tool (options.codemode === false); Code Mode would hide it behind the execute sandbox.
  */
 export function registerPlanBoardTool(ctx: PluginContext): boolean {
   if (typeof ctx.tool?.transform !== "function") {
@@ -143,6 +155,11 @@ export function registerPlanBoardTool(ctx: PluginContext): boolean {
   ctx.tool.transform((editor) => {
     editor.add({
       name: PLAN_BOARD_TOOL_NAME,
+      // OpenCode 2 espone i tool dei plugin SOLO in Code Mode (`execute` -> `tools.plan_board`)
+      // finche' non si passa `codemode: false`. Senza questa opzione il tool non compare nel
+      // catalogo dell'agente (sessione 2026-11-02: 11 chiamate execute + 1 "No tool named plan_board").
+      // Non impostare `permission: "edit"`: la standing authorization copre check/move.
+      options: { codemode: false },
       description: PLAN_BOARD_TOOL_DESCRIPTION,
       input: PLAN_BOARD_TOOL_INPUT,
       execute: executePlanBoardTool,

@@ -29,6 +29,7 @@ import { dirname, join, relative, sep } from "node:path";
 const ROOT = join(import.meta.dir, "..");
 const PACKAGED_COMMANDS = [
   "start-session.md",
+  "quick.md",
   "recall.md",
   "research-mode.md",
   "close-session.md",

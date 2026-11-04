@@ -26,11 +26,11 @@
  * it instead of assuming it.
  *
  * Scenarios:
- *  1. packaged artifact — the tarball is exactly the expected 43 files, the
+ *  1. packaged artifact — the tarball is exactly the expected 45 files, the
  *     package declares zero runtime dependencies, `files`/`exports` cover
  *     everything registration needs, and the packed assets are the repo-root
  *     sources;
- *  2. empty fixture repo — 4 commands, 9 skills, 15 agents (17 with
+ *  2. empty fixture repo — 5 commands, 9 skills, 16 agents (18 with
  *     `withExtras: true`), 1 `plan_board` tool, orchestrator the only
  *     `primary`, per-agent models resolved from the bundled preset tiers,
  *     V2 permissions on every agent (orchestrator 26 rules, plan-writer 10);
@@ -68,7 +68,7 @@ const PLUGIN_DIR = join(ROOT, "plugin");
 /** Hard ceiling for the pack subprocess: a hung pack must never wedge CI. */
 const PACK_TIMEOUT_MS = 120_000;
 
-/** The kit agent ids shipped in plugin/assets/agents/ (15). */
+/** The kit agent ids shipped in plugin/assets/agents/ (16). */
 const AGENT_IDS = [
   "build-helper",
   "code-reviewer",
@@ -80,6 +80,7 @@ const AGENT_IDS = [
   "npm-helper",
   "oracle",
   "orchestrator",
+  "orchestrator-quick",
   "plan-writer",
   "planner",
   "profiler",
@@ -103,16 +104,17 @@ const SKILL_IDS = [
   "structural-search",
 ] as const;
 
-/** The 4 kit commands. */
+/** The 5 kit commands. */
 const COMMAND_NAMES = [
   "start-session",
+  "quick",
   "recall",
   "research-mode",
   "close-session",
 ] as const;
 
 /**
- * The exact file surface of the published package (43 entries, relative to
+ * The exact file surface of the published package (45 entries, relative to
  * the package root). Any drift is a packaging change that must be reviewed
  * explicitly — the plugin is self-contained and ships nothing else.
  */
@@ -734,7 +736,7 @@ describe("packaged artifact — offline pack and self-containment", () => {
       expect(pack.log).toContain("opencode-orchestrator-kit-");
     }
     expect(packageFiles()).toEqual([...EXPECTED_PACKAGE_FILES].sort());
-    expect(packageFiles()).toHaveLength(43);
+    expect(packageFiles()).toHaveLength(45);
     if (extractedFiles !== null) {
       expect(extractedFiles).toEqual([...EXPECTED_PACKAGE_FILES].sort());
     }
@@ -837,7 +839,7 @@ describe("packaged artifact — offline pack and self-containment", () => {
 /* -------------------------------------------------------------------------- */
 
 describe("plugin activation — empty fixture repo", () => {
-  test("the packed plugin registers 4 commands, 9 skills and 1 plan_board tool", async () => {
+  test("the packed plugin registers 5 commands, 9 skills and 1 plan_board tool", async () => {
     const repo = makeEmptyFixture({ withExtras: false });
     const options = readKitOptions(repo);
     const harness = await setupPackedPlugin(options);
@@ -845,6 +847,7 @@ describe("plugin activation — empty fixture repo", () => {
     // Commands — the bodies come from the PACKED assets.
     expect(harness.commands.map((c) => String(c.name)).sort()).toEqual([
       "close-session",
+      "quick",
       "recall",
       "research-mode",
       "start-session",
@@ -873,9 +876,12 @@ describe("plugin activation — empty fixture repo", () => {
       expect(harness.prompts.at(-1)?.text).toBe(body);
       expect(harness.prompts.at(-1)?.sessionID).toBe("ses_fixture");
       expect(harness.prompts.at(-1)?.delivery).toBe("queue");
+      const declaredAgent = new RegExp("^agent:[\\t]*(.+)$", "m").exec(
+        shipped.match(/^---[\s\S]*?---/)?.[0] ?? "",
+      )?.[1];
       expect(harness.switched.at(-1)).toEqual({
         sessionID: "ses_fixture",
-        agent: "orchestrator",
+        agent: declaredAgent?.trim(),
       });
     }
 
@@ -898,8 +904,12 @@ describe("plugin activation — empty fixture repo", () => {
     for (const column of ["draft", "in-progress", "qa", "complete"]) {
       mkdirSync(join(board, column), { recursive: true });
     }
-    const execute = harness.tools[0].execute as (input: unknown) => string;
-    const payload = JSON.parse(execute({ command: "check", root: board })) as {
+    const execute = harness.tools[0].execute as (
+      input: unknown,
+    ) => Promise<{ content: Array<{ type: string; text: string }> }>;
+    const payload = JSON.parse(
+      (await execute({ command: "check", root: board })).content[0].text,
+    ) as {
       ok: boolean;
       action: string;
     };
@@ -907,32 +917,32 @@ describe("plugin activation — empty fixture repo", () => {
     expect(payload.action).toBe("check");
   });
 
-  test("the packed plugin registers the 15 kit agents, 17 with withExtras", async () => {
+  test("the packed plugin registers the 16 kit agents, 18 with withExtras", async () => {
     const defaultRepo = makeEmptyFixture({ withExtras: false });
     const defaults = await setupPackedPlugin(readKitOptions(defaultRepo));
-    expect(defaults.registered).toHaveLength(15);
+    expect(defaults.registered).toHaveLength(16);
     expect([...defaults.registered].sort()).toEqual([...AGENT_IDS].sort());
     expect(defaults.registered).not.toContain("pc-doctor");
     expect(defaults.registered).not.toContain("writer");
 
     const extrasRepo = makeEmptyFixture({ withExtras: true });
     const extras = await setupPackedPlugin(readKitOptions(extrasRepo));
-    expect(extras.registered).toHaveLength(17);
+    expect(extras.registered).toHaveLength(18);
     expect([...extras.registered].sort()).toEqual(
       [...AGENT_IDS, ...EXTRA_IDS].sort(),
     );
   });
 
-  test("orchestrator is the only primary agent", async () => {
+  test("orchestrator and orchestrator-quick are the primary agents", async () => {
     const repo = makeEmptyFixture({ withExtras: true });
     const harness = await setupPackedPlugin(readKitOptions(repo));
 
     const primaries = harness.registered.filter(
       (id) => harness.agents.get(id)?.mode === "primary",
     );
-    expect(primaries).toEqual(["orchestrator"]);
+    expect(primaries.sort()).toEqual(["orchestrator", "orchestrator-quick"]);
     for (const id of harness.registered) {
-      if (id !== "orchestrator") {
+      if (id !== "orchestrator" && id !== "orchestrator-quick") {
         expect(harness.agents.get(id)?.mode).toBe("subagent");
       }
     }
@@ -950,7 +960,7 @@ describe("plugin activation — empty fixture repo", () => {
     );
     expect(tierMap.preset).toBe("default");
     const packaged = collectPackagedAgents(true);
-    expect(packaged).toHaveLength(17);
+    expect(packaged).toHaveLength(18);
 
     for (const agent of packaged) {
       const registered = harness.agents.get(agent.id);
@@ -988,7 +998,7 @@ describe("plugin activation — empty fixture repo", () => {
     });
   });
 
-  test("every agent carries V2 permissions (orchestrator 26 rules, plan-writer 10)", async () => {
+  test("every agent carries V2 permissions (orchestrator 28 rules, plan-writer 13)", async () => {
     const repo = makeEmptyFixture({ withExtras: true });
     const harness = await setupPackedPlugin(readKitOptions(repo));
 
@@ -1002,7 +1012,7 @@ describe("plugin activation — empty fixture repo", () => {
     }
 
     const orchestrator = harness.agents.get("orchestrator")!.permissions!;
-    expect(orchestrator).toHaveLength(26);
+    expect(orchestrator).toHaveLength(28);
     expect(orchestrator[orchestrator.length - 1]).toEqual({
       action: "edit",
       resource: "plan/*.md",
@@ -1014,7 +1024,7 @@ describe("plugin activation — empty fixture repo", () => {
     );
 
     const planWriter = harness.agents.get("plan-writer")!.permissions!;
-    expect(planWriter).toHaveLength(10);
+    expect(planWriter).toHaveLength(13);
     expect(resolveEffect(planWriter, "edit", "plan/qa/13-example.md")).toBe(
       "allow",
     );
@@ -1086,7 +1096,7 @@ describe("plugin activation — existing fixture repo (user config wins)", () =>
 
     // The kit skipped it entirely (the `editor.get(id)` guard).
     expect(harness.registered).not.toContain("orchestrator");
-    expect(harness.registered).toHaveLength(14);
+    expect(harness.registered).toHaveLength(15);
     // The user configuration is intact, field by field.
     expect(harness.agents.get("orchestrator")).toEqual(userAgent);
   });
@@ -1151,7 +1161,7 @@ describe("plugin activation — degraded runtime registry", () => {
       REGISTRY_FULL.filter((entry) => entry.providerID !== "ollama"),
     );
 
-    expect(harness.registered).toHaveLength(15);
+    expect(harness.registered).toHaveLength(16);
     const fastWarnings = harness.warned.filter((message) =>
       message.includes("TIER_FAST"),
     );

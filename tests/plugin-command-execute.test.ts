@@ -3,6 +3,7 @@ import { describe, expect, test } from "bun:test";
 import plugin from "../plugin/src/index.ts";
 import {
   loadPackagedCloseSession,
+  loadPackagedQuick,
   loadPackagedRecall,
   loadPackagedResearchMode,
   loadPackagedStartSession,
@@ -80,6 +81,7 @@ function harness() {
 describe("CommandDefinition.execute (OpenCode 2.2)", () => {
   const cases = [
     ["start-session", loadPackagedStartSession()],
+    ["quick", loadPackagedQuick()],
     ["recall", loadPackagedRecall()],
     ["research-mode", loadPackagedResearchMode()],
     ["close-session", loadPackagedCloseSession()],
@@ -110,10 +112,25 @@ describe("CommandDefinition.execute (OpenCode 2.2)", () => {
       expect(prompts[0]?.delivery).toBe("queue");
       expect(prompts[0]?.text).toBe(packaged.body);
       expect(switched).toEqual([
-        { sessionID: "ses_probe", agent: "orchestrator" },
+        { sessionID: "ses_probe", agent: packaged.agent },
       ]);
     });
   }
+
+  test("/quick switches the session to the slim orchestrator", async () => {
+    const { ctx, commands, switched } = harness();
+    await plugin.setup(ctx as never);
+    const command = commands.find((entry) => entry.name === "quick");
+    expect(command).toBeDefined();
+    await (command?.execute as (input: unknown) => Promise<void>)({
+      sessionID: "ses_quick",
+      prompt: { text: "ignored" },
+      delivery: "immediate",
+    });
+    expect(switched).toEqual([
+      { sessionID: "ses_quick", agent: "orchestrator-quick" },
+    ]);
+  });
 
   test("un cambio agente fallito non impedisce l'invio del prompt", async () => {
     const { ctx, commands, prompts } = harness();

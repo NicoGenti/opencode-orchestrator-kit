@@ -1,6 +1,11 @@
 {
   "agents/build-helper.md": [
     {
+      "action": "code-review-graph_*",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
       "action": "subagent",
       "resource": "*",
       "effect": "deny"
@@ -173,6 +178,11 @@
   ],
   "agents/code-reviewer.md": [
     {
+      "action": "code-review-graph_*",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
       "action": "subagent",
       "resource": "*",
       "effect": "deny"
@@ -209,6 +219,11 @@
     },
     {
       "action": "code-review-graph_get_impact_radius_tool",
+      "resource": "*",
+      "effect": "allow"
+    },
+    {
+      "action": "code-review-graph_build_or_update_graph_tool",
       "resource": "*",
       "effect": "allow"
     },
@@ -340,6 +355,11 @@
   ],
   "agents/comprehension-coach.md": [
     {
+      "action": "code-review-graph_*",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
       "action": "subagent",
       "resource": "*",
       "effect": "deny"
@@ -441,6 +461,11 @@
     }
   ],
   "agents/deploy-helper.md": [
+    {
+      "action": "code-review-graph_*",
+      "resource": "*",
+      "effect": "deny"
+    },
     {
       "action": "subagent",
       "resource": "*",
@@ -593,6 +618,11 @@
     }
   ],
   "agents/developer-fixer.md": [
+    {
+      "action": "code-review-graph_*",
+      "resource": "*",
+      "effect": "deny"
+    },
     {
       "action": "subagent",
       "resource": "*",
@@ -886,6 +916,11 @@
   ],
   "agents/explorer.md": [
     {
+      "action": "code-review-graph_*",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
       "action": "subagent",
       "resource": "*",
       "effect": "deny"
@@ -922,6 +957,11 @@
     },
     {
       "action": "code-review-graph_get_architecture_overview_tool",
+      "resource": "*",
+      "effect": "allow"
+    },
+    {
+      "action": "code-review-graph_build_or_update_graph_tool",
       "resource": "*",
       "effect": "allow"
     },
@@ -1062,6 +1102,11 @@
     }
   ],
   "agents/librarian.md": [
+    {
+      "action": "code-review-graph_*",
+      "resource": "*",
+      "effect": "deny"
+    },
     {
       "action": "subagent",
       "resource": "*",
@@ -1250,6 +1295,11 @@
   ],
   "agents/npm-helper.md": [
     {
+      "action": "code-review-graph_*",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
       "action": "subagent",
       "resource": "*",
       "effect": "deny"
@@ -1391,6 +1441,11 @@
     }
   ],
   "agents/oracle.md": [
+    {
+      "action": "code-review-graph_*",
+      "resource": "*",
+      "effect": "deny"
+    },
     {
       "action": "subagent",
       "resource": "*",
@@ -1542,7 +1597,12 @@
       "effect": "allow"
     }
   ],
-  "agents/orchestrator.md": [
+  "agents/orchestrator-quick.md": [
+    {
+      "action": "code-review-graph_*",
+      "resource": "*",
+      "effect": "deny"
+    },
     {
       "action": "subagent",
       "resource": "*",
@@ -1655,6 +1715,138 @@
     },
     {
       "action": "skill",
+      "resource": "web-*",
+      "effect": "allow"
+    },
+    {
+      "action": "skill",
+      "resource": "project-*",
+      "effect": "allow"
+    }
+  ],
+  "agents/orchestrator.md": [
+    {
+      "action": "code-review-graph_*",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
+      "action": "subagent",
+      "resource": "*",
+      "effect": "allow"
+    },
+    {
+      "action": "todowrite",
+      "resource": "*",
+      "effect": "allow"
+    },
+    {
+      "action": "read",
+      "resource": "*",
+      "effect": "allow"
+    },
+    {
+      "action": "glob",
+      "resource": "*",
+      "effect": "allow"
+    },
+    {
+      "action": "grep",
+      "resource": "*",
+      "effect": "allow"
+    },
+    {
+      "action": "code-review-graph_get_minimal_context_tool",
+      "resource": "*",
+      "effect": "allow"
+    },
+    {
+      "action": "webfetch",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
+      "action": "edit",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
+      "action": "edit",
+      "resource": ".context/progress.md",
+      "effect": "allow"
+    },
+    {
+      "action": "edit",
+      "resource": ".context/comprehension/*.md",
+      "effect": "allow"
+    },
+    {
+      "action": "edit",
+      "resource": ".context/comprehension-log.md",
+      "effect": "allow"
+    },
+    {
+      "action": "edit",
+      "resource": ".context/research-dataset.jsonl",
+      "effect": "allow"
+    },
+    {
+      "action": "edit",
+      "resource": "plan/*.md",
+      "effect": "deny"
+    },
+    {
+      "action": "edit",
+      "resource": ".context/decisions.md",
+      "effect": "allow"
+    },
+    {
+      "action": "edit",
+      "resource": ".context/issues.md",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "git status *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "git diff *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "git log *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "git show *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "ls *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "cat *",
+      "effect": "allow"
+    },
+    {
+      "action": "skill",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
+      "action": "skill",
       "resource": "comprehension-workflow",
       "effect": "allow"
     },
@@ -1670,6 +1862,11 @@
     }
   ],
   "agents/plan-writer.md": [
+    {
+      "action": "code-review-graph_*",
+      "resource": "*",
+      "effect": "deny"
+    },
     {
       "action": "edit",
       "resource": "*",
@@ -1692,12 +1889,17 @@
     },
     {
       "action": "shell",
-      "resource": "python */plan-board.py *",
+      "resource": "python *plan-board.py *",
       "effect": "allow"
     },
     {
       "action": "shell",
-      "resource": "python3 */plan-board.py *",
+      "resource": "python3 *plan-board.py *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "py -3 *plan-board.py *",
       "effect": "allow"
     },
     {
@@ -1708,6 +1910,11 @@
     {
       "action": "shell",
       "resource": "cat *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "rm .context/plan-body-*.md",
       "effect": "allow"
     },
     {
@@ -1722,6 +1929,11 @@
     }
   ],
   "agents/planner.md": [
+    {
+      "action": "code-review-graph_*",
+      "resource": "*",
+      "effect": "deny"
+    },
     {
       "action": "edit",
       "resource": "*",
@@ -1789,6 +2001,11 @@
     }
   ],
   "agents/profiler.md": [
+    {
+      "action": "code-review-graph_*",
+      "resource": "*",
+      "effect": "deny"
+    },
     {
       "action": "subagent",
       "resource": "*",
@@ -1942,6 +2159,11 @@
   ],
   "agents/security.md": [
     {
+      "action": "code-review-graph_*",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
       "action": "*",
       "resource": "*",
       "effect": "deny"
@@ -2029,6 +2251,11 @@
   ],
   "agents/test-engineer.md": [
     {
+      "action": "code-review-graph_*",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
       "action": "subagent",
       "resource": "*",
       "effect": "deny"
@@ -2115,6 +2342,11 @@
     }
   ],
   "extras/pc-doctor.md": [
+    {
+      "action": "code-review-graph_*",
+      "resource": "*",
+      "effect": "deny"
+    },
     {
       "action": "subagent",
       "resource": "*",
@@ -2237,6 +2469,11 @@
     }
   ],
   "extras/writer.md": [
+    {
+      "action": "code-review-graph_*",
+      "resource": "*",
+      "effect": "deny"
+    },
     {
       "action": "subagent",
       "resource": "*",

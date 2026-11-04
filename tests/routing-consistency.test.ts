@@ -53,8 +53,14 @@ const rosterTableIds = extractBacktickIds(
   extractSection(agentsMd, /##\s+Runtime Subagent Roster\r?\n/),
 );
 
+/**
+ * Session entry points are not delegation targets: the orchestrator never
+ * delegates to itself or to its slim peer, so neither belongs in the routing
+ * table. Both are listed in AGENTS.md's roster instead.
+ */
+const ROUTER_FILES = new Set(["orchestrator.md", "orchestrator-quick.md"]);
 const agentIdsInAgents = readdirSync(AGENTS_DIR)
-  .filter((f) => f.endsWith(".md") && f !== "orchestrator.md")
+  .filter((f) => f.endsWith(".md") && !ROUTER_FILES.has(f))
   .map((f) => f.replace(/\.md$/, ""));
 const agentIdsInExtras = existsSync(EXTRAS_DIR)
   ? readdirSync(EXTRAS_DIR)

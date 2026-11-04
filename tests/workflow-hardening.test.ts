@@ -27,7 +27,15 @@ import {
 } from "./contract-fields.ts";
 
 const REPO_ROOT = join(import.meta.dir, "..");
-const ORCH = readFileSync(join(REPO_ROOT, "agents/orchestrator.md"), "utf-8");
+/** Prompt budgets are character counts of the shipped text: normalise the
+ * Windows checkout's CRLF so the guard measures content, not line endings
+ * (CI checks out LF and would otherwise disagree with a local run). */
+const readPrompt = (relPath: string): string =>
+  readFileSync(join(REPO_ROOT, relPath), "utf-8")
+    .split(String.fromCharCode(13))
+    .join("");
+const ORCH = readPrompt("agents/orchestrator.md");
+const QUICK = readPrompt("agents/orchestrator-quick.md");
 const COACH = readFileSync(
   join(REPO_ROOT, "agents/comprehension-coach.md"),
   "utf-8",
@@ -49,6 +57,23 @@ const START = readFileSync(
 describe("workflow-hardening — W1 prompt budget (v0.6.1)", () => {
   test("agents/orchestrator.md stays within the 24,000-char prompt budget (v0.6.4)", () => {
     expect(ORCH.length).toBeLessThanOrEqual(24_000);
+  });
+
+  test("agents/orchestrator-quick.md stays within the 6,000-char prompt budget", () => {
+    expect(QUICK.length).toBeLessThanOrEqual(6_000);
+  });
+
+  test("orchestrator-quick keeps the kit's verification contract", () => {
+    expect(QUICK).toContain("## Hand back instead of improvising");
+    expect(QUICK).toContain(
+      "## Delegation contract (5 fields, never free-form)",
+    );
+    expect(QUICK).toContain("never upgraded by inference");
+  });
+
+  test("orchestrator triages small tasks to orchestrator-quick before delegating", () => {
+    expect(ORCH).toContain("### Small-task triage (before any delegation)");
+    expect(ORCH).toContain("orchestrator-quick");
   });
 
   test("orchestrator keeps routing + classification, delegates operational details", () => {

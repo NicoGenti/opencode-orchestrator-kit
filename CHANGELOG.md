@@ -4,10 +4,33 @@ All notable changes to this project are documented in this file. The format foll
 
 ## [Unreleased]
 
+### Added
+
+- **`orchestrator-quick`**: a second `mode: primary` agent (3,596-character prompt against the orchestrator's 23,961) for small tasks. Same read-only surface and the same kit invariants — it cannot edit application code, run the plan board or write `.context` — but its cycle is one classify, one delegation and one verification, with an explicit hand-back to `orchestrator` when the task needs more than one delegation, more than about five files, or must survive the session. `plugin/src/permissions.ts` now treats both routers through a `ROUTING_AGENTS` set instead of a hardcoded `"orchestrator"` in three places.
+- **`/quick`**: packaged command that switches the session to `orchestrator-quick` and states the working rules (one delegation, raw verification output, stop and escalate when the task grows). Five commands are registered at runtime.
+- **Small-task triage**: `agents/orchestrator.md` tells the full router to hand a one-file or plan-free request to `/quick` instead of running the multi-agent flow, citing the measured 2-3x cost.
+
+## [1.0.1] — 2026-11-03
+
+### Added
+
+- **MCP least privilege**: `plugin/src/permissions.ts` prepends `mcpDefaultDenies()` — `{ action: "code-review-graph_*", resource: "*", effect: "deny" }` — to every agent's translated rule list, so a declared `<server>_<tool>: allow` is a real allowlist and any undeclared tool of that family, `apply_refactor_tool` included, resolves to `deny` instead of the host default. `assertKitPermissionInvariants` fails the setup when an agent can reach `code-review-graph_apply_refactor_tool`, and `MCP_SERVER_PREFIXES` lists the families that get this default.
+- **Graph lifecycle**: `explorer` and `code-reviewer` may call `code-review-graph_build_or_update_graph_tool` (it writes only `.code-review-graph/graph.db`, never sources) and their prompts describe the `status: not_ready` / `reason: stale_graph` recovery: rebuild once, retry, then fall back silently. `orchestrator` gets the read-only `code-review-graph_get_minimal_context_tool`.
+- **Explorer and planner tool surface**: `agents/explorer.md` documents the graph call as the FIRST tool call of any multi-file exploration, with the Code Mode namespacing rule (MCP tools through `tools["<server>"]`, native tools called directly — `tools.shell(...)` fails); `agents/planner.md` declares that it has no native `ls` or `sed` and that `shell` is limited to `ls`, `cat` and read-only git.
+
+### Fixed
+
+- **`plan_board` was not a first-class tool**: the plugin registered it through Code Mode, so the host never exposed `plan_board` to the agents; it is registered with `options: { codemode: false }` and covered by a description contract test. Its `execute` is now `async` (`Promise<string>`), because the host chains `.then` on the return value and every call failed with `t(s).then is not a function`.
+- **Folded YAML descriptions**: twelve agents were registered with the literal description `">-"`. `plugin/src/frontmatter-map.ts` exports `parseFrontmatterScalar`, shared by the loader and the test helper, so a `description: >-` block folds to its real sentence.
+- **`missing-column` on plan-board writes**: `new` and `move` create the destination column when it is absent on disk instead of failing — in the TypeScript port and in `scripts/plan-board.py`, which previously raised. `check` still reports the missing column as a warning.
+- **plan-writer V1 shell patterns**: the fallback matches the commands people actually run (`python *plan-board.py *`, `python3 *plan-board.py *`, `py -3 *plan-board.py *`) plus `rm .context/plan-body-*.md` for the staging cleanup; the previous glob never matched.
+
 ### Changed
 
+- **README: when to use the kit**: the README states the design envelope — long, multi-phase or multi-session work — and tells readers to use OpenCode's built-in `Build` or `Plan` agent for anything that fits in a single context. Two measured runs (a research task and an implementation task on three identical worktrees of this repository, graded by the same external harness) document that boundary, with the reproduction query and an explicit note that the long-session regime is not measured yet.
+- **Board outcome verification**: the orchestrator and plan-writer contracts require `ok: true` in the tool payload before a board operation counts as done, and require quoting `code` and `message` verbatim when it is false.
 - **Landing page**: the GitHub Pages site matches the npm 1.0.0 install (quickstart tabs for npm, git, a local `plugin/` directory, legacy `install.sh`, and OpenCode Studio). The agent roster and its counts are derived from `agents/` and `extras/` frontmatter. The page adds a What's new in 1.0 section and the four commands (`/start-session`, `/recall`, `/research-mode`, `/close-session`). The docs build prerenders the page, refreshes `sitemap.xml` `lastmod`, and injects `softwareVersion` from `plugin/package.json`. `.gitignore` anchors the docs build output as `/site/` so `src/site/` is not ignored.
-- **npm package metadata**: `plugin/package.json` sets `homepage` to the GitHub Pages URL, adds discovery `keywords`, and describes `/start-session`, `/recall`, `/research-mode`, and `/close-session`. The version stays `1.0.0` (no tag, no publish).
+- **npm package metadata**: `plugin/package.json` sets `homepage` to the GitHub Pages URL, adds discovery `keywords`, and describes `/start-session`, `/recall`, `/research-mode`, and `/close-session`. The version moves to `1.0.1` with this release.
 - **OpenCode 2 install path**: README, QUICKSTART, `docs/MIGRATION-V1-V2.md`, `docs/SETUP-NATIVE.md`, and CONTRIBUTING describe the published npm package `opencode-orchestrator-kit` (1.0.0) as the primary OpenCode 2 install. The `plugins` entry keeps the documented object form `{ "package", "options" }`. A local `plugin/` directory and `opencode plugin add 'github:NicoGenti/opencode-orchestrator-kit#main::path:plugin'` stay as alternatives. `install.sh` stays the legacy v1 path. The release workflow comment records that 1.0.0 is already on npm and that a later tag still needs `NPM_TOKEN`.
 - **Plan 13 stays in `qa`**: `plan/qa/13-migrare-il-kit-al-plugin-opencode-2` was checked against its completion line (npm release v0.7.0 or v1.0.0, green CI, updated CHANGELOG, and a `v1` branch for the old installer). `opencode-orchestrator-kit@1.0.0` is published (tag `v1.0.0` at `9bc59b4`; the Release workflow on that tag succeeded; `## [1.0.0]` is in this changelog). The `v1` branch is absent (`origin` has only `main`), so that line is still unmet and the plan was not moved. Issue #13 remains open. Standing authorization covers `check` and `move` only, so the plan body was left unchanged.
 
