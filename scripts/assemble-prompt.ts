@@ -10,7 +10,8 @@ import {
 /**
  * Stable Prefix Extractor
  *
- * Implements the "Prompt-Assembly Stable-Prefix Contract" defined in AGENTS.md.
+ * Implements the "Prompt-assembly contract" defined in CONTRIBUTING.md (moved
+ * out of AGENTS.md so the always-on instructions carry no maintainer-only text).
  *
  * The repository-controlled stable prefix is a fixed, finite set of
  * repository-controlled prompt files. This function enumerates them in
