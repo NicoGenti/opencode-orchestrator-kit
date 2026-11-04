@@ -1,7 +1,8 @@
 ---
 description: >-
-  Build-tool error specialist for TypeScript, Vite, webpack, Rollup, esbuild, Sass, PostCSS, and native
-  modules.Diagnoses from error output and applies minimal fixes. Does not refactor application code.
+  Build-tool error specialist for TypeScript, Vite, webpack, Rollup, esbuild, Sass, PostCSS and native
+  modules: diagnoses from the error output, applies minimal fixes. Not for app refactors or CI-only
+  failures.
 mode: subagent
 model: {{TIER_FAST}}
 temperature: 0.2

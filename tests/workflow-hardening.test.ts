@@ -54,14 +54,36 @@ const START = readFileSync(
   "utf-8",
 );
 
-describe("workflow-hardening — W1 prompt budget (v0.6.1)", () => {
-  test("agents/orchestrator.md stays within the 24,000-char prompt budget (v0.6.4)", () => {
-    expect(ORCH.length).toBeLessThanOrEqual(24_000);
-  });
+/** v0.7.0 — one budget per agent prompt: the current size plus 5%, rounded up
+ *  to 100 characters. A prompt may only shrink; growing it means editing this
+ *  table on purpose, in the same commit that adds the content. */
+const PROMPT_BUDGETS: Record<string, number> = {
+  "agents/build-helper.md": 2_800,
+  "agents/code-reviewer.md": 3_600,
+  "agents/comprehension-coach.md": 6_500,
+  "agents/deploy-helper.md": 3_300,
+  "agents/developer-fixer.md": 4_300,
+  "agents/explorer.md": 5_000,
+  "agents/librarian.md": 2_500,
+  "agents/npm-helper.md": 2_700,
+  "agents/oracle.md": 3_500,
+  "agents/orchestrator-quick.md": 4_200,
+  "agents/orchestrator.md": 23_000,
+  "agents/plan-writer.md": 14_100,
+  "agents/planner.md": 3_800,
+  "agents/profiler.md": 8_100,
+  "agents/security.md": 4_400,
+  "agents/test-engineer.md": 2_400,
+  "extras/pc-doctor.md": 2_900,
+  "extras/writer.md": 5_000,
+};
 
-  test("agents/orchestrator-quick.md stays within the 6,000-char prompt budget", () => {
-    expect(QUICK.length).toBeLessThanOrEqual(6_000);
-  });
+describe("workflow-hardening — W1 prompt budget (v0.6.1)", () => {
+  for (const [relative, cap] of Object.entries(PROMPT_BUDGETS)) {
+    test(`${relative} stays within its ${cap}-char prompt budget`, () => {
+      expect(readPrompt(relative).length).toBeLessThanOrEqual(cap);
+    });
+  }
 
   test("orchestrator-quick keeps the kit's verification contract", () => {
     expect(QUICK).toContain("## Hand back instead of improvising");

@@ -1,7 +1,8 @@
 ---
 description: >-
-  npm and Node.js error specialist for dev folders. Diagnoses install/runtime/peer-dep/cache/native-module issues and
-  applies minimal fixes. Does not modify application source code.
+  npm/Node error specialist for a local dev folder: install, runtime, peer-dep, cache and
+  native-module issues, minimal fixes. Never edits application source. Not for CI pipelines
+  (deploy-helper).
 mode: subagent
 model: {{TIER_FAST}}
 temperature: 0.2

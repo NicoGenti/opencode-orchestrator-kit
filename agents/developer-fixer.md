@@ -1,7 +1,8 @@
 ---
 description: >-
-  Unified implementation agent. Operates in Fixer mode (exact-spec execution, zero extra research) when given a
-  complete task spec, or Developer mode (strict TDD) when given a partial/exploratory request.
+  TDD implementation: exact-spec execution when the task is fully specified, strict RED-GREEN-REFACTOR
+  when it is not; one commit per task. Not for test strategy, architecture advice or build/CI tool
+  failures.
 mode: subagent
 model: {{TIER_CODE}}
 temperature: 0.2
