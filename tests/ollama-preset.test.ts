@@ -9,7 +9,7 @@ const TPL = join(REPO, "templates", "models.config.json");
 /**
  * I cinque modelli confermati dall'utente. Quattro erano già verificati il
  * 2026-10-27 con `opencode2 run --model <provider>/<id>` sul provider `ollama`;
- * TIER_FAST è passato a `nemotron-3-nano:30b-cloud`, verificato il 2026-11-04
+ * TIER_FAST è passato a `mimo-v2.6-flash:cloud`, verificato il 2026-11-04
  * con `POST /v1/chat/completions` (usage 18/4/22).
  */
 const EXPECTED = {
@@ -17,7 +17,7 @@ const EXPECTED = {
   TIER_REASONING: "ollama/beam:cloud",
   TIER_CODE: "ollama/deepseek-v4.1-flash:cloud",
   TIER_REVIEW: "ollama/glm-5.3:cloud",
-  TIER_FAST: "ollama/nemotron-3-nano:30b-cloud",
+  TIER_FAST: "ollama/mimo-v2.6-flash:cloud",
 } as const;
 
 describe("templates/models.config.json — preset ollama", () => {
