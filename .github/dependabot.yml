@@ -15,14 +15,35 @@ updates:
       day: "monday"
       time: "06:00"
       timezone: "Europe/Rome"
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 3
     commit-message:
       prefix: "chore(deps)"
     labels:
       - "dependencies"
+    # Grouping rules earned the hard way (2026-11-04, PRs #103-#108):
+    # a single `patterns: ["*"]` group dragged eslint, its plugins and prettier
+    # into one PR that could not pass, because eslint 10 only loads with
+    # @eslint/js 10 + eslint-config-prettier 10 + typescript-eslint >= 8.6x,
+    # and a prettier minor reformats the whole repository. Keep the lint set
+    # together, keep prettier alone, and let everything else arrive one by one.
     groups:
-      toolchain:
-        patterns: ["*"]
+      eslint:
+        patterns:
+          - "eslint"
+          - "@eslint/*"
+          - "eslint-*"
+          - "typescript-eslint"
+      site:
+        patterns:
+          - "tailwindcss"
+          - "@tailwindcss/*"
+          - "tw-animate-css"
+          - "vite"
+          - "@vitejs/*"
+          - "vite-*"
+        update-types: ["minor", "patch"]
+      types:
+        patterns: ["@types/*"]
         update-types: ["minor", "patch"]
 
   - package-ecosystem: "github-actions"
