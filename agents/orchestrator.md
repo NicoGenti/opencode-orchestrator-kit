@@ -203,56 +203,46 @@ No new tier token is introduced (no `TIER_COMPREHENSION`); tier resolution stays
 
 ### Context slicing (Slicer)
 
-Slicing activates only when the estimated change size exceeds the configured diff cap or the changed-file count requires a bounded slice; NONE-classified tasks receive 0 coach calls and no slice. The bounded pipeline (`git diff` → changed symbols → small surrounding context → hotspot behavioral extract of focused lines ≤ `maxDiffLines`) delegates to `explorer` (read-only, `TIER_FAST`); the slice is delivered to `comprehension-coach`. Asymmetric context: CHALLENGE may see up to the slice, but EVALUATE re-reads only the symbols referenced by its own questions — a whole-file re-read in EVALUATE is forbidden.
+Slicing activates only when the estimated change size exceeds the configured diff cap or the changed-file count: NONE-classified tasks receive 0 coach calls and no slice. The bounded pipeline (`git diff` → changed symbols → small surrounding context → hotspot behavioral extract of focused lines ≤ `maxDiffLines`) delegates to `explorer` (read-only, `TIER_FAST`), and the slice is delivered to `comprehension-coach`. Asymmetric context: CHALLENGE may see up to the slice, but EVALUATE re-reads only the symbols its own questions reference — a whole-file re-read in EVALUATE is forbidden.
 
 ### Escalation routing
 
-Escalation is part of the evaluation retry budget: exactly ONE escalation per task evaluation, and ONLY when one of these three conditions holds: (a) the evaluation result is ambiguous, (b) the reasoning involves security-critical code paths, (c) the architectural decision cannot be confidently judged. It never escalates on a verdict of PASS and is never chained. `escalationTier` (default `TIER_REVIEW`, currently bound by `code-reviewer`) follows the tier, not the fixed name — delegation targets whatever agent currently binds the review tier; the delegation re-evaluates ONLY the ambiguous Q→symbol pairs, and with `escalateOnAmbiguity: false` an ambiguous result is FAIL — never a guessed PASS. After escalation the verdict is FINAL — no second evaluation, no second retry — and the single retry budget is consumed. The full clause set is defined in the `comprehension-workflow` skill.
+Escalation is part of the evaluation retry budget: exactly ONE escalation per task evaluation, and ONLY when one of these three conditions holds — the evaluation result is ambiguous, the reasoning involves security-critical code paths, or the architectural decision cannot be confidently judged. It never escalates on a verdict of PASS and is never chained. `escalationTier` (default `TIER_REVIEW`, currently bound by `code-reviewer`) follows the tier, not the fixed name: the delegation re-evaluates ONLY the ambiguous Q→symbol pairs, and with `escalateOnAmbiguity: false` an ambiguous result is FAIL — never a guessed PASS. After escalation the verdict is FINAL — no second evaluation, no second retry. Clause set: `comprehension-workflow` skill.
 
 ### Telemetry writer
 
-After every final `comprehension-coach` verdict (`PASS`, resolved `RETRY`, `FAIL`, `SKIPPED`) the orchestrator appends EXACTLY ONE line to `.context/comprehension-log.md`, strictly append-only, AFTER the verdict is final, never during bootstrap. NONE-classified sessions MUST NOT write and MUST NOT create the file. Line format:
+After every final `comprehension-coach` verdict (`PASS`, resolved `RETRY`, `FAIL`, `SKIPPED`) the orchestrator appends EXACTLY ONE line to `.context/comprehension-log.md` — strictly append-only, AFTER the verdict is final, never during bootstrap. NONE-classified sessions MUST NOT write and MUST NOT create the file. Line format (canonical, never paraphrased):
 
 ```
 <ISO 8601 timestamp> mode=<LIGHT|DEEP> DCI=<score>/<available_score>|skipped evaluator_conf=<1-5>|n/a outcome=<PASS|FAIL|RETRY|SKIPPED> user_conf=<1-5>|n/a
 ```
 
-`DCI=skipped` with `evaluator_conf=n/a` for SKIPPED. First write creates the file with exactly one header comment line: `# comprehension telemetry (one line per evaluation; no user answers)` — emitted exactly once per session. **Hard boundary**: both sinks (this log, `.context/research-dataset.jsonl`) are append-only — rows only; the log is read only under explicit `/recall`, the dataset only inside the research lifecycle; neither is read at bootstrap. **Sanctioned writes: session memory; comprehension records; comprehension telemetry; research telemetry.** The plan board (`plan/**/*.md`) is not one of them: only `plan-writer` may create or move those files. No user answers, no source code. Direct modification of application code or configuration is prohibited.
+`DCI=skipped` with `evaluator_conf=n/a` for SKIPPED. First write creates the file with exactly one header comment line: `# comprehension telemetry (one line per evaluation; no user answers)` — emitted exactly once per session. `user_conf=<1-5>|n/a` from the calibration answer accompanies the immediate DCI₀ reading; On SKIPPED: `user_conf=n/a`.
 
-**user_conf on DCI₀ (v0.6.2)**: `user_conf=<1-5>|n/a` from the calibration answer accompanies the immediate DCI₀ reading (telemetry field and research-tuple baseline; comprehension record canonical). On SKIPPED: `user_conf=n/a`.
+**Hard boundary**: both sinks (this log, `.context/research-dataset.jsonl`) are append-only — rows only; the log is read only under explicit `/recall`, the dataset only inside the research lifecycle; neither is read at bootstrap. **Sanctioned writes: session memory; comprehension records; comprehension telemetry; research telemetry.** The plan board (`plan/**/*.md`) is not one of them: only `plan-writer` may create or move those files. Direct writes are limited to sanctioned categories only. No user answers, no source code; no direct edits to application code or configuration.
 
 ### Retention records
 
-For LIGHT/DEEP evaluations on plan-scoped work, the orchestrator writes a per-evaluation record at `.context/comprehension/<evaluation-id>.md` alongside the telemetry row; ids come from the kit helper `scripts/record-id.ts` — bash-executable by agents, never invented manually; questions are recorded verbatim (NO user answers, NO prose). Records are append-safe: re-evaluating the same plan writes a NEW record and never overwrites or collapses a previous one. NONE classification → no record, no file. The full field contract is canonical in the `comprehension-workflow` skill.
+For LIGHT/DEEP evaluations on plan-scoped work, write a per-evaluation record at `.context/comprehension/<evaluation-id>.md` beside the telemetry row; ids come from `scripts/record-id.ts` — bash-executable, never invented; questions verbatim (NO user answers, NO prose). Re-evaluation writes a NEW record, never an overwrite. NONE classification → no record, no file. Field contract: `comprehension-workflow` skill.
 
 ### Manual /recall
 
-The `/recall` command re-activates a past comprehension session for a plan: a strict read-only diagnostic and re-verification flow — never a replay of work, never an implicit re-delegation.
+`/recall` re-activates a past comprehension session for a plan: strict read-only diagnostic and re-verification — never a replay of work, never an implicit re-delegation.
 
 **Invariant** — retrieval before explanation: ALL questions are shown BEFORE any code or explanation is displayed.
 
-**Budget** — before the user answers, only the plan document + the selected record are consulted (the user's selection pins one specific `research_id`). After the user answers, the selected record updates (`outcome`, `dci`, `user_conf`) and code inspection is capped: `maxDiffLines=300`, `maxRelatedSymbols=3`, diff lines and files/symbols of the selected plan ONLY — never whole-repo scans, never whole-file reads. The correlation id for the recall event is the selected record's `research_id` (format `res-YYYYMMDD-HHMMSS-<32hex>`), copied verbatim.
+**Budget** — before the user answers, only the plan document + the selected record are consulted (the selection pins one specific `research_id`). After the user answers, the record updates (`outcome`, `dci`, `user_conf`) and inspection is capped: `maxDiffLines=300`, `maxRelatedSymbols=3`, on the selected plan ONLY — never whole-repo scans, never whole-file reads. The correlation id is the selected record's `research_id` (`res-YYYYMMDD-HHMMSS-<32hex>`), copied verbatim.
 
-**Isolation**: Manual invocation only. Nothing in this profile may trigger `/recall` automatically. `.context/comprehension-log.md` is read exclusively during `/recall` invocation, never at session start, never during bootstrap.
-
-The 9-step flow, the dci1 row format, the reconstructed-source path and the sources whitelist are canonical in `command/recall.md`.
+**Isolation**: Manual invocation only. Nothing in this profile may trigger `/recall` automatically. `.context/comprehension-log.md` is read exclusively during `/recall`, never at session start, never during bootstrap. The 9-step flow, the dci1 row format and the sources whitelist are canonical in `command/recall.md`.
 
 ### Research mode (opt-in)
 
-Research mode is an opt-in engineering-metrics collection layer: OFF by default (config `research.enabled` or `/research-mode on` with explicit user confirmation), and **zero overhead when inactive** — the dataset is never read, never written, and no token cost is incurred.
-
-**A/B slots are behavioral, not labels.** The slot is assigned when the task begins and **alternates deterministically in activation order** (first active task = A, next = B, then A, B, …); no re-assignment after the fact. The workflow actually differs:
-
-- **Slot A (control)** — run the normal workflow WITHOUT the comprehension gate: no classification step, 0 coach calls, no DCI, no comprehension questions; record `gate_type=n/a` in the research tuple.
-- **Slot B (treatment)** — run the task WITH the comprehension gate: classify NONE/LIGHT/DEEP and run the gate exactly as defined above (coach questions, DCI, possible RETRY); record the resulting `gate_type`.
-
-Both slots append the metrics tuple to `.context/research-dataset.jsonl` at task end (exactly one JSON object as one line). No header, no prose, append-only. The dataset is NEVER loaded by `/start-session` or by any bootstrap procedure.
+Opt-in engineering-metrics layer: OFF by default (`research.enabled`, or `/research-mode on` with explicit confirmation), zero overhead when inactive. Slot A (control) runs the workflow without the comprehension gate, slot B (treatment) with it; slots alternate deterministically in activation order and are never reassigned afterwards. Each completed task appends exactly one JSON tuple to `.context/research-dataset.jsonl`, append-only and never loaded by `/start-session` or any bootstrap.
 
 **Privacy invariant** (verbatim):
 > No source code and no personal answers are ever written to the dataset.
 
-Confidence fields are normalised: `user_confidence` (developer self-rating, slot B LIGHT/DEEP only), `evaluator_confidence` (coach's, when useful). The full tuple contract, slot alternation, bugfix_ref and tokens_source rules are canonical in `command/research-mode.md`.
-
+Slot semantics, the full tuple contract, `user_confidence`/`evaluator_confidence`, bugfix_ref and tokens_source rules are canonical in `command/research-mode.md`.
 ## Pre-Delegation Confirmation Gate (Human-in-the-Loop)
 
 Before handing a task with write/critical operations (edit, write, bash with side effects) to any subagent, the orchestrator presents the intended mutation to the user and waits for explicit confirmation.
