@@ -1,32 +1,32 @@
 # Flow verification — plan board (plan-writer)
 
-## 1. Cosa e' stato verificato
+## 1. What was verified
 
-Il board dei piani ha un owner unico, l'agente `plan-writer`, e ogni mutazione di piani passa dal tool deterministico `scripts/plan-board.py`. Qui si registrano le prove d'esecuzione raccolte il 2026-10-14: i momenti di dispatch e il `check` di status esercitati su una board usa-e-getta nella directory temporanea del profilo (log `pbwork/logs/b3-*.log`), i rifiuti verificati del tool, l'effetto sul filesystem, lo stato (sola lettura) della board reale del kit e un censimento (sola lettura) della controparte O4A. Nessun file di `plan/**` del repo e' stato scritto; l'unico artefatto nel repo e' questo documento.
+The plan board has a single owner, the `plan-writer` agent, and every plan mutation goes through the deterministic tool `scripts/plan-board.py`. This document records the execution evidence gathered on 2026-10-14: the four dispatch moments and the `check` of status exercised on a throwaway board in the profile's temp directory (logs `pbwork/logs/b3-*.log`), the tool's verified rejections, the effect on the filesystem, the (read-only) state of the kit's real board, and a (read-only) census of the O4A counterpart. No file under `plan/**` of this repo was written; the only artifact in the repo is this document.
 
-## 2. I quattro momenti di dispatch (contratto di flusso)
+## 2. The four dispatch moments (flow contract)
 
-| Momento | Stato del tool | Comando eseguito | Exit | Esito |
+| Moment | Tool state | Command executed | Exit | Outcome |
 | --- | --- | --- | --- | --- |
-| Piano approvato -> `new` | `"ok": true`, `"verified": true`, `"column": "draft"` | `python scripts/plan-board.py new --root "$BOARD" --id 9001-flow-probe --title "Flow probe" --owner orchestrator --executor developer-fixer --body "$BODY" --json` (passo 4, `b3-2.log`) | 0 | piano conforme creato in `draft/9001-flow-probe.md` |
-| Approvato con file esistente -> move `draft` -> `in-progress` | `"ok": true`, `"from": "draft"`, `"to": "in-progress"` | `python scripts/plan-board.py move --root "$BOARD" --id 9001-flow-probe --to in-progress --json` (passo 5, `b3-3.log`) | 0 | file spostato, frontmatter aggiornato (v. sezione 4) |
-| Completamento implementer -> move `in-progress` -> `qa` | — | `plan-board.py move --to qa` | non esercitato | non esercitato: richiede una board reale |
-| Accettazione utente -> move `qa` -> `complete` | — | `plan-board.py move --to complete` | non esercitato | non esercitato: decide l'utente |
-| Status/resume di sessione -> `check` | `"ok": true` (due run) | `python scripts/plan-board.py check --root "$BOARD" --json` (passi 3 e 6, `b3-1.log` / `b3-4.log`) | 0 / 0 | board conforme: 0 piani al primo `check`, 1 piano `in-progress` al secondo |
+| Approved plan -> `new` | `"ok": true`, `"verified": true`, `"column": "draft"` | `python scripts/plan-board.py new --root "$BOARD" --id 9001-flow-probe --title "Flow probe" --owner orchestrator --executor developer-fixer --body "$BODY" --json` (step 4, `b3-2.log`) | 0 | conforming plan created in `draft/9001-flow-probe.md` |
+| Approved with existing file -> move `draft` -> `in-progress` | `"ok": true`, `"from": "draft"`, `"to": "in-progress"` | `python scripts/plan-board.py move --root "$BOARD" --id 9001-flow-probe --to in-progress --json` (step 5, `b3-3.log`) | 0 | file moved, frontmatter updated (see section 4) |
+| Implementer completion -> move `in-progress` -> `qa` | — | `plan-board.py move --to qa` | not exercised | not exercised: requires a real board |
+| User acceptance -> move `qa` -> `complete` | — | `plan-board.py move --to complete` | not exercised | not exercised: the user decides |
+| Session status/resume -> `check` | `"ok": true` (two runs) | `python scripts/plan-board.py check --root "$BOARD" --json` (steps 3 and 6, `b3-1.log` / `b3-4.log`) | 0 / 0 | conforming board: 0 plans at the first `check`, 1 `in-progress` plan at the second |
 
-## 3. Rifiuti verificati (il tool non indovina)
+## 3. Verified rejections (the tool does not guess)
 
-| Codice atteso | Comando | Exit reale | Messaggio verbatim (1 riga) |
+| Expected code | Command | Actual exit | Verbatim message (1 line) |
 | --- | --- | --- | --- |
-| `already-in-column` | `move --id 9001-flow-probe --to in-progress` ripetuto (passo 7, `b3-5.log`) | 1 | `'9001-flow-probe.md' e' gia' in 'in-progress'` |
-| `duplicate-id` | `new --id 9001 --title Dup --owner orchestrator --executor developer-fixer --body "$BODY"` (passo 8, `b3-6.log`) | 1 | `'9001' esiste gia' in in-progress` |
-| `plan-ambiguous` | `move --id 9002 --to qa` dopo la creazione ad hoc di `draft/9002-alpha.md` e `complete/9002-beta.md` (passo 9, `b3-7.log`) | 1 | `'9002' presente in piu' colonne: draft/9002-alpha.md, complete/9002-beta.md` |
+| `already-in-column` | `move --id 9001-flow-probe --to in-progress` repeated (step 7, `b3-5.log`) | 1 | `'9001-flow-probe.md' is already in 'in-progress'` |
+| `duplicate-id` | `new --id 9001 --title Dup --owner orchestrator --executor developer-fixer --body "$BODY"` (step 8, `b3-6.log`) | 1 | `'9001' already exists in in-progress` |
+| `plan-ambiguous` | `move --id 9002 --to qa` after the ad-hoc creation of `draft/9002-alpha.md` and `complete/9002-beta.md` (step 9, `b3-7.log`) | 1 | `'9002' present in multiple columns: draft/9002-alpha.md, complete/9002-beta.md` |
 
-Il rifiuto `plan-ambiguous` cita entrambi i file candidati: `9002-alpha.md` e `9002-beta.md`.
+The `plan-ambiguous` rejection cites both candidate files: `9002-alpha.md` and `9002-beta.md`.
 
-## 4. Effetto sul filesystem (prova, non dichiarazione)
+## 4. Filesystem effect (proof, not a declaration)
 
-`cat "$BOARD/in-progress/9001-flow-probe.md"` (da `b3-plan.txt`, exit 0) — blocco frontmatter, 7 righe fra i due `---` (id, title, status, created, updated, owner, executor):
+`cat "$BOARD/in-progress/9001-flow-probe.md"` (from `b3-plan.txt`, exit 0) — frontmatter block, 7 lines between the two `---` (id, title, status, created, updated, owner, executor):
 
 ```
 ---
@@ -40,7 +40,7 @@ executor: developer-fixer
 ---
 ```
 
-Prova dell'effetto sul filesystem (comandi e output verbatim da `b3-ls.txt`, exit 0):
+Proof of the filesystem effect (commands and verbatim output from `b3-ls.txt`, exit 0):
 
 ```
 $ ls "$BOARD/draft"
@@ -53,52 +53,52 @@ $ grep -c 'status: in-progress' in-progress/9001-flow-probe.md
 1
 ```
 
-Il piano vive in `in-progress/` e NON in `draft/`: `draft/` contiene solo `9002-alpha.md` (creato ad hoc al passo 9), `in-progress/` contiene `9001-flow-probe.md` (1 file), e il frontmatter porta `status: in-progress` e `updated: 2026-10-14` (aggiornato dal move).
+The plan lives in `in-progress/` and NOT in `draft/`: `draft/` contains only `9002-alpha.md` (created ad hoc at step 9), `in-progress/` contains `9001-flow-probe.md` (1 file), and the frontmatter carries `status: in-progress` and `updated: 2026-10-14` (updated by the move).
 
-## 5. Board reale del kit: stato noto al 2026-10-14
+## 5. The kit's real board: state as of 2026-10-14
 
-`python scripts/plan-board.py check --root plan` — exit reale `1` (`b3-kit-board.exit`). Conteggi reali: `  ERROR ` = **1** (`b3-kit-errors.txt`), `  WARN  ` = **10** (`b3-kit-warns.txt`). Elenco verbatim (da `b3-kit-board.log`):
+`python scripts/plan-board.py check --root plan` — actual exit `1` (`b3-kit-board.exit`). Actual counts: `  ERROR ` = **1** (`b3-kit-errors.txt`), `  WARN  ` = **10** (`b3-kit-warns.txt`). Verbatim list (from `b3-kit-board.log`):
 
 ```
 FAIL
-  ERROR missing-id  plan\complete\0002-roster-and-schema-fixes.md  frontmatter senza `id`
-  WARN  missing-section  plan\draft\0002-v0.3.0-human-comprehension-gate.md  sezione mancante: ## Notes / Edge Cases
-  WARN  legacy-no-frontmatter  plan\draft\0003-prompt-assembly-optimization.md  file legacy senza frontmatter YAML: normalizzalo con `adopt`
-  WARN  missing-section  plan\draft\0003-v0.3.1-token-aware-comprehension.md  sezione mancante: ## Notes / Edge Cases
-  WARN  missing-section  plan\draft\001-installer-prereq-checkpoints.md  sezione mancante: ## Notes / Edge Cases
-  WARN  unexpected-file  plan\draft\test_write.txt  file non .md presente in una colonna
-  WARN  legacy-no-frontmatter  plan\in-progress\0001-kit-evolution-toolkit.md  file legacy senza frontmatter YAML: normalizzalo con `adopt`
-  WARN  missing-frontmatter-key  plan\in-progress\0006-branching-strategy.md  chiave frontmatter mancante: executor
-  WARN  missing-frontmatter-key  plan\complete\0002-roster-and-schema-fixes.md  chiave frontmatter mancante: updated
-  WARN  missing-frontmatter-key  plan\complete\0002-roster-and-schema-fixes.md  chiave frontmatter mancante: owner
-  WARN  missing-frontmatter-key  plan\complete\0002-roster-and-schema-fixes.md  chiave frontmatter mancante: executor
+  ERROR missing-id  plan\complete\0002-roster-and-schema-fixes.md  frontmatter without `id`
+  WARN  missing-section  plan\draft\0002-v0.3.0-human-comprehension-gate.md  missing section: ## Notes / Edge Cases
+  WARN  legacy-no-frontmatter  plan\draft\0003-prompt-assembly-optimization.md  legacy file without YAML frontmatter: normalize it with `adopt`
+  WARN  missing-section  plan\draft\0003-v0.3.1-token-aware-comprehension.md  missing section: ## Notes / Edge Cases
+  WARN  missing-section  plan\draft\001-installer-prereq-checkpoints.md  missing section: ## Notes / Edge Cases
+  WARN  unexpected-file  plan\draft\test_write.txt  non-.md file present in a column
+  WARN  legacy-no-frontmatter  plan\in-progress\0001-kit-evolution-toolkit.md  legacy file without YAML frontmatter: normalize it with `adopt`
+  WARN  missing-frontmatter-key  plan\in-progress\0006-branching-strategy.md  missing frontmatter key: executor
+  WARN  missing-frontmatter-key  plan\complete\0002-roster-and-schema-fixes.md  missing frontmatter key: updated
+  WARN  missing-frontmatter-key  plan\complete\0002-roster-and-schema-fixes.md  missing frontmatter key: owner
+  WARN  missing-frontmatter-key  plan\complete\0002-roster-and-schema-fixes.md  missing frontmatter key: executor
 ```
 
-Decisione esplicita: nessun intervento automatico da parte di questa verifica. `adopt` rifiuta un file che ha gia' un frontmatter, e comunque il board resta in sola lettura qui; la cancellazione di `plan/draft/test_write.txt` (visto nel warn `unexpected-file`) e' una decisione dell'utente. Il fix proposto e' una riga, a cura dell'utente: aggiungere `id: 0002-roster-and-schema-fixes` come prima riga del frontmatter di `plan/complete/0002-roster-and-schema-fixes.md`.
+Explicit decision: no automatic intervention from this verification. `adopt` rejects a file that already has a frontmatter, and in any case the board stays read-only here; deleting `plan/draft/test_write.txt` (seen in the `unexpected-file` warn) is a user decision. The proposed fix is one line, on the user: add `id: 0002-roster-and-schema-fixes` as the first line of the frontmatter of `plan/complete/0002-roster-and-schema-fixes.md`.
 
-## 6. Nota sulle flaky
+## 6. Note on the flaky suites
 
-I 3 nomi delle suite installer/oc2 che compaiono e scompaiono (`install.sh global`, `install-freellmapi.sh` x2) sono flaky da contesa: sotto carico pieno vanno in timeout a 5 s, in isolamento passano (nota in testa alla fixture). La baseline completa e' in `tests/fixtures/baseline-failures.txt` (6 righe di commento + 20 nomi; conteggi riletti sul file) e una regressione e' solo un nome NUOVO; un elenco piu' corto non e' una regressione (regola dichiarata nella fixture stessa).
+The 3 installer/oc2 suite names that appear and disappear (`install.sh global`, `install-freellmapi.sh` x2) are contention-flaky: under full load they time out at 5 s, in isolation they pass (note at the top of the fixture). The full baseline is in `tests/fixtures/baseline-failures.txt` (6 comment lines + 20 names; counts re-read on the file) and a regression is only a NEW name; a shorter list is not a regression (rule declared in the fixture itself).
 
-## 7. Censimento O4A (sola lettura, nessuna scrittura)
+## 7. O4A census (read-only, no writes)
 
-| Comando | Exit reale | Output verbatim (1-3 righe) |
+| Command | Actual exit | Verbatim output (1-3 lines) |
 | --- | --- | --- |
-| `python "D:/Work/O4A/.opencode/scripts/plan-board.py" check --json` | 0 | `"ok": true,` / `"action": "check",` / `"root": "D:\\Work\\O4A\\plan",` — dallo stesso JSON: `errors: []`, 2 warning `legacy-no-frontmatter`, 1 piano `in-progress`, 2 piani legacy in `complete` |
+| `python "D:/Work/O4A/.opencode/scripts/plan-board.py" check --json` | 0 | `"ok": true,` / `"action": "check",` / `"root": "D:\\Work\\O4A\\plan",` — from the same JSON: `errors: []`, 2 `legacy-no-frontmatter` warnings, 1 `in-progress` plan, 2 legacy plans in `complete` |
 | `node "D:/Work/O4A/.opencode/scripts/check-agent-frontmatter.mjs"` | 0 | `PASS — 17 file agente: tools booleani, mode coerenti` |
 | `node "D:/Work/O4A/.opencode/scripts/verify-agent-models.mjs"` | 1 | `ok    opencode.jsonc parsed` / `ok    agent map covers all 17 project agents` / `FAIL  debug agents returned 0 agents — cannot verify resolution (opencode2 service start)` |
 | `python "D:/Work/O4A/.opencode/scripts/verify-instructions.py"` | 0 | `PASS  istruzioni di D:/Work/O4A presenti (AGENTS.md)` |
 
-Nota: `verify-agent-models.mjs` esce 1 perche' non riesce a risolvere i modelli senza avviare il servizio opencode2 (debug agents = 0); e' un dato misurato, nessun intervento effettuato.
+Note: `verify-agent-models.mjs` exits 1 because it cannot resolve the models without starting the opencode2 service (debug agents = 0); it is a measured fact, no intervention was performed.
 
 ## 8. Mapping kit <-> O4A
 
-| Aspetto | Kit (E:/MyProjects/opencode-orchestrator-kit) | O4A (D:/Work/O4A) |
+| Aspect | Kit (E:/MyProjects/opencode-orchestrator-kit) | O4A (D:/Work/O4A) |
 | --- | --- | --- |
-| Agente owner | `agents/plan-writer.md` | `D:\Work\O4A\.opencode\agents\o4a-plan-writer.md` (nella radice di O4A non esiste una cartella `agents/`) |
-| Tool | `scripts/plan-board.py` (repo kit) | `D:\Work\O4A\.opencode\scripts\plan-board.py` |
-| Board root | `plan/` relativa al repo, git-local (qui: root temporanea per la prova, passi 1-10; `--root plan` per la board reale, passo 11) | `D:\Work\O4A\plan\` — default assoluto del tool (dal JSON del passo 12) |
-| Gate permessi | `edit: ask`; `write: plan/**/*.md allow` (tutto il resto `deny`); `bash: deny` salvo `python */plan-board.py *`, `ls *`, `cat *` (da `agents/plan-writer.md`) | `edit: ask`, `write: ask`, `bash: ask` (da `o4a-plan-writer.md`) |
-| Guardia frontmatter | `bun test`: `tests/plan-board.test.ts`, `tests/plan-writer-contract.test.ts`, `tests/assembly-order.test.ts`, `tests/frontmatter-order.test.ts`, `tests/stable-prefix-boundary.test.ts` | `check-agent-frontmatter.mjs`: 17 file (exit 0, sezione 7) |
+| Owner agent | `agents/plan-writer.md` | `D:\Work\O4A\.opencode\agents\o4a-plan-writer.md` (there is no `agents/` folder in the O4A root) |
+| Tool | `scripts/plan-board.py` (kit repo) | `D:\Work\O4A\.opencode\scripts\plan-board.py` |
+| Board root | `plan/` relative to the repo, git-local (here: temporary root for the run, steps 1-10; `--root plan` for the real board, step 11) | `D:\Work\O4A\plan\` — the tool's absolute default (from the JSON at step 12) |
+| Permission gate | `edit: ask`; `write: plan/**/*.md allow` (everything else `deny`); `bash: deny` except `python */plan-board.py *`, `ls *`, `cat *` (from `agents/plan-writer.md`) | `edit: ask`, `write: ask`, `bash: ask` (from `o4a-plan-writer.md`) |
+| Frontmatter guard | `bun test`: `tests/plan-board.test.ts`, `tests/plan-writer-contract.test.ts`, `tests/assembly-order.test.ts`, `tests/frontmatter-order.test.ts`, `tests/stable-prefix-boundary.test.ts` | `check-agent-frontmatter.mjs`: 17 files (exit 0, section 7) |
 
-Il contratto dell'agente e' lo stesso: owner unico dei piani, quattro colonne, `id` = stem del file, nove sezioni nel body, mutazioni solo via `plan-board.py`. Cambiano root, path del tool e gate dei permessi.
+The agent contract is the same: single owner of the plans, four columns, `id` = the file's stem, nine sections in the body, mutations only via `plan-board.py`. What changes: the root, the tool path, and the permission gates.

@@ -46,19 +46,19 @@ Nothing here is pinned to an upstream repository. Delete any section that does n
 Users may rewrite every rule. Planner and code-reviewer can cite the ones that remain as DR-UI-n.
 A web-stack skill pack, if the project uses one, loads through the reserved `web-*` skill prefix (see README "Companion kits"). -->
 
-- **DR-UI-1 — Solo token.** Colori, raggi, ombre, spazi, tipografia e durate si scrivono solo come variabili `--ui-*` (o utility/mixin che le mappano). Nessun esadecimale, `px` di colore o durata letterale nei componenti. Verifica: `web-theme/scripts/audit-theme.sh <src>` senza segnalazioni.
-- **DR-UI-2 — Tre strati di stile.** Ordine fisso: tema (`theme/`, copiato da web-theme e mai modificato a mano) → brand (`brand.css`, solo override di token) → app (stili dei componenti). Un cambio di brand non tocca i componenti.
-- **DR-UI-3 — Brand dal logo, contrasto verificato.** Accento, font e logo derivano dagli asset del cliente (skill web-brand). Testo ≥ 4.5:1, elementi UI e focus ≥ 3:1, tile ≥ 7:1, in chiaro e scuro. Verifica: `python3 tools/contrast.py --auto` in CI.
-- **DR-UI-4 — Movimento sobrio.** Animazioni 150–400 ms tramite `--ui-dur-*`/`dur()`, solo `transform` e `opacity`, mai `transition: all`; con `prefers-reduced-motion: reduce` durata 0 e contenuto subito visibile.
-- **DR-UI-5 — Accessibilità di base.** HTML semantico, skip link, focus visibile (`--ui-focus`), target ≥ 44 px, etichette su ogni campo, `alt` sulle immagini, `lang` corretto, navigazione completa da tastiera, nessuna informazione affidata solo al colore.
-- **DR-UI-6 — Mobile first.** Layout progettato da 390 px in su; a ≤ 760 px le tabelle diventano card e la navigazione laterale diventa drawer. Nessuno scroll orizzontale della pagina.
-- **DR-UI-7 — Uno stack per tipo di sito.** Vetrina: Astro statico. Shop: Astro + Stripe Checkout o Shopify Buy Button. Gestionale/CRM: Angular + API .NET. Eccezioni solo con voce nel Decision Log.
-- **DR-UI-8 — Starter prima delle feature.** Ogni progetto nasce da `web-scaffold-*` e deve compilare, passare i test e avere gli screenshot prima di aggiungere funzionalità.
-- **DR-UI-9 — Contratto API prima del client.** L'API .NET espone OpenAPI; il client TypeScript si genera (`npm run gen:api`) e non si scrive a mano. I prezzi e i totali si calcolano sempre sul server.
-- **DR-UI-10 — Configurazione dall'ambiente.** Una sola immagine per tutti gli ambienti; configurazione da variabili d'ambiente a runtime; nessun segreto in repo, immagine, log o bundle client.
-- **DR-UI-11 — Pipeline a tre stadi.** Build/test → immagine con tag immutabile (`sha-…`) → produzione con approvazione manuale. Azioni CI pinnate a SHA. Target predefinito VPS Docker Compose + Caddy; Azure Container Apps come alternativa.
-- **DR-UI-12 — Budget di qualità.** Test unitari verdi, smoke Playwright sulle pagine principali, Lighthouse ≥ 90 (performance, accessibilità, best practice, SEO) sulle pagine pubbliche, bundle iniziale Angular ≤ 500 kB.
-- **DR-UI-13 — Screenshot di review.** Ogni pagina nuova o modificata ha screenshot 1440 px e 390 px in `docs/screens/`, allegati alla review e riletti prima dell'approvazione.
+- **DR-UI-1 — Tokens only.** Colors, radii, shadows, spacing, typography, and durations are written only as `--ui-*` variables (or utility/mixins that map them). No hex codes, no literal `px` for colors or durations in components. Check: `web-theme/scripts/audit-theme.sh <src>` with no findings.
+- **DR-UI-2 — Three style layers.** Fixed order: theme (`theme/`, copied from web-theme and never hand-edited) → brand (`brand.css`, token overrides only) → app (component styles). A brand change does not touch the components.
+- **DR-UI-3 — Brand from the logo, contrast verified.** Accent, fonts, and the logo derive from the client's assets (web-brand skill). Text ≥ 4.5:1, UI elements and focus ≥ 3:1, tiles ≥ 7:1, in light and dark. Check: `python3 tools/contrast.py --auto` in CI.
+- **DR-UI-4 — Sober motion.** Animations 150–400 ms via `--ui-dur-*`/`dur()`, only `transform` and `opacity`, never `transition: all`; with `prefers-reduced-motion: reduce` duration 0 and content immediately visible.
+- **DR-UI-5 — Basic accessibility.** Semantic HTML, skip link, visible focus (`--ui-focus`), targets ≥ 44 px, labels on every field, `alt` on images, correct `lang`, full keyboard navigation, no information conveyed by color alone.
+- **DR-UI-6 — Mobile first.** Layout designed from 390 px up; at ≤ 760 px tables become cards and the side navigation becomes a drawer. No horizontal page scroll.
+- **DR-UI-7 — One stack per site type.** Showcase: static Astro. Shop: Astro + Stripe Checkout or Shopify Buy Button. Back-office/CRM: Angular + .NET API. Exceptions only with a Decision Log entry.
+- **DR-UI-8 — Starter before features.** Every project starts from `web-scaffold-*` and must build, pass tests, and have screenshots before features are added.
+- **DR-UI-9 — API contract before the client.** The .NET API exposes OpenAPI; the TypeScript client is generated (`npm run gen:api`) and never hand-written. Prices and totals are always computed on the server.
+- **DR-UI-10 — Configuration from the environment.** One image for all environments; configuration from environment variables at runtime; no secrets in the repo, image, logs, or the client bundle.
+- **DR-UI-11 — Three-stage pipeline.** Build/test → image with an immutable tag (`sha-…`) → production with manual approval. CI actions pinned to SHA. Default target VPS Docker Compose + Caddy; Azure Container Apps as an alternative.
+- **DR-UI-12 — Quality budget.** Green unit tests, Playwright smoke on the main pages, Lighthouse ≥ 90 (performance, accessibility, best practices, SEO) on public pages, initial Angular bundle ≤ 500 kB.
+- **DR-UI-13 — Review screenshots.** Every new or modified page has 1440 px and 390 px screenshots in `docs/screens/`, attached to the review and re-read before approval.
 
 ## Decision Log
 

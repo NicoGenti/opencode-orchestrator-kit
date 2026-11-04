@@ -3,7 +3,7 @@ description: Re-activate a past comprehension session for a plan via a strict re
 agent: orchestrator
 ---
 
-Comando `/recall`. Flusso di ri-attivazione di una sessione di comprensione passata per un plan. È un flow strettamente read-only di diagnostica e ri-verifica della comprensione — mai una replay del lavoro, mai una re-delegazione implicita.
+`/recall` command. Flow to re-activate a past comprehension session for a plan. It is a strictly read-only diagnostics and comprehension re-verification flow — never a replay of the work, never an implicit re-delegation.
 
 **Invariant**: ALL questions are shown BEFORE any code or explanation is displayed.
 

@@ -68,7 +68,7 @@ Three profiles ship with the kit in `templates/models.config.json`:
 | Profile     | Status at install | Use when                                                  |
 | ----------- | ---------------- | --------------------------------------------------------- |
 | `default`   | Ready to use     | You want the kit's known-good OpenCode Go + Ollama Cloud mix out of the box. |
-| freellmapi | Ready to use (app locale) | Vuoi il kit sull'app FreeLLMAPI installata sul PC |
+| freellmapi | Ready to use (local app) | You want the kit on the FreeLLMAPI app installed on your PC |
 | `generic`   | Editable         | You want to point the kit at your own providers; the values are `placeholder/*` sentinels and the validator rejects them until you edit them. |
 
 The profile name is the value of `default_preset` in
@@ -332,17 +332,19 @@ The `freellmapi` preset routes every tier to the FreeLLMAPI app installed on the
 catalog changes. Install it into a project with:
 
 ```bash
-# profilo dentro un progetto (comando opencode2 - vedi il limite sotto)
+# profile inside a project (opencode2 command - see the limit below)
 bash scripts/install-freellmapi.sh --with-extras D:/Work/MyProject
 ```
 
-**Limite misurato (OpenCode V2 2.0.28, 2026-10-14)** - in modalita' progetto il provider
-`freellmapi` viene fuso nel config e **risolve gli agenti** (`debug agents`), ma **non entra nel
-catalogo runtime**: da `<progetto>`, `opencode2 models` resta senza righe `freellmapi/`, la TUI
-non offre il provider e un run risponde `Model unavailable`. Il file di progetto e' letto (prova:
-`opencode2 debug config` elenca `<progetto>/.opencode/opencode.jsonc`) - e' il profilo `opencode2`
-a non avere freellmapi nel proprio catalogo. Non sporcare la config globale per aggirarlo:
+**Measured limit (OpenCode V2 2.0.28, 2026-10-14)** - in project mode the
+`freellmapi` provider is merged into the config and **resolves the agents**
+(`debug agents`), but **does not enter the runtime catalog**: from `<project>`,
+`opencode2 models` stays without `freellmapi/` rows, the TUI does not offer the
+provider, and a run answers `Model unavailable`. The project file is read (proof:
+`opencode2 debug config` lists `<project>/.opencode/opencode.jsonc`) - it is the
+`opencode2` profile that does not have freellmapi in its own catalog. Do not
+touch the global config to work around this:
 
-| Dove lavori | Comando | freellmapi in `models` / nella TUI |
+| Where you work | Command | freellmapi in `models` / in the TUI |
 | --- | --- | --- |
-| questo progetto | `opencode2` | no (0 righe, `Model unavailable`) |
+| this project | `opencode2` | no (0 rows, `Model unavailable`) |
