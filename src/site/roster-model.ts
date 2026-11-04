@@ -46,6 +46,7 @@ export interface SiteCommand {
 
 const EMOJI: Record<string, string> = {
   orchestrator: "🧭",
+  "orchestrator-quick": "⚡",
   profiler: "🩺",
   explorer: "🔎",
   librarian: "📚",
@@ -74,7 +75,14 @@ const CORE_GROUPS: ReadonlyArray<{
     id: "routing",
     title: "Core routing",
     note: "Installed by default. The primary agent only routes.",
-    names: ["orchestrator", "profiler", "explorer", "oracle", "planner"],
+    names: [
+      "orchestrator",
+      "orchestrator-quick",
+      "profiler",
+      "explorer",
+      "oracle",
+      "planner",
+    ],
   },
   {
     id: "delivery",
@@ -105,6 +113,7 @@ const CORE_GROUPS: ReadonlyArray<{
 
 const COMMAND_ORDER = [
   "start-session",
+  "quick",
   "recall",
   "research-mode",
   "close-session",

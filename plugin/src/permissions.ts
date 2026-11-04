@@ -199,7 +199,7 @@ export function toV2Permissions(
   }
 
   const seen = new Set<string>();
-  return rules.filter((rule) => {
+  return [...mcpDefaultDenies(), ...rules].filter((rule) => {
     const signature = `${rule.action}\u0000${rule.resource}\u0000${rule.effect}`;
     if (seen.has(signature)) return false;
     seen.add(signature);
@@ -212,6 +212,23 @@ export const BOARD_ROOT_OWNER = "plan-writer";
 
 /** Pattern covering every plan file of the resolved board root, in V2 syntax. */
 export const BOARD_ROOT_PATTERN = "plan/*.md";
+
+/**
+ * MCP servers the kit knows about. Every tool of these families is denied by default:
+ * without this catch-all the host default is `allow`, so a declared `<server>_<tool>: allow`
+ * would be a no-op and ANY MCP tool (including the write-capable apply_refactor_tool) would
+ * be reachable from every agent, orchestrator included.
+ */
+export const MCP_SERVER_PREFIXES: readonly string[] = ["code-review-graph"];
+
+/** Catch-all denies for the known MCP families; EMITTED FIRST so declared allows win. */
+export function mcpDefaultDenies(): PermissionRule[] {
+  return MCP_SERVER_PREFIXES.map((prefix) => ({
+    action: `${prefix}_*`,
+    resource: "*",
+    effect: "deny" as PermissionEffect,
+  }));
+}
 
 /**
  * Kit-level rules appended AFTER the frontmatter translation. Appended last, so
@@ -300,11 +317,16 @@ function invariantError(agentId: string, detail: string): Error {
   );
 }
 
+/** Agents allowed to route work to specialists (the kit's routers). */
+const ROUTING_AGENTS: ReadonlySet<string> = new Set([
+  "orchestrator",
+  "orchestrator-quick",
+]);
+
 /**
  * Every agent must declare a catch-all for shell, skill, and subagent. Without
  * one, OpenCode's host default allows the action. An explicit `allow` catch-all
- * is the same hole. The orchestrator is the only agent whose subagent catch-all
- * may be `allow`, because it is the router.
+ * is the same hole. Only the kit's routers may allow the subagent catch-all.
  */
 function assertDeclaredCatchAlls(
   agentId: string,
@@ -318,7 +340,7 @@ function assertDeclaredCatchAlls(
         `no catch-all rule for '${action}' (resource '*'); the host default would allow it`,
       );
     }
-    const routerMayAllow = agentId === "orchestrator" && action === "subagent";
+    const routerMayAllow = ROUTING_AGENTS.has(agentId) && action === "subagent";
     if (catchAll.effect === "allow" && !routerMayAllow) {
       throw invariantError(
         agentId,
@@ -353,10 +375,10 @@ export function assertKitPermissionInvariants(
     {
       action: "subagent",
       resource: IMPLEMENTOR,
-      effect: agentId === "orchestrator" ? "allow" : "deny",
+      effect: ROUTING_AGENTS.has(agentId) ? "allow" : "deny",
     },
   ];
-  if (agentId === "orchestrator") {
+  if (ROUTING_AGENTS.has(agentId)) {
     expectations.push({ action: "edit", resource: APP_SAMPLE, effect: "deny" });
   }
   for (const expectation of expectations) {
@@ -369,6 +391,16 @@ export function assertKitPermissionInvariants(
       throw invariantError(
         agentId,
         `${expectation.action} on '${expectation.resource}' resolved to '${actual}', expected '${expectation.effect}'`,
+      );
+    }
+  }
+  // Il tool MCP che scrive sui sorgenti non deve mai essere raggiungibile.
+  for (const prefix of MCP_SERVER_PREFIXES) {
+    const effect = resolveEffect(rules, `${prefix}_apply_refactor_tool`, "*");
+    if (effect !== "deny") {
+      throw invariantError(
+        agentId,
+        `${prefix}_apply_refactor_tool resolved to '${effect}', expected 'deny'`,
       );
     }
   }

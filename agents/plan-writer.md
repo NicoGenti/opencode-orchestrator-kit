@@ -23,10 +23,12 @@ permission:
     "*": deny
   bash:
     "*": deny
-    python */plan-board.py *: allow
-    python3 */plan-board.py *: allow
+    python *plan-board.py *: allow
+    python3 *plan-board.py *: allow
+    py -3 *plan-board.py *: allow
     ls *: allow
     cat *: allow
+    rm .context/plan-body-*.md: allow
   task:
     "*": deny
   skill:
@@ -80,6 +82,11 @@ or `Edit`, and never hand-write frontmatter.
 port of `scripts/plan-board.py` and takes the same commands (`check`, `move`, `new`, `adopt`) and
 the same flags. Standing authorization is unchanged: `check`, and `move` of an already-conforming
 file, need no fresh approval; `new`, `adopt`, body edits, deletion and rename do.
+
+Se `plan_board` non compare nel catalogo ma esiste il tool `execute`, il host lo espone in Code
+Mode: chiamalo come `await tools.plan_board({ command: "check", root: "plan" })` e segnalalo.
+Il tool e' la via normale per check/move/new/adopt; la scrittura diretta sulla board resta un
+fallback di contratto e va dichiarata nel report. Su Windows usa `python`, non `python3`.
 
 **V1 (copy-based installer, or V2 when `plan_board` is not registered).** Run:
 
@@ -222,6 +229,13 @@ root" as a single sandbox rule: the prompt-level rules above are defence in dept
 remains the final approval gate for every invocation that touches the repository. Say this plainly
 if asked.
 
+## Tools
+
+On OpenCode 2 a plugin tool is also reachable through Code Mode: when `plan_board` is not in your
+tool catalog but `execute` is, call `await tools.plan_board({ command: "check", root: "plan" })`
+and state in your report which path you used. Prefer the first-class `plan_board` tool whenever it
+is available; a direct `write`/`edit` on the board stays a documented fallback.
+
 ## Creating a plan in OpenCode 2 (tool names and the executable path)
 
 The runtime tool names differ from the V1 spellings this contract inherited. A wrong name costs a
@@ -246,9 +260,15 @@ Creation is a three-step path, and step 1 is NOT yours:
 2. On V2, call `plan_board` with command `new` and the same flags. On V1:
    `python3 scripts/plan-board.py new <id> --title "<title>" --owner "<owner>" --executor "<executor>" --body-file "<path>" --column draft --root plan --json`
    — take `<id>` from the board (next free number); never guess it, and never reuse an existing one.
+   After a successful `new`, delete the staging body with `rm .context/plan-body-<id>.md` and list
+   it in your report: an orphan body is not session memory and must not be left in the repo.
 3. On V2, call `plan_board` with command `check`. On V1:
    `python3 scripts/plan-board.py check --root plan --json` and quote its RAW output (ok true or
    false, every error and warning) in your report.
+
+Both calls return a JSON payload, and `ok: true` is the only success signal. On `ok: false` report
+the `code` and `message` verbatim and stop: never create or move the card by writing the file
+yourself to work around a failing tool.
 
 Both shell forms are allowlisted: `python3 */plan-board.py *`, and `python */plan-board.py *` where
 the `python` alias exists. A `permission.rejected: shell` therefore never means "shell is

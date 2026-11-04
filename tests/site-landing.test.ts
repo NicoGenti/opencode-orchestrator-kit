@@ -35,8 +35,8 @@ describe("landing roster is derived from agent frontmatter", () => {
     expect(roster.extras.map((agent) => agent.name).sort()).toEqual(
       extraFiles.map((file) => file.name).sort(),
     );
-    expect(roster.primaryCount).toBe(1);
-    expect(roster.specialistCount).toBe(roster.coreCount - 1);
+    expect(roster.primaryCount).toBe(2);
+    expect(roster.specialistCount).toBe(roster.coreCount - 2);
     expect(coreAgents.map((agent) => agent.name)).toContain("plan-writer");
     expect(coreAgents.map((agent) => agent.name)).toContain(
       "comprehension-coach",
@@ -82,6 +82,7 @@ describe("landing roster is derived from agent frontmatter", () => {
   test("commands come from command/*.md in session order", () => {
     expect(commands.map((command) => command.name)).toEqual([
       "start-session",
+      "quick",
       "recall",
       "research-mode",
       "close-session",
@@ -185,7 +186,7 @@ describe("site head tokens and npm metadata", () => {
       homepage: string;
       keywords: string[];
     };
-    expect(pkg.version).toBe("1.0.0");
+    expect(pkg.version).toBe("1.0.1");
     expect(pkg.homepage).toBe(
       "https://nicogenti.github.io/opencode-orchestrator-kit/",
     );

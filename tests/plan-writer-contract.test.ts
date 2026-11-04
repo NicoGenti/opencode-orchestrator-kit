@@ -2,6 +2,9 @@ import { describe, expect, test } from "bun:test";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
+import { collectPackagedAgents } from "../plugin/src/agents.ts";
+import { resolveEffect } from "../plugin/src/permissions.ts";
+
 /**
  * Contratto di `agents/plan-writer.md` e del suo aggancio al flusso dell'orchestratore.
  *
@@ -161,5 +164,38 @@ describe("plan-writer — negativo (la verifica ha denti)", () => {
   test("un orchestrator senza la riga di routing non soddisfa l'asserzione", () => {
     const fake = "| `librarian` | Remote documentation lookups. |\n";
     expect(/^\|\s*`plan-writer`\s*\|/m.test(fake)).toBe(false);
+  });
+});
+
+describe("plan-writer — permessi V2 reali (shell patterns e staging)", () => {
+  test("plan-writer puo' cancellare il proprio staging .context/plan-body-*.md", () => {
+    const agent = collectPackagedAgents(true).find((a) => a.id === "plan-writer")!;
+    expect(resolveEffect(agent.permissions, "shell", "rm .context/plan-body-5.md")).toBe(
+      "allow",
+    );
+  });
+
+  test("i pattern shell coprono python, python3 e py -3 su scripts/plan-board.py", () => {
+    const agent = collectPackagedAgents(true).find((a) => a.id === "plan-writer")!;
+    for (const command of [
+      "python scripts/plan-board.py check --root plan/",
+      "python3 scripts/plan-board.py check --root plan/",
+      "py -3 scripts/plan-board.py check --root plan/",
+    ]) expect(resolveEffect(agent.permissions, "shell", command)).toBe("allow");
+  });
+});
+
+describe("plan-writer — documentazione del contratto (staging + Code Mode)", () => {
+  test("la documentazione cita lo staging body e la via Code Mode", () => {
+    expect(read(AGENT_PATH)).toContain("plan-body-");
+    expect(read(AGENT_PATH)).toContain("Code Mode");
+    expect(read(AGENTS_MD_PATH)).toContain("plan-body-");
+  });
+
+  test("il contratto impone di verificare `ok: true` prima di dichiarare una card creata", () => {
+    expect(read(AGENT_PATH)).toContain("`ok: true` is the only success signal");
+    expect(read(ORCHESTRATOR_PATH)).toContain(
+      "succeeded ONLY when the payload reports ok: true",
+    );
   });
 });

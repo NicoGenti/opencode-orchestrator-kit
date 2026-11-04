@@ -112,6 +112,7 @@ Model assignment (primary/fallback per agent) lives in each `agents/<name>.md` (
   `id/title/status/created/updated/owner/executor`, the `id` equal to the leading segment of the filename stem, `status` equal to the containing column, and the nine sections of `plan/README.md` in the body.
 - **Standing authorization (user-granted, limited to the board root)** — covered without a fresh approval: `check` runs, and `move` of an already-conforming file between columns (including the `status`/`updated` refresh), cited as
   `## Approved Mutation Summary — plan-board-standing-v1`. NOT covered: `new` (creating a plan file), `adopt` (normalising an existing file), any body edit, deletion and rename — each needs its own per-dispatch approved Mutation Summary.
+- **Staging body** — `planner` writes the plan body to `.context/plan-body-<id>.md`; once `plan-writer` has created the card through `plan_board new`, that file must be deleted (`rm .context/plan-body-<id>.md`, allowlisted for `plan-writer`). An orphan body is not session memory and must not be left in the repo.
 - **Scaffolding exception** — `profiler` may create the missing `plan/<column>/.gitkeep` folders and `plan/README.md` on first run; it never creates or moves a plan file.
 - **Never** — deletion, renaming, writes outside the board root, and edits to `plan/README.md` or `scripts/plan-board.py` are user-only decisions.
 

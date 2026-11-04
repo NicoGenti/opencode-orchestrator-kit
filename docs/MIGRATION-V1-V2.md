@@ -17,7 +17,7 @@ The kit ships two install paths:
 
 The plugin's **standing authorization** for `plan_board` covers `check` plus `move` of conforming plan files without a per-request approval; every other board operation (`new`, `adopt`, body edits, deletion, rename) still requires approval — identical to the v1 contract. User configuration always wins: an agent's `transform` is upserted only when the editor returns nothing for it, so your own config in `~/.config/opencode/` or the project config is never overwritten. A preset whose tier values are **all `placeholder/*`** fails fast with a `TierConfigError` before registration — the same fail-fast policy the v1 validator enforced pre-install. Five presets are bundled (`default`, `freellmapi`, `generic`, `opencode-go-free`, `ollama`); any other preset name fails fast with the same `TierConfigError`.
 
-The plugin registers all four kit commands: `/start-session`, `/recall`, `/research-mode`, and `/close-session`.
+The plugin registers all five kit commands: `/start-session`, `/quick`, `/recall`, `/research-mode`, and `/close-session`.
 
 ## What does NOT change
 

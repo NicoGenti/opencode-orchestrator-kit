@@ -48,6 +48,11 @@ export function loadPackagedRecall(): PackagedCommand {
   return loadPackagedCommand("recall", "recall");
 }
 
+/** Load the packaged /quick command (mirrors command/quick.md). */
+export function loadPackagedQuick(): PackagedCommand {
+  return loadPackagedCommand("quick", "quick");
+}
+
 /** Load the packaged /research-mode command (mirrors command/research-mode.md). */
 export function loadPackagedResearchMode(): PackagedCommand {
   return loadPackagedCommand("research-mode", "research-mode");
@@ -62,6 +67,7 @@ export function loadPackagedCloseSession(): PackagedCommand {
 export function loadPackagedCommands(): PackagedCommand[] {
   return [
     loadPackagedStartSession(),
+    loadPackagedQuick(),
     loadPackagedRecall(),
     loadPackagedResearchMode(),
     loadPackagedCloseSession(),

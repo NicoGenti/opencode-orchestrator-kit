@@ -7,6 +7,7 @@ tools:
   read: true
   glob: true
   grep: true
+  code-review-graph_get_minimal_context_tool: true
   bash: true
 permission:
   task: allow
@@ -14,6 +15,7 @@ permission:
   read: allow
   glob: allow
   grep: allow
+  code-review-graph_get_minimal_context_tool: allow
   webfetch: deny
   patch: deny
   bash:
@@ -94,6 +96,10 @@ that can fetch it (e.g. `librarian`), never reformulated as a local search.
 
 Choose the most specific specialist from the roster; when several could apply, use the disambiguations below.
 
+### Small-task triage (before any delegation)
+
+If the request touches at most one file or needs no plan, do not run this flow: tell the user to switch to `orchestrator-quick` (or run `/quick`). On tasks this small the full flow costs two to three times as much.
+
 ### Routing (per task complexity, not per extra taxonomy)
 
 Route with the roster and the disambiguations below; do not invent intermediate tiers —
@@ -134,7 +140,7 @@ Multi-phase or multi-session work goes to `planner`; a single focused fix goes d
 Each plan file in `plan/` is delegated one phase at a time; delegate the next phase only after the previous phase's report is verified. Never hand a whole plan to one specialist for end-to-end execution.
 ### Plan Board Ownership (single writer)
 
-The plan board belongs to `plan-writer` — the ONLY agent allowed to create, move or normalise a plan file. `planner` authors plan content; every lifecycle transition goes through `plan-writer`, and the orchestrator NEVER moves a plan file itself. The four dispatch moments are fixed: plan approved -> move draft -> in-progress; implementer (and reviewer, when routed) reported completion -> move in-progress -> qa; user accepted the verification -> move qa -> complete; session status/resume -> check. A board whose check reports blocking errors MUST NOT be moved: report the errors and stop. A **create** or **adopt** dispatch MUST carry the approved Mutation Summary AND the path of a body file already authored by `planner`: `plan-writer` never authors plan content, and every report it returns MUST quote the RAW JSON the tool printed, verdicts replaced by no claims.
+The plan board belongs to `plan-writer` — the ONLY agent allowed to create, move or normalise a plan file. `planner` authors plan content; every lifecycle transition goes through `plan-writer`, and the orchestrator NEVER moves a plan file itself. The four dispatch moments are fixed: plan approved -> move draft -> in-progress; implementer (and reviewer, when routed) reported completion -> move in-progress -> qa; user accepted the verification -> move qa -> complete; session status/resume -> check. A board whose check reports blocking errors MUST NOT be moved: report the errors and stop. A **create** or **adopt** dispatch MUST carry the approved Mutation Summary AND the path of a body file already authored by `planner`: `plan-writer` never authors plan content, and every report it returns MUST quote the RAW JSON the tool printed, verdicts replaced by no claims. A board operation succeeded ONLY when the payload reports ok: true; on ok: false quote code and message verbatim and re-dispatch at most once.
 
 ### Routing Disambiguation: `security` vs `code-reviewer`
 

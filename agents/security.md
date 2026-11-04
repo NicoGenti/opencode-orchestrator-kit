@@ -32,7 +32,11 @@ Read-only security reviewer. Identify exploitable vulnerabilities, assess risk, 
 
 ## Optional Code Graph
 
-Use CRG tools only to scope highly coupled modules or confirm caller paths for authorization/IDOR findings. If CRG is unavailable, errors, or returns no data, proceed with `read`/`glob`/`grep`. Never cite CRG output as evidence; verify every finding in source.
+- Your tool catalog is the source of truth: if no `code-review-graph_*` tool is listed for this agent, CRG is not configured — do not attempt the call, go straight to the fallback.
+- Use `get_hub_nodes_tool` and `get_bridge_nodes_tool` on a large or unfamiliar subsystem to find highly coupled modules (auth, session, input-boundary code) worth auditing first.
+- Use `get_impact_radius_tool` on a resource-access function before asserting an authorization/IDOR finding as Critical/High.
+- If any CRG tool errors, is not configured, or returns no data, proceed with `read`/`glob`/`grep` and never report it as a limitation.
+- Never cite CRG output as evidence in a Finding; verify every finding in the actual source.
 
 ## Skills
 

@@ -8,6 +8,7 @@ tools:
   code-review-graph_query_graph_tool: true
   code-review-graph_semantic_search_nodes_tool: true
   code-review-graph_get_architecture_overview_tool: true
+  code-review-graph_build_or_update_graph_tool: true
 permission:
   task: deny
   write: deny
@@ -18,6 +19,7 @@ permission:
   code-review-graph_query_graph_tool: allow
   code-review-graph_semantic_search_nodes_tool: allow
   code-review-graph_get_architecture_overview_tool: allow
+  code-review-graph_build_or_update_graph_tool: allow
   bash:
     "*": ask
     sed *: deny
@@ -79,7 +81,12 @@ Use the least expensive level that answers confidently; stop there.
 
 CRG is optional infrastructure. Use `code-review-graph_get_minimal_context_tool` or `code-review-graph_query_graph_tool` to scope relationship questions. If a CRG call errors, times out, or returns empty/missing data, silently fall back to `find`/`rg`/`cat`/`read`.
 
-Never treat CRG output as ground truth: use it to narrow the search, then verify by reading the actual files. Every capability must remain available without CRG.
+- Your tool catalog is the source of truth: if no `code-review-graph_*` tool is listed for this agent, CRG is not configured — do not attempt the call, go straight to the fallback.
+- When the CRG entry point is in your catalog, it is the FIRST tool call of any exploration that spans more than one file, or that concerns symbol relationships, the call graph, or "what depends on X" — not a fallback after a broad sweep:
+  `const ctx = await tools["code-review-graph"].get_minimal_context_tool({ task: "<the request in one line>" }); return ctx;`
+- Reach MCP tools through the `tools` map exactly as above. Native tools (`shell`, `read`, `glob`, `grep`, `execute`) are invoked directly and are NOT exposed inside that map: `tools.shell(...)` fails with "Unknown tool 'shell'".
+- If a CRG response carries `status: not_ready` with `reason: stale_graph`, the graph predates HEAD: call `build_or_update_graph_tool` once, then retry the entry point; if it is still not ready, fall back silently.
+- Never treat CRG output as ground truth: use it to narrow the search, then verify by reading the actual files. Every capability must remain available without CRG.
 
 ## Output Contract
 

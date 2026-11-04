@@ -125,7 +125,7 @@ If `plan/draft/`, `plan/in-progress/`, `plan/qa/`, `plan/complete/`, and `plan/R
 
 ## Repo Map
 
-Generate or refresh `.context/repo-map.md` on every run from cheap local signals (`git ls-files`, `find`, `ls`, `wc`, targeted `head` reads). Do not rerun Repomix solely for the map.
+Generate or refresh `.context/repo-map.md` on every run from cheap local signals (`git ls-files`, `find`, `ls`, `wc`, targeted `head` reads). It is a **derived, regenerable artifact**: unlike the memory templates, you MUST overwrite it on every profiler run so it stays current. Do not rerun Repomix solely for the map.
 
 Keep it within 300 lines using this structure:
 
@@ -144,6 +144,7 @@ Keep it within 300 lines using this structure:
 - One line per module; no code excerpts or full file contents.
 - Exclude `node_modules`, `dist`, `build`, `coverage`, `.git`, and other generated directories.
 - If over budget, truncate Directory Layout first, then Notable Modules; keep Stack and Key Entry Points. Add one final `Truncated:` line.
+- The map is a navigation aid for the `explorer`, never a substitute for reading source files.
 
 ## Code Graph Detection
 

@@ -19,7 +19,7 @@
 
 With the `opencode-orchestrator-kit` plugin on OpenCode 2 (requires `@opencode/plugin` `^2.1.0`), agents, commands and skills are registered at runtime — nothing is copied into your project's `.opencode/` directory.
 
-The package is published on npm (`1.0.0`). The config key is `plugins`, and options use `{ "package", "options" }` ([Plugins](https://opencode.ai/v2/docs/plugins)):
+The package is published on npm (`1.0.1`). The config key is `plugins`, and options use `{ "package", "options" }` ([Plugins](https://opencode.ai/v2/docs/plugins)):
 
 ```jsonc
 {

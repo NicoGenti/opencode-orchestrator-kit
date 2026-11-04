@@ -214,6 +214,9 @@ def cmd_move(root: Path, ident: str, to: str, dry_run: bool, as_json: bool,
     payload = {"ok": True, "action": "move", "id": path.stem, "from": col, "to": to,
                "path": str(dst), "dry_run": dry_run}
     if not dry_run:
+        # una colonna vuota non versionata puo' sparire da un checkout: la creiamo
+        # invece di andare in traceback sulla write.
+        (root / to).mkdir(parents=True, exist_ok=True)
         path.write_text(update_status(path, fm, to, comprehension), encoding="utf-8", newline="")
         path.replace(dst)
         payload["verified"] = dst.is_file() and not path.exists()
@@ -244,6 +247,8 @@ def cmd_new(root: Path, ident: str, title: str, owner: str, executor: str,
     payload = {"ok": True, "action": "new", "id": ident, "column": column,
                "path": str(dst), "dry_run": dry_run}
     if not dry_run:
+        # vedi cmd_move: la colonna assente si crea, non si fallisce.
+        (root / column).mkdir(parents=True, exist_ok=True)
         dst.write_text(render_frontmatter(fm) + "\n" + body.lstrip("\n"), encoding="utf-8", newline="")
         payload["verified"] = dst.is_file()
     emit(payload, as_json)

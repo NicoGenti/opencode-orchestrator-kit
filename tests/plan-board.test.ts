@@ -476,3 +476,48 @@ maybe("plan-board.py — root predefinito", () => {
     expect(json.plans?.draft?.map((p: any) => p.id)).toEqual(["9100-default"]);
   });
 });
+
+maybe("plan-board.py — colonne create su richiesta", () => {
+  test("new in una colonna assente la crea (niente traceback)", () => {
+    const root = mkdtempSync(join(tmpdir(), "pb-py-nodraft-"));
+    boards.push(root);
+    mkdirSync(join(root, "complete"), { recursive: true });
+
+    const r = run(
+      [
+        "new",
+        "--id",
+        "9110-autocol",
+        "--title",
+        "Auto column",
+        "--owner",
+        "plan-writer",
+        "--executor",
+        "developer-fixer",
+        "--column",
+        "draft",
+        "--body",
+        writeBody(BODY_OK),
+      ],
+      root,
+    );
+
+    expect(r.status).toBe(0);
+    expect(r.json?.ok).toBe(true);
+    expect(existsSync(join(root, "draft", "9110-autocol.md"))).toBe(true);
+  });
+
+  test("move verso una colonna assente la crea (niente traceback)", () => {
+    const root = mkdtempSync(join(tmpdir(), "pb-py-noqa-"));
+    boards.push(root);
+    mkdirSync(join(root, "draft"), { recursive: true });
+    seedPlan(root, "draft", "9111-democol");
+
+    const r = run(["move", "--id", "9111-democol", "--to", "qa"], root);
+
+    expect(r.status).toBe(0);
+    expect(r.json?.ok).toBe(true);
+    expect(existsSync(join(root, "qa", "9111-democol.md"))).toBe(true);
+    expect(existsSync(join(root, "draft", "9111-democol.md"))).toBe(false);
+  });
+});
