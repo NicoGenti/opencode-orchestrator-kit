@@ -4,6 +4,12 @@ All notable changes to this project are documented in this file. The format foll
 
 ## [Unreleased]
 
+## [1.1.1] — 2026-11-04
+
+### Changed
+
+- **`TIER_FAST` moves to `ollama/mimo-v2.6-flash:cloud`**: every agent on the fast tier (`profiler`, `explorer`, `librarian`, `build-helper`, `npm-helper`, `deploy-helper`, `comprehension-coach`, and the opt-in `pc-doctor` and `writer` extras) now resolves to `mimo-v2.6-flash:cloud` instead of `minimax-m3.1-flash:cloud`. `plugin/src/tiers.ts`, `templates/models.config.json` and the pin in `tests/ollama-preset.test.ts` move together; the test now accepts both `:<size>cloud` and `-cloud` model suffixes. No agent, command, skill or contract changes, so this is a patch.
+
 ## [1.1.0] — 2026-11-04
 
 ### Added

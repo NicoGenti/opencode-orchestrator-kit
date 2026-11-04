@@ -78,7 +78,7 @@ Full contracts, permissions and model fallbacks are in each `agents/*.md` file (
 
 With the plugin, tier resolution happens at runtime from `plugin/src/tiers.ts` presets — there is no `{{TIER_*}}` substitution at install time.
 
-`opencode-orchestrator-kit` is published on npm (`1.1.0`, tag `v1.1.0`; later releases follow `.github/workflows/release.yml` and the steps in `CONTRIBUTING.md`). OpenCode 2 loads plugins from the `plugins` array in `opencode.json` or `opencode.jsonc` ([Plugins](https://opencode.ai/v2/docs/plugins)). A string entry is a package name or a local directory. Pass options with the object form `{ "package", "options" }`. Local paths must be directories (a path to a single file is skipped). Relative paths resolve from the config file that contains the entry.
+`opencode-orchestrator-kit` is published on npm (`1.1.1`, tag `v1.1.1`; later releases follow `.github/workflows/release.yml` and the steps in `CONTRIBUTING.md`). OpenCode 2 loads plugins from the `plugins` array in `opencode.json` or `opencode.jsonc` ([Plugins](https://opencode.ai/v2/docs/plugins)). A string entry is a package name or a local directory. Pass options with the object form `{ "package", "options" }`. Local paths must be directories (a path to a single file is skipped). Relative paths resolve from the config file that contains the entry.
 
 Primary install, the npm package:
 
