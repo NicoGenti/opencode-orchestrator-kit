@@ -250,7 +250,7 @@ for s in sources:
     if path and "opencode" in path.lower():
         print("    %s | enabled_providers=%s" % (path, (info or {}).get("enabled_providers")))
 if not rows:
-    print("  > SKIP: no recognized source in \`debug config\")
+    print("  > SKIP: no recognized source in `debug config`")
     raise SystemExit(0)
 ep_any = any(isinstance((i or {}).get("enabled_providers"), list)
              and "freellmapi" in i["enabled_providers"] for _, i in rows)
@@ -296,7 +296,7 @@ except Exception:
     print("  > SKIP: `debug agents` returned no JSON (V2 service not running?)")
     raise SystemExit(0)
 if not isinstance(agents, list):
-    print("  > SKIP: unexpected format of \`debug agents\")
+    print("  > SKIP: unexpected format of `debug agents`")
     raise SystemExit(0)
 cfg = json.load(open(sys.argv[2], encoding="utf-8"))
 index = {(a.get("id") or a.get("name")): a for a in agents}
