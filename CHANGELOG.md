@@ -12,7 +12,7 @@ All notable changes to this project are documented in this file. The format foll
 
 ### Changed
 
-- **`AGENTS.md` down to 11.607 characters** (was 15.552, −25%): the `Prompt-Assembly Stable-Prefix Contract` block — stable prefix, boundary baseline, frontmatter key order, single primary agent — moved verbatim to `CONTRIBUTING.md#prompt-assembly-contract`, where contributors read it and no agent pays for it on every request. `AGENTS.md` keeps a four-line pointer; `tests/agents-instructions-budget.test.ts` caps the file at 12.000 characters and fails if the contract comes back.
+- **`AGENTS.md` down to 11.617 characters** (was 15.552, −25%): the `Prompt-Assembly Stable-Prefix Contract` block — stable prefix, boundary baseline, frontmatter key order, single primary agent — moved verbatim to `CONTRIBUTING.md#prompt-assembly-stable-prefix-contract`, where contributors read it and no agent pays for it on every request. `AGENTS.md` keeps a four-line pointer; `tests/agents-instructions-budget.test.ts` caps the file at 12.000 characters and fails if the contract comes back.
 
 ### Removed
 

@@ -124,11 +124,10 @@ Model assignment (primary/fallback per agent) lives in each `agents/<name>.md` (
 - All delegated tasks MUST include a reference to this document for clarity.
 - This file governs orchestration and delegation; `CONTRIBUTING.md` governs engineering discipline (secrets hygiene, git hygiene, definition of done). Where they overlap, this file wins for routing decisions and `CONTRIBUTING.md` wins for how the work itself is done.
 
----
 
 ## Repository contracts
 
 The prompt-assembly contract — stable prefix, boundary baseline, frontmatter key order,
 single primary agent — is a contributor invariant, not an agent instruction. It lives in
-`CONTRIBUTING.md` (section "Prompt-assembly contract") and is enforced by the test suite;
-nothing in this file changes when it changes.
+`CONTRIBUTING.md` (section "Prompt-Assembly Stable-Prefix Contract") and is enforced by
+the test suite; nothing in this file changes when it changes.
