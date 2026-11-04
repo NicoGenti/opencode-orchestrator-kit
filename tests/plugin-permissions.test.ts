@@ -408,7 +408,9 @@ describe("packaged agent manifest permissions", () => {
     expect(resolveEffect(rules, "edit", "src/app.ts")).toBe("deny");
     expect(resolveEffect(rules, "edit", "plan/qa/13-example.md")).toBe("deny");
     // V1 `write` is translated to the V2 `edit` action by the translator.
-    expect(resolveEffect(rules, mapAction("write"), "anything.ts")).toBe("deny");
+    expect(resolveEffect(rules, mapAction("write"), "anything.ts")).toBe(
+      "deny",
+    );
   });
 
   test("source frontmatter alone denies the plan board except for plan-writer", () => {
@@ -452,23 +454,44 @@ describe("MCP default deny — le allowlist dichiarate sono reali", () => {
     expect(resolveEffect(rulesOf(rel), `${CRG}_${tool}`, "*")).toBe(expected);
   };
   test("ogni agente nega i tool CRG non dichiarati", () => {
-    for (const rel of ["agents/orchestrator.md", "agents/planner.md", "agents/developer-fixer.md", "agents/profiler.md"]) {
+    for (const rel of [
+      "agents/orchestrator.md",
+      "agents/planner.md",
+      "agents/developer-fixer.md",
+      "agents/profiler.md",
+    ]) {
       declared(rel, "apply_refactor_tool", "deny");
       declared(rel, "get_review_context_tool", "deny");
     }
   });
   test("explorer: allow solo i quattro dichiarati, deny il resto", () => {
-    for (const t of ["get_minimal_context_tool", "query_graph_tool", "semantic_search_nodes_tool", "get_architecture_overview_tool"]) declared("agents/explorer.md", t, "allow");
+    for (const t of [
+      "get_minimal_context_tool",
+      "query_graph_tool",
+      "semantic_search_nodes_tool",
+      "get_architecture_overview_tool",
+    ])
+      declared("agents/explorer.md", t, "allow");
     declared("agents/explorer.md", "build_or_update_graph_tool", "allow");
     declared("agents/explorer.md", "apply_refactor_tool", "deny");
   });
   test("code-reviewer: allow i tre dichiarati, deny il resto", () => {
-    for (const t of ["detect_changes_tool", "get_review_context_tool", "get_impact_radius_tool"]) declared("agents/code-reviewer.md", t, "allow");
+    for (const t of [
+      "detect_changes_tool",
+      "get_review_context_tool",
+      "get_impact_radius_tool",
+    ])
+      declared("agents/code-reviewer.md", t, "allow");
     declared("agents/code-reviewer.md", "build_or_update_graph_tool", "allow");
     declared("agents/code-reviewer.md", "apply_refactor_tool", "deny");
   });
   test("security: allow i tre dichiarati, deny apply_refactor", () => {
-    for (const t of ["get_impact_radius_tool", "get_hub_nodes_tool", "get_bridge_nodes_tool"]) declared("agents/security.md", t, "allow");
+    for (const t of [
+      "get_impact_radius_tool",
+      "get_hub_nodes_tool",
+      "get_bridge_nodes_tool",
+    ])
+      declared("agents/security.md", t, "allow");
     declared("agents/security.md", "apply_refactor_tool", "deny");
   });
   test("orchestrator: solo get_minimal_context_tool, nessun tool che scrive", () => {
@@ -477,8 +500,14 @@ describe("MCP default deny — le allowlist dichiarate sono reali", () => {
     declared("agents/orchestrator.md", "apply_refactor_tool", "deny");
   });
   test("i tre agenti CRG dichiarano il catalogo come fonte di verita'", () => {
-    for (const rel of ["agents/explorer.md", "agents/code-reviewer.md", "agents/security.md"]) {
-      expect(readFileSync(join(ROOT, rel), "utf-8")).toContain("Your tool catalog is the source of truth");
+    for (const rel of [
+      "agents/explorer.md",
+      "agents/code-reviewer.md",
+      "agents/security.md",
+    ]) {
+      expect(readFileSync(join(ROOT, rel), "utf-8")).toContain(
+        "Your tool catalog is the source of truth",
+      );
     }
   });
 });
@@ -489,7 +518,7 @@ describe("tool surface documentata per explorer e planner", () => {
     const t = body("agents/explorer.md");
     expect(t).toContain("it is the FIRST tool call of any exploration");
     expect(t).toContain('tools["code-review-graph"].get_minimal_context_tool');
-    expect(t).toContain('"Unknown tool \'shell\'"');
+    expect(t).toContain("\"Unknown tool 'shell'\"");
   });
   test("planner: dichiara l'assenza di ls/sed nativi e i limiti di shell", () => {
     const t = body("agents/planner.md");
