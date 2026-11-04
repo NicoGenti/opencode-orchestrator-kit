@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# install-freellmapi.sh — un comando: installa l'orchestrator kit in <project> e
+# install-freellmapi.sh — one command: installs the orchestrator kit in <project> and
 # wires every agent to the local FreeLLMAPI app (http://127.0.0.1:31415/v1).
 #
 #   bash scripts/install-freellmapi.sh [--with-extras] [--symlink] [--no-strip]
@@ -14,7 +14,7 @@
 #
 # It NEVER writes to the global .opencode2/** profile: the V2 commands
 # (`debug config`, `debug agents`, `run`) are invoked READ-ONLY
-# tramite lo shim `opencode2` (~/bin/opencode2, sovrascrivibile con $OC2_SHIM).
+# through the \`opencode2\ shim (~/bin/opencode2, overridable with $OC2_SHIM).
 set -euo pipefail
 
 KIT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -62,7 +62,7 @@ for c in python3 python py; do command -v "$c" >/dev/null 2>&1 && { PY="$c"; bre
 
 case "$PROJECT" in
   /*|[A-Za-z]:[\\/]*) ;;
-  *) echo "ERROR: serve un percorso assoluto per <project-dir> (ricevuto: $PROJECT)" >&2; exit 1 ;;
+  *) echo "ERROR: an absolute path is required for <project-dir> (received: $PROJECT)" >&2; exit 1 ;;
 esac
 [[ -d "$PROJECT" ]] || { echo "ERROR: directory progetto inesistente: $PROJECT" >&2; exit 1; }
 PROJECT_NATIVE="$(native "$PROJECT")"
@@ -81,7 +81,7 @@ PYEOF
 }
 
 [[ -n "$API_KEY" ]] || API_KEY="$(read_key_from_app || true)"
-[[ -n "$API_KEY" ]] || { echo "ERROR: chiave FreeLLMAPI assente (--key o FREELLMAPI_API_KEY)." >&2; exit 1; }
+[[ -n "$API_KEY" ]] || { echo "ERROR: FreeLLMAPI key missing (--key or FREELLMAPI_API_KEY)." >&2; exit 1; }
 
 # 0) preflight: the app validates the Bearer, so the real key is used (never printed).
 if [[ "$PREFLIGHT" == true ]]; then
@@ -90,7 +90,7 @@ if [[ "$PREFLIGHT" == true ]]; then
   if [[ "$code" == "200" ]]; then
     echo "  + preflight FreeLLMAPI OK ($BASE_URL)"
   elif [[ "$code" == "401" ]]; then
-    echo "ERROR: FreeLLMAPI su $BASE_URL ha rifiutato la chiave (HTTP 401)." >&2
+    echo "ERROR: FreeLLMAPI at $BASE_URL rejected the key (HTTP 401)." >&2
     exit 1
   else
     echo "ERROR: FreeLLMAPI unreachable at $BASE_URL (HTTP $code). Start the FreeLLMAPI app." >&2
@@ -98,13 +98,13 @@ if [[ "$PREFLIGHT" == true ]]; then
   fi
 fi
 
-# 1) profilo modelli del progetto: default_preset = freellmapi (edit byte-minimal,
-#    preserva i line ending del file esistente).
+# 1) project model profile: default_preset = freellmapi (byte-minimal edit,
+#    preserves the existing file's line endings).
 mkdir -p "$OPENCODE_DIR"
 TARGET_PROFILE="$OPENCODE_DIR/models.config.json"
 if [[ ! -f "$TARGET_PROFILE" ]]; then
   cp "$(native "$KIT_DIR/templates/models.config.json")" "$TARGET_PROFILE"
-  echo "  + seminato $TARGET_PROFILE"
+  echo "  + seeded $TARGET_PROFILE"
 fi
 "$PY" - "$TARGET_PROFILE" <<'PYEOF'
 import json, re, sys
@@ -113,7 +113,7 @@ with open(p, encoding="utf-8", newline="") as fh:
     raw = fh.read()
 cfg = json.loads(raw)
 if "freellmapi" not in (cfg.get("presets") or {}):
-    raise SystemExit("ERROR: preset 'freellmapi' assente in %s (aggiorna il kit o il file)" % p)
+    raise SystemExit("ERROR: preset 'freellmapi' missing in %s (update the kit or the file)" % p)
 new, n = re.subn(r'("default_preset"\s*:\s*")[^"]*(")', r'\g<1>freellmapi\g<2>', raw, count=1)
 if n == 0:
     raise SystemExit("ERROR: default_preset field not found in %s" % p)
@@ -122,7 +122,7 @@ with open(p, "w", encoding="utf-8", newline="") as fh:
 print("  + default_preset = freellmapi in %s" % p)
 PYEOF
 
-# 2) install del kit nel progetto (copia + validazione + risoluzione {{TIER_*}}).
+# 2) kit install into the project (copy + validation + {{TIER_*}} resolution).
 #    Deviation from the plan, required on this host: `install.sh project` resolves
 #    the target as "$(pwd)/.opencode" (MSYS form), which native python does not
 #    read: resolution dies with "config file not found: \c\Users\...") even
@@ -194,8 +194,8 @@ EXTRA_PY=()
 if [[ "$GITIGNORE" == true ]] && git -C "$PROJECT_NATIVE" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   GI="$PROJECT_NATIVE/.gitignore"
   if ! grep -q 'opencode-orchestrator-kit + FreeLLMAPI profile' "$GI" 2>/dev/null; then
-    printf '\n# opencode-orchestrator-kit + FreeLLMAPI profile (contiene una API key locale)\n.opencode/opencode.jsonc\n.opencode/models.config.json\n' >> "$GI"
-    echo "  + .gitignore aggiornato ($GI)"
+    printf '\n# opencode-orchestrator-kit + FreeLLMAPI profile (contains a local API key)\n.opencode/opencode.jsonc\n.opencode/models.config.json\n' >> "$GI"
+    echo "  + .gitignore updated ($GI)"
   fi
 fi
 
@@ -239,7 +239,7 @@ except Exception:
     print("  > SKIP: `debug config` returned no JSON")
     raise SystemExit(0)
 sources = data if isinstance(data, list) else (data.get("sources") if isinstance(data, dict) and isinstance(data.get("sources"), list) else [])
-print("  > sorgenti config:")
+print("  > config sources:")
 rows = []
 for s in sources:
     if not isinstance(s, dict):
@@ -250,7 +250,7 @@ for s in sources:
     if path and "opencode" in path.lower():
         print("    %s | enabled_providers=%s" % (path, (info or {}).get("enabled_providers")))
 if not rows:
-    print("  > SKIP: nessuna sorgente riconosciuta in `debug config`")
+    print("  > SKIP: no recognized source in \`debug config\")
     raise SystemExit(0)
 ep_any = any(isinstance((i or {}).get("enabled_providers"), list)
              and "freellmapi" in i["enabled_providers"] for _, i in rows)
@@ -271,7 +271,7 @@ elif declared:
     except Exception:
         n_cat = -1
     if n_cat > 0:
-        print("  + guardia: freellmapi nel catalogo runtime (%d righe `freellmapi/`)" % n_cat)
+        print("  + guard: freellmapi in the runtime catalog (%d \`freellmapi/\" rows)" % n_cat)
     else:
         print("  WARNING: `freellmapi` is in the project config and resolves the agents, but does NOT enter")
         print("           the runtime catalogue: `opencode2 models` has no `freellmapi/` rows, so")
@@ -281,7 +281,7 @@ elif declared:
 else:
     print("  WARNING: `freellmapi` does not appear enabled in the project config seen by opencode2.")
     print("           I do NOT modify the global profile: for a dedicated profile use")
-    print("           scripts/setup-oc2-fm-profile.sh (comando oc2-fm).")
+    print("           scripts/setup-oc2-fm-profile.sh (the \`oc2-fm\" command).")
     warn = 1
 raise SystemExit(warn)
 PYEOF
@@ -296,7 +296,7 @@ except Exception:
     print("  > SKIP: `debug agents` returned no JSON (V2 service not running?)")
     raise SystemExit(0)
 if not isinstance(agents, list):
-    print("  > SKIP: formato inatteso di `debug agents`")
+    print("  > SKIP: unexpected format of \`debug agents\")
     raise SystemExit(0)
 cfg = json.load(open(sys.argv[2], encoding="utf-8"))
 index = {(a.get("id") or a.get("name")): a for a in agents}
@@ -314,7 +314,7 @@ if missing:
     print("  FAIL: config agents not registered in opencode2: %s" % ", ".join(sorted(missing)))
     raise SystemExit(1)
 if bad:
-    print("  FAIL: agent ancora su un altro provider: %s" % ", ".join(bad))
+    print("  FAIL: agents still on another provider: %s" % ", ".join(bad))
     raise SystemExit(1)
 print("  + every mapped agent resolves providerID=freellmapi")
 PYEOF
@@ -338,8 +338,8 @@ else
 fi
 
 echo
-echo "Profilo FreeLLMAPI pronto in $OPENCODE_DIR"
+echo "FreeLLMAPI profile ready in $OPENCODE_DIR"
 echo "  avvio:    cd $PROJECT_NATIVE && opencode2"
-echo "  headless: $OC2_SHIM run -m freellmapi/auto:smart \"...\"  (run --agent ignora la mappa: serve -m)"
+echo "  headless: $OC2_SHIM run -m freellmapi/auto:smart \"...\"  (run --agent ignores the map: -m is required)"
 echo "  rollback: rm -rf $OPENCODE_DIR/agents $OPENCODE_DIR/skills $OPENCODE_DIR/command $OPENCODE_DIR/models.config.json $OPENCODE_DIR/opencode.jsonc $PROJECT_NATIVE/AGENTS.md $PROJECT_NATIVE/CONTRIBUTING.md"
 exit $fail

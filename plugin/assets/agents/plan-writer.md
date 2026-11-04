@@ -68,10 +68,10 @@ or `Edit`, and never hand-write frontmatter.
 - **V1 or missing `plan_board`**: run `python3 scripts/plan-board.py <check|move|new|adopt> [options] --root "<board root>" --json`.
 - If neither tool nor script exists, stop with `plan-board-missing`.
 
-Se `plan_board` non compare nel catalogo ma esiste il tool `execute`, il host lo espone in Code
-Mode: chiamalo come `await tools.plan_board({ command: "check", root: "plan" })` e segnalalo.
-Il tool e' la via normale per check/move/new/adopt; la scrittura diretta sulla board resta un
-fallback di contratto e va dichiarata nel report. Su Windows usa `python`, non `python3`.
+If `plan_board` does not appear in the catalog but the `execute` tool exists, the host exposes it
+in Code Mode: call it as `await tools.plan_board({ command: "check", root: "plan" })` and say so.
+That tool is the normal path for check/move/new/adopt; writing to the board directly remains a
+contract fallback and must be declared in the report. On Windows use `python`, not `python3`.
 
 **V1 (copy-based installer, or V2 when `plan_board` is not registered).** Run:
 
