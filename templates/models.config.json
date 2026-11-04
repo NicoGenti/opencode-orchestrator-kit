@@ -28,7 +28,7 @@
       }
     },
     "freellmapi": {
-      "label": "FreeLLMAPI (app locale su http://127.0.0.1:31415/v1)",
+      "label": "FreeLLMAPI (local app at http://127.0.0.1:31415/v1)",
       "description": "Routes every tier to the FreeLLMAPI app installed on the PC. Uses the routing aliases (auto:smart / auto:fast) because they stay valid when the concrete catalog changes; individual tiers remain overridable with concrete ids present in /v1/models.",
       "requires": ["freellmapi"],
       "models": {
@@ -64,7 +64,7 @@
       }
     },
     "ollama": {
-      "label": "Ollama Cloud (provider ollama locale)",
+      "label": "Ollama Cloud (local ollama provider)",
       "description": "Routes every tier to the `ollama` provider defined in opencode.jsonc (Ollama Cloud via a local OpenAI-compatible endpoint). Verified on 2026-10-27 with `opencode2 run --model`: all five models answer on `ollama`, while the built-in catalog's `ollama-cloud` provider answers `Model unavailable` for the same ids. No consumption on opencode-go, no freellmapi.",
       "requires": ["ollama"],
       "models": {
