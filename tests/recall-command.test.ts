@@ -67,7 +67,7 @@ describe("recall-command — v0.5.0 Comprehension Retention", () => {
 
   test("metric caveat (operational, not validated) present", () => {
     expect(recall).toContain(
-      "metrica operativa, non una metrica scientificamente validata",
+      "it is our own operational metric, not a scientifically validated one",
     );
     expect(recall).toContain("DCI₁");
   });

@@ -104,8 +104,8 @@ export default Plugin.define({
                   agent: packaged.agent,
                 });
               } catch (error) {
-                // Il prompt resta la parte essenziale: un cambio agente fallito
-                // non deve impedire l'invio del comando.
+                // The prompt is the essential part: a failed agent switch
+                // must not block sending the command.
                 console.warn(
                   `${WARNING_PREFIX} /${packaged.name}: could not switch the session to '${packaged.agent}' (${String(error)}); delivering the prompt on the current agent`,
                 );

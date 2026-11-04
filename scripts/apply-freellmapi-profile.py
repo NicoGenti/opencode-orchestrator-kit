@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
-"""apply-freellmapi-profile.py - cabla una config OpenCode (profilo o progetto) su FreeLLMAPI.
+"""apply-freellmapi-profile.py - wires an OpenCode config (profile or project) to FreeLLMAPI.
 
-  1. legge la riga `model:` gia' risolta da ogni file agente in --agents-dir;
-  2. fonde nel config: provider `freellmapi`, `enabled_providers`, `default_agent`,
-     mappa agent.<id>.model per OGNI agente trovato e (se richiesto) model/small_model
-     di root per i builtin;
-  3. con --strip-frontmatter toglie la riga `model:` dai file agente (la mappa del
-     config diventa l'unica fonte).
+  1. reads the `model:` line already resolved in every agent file under --agents-dir;
+  2. merges into the config: provider `freellmapi`, `enabled_providers`, `default_agent`,
+     the agent.<id>.model map for EVERY agent found and (when asked) the root
+     model/small_model for the builtins;
+  3. with --strip-frontmatter removes the `model:` line from the agent files (the config
+     map becomes the single source).
 
-Exit code: 0 ok · 1 input mancante/token non risolti · 2 config esistente non-JSON
-(commenti o JSON invalido) -> ripetere con --force-config (backup datato automatico).
+Exit code: 0 ok · 1 missing input/unresolved token · 2 existing config is not JSON
+(comments or invalid JSON) -> rerun with --force-config (dated automatic backup).
 """
 from __future__ import annotations
 

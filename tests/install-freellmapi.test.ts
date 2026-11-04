@@ -107,7 +107,7 @@ maybe("install-freellmapi.sh", () => {
       { encoding: "utf-8", env: OFFLINE_ENV },
     );
     expect(r.status).toBe(1);
-    expect(r.stderr).toContain("FreeLLMAPI non raggiungibile");
+    expect(r.stderr).toContain("FreeLLMAPI unreachable");
   });
   test("la guardia avverte che senza catalogo runtime serve oc2-fm", () => {
     const stubDir = mkdtempSync(join(tmpdir(), "oc2-stub-")).replaceAll(
@@ -144,7 +144,7 @@ maybe("install-freellmapi.sh", () => {
       ],
       { encoding: "utf-8", env: { ...process.env, OC2_SHIM: stub } },
     );
-    expect(r.stdout).toMatch(/catalogo runtime/i);
+    expect(r.stdout).toMatch(/runtime catalogue/i);
     expect(r.stdout).toContain("oc2-fm");
     rmSync(stubDir, { recursive: true, force: true });
     rmSync(proj, { recursive: true, force: true });

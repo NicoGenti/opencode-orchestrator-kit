@@ -536,7 +536,7 @@ describe("plan-board.ts — deviazioni documentate dalla migrazione", () => {
     );
     expect(r.status).toBe(1);
     expect((r.stdout ?? "").split("\n")[0]).toBe(
-      "FAIL bad-column colonna 'bogus' non valida (usare: draft, in-progress, qa, complete)",
+      "FAIL bad-column invalid column 'bogus' (use: draft, in-progress, qa, complete)",
     );
   });
 

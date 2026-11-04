@@ -28,8 +28,8 @@
       }
     },
     "freellmapi": {
-      "label": "FreeLLMAPI (app locale su http://127.0.0.1:31415/v1)",
-      "description": "Instrada ogni tier sull'app FreeLLMAPI installata sul PC. Usa gli alias di routing (auto:smart / auto:fast) perche' restano validi quando il catalogo concreto cambia; i singoli tier restano sovrascrivibili con id concreti presenti in /v1/models.",
+      "label": "FreeLLMAPI (local app at http://127.0.0.1:31415/v1)",
+      "description": "Routes every tier to the FreeLLMAPI app installed on the PC. Uses the routing aliases (auto:smart / auto:fast) because they stay valid when the concrete catalog changes; individual tiers remain overridable with concrete ids present in /v1/models.",
       "requires": ["freellmapi"],
       "models": {
         "TIER_ROUTER": "freellmapi/auto:smart",
@@ -52,8 +52,8 @@
       }
     },
     "opencode-go-free": {
-      "label": "OpenCode Go \u2014 solo modelli gratuiti (*-free)",
-      "description": "Usa esclusivamente i modelli gratuiti del provider opencode-go (beam-free, minimax-m3.1-flash-free). longcat-2.5-preview-free e cat-jam-free restano disponibili come alternative manuali (cat-jam-free solo via Hermes). Nessun modello a consumo, nessun ollama, nessun freellmapi.",
+      "label": "OpenCode Go \u2014 free models only (*-free)",
+      "description": "Uses exclusively the free models of the opencode-go provider (beam-free, minimax-m3.1-flash-free). longcat-2.5-preview-free and cat-jam-free remain available as manual alternatives (cat-jam-free only via Hermes). No consumption models, no ollama, no freellmapi.",
       "requires": [],
       "models": {
         "TIER_ROUTER": "opencode-go/beam-free",
@@ -64,8 +64,8 @@
       }
     },
     "ollama": {
-      "label": "Ollama Cloud (provider ollama locale)",
-      "description": "Instrada ogni tier sul provider `ollama` definito in opencode.jsonc (Ollama Cloud via endpoint OpenAI-compatibile locale). Verificato il 2026-10-27 con `opencode2 run --model`: tutti e cinque i modelli rispondono su `ollama`, mentre il provider `ollama-cloud` del catalogo built-in risponde `Model unavailable` per gli stessi id. Nessun consumo su opencode-go, nessun freellmapi.",
+      "label": "Ollama Cloud (local ollama provider)",
+      "description": "Routes every tier to the `ollama` provider defined in opencode.jsonc (Ollama Cloud via a local OpenAI-compatible endpoint). Verified on 2026-10-27 with `opencode2 run --model`: all five models answer on `ollama`, while the built-in catalog's `ollama-cloud` provider answers `Model unavailable` for the same ids. No consumption on opencode-go, no freellmapi.",
       "requires": ["ollama"],
       "models": {
         "TIER_ROUTER": "ollama/glm-5.3-flash:cloud",
