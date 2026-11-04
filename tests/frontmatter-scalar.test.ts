@@ -18,9 +18,9 @@ describe("parseFrontmatterScalar", () => {
   });
 
   test("uno scalare inline resta invariato", () => {
-    expect(parseFrontmatterScalar("description: Fast explorer.", "description")).toBe(
-      "Fast explorer.",
-    );
+    expect(
+      parseFrontmatterScalar("description: Fast explorer.", "description"),
+    ).toBe("Fast explorer.");
   });
 
   test("una chiave assente ritorna undefined", () => {

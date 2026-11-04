@@ -229,7 +229,9 @@ describe("agent registration (defaults)", () => {
     const broken = [...harness.editor.updates.entries()]
       .filter(([, agent]) => {
         const desc = String(agent.description ?? "").trim();
-        return desc.startsWith(">-") || desc.startsWith("|") || desc.length < 20;
+        return (
+          desc.startsWith(">-") || desc.startsWith("|") || desc.length < 20
+        );
       })
       .map(([id]) => id);
 

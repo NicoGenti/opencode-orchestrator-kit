@@ -169,19 +169,24 @@ describe("plan-writer — negativo (la verifica ha denti)", () => {
 
 describe("plan-writer — permessi V2 reali (shell patterns e staging)", () => {
   test("plan-writer puo' cancellare il proprio staging .context/plan-body-*.md", () => {
-    const agent = collectPackagedAgents(true).find((a) => a.id === "plan-writer")!;
-    expect(resolveEffect(agent.permissions, "shell", "rm .context/plan-body-5.md")).toBe(
-      "allow",
-    );
+    const agent = collectPackagedAgents(true).find(
+      (a) => a.id === "plan-writer",
+    )!;
+    expect(
+      resolveEffect(agent.permissions, "shell", "rm .context/plan-body-5.md"),
+    ).toBe("allow");
   });
 
   test("i pattern shell coprono python, python3 e py -3 su scripts/plan-board.py", () => {
-    const agent = collectPackagedAgents(true).find((a) => a.id === "plan-writer")!;
+    const agent = collectPackagedAgents(true).find(
+      (a) => a.id === "plan-writer",
+    )!;
     for (const command of [
       "python scripts/plan-board.py check --root plan/",
       "python3 scripts/plan-board.py check --root plan/",
       "py -3 scripts/plan-board.py check --root plan/",
-    ]) expect(resolveEffect(agent.permissions, "shell", command)).toBe("allow");
+    ])
+      expect(resolveEffect(agent.permissions, "shell", command)).toBe("allow");
   });
 });
 
