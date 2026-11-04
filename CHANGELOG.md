@@ -13,6 +13,7 @@ All notable changes to this project are documented in this file. The format foll
 ### Changed
 
 - **Orchestrator prompt trimmed to 22.652 characters** (was 23.961, against a 24.000 cap — 39 characters of headroom left): the six subsections `Context slicing` … `Research mode` no longer restate what `skills/comprehension-workflow/SKILL.md` and `command/{recall,research-mode}.md` already define as canonical; every contract sentence asserted by `tests/recall-command.test.ts`, `tests/telemetry-writer.test.ts` and `tests/comprehension-config.test.ts` is preserved verbatim. The budget guard W1 now covers all 18 agent prompts at current size + 5%, so a prompt can shrink freely and can only grow by editing the table on purpose.
+- **`AGENTS.md` down to 11.617 characters** (was 15.552, −25%): the `Prompt-Assembly Stable-Prefix Contract` block — stable prefix, boundary baseline, frontmatter key order, single primary agent — moved verbatim to `CONTRIBUTING.md#prompt-assembly-stable-prefix-contract`, where contributors read it and no agent pays for it on every request. `AGENTS.md` keeps a four-line pointer; `tests/agents-instructions-budget.test.ts` caps the file at 12.000 characters and fails if the contract comes back.
 
 ### Removed
 
