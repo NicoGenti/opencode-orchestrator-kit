@@ -168,7 +168,7 @@ function asText(value: string | Buffer | null | undefined): string {
 
 function toResult(r: ReturnType<typeof spawnSync>): RunResult {
   const stdout = asText(r.stdout);
-  let json: any = null;
+  let json: any;
   try {
     json = JSON.parse(stdout);
   } catch {

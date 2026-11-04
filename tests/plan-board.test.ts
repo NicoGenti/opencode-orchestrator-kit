@@ -115,7 +115,7 @@ function run(args: string[], root?: string): RunResult {
     encoding: "utf-8",
   });
   const stdout = r.stdout ?? "";
-  let json: any = null;
+  let json: any;
   try {
     json = JSON.parse(stdout);
   } catch {
