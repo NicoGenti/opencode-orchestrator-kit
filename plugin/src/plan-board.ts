@@ -251,7 +251,8 @@ function inspectFile(root: string, column: string, name: string): Inspected {
     findings.push({
       severity: "WARN",
       code: "legacy-no-frontmatter",
-      message: "legacy file without YAML frontmatter: normalize it with `adopt`",
+      message:
+        "legacy file without YAML frontmatter: normalize it with `adopt`",
     });
     return { findings, fm: null };
   }
@@ -461,7 +462,10 @@ function cmdMove(
   const srcPath = join(root, hit.column, hit.name);
   const stem = stemOf(hit.name);
   if (hit.column === to) {
-    return failPayload("already-in-column", `'${hit.name}' is already in '${to}'`);
+    return failPayload(
+      "already-in-column",
+      `'${hit.name}' is already in '${to}'`,
+    );
   }
   const { fm } = splitFrontmatter(readFileSync(srcPath, "utf-8"));
   if (fm === null) {
@@ -608,7 +612,10 @@ function cmdAdopt(
     );
   }
   if (hits.length > 1) {
-    return failPayload("plan-ambiguous", `'${name}' present in multiple columns`);
+    return failPayload(
+      "plan-ambiguous",
+      `'${name}' present in multiple columns`,
+    );
   }
   const hit = hits[0];
   const path = join(root, hit.column, hit.name);
