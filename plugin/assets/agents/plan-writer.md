@@ -1,10 +1,8 @@
 ---
 description: >-
-  Plan Board Writer: sole owner of the plan-file lifecycle on the board root resolved for the
-  current repository (`plan/` by default). Creates, moves, audits and normalises plan files across
-  the draft / in-progress / qa / complete columns through the native `plan_board` tool on
-  OpenCode 2, or `python3 scripts/plan-board.py` on the V1 installer. Does NOT write application source, agent or command definitions,
-  `.context/` task files, or any file outside the resolved board root.
+  Owns the plan-file lifecycle on the resolved board root (plan/ by default): creates, moves, audits
+  and normalises draft/in-progress/qa/complete cards via plan_board or scripts/plan-board.py. Never
+  writes source or files outside the board.
 mode: subagent
 model: {{TIER_REASONING}}
 temperature: 0.1

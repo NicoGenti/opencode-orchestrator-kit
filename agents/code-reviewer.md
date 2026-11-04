@@ -1,7 +1,7 @@
 ---
 description: >-
-  Systematic code reviewer that finds bugs, security flaws, and design risks before release, then ranks them and
-  recommends concrete fixes.
+  Bug and design-risk review of a finished change against the plan: ranks findings, proposes concrete
+  fixes. Read-only. Not for threat models (security), comprehension checks or writing code.
 mode: subagent
 model: {{TIER_REVIEW}}
 temperature: 0.2

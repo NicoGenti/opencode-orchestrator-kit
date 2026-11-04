@@ -1,12 +1,8 @@
 ---
 description: >-
-  Repo bootstrap specialist. Detects tech stack, build tool, and CI/CD in an existing repo (using manifest globbing
-  and Repomix as fallback), or runs a structured architecture intake for an empty or context-poor repo. Writes
-  PROJECT-PROFILE.md, initializes .context/ memory templates, seeds a structured .context/DESIGN-RULES.md draft for
-  new or context-poor repos, offers user-approved review/normalization of existing design-rules artifacts, scaffolds
-  the plan/ kanban folder structure, and generates a token-budgeted repo map for downstream exploration. Runs once
-  per repo (idempotent on re-run: only creates what is missing; the repo map is a derived artifact and is refreshed
-  on every run).
+  Repo bootstrap, once per repo: detects stack and CI, runs the architecture intake for new or
+  context-poor repos, writes PROJECT-PROFILE.md, seeds .context/DESIGN-RULES.md and plan/, refreshes
+  the token-budgeted repo map. Not for later exploration.
 mode: subagent
 model: {{TIER_FAST}}
 temperature: 0.1

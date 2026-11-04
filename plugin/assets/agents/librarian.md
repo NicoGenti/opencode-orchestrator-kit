@@ -1,7 +1,7 @@
 ---
 description: >-
-  Research-focused agent that explains code across repositories, cites official docs, and finds relevant implementation
-  examples.
+  Remote-docs lookup: explains code across repositories, cites official documentation and finds real
+  implementation examples. Read-only. Not for local codebase exploration (explorer).
 mode: subagent
 model: {{TIER_FAST}}
 temperature: 0.1

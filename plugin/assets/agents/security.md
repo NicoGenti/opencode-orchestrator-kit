@@ -1,7 +1,7 @@
 ---
 description: >-
-  Security engineer focused on vulnerability detection, threat modeling, and secure coding practices. Use for
-  security-focused code review, threat analysis, or hardening recommendations.
+  Vulnerability, threat-model and hardening review: severity plus exploit path per finding, blast
+  radius from the diff. Read-only, proposes no patches. Not for general code quality (code-reviewer).
 mode: subagent
 model: {{TIER_REASONING}}
 temperature: 0.2
