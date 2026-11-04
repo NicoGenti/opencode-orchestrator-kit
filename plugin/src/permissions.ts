@@ -394,7 +394,7 @@ export function assertKitPermissionInvariants(
       );
     }
   }
-  // Il tool MCP che scrive sui sorgenti non deve mai essere raggiungibile.
+  // The MCP tool that writes to the sources must never be reachable.
   for (const prefix of MCP_SERVER_PREFIXES) {
     const effect = resolveEffect(rules, `${prefix}_apply_refactor_tool`, "*");
     if (effect !== "deny") {

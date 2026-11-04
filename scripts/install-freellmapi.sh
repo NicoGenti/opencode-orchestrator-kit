@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # install-freellmapi.sh — un comando: installa l'orchestrator kit in <project> e
-# cabla ogni agente sull'app FreeLLMAPI locale (http://127.0.0.1:31415/v1).
+# wires every agent to the local FreeLLMAPI app (http://127.0.0.1:31415/v1).
 #
 #   bash scripts/install-freellmapi.sh [--with-extras] [--symlink] [--no-strip]
 #        [--force-config] [--no-gitignore] [--no-preflight] [--no-smoke]
@@ -8,12 +8,12 @@
 #
 # Esempio:  bash scripts/install-freellmapi.sh --with-extras D:/Work/MyProject
 #
-# La chiave viene presa (in ordine) da --key, da $FREELLMAPI_API_KEY, oppure
-# letta in sola lettura dal DB dell'app: %APPDATA%\FreeLLMAPI\freeapi.db
-# (tabella settings, chiave unified_api_key). La chiave non viene mai stampata.
+# The key is taken (in order) from --key, from $FREELLMAPI_API_KEY, or
+# read read-only from the app DB: %APPDATA%\FreeLLMAPI\freeapi.db
+# (settings table, unified_api_key entry). The key is never printed.
 #
-# NON scrive MAI nel profilo globale .opencode2/**: i comandi V2
-# (`debug config`, `debug agents`, `run`) sono invocati SOLO in lettura
+# It NEVER writes to the global .opencode2/** profile: the V2 commands
+# (`debug config`, `debug agents`, `run`) are invoked READ-ONLY
 # tramite lo shim `opencode2` (~/bin/opencode2, sovrascrivibile con $OC2_SHIM).
 set -euo pipefail
 
@@ -58,7 +58,7 @@ done
 native() { if command -v cygpath >/dev/null 2>&1; then cygpath -m "$1"; else printf '%s\n' "$1"; fi; }
 PY=""
 for c in python3 python py; do command -v "$c" >/dev/null 2>&1 && { PY="$c"; break; }; done
-[[ -n "$PY" ]] || { echo "ERROR: serve python3/python/py sul PATH." >&2; exit 1; }
+[[ -n "$PY" ]] || { echo "ERROR: python3/python/py is required on PATH." >&2; exit 1; }
 
 case "$PROJECT" in
   /*|[A-Za-z]:[\\/]*) ;;
@@ -83,7 +83,7 @@ PYEOF
 [[ -n "$API_KEY" ]] || API_KEY="$(read_key_from_app || true)"
 [[ -n "$API_KEY" ]] || { echo "ERROR: chiave FreeLLMAPI assente (--key o FREELLMAPI_API_KEY)." >&2; exit 1; }
 
-# 0) preflight: l'app valida il Bearer, quindi si usa la chiave reale (mai stampata).
+# 0) preflight: the app validates the Bearer, so the real key is used (never printed).
 if [[ "$PREFLIGHT" == true ]]; then
   code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 \
             -H "Authorization: Bearer ${API_KEY}" "$BASE_URL/models" || true)"
@@ -93,7 +93,7 @@ if [[ "$PREFLIGHT" == true ]]; then
     echo "ERROR: FreeLLMAPI su $BASE_URL ha rifiutato la chiave (HTTP 401)." >&2
     exit 1
   else
-    echo "ERROR: FreeLLMAPI non raggiungibile su $BASE_URL (HTTP $code). Avvia l'app FreeLLMAPI." >&2
+    echo "ERROR: FreeLLMAPI unreachable at $BASE_URL (HTTP $code). Start the FreeLLMAPI app." >&2
     exit 1
   fi
 fi
@@ -116,22 +116,22 @@ if "freellmapi" not in (cfg.get("presets") or {}):
     raise SystemExit("ERROR: preset 'freellmapi' assente in %s (aggiorna il kit o il file)" % p)
 new, n = re.subn(r'("default_preset"\s*:\s*")[^"]*(")', r'\g<1>freellmapi\g<2>', raw, count=1)
 if n == 0:
-    raise SystemExit("ERROR: campo default_preset non trovato in %s" % p)
+    raise SystemExit("ERROR: default_preset field not found in %s" % p)
 with open(p, "w", encoding="utf-8", newline="") as fh:
     fh.write(new)
 print("  + default_preset = freellmapi in %s" % p)
 PYEOF
 
 # 2) install del kit nel progetto (copia + validazione + risoluzione {{TIER_*}}).
-#    Deviazione dal piano, necessaria su questo host: `install.sh project` risolve
-#    il targeting come "$(pwd)/.opencode" (forma MSYS) che il python nativo non
-#    legge e la risoluzione muore ("config file not found: \c\Users\...") anche
-#    con --skip-validation, che non salta resolve_model_tokens (evidenza raccolta
-#    2026-10-13, probe su dir di scratch). Stesse operazioni, rieseguite qui con
-#    path nativi (pattern identico a scripts/setup-oc2-fm-profile.sh, committato).
+#    Deviation from the plan, required on this host: `install.sh project` resolves
+#    the target as "$(pwd)/.opencode" (MSYS form), which native python does not
+#    read: resolution dies with "config file not found: \c\Users\...") even
+#    with --skip-validation, which does not skip resolve_model_tokens (evidence
+#    collected 2026-10-13 on a scratch dir). Same operations, rerun here with
+#    native paths (same pattern as scripts/setup-oc2-fm-profile.sh, committed).
 if [[ "$SYMLINK" == true ]]; then
-  echo "ERROR: --symlink non e' supportato dal profilo FreeLLMAPI: la risoluzione" >&2
-  echo "       dei tier e lo strip del frontmatter richiedono copie. Usa la modalita' copy." >&2
+  echo "ERROR: --symlink is not supported by the FreeLLMAPI profile: tier" >&2
+  echo "       resolution and frontmatter stripping need copies. Use copy mode." >&2
   exit 1
 fi
 echo "  > Validating model profile at $TARGET_PROFILE (default_preset=freellmapi)..."
@@ -177,7 +177,7 @@ fi
 copy_kit_component "$KIT_DIR/AGENTS.md"       "$PROJECT_NATIVE/AGENTS.md"
 copy_kit_component "$KIT_DIR/CONTRIBUTING.md" "$PROJECT_NATIVE/CONTRIBUTING.md"
 
-# 3) provider + mappa agent nel config di progetto, e strip del `model:` dal frontmatter
+# 3) provider + agent map in the project config, and strip of `model:` from the frontmatter
 AGENT_DIRS=(--agents-dir "$OPENCODE_DIR/agents")
 if [[ "$WITH_EXTRAS" == true && -d "$OPENCODE_DIR/extras" ]]; then
   # Legacy layout only. New installs place pc-doctor.md and writer.md in agents/.
@@ -190,7 +190,7 @@ EXTRA_PY=()
   --config "$OPENCODE_DIR/opencode.jsonc" "${AGENT_DIRS[@]}" \
   --key "$API_KEY" --base-url "$BASE_URL" "${EXTRA_PY[@]}"
 
-# 4) la chiave sta nel config di progetto: proteggerlo da un commit accidentale
+# 4) the key sits in the project config: keep it out of an accidental commit
 if [[ "$GITIGNORE" == true ]] && git -C "$PROJECT_NATIVE" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   GI="$PROJECT_NATIVE/.gitignore"
   if ! grep -q 'opencode-orchestrator-kit + FreeLLMAPI profile' "$GI" 2>/dev/null; then
@@ -199,26 +199,26 @@ if [[ "$GITIGNORE" == true ]] && git -C "$PROJECT_NATIVE" rev-parse --is-inside-
   fi
 fi
 
-# 5) verifica statica: nessun token non risolto, nessun model: residuo (se strip)
+# 5) static check: no unresolved token, no leftover model: (when stripping)
 fail=0
 CHECK_DIRS=("$OPENCODE_DIR/agents")
 [[ -d "$OPENCODE_DIR/extras" ]] && CHECK_DIRS+=("$OPENCODE_DIR/extras")
 tier_left="$(grep -rn '{{TIER_' "${CHECK_DIRS[@]}" --include='*.md' 2>/dev/null || true)"
 if [[ -n "$tier_left" ]]; then
-  echo "FAIL: restano token {{TIER_*}} non risolti:"
+  echo "FAIL: unresolved {{TIER_*}} tokens remain:"
   printf '%s\n' "$tier_left" | head -5
   fail=1
 fi
 if [[ "$STRIP" == true ]]; then
   model_left="$(grep -rn '^model:' "${CHECK_DIRS[@]}" --include='*.md' 2>/dev/null || true)"
   if [[ -n "$model_left" ]]; then
-    echo "FAIL: il frontmatter degli agenti contiene ancora model:"
+    echo "FAIL: the agent frontmatter still contains model:"
     printf '%s\n' "$model_left" | head -5
     fail=1
   fi
 fi
 
-# 6) verifica V2 via shim opencode2 (SOLO LETTURA, mai scritta nel profilo globale)
+# 6) V2 check via the opencode2 shim (READ-ONLY, never written to the global profile)
 if [[ -x "$OC2_SHIM" ]]; then
   AGENTS_JSON="$(mktemp 2>/dev/null || mktemp)"
   CFG_JSON="$(mktemp 2>/dev/null || mktemp)"
@@ -228,7 +228,7 @@ if [[ -x "$OC2_SHIM" ]]; then
 
   ( cd "$PROJECT_NATIVE" && env -u PWD "$OC2_SHIM" debug config ) > "$CFG_JSON"  2>/dev/null || true
 
-  # guardia: `freellmapi` deve risultare fra gli enabled_providers visti da V2
+  # guard: `freellmapi` must appear among the enabled_providers seen by V2
   "$PY" - "$(native "$CFG_JSON")" "$(native "$MODELS_TXT")" <<'PYEOF' || warn=1
 
 import json, sys
@@ -236,7 +236,7 @@ warn = 0
 try:
     data = json.loads(open(sys.argv[1], encoding="utf-8", errors="replace").read())
 except Exception:
-    print("  > SKIP: `debug config` non ha restituito JSON")
+    print("  > SKIP: `debug config` returned no JSON")
     raise SystemExit(0)
 sources = data if isinstance(data, list) else (data.get("sources") if isinstance(data, dict) and isinstance(data.get("sources"), list) else [])
 print("  > sorgenti config:")
@@ -262,7 +262,7 @@ declared = any("freellmapi" in json.dumps(i.get("agents") or {})
                or "freellmapi" in json.dumps(i.get("providers") or {})
                for _, i in proj if i)
 if ep_any:
-    print("  + guardia: freellmapi fra gli enabled_providers visti da opencode2")
+    print("  + guard: freellmapi among the enabled_providers seen by opencode2")
 elif declared:
     n_cat = 0
     try:
@@ -273,27 +273,27 @@ elif declared:
     if n_cat > 0:
         print("  + guardia: freellmapi nel catalogo runtime (%d righe `freellmapi/`)" % n_cat)
     else:
-        print("  WARNING: `freellmapi` e' nel config di progetto e risolve gli agenti, ma NON entra")
-        print("           nel catalogo runtime: `opencode2 models` non ha righe `freellmapi/`, quindi")
-        print("           la TUI non offre il provider e i run danno `Model unavailable`.")
-        print("           Per lavorare in questo progetto usa il profilo dedicato: comando `oc2-fm`.")
+        print("  WARNING: `freellmapi` is in the project config and resolves the agents, but does NOT enter")
+        print("           the runtime catalogue: `opencode2 models` has no `freellmapi/` rows, so")
+        print("           the TUI does not offer the provider and runs fail with `Model unavailable`.")
+        print("           To work in this project use the dedicated profile: command `oc2-fm`.")
         warn = 1
 else:
-    print("  WARNING: `freellmapi` non risulta abilitato nel config di progetto visto da opencode2.")
-    print("           NON modifico il profilo globale: per un profilo dedicato usa")
+    print("  WARNING: `freellmapi` does not appear enabled in the project config seen by opencode2.")
+    print("           I do NOT modify the global profile: for a dedicated profile use")
     print("           scripts/setup-oc2-fm-profile.sh (comando oc2-fm).")
     warn = 1
 raise SystemExit(warn)
 PYEOF
 
-  # mappa agent -> providerID freellmapi per ogni agente del config di progetto
+  # agent -> freellmapi providerID map for every agent in the project config
   "$PY" - "$(native "$AGENTS_JSON")" "$(native "$OPENCODE_DIR/opencode.jsonc")" <<'PYEOF' || fail=1
 import json, sys
 try:
     raw = open(sys.argv[1], encoding="utf-8", errors="replace").read().strip()
     agents = json.loads(raw)
 except Exception:
-    print("  > SKIP: `debug agents` non ha restituito JSON (servizio V2 non attivo?)")
+    print("  > SKIP: `debug agents` returned no JSON (V2 service not running?)")
     raise SystemExit(0)
 if not isinstance(agents, list):
     print("  > SKIP: formato inatteso di `debug agents`")
@@ -311,12 +311,12 @@ for aid in (cfg.get("agent") or {}):
         bad.append("%s=%s" % (aid, pid))
 print("  > agent mappati: %d | agenti enumerati: %d" % (len(cfg.get("agent") or {}), len(agents)))
 if missing:
-    print("  FAIL: agent del config non registrati in opencode2: %s" % ", ".join(sorted(missing)))
+    print("  FAIL: config agents not registered in opencode2: %s" % ", ".join(sorted(missing)))
     raise SystemExit(1)
 if bad:
     print("  FAIL: agent ancora su un altro provider: %s" % ", ".join(bad))
     raise SystemExit(1)
-print("  + tutti gli agent mappati risolvono providerID=freellmapi")
+print("  + every mapped agent resolves providerID=freellmapi")
 PYEOF
 
   rm -f "$AGENTS_JSON" "$CFG_JSON"
@@ -334,7 +334,7 @@ PYEOF
     fi
   fi
 else
-  echo "  > SKIP: shim opencode2 non trovato in $OC2_SHIM (verifica manuale con: cd <project> && opencode2 debug agents)"
+  echo "  > SKIP: opencode2 shim not found in $OC2_SHIM (check manually with: cd <project> && opencode2 debug agents)"
 fi
 
 echo

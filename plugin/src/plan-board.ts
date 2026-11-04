@@ -1,30 +1,30 @@
 /**
- * plan-board.ts — porta TypeScript dei piani Kanban (draft/in-progress/qa/complete).
+ * plan-board.ts — TypeScript port of the plan kanban board (draft/in-progress/qa/complete).
  *
- * Parita' osservabile con `scripts/plan-board.py` (libreria std, fonte autoritativa):
- * stessi subcomandi, stessi payload JSON (stessi codici, stessi messaggi, stesso ordine
- * delle chiavi), stesso formato human di `emit()`, stesso effetto sul filesystem.
+ * Observable parity with `scripts/plan-board.py` (stdlib library, authoritative source):
+ * same subcommands, same JSON payloads (same codes, same messages, same
+ * key order), same human output of `emit()`, same filesystem effect.
  *
- * Contratto (AGENTS.md "Plan Board Lifecycle & Owner Contract"): unico modo autorizzato
- * per creare, spostare e normalizzare i file di piano. `runPlanBoard(argv)` e' puro:
- * non scrive su stdout/stderr, non esce, non lancia (ogni fallimento ritorna un payload
- * {ok:false, code, message} — nessun `action` key su un payload di fallimento).
+ * Contract (AGENTS.md "Plan Board Lifecycle & Owner Contract"): the only authorized
+ * way to create, move, and normalize plan files. `runPlanBoard(argv)` is pure:
+ * it does not write to stdout/stderr, does not exit, does not throw (every failure
+ * returns a payload {ok:false, code, message} — no `action` key on a failing payload).
  *
- * Deviazioni documentate dal python (argparse uscirebbe con exit 2 o traceback):
- *  - errori di argomento (subcomando/flag sconosciuto, flag richiesto assente, valore non
- *    ammesso) -> codici `missing-argument`/`bad-argument`, exit 1;
- *  - `move`/`new` non dry-run con colonna di destinazione assente su disco -> la colonna viene
- *    creata (`mkdir -p`) e l'operazione prosegue (python andrebbe in traceback);
- *  - eccezione inattesa -> payload {ok:false, code:"internal-error"}, exit 1: il tool non lancia mai.
+ * Documented deviations from the python (argparse would exit with 2 or traceback):
+ *  - argument errors (unknown subcommand/flag, missing required flag, value not
+ *    allowed) -> `missing-argument`/`bad-argument` codes, exit 1;
+ *  - `move`/`new` non dry-run with a missing destination column on disk -> the column is
+ *    created (`mkdir -p`) and the operation proceeds (the python would traceback);
+ *  - unexpected exception -> payload {ok:false, code:"internal-error"}, exit 1: the tool never throws.
  *
- * Il formato human e' byte-identico a `emit()`: "ok" su un payload ok, "FAIL <code> <message>"
- * solo per i payload di fallimento che portano il codice, la riga "FAIL" per un payload di
- * `check` (che non ha chiave `code`), poi le righe ERROR/WARN.
+ * The human format is byte-identical to `emit()`: "ok" on an ok payload, "FAIL <code> <message>"
+ * only for failing payloads carrying the code, the "FAIL" line for a `check`
+ * payload (which has no `code` key), then the ERROR/WARN rows.
  *
- * Exit code: 0 se ok (i warning da soli non fanno fallire), 1 per ogni errore bloccante.
- * Si esegue con `bun plugin/src/plan-board.ts <subcommand> [flags]`; `--json` salva il
- * payload JSON su stdout; senza `--json` gli errori di argomento aggiungono sullo stderr
- * un hint d'uso di una riga. Dipendenze: solo node:fs + node:path.
+ * Exit code: 0 if ok (warnings alone do not fail), 1 for every blocking error.
+ * Run with `bun plugin/src/plan-board.ts <subcommand> [flags]`; `--json` writes the
+ * JSON payload to stdout; without `--json` argument errors add on stderr
+ * a one-line usage hint. Dependencies: node:fs + node:path only.
  */
 import {
   existsSync,
@@ -73,7 +73,7 @@ const COMPREHENSION_VALUES = [
 
 const ID_RE = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
 
-/** Stessa regex del python: `^---\r?\n(.*?)\r?\n---\r?\n?` in DOTALL. */
+/** Same regex as the python: `^---\r?\n(.*?)\r?\n---\r?\n?` in DOTALL. */
 const FM_RE = /^---\r?\n([\s\S]*?)\r?\n---(\r?\n)?/;
 
 type Command = "check" | "move" | "new" | "adopt";
@@ -84,7 +84,7 @@ type PlanBoardResult = { ok: boolean; asJson: boolean; payload: Payload };
 
 type Hit = { column: string; name: string };
 
-/** Item su check: `file` e' il path pieno su errori/warning, mentre su `duplicate-id` e' l'id. */
+/** Item on check: `file` is the full path on errors/warnings, while on `duplicate-id` it is the id. */
 type Item = { file: string; code: string; message: string };
 
 type Inspected = {
@@ -97,7 +97,7 @@ type Inspected = {
 };
 
 const USAGE = [
-  "uso: bun plugin/src/plan-board.ts <check|move|new|adopt> [flag]",
+  "usage: bun plugin/src/plan-board.ts <check|move|new|adopt> [flag]",
   "",
   "  check [--root DIR] [--json]",
   "  move  --id ID --to COL [--comprehension V] [--dry-run] [--root DIR] [--json]",
@@ -106,18 +106,18 @@ const USAGE = [
 ].join("\n");
 
 const USAGE_HINT =
-  "uso: bun plugin/src/plan-board.ts <check|move|new|adopt> [flag] (vedi --help)";
+  "usage: bun plugin/src/plan-board.ts <check|move|new|adopt> [flag] (see --help)";
 
 function isColumn(value: string): value is Column {
   return (COLUMNS as readonly string[]).includes(value);
 }
 
-/** Ordine per code-unit (< / > plain, NON localeCompare — identico a sorted() del python). */
+/** Order by code-unit (< / > plain, NOT localeCompare — identical to the python's sorted()). */
 function cmp(a: string, b: string): number {
   return a < b ? -1 : a > b ? 1 : 0;
 }
 
-/** Data di calendario LOCALE (python date.today().isoformat()), "YYYY-MM-DD". */
+/** Local calendar date (python date.today().isoformat()), "YYYY-MM-DD". */
 function today(): string {
   const d = new Date();
   const month = `${d.getMonth() + 1}`.padStart(2, "0");
@@ -125,7 +125,7 @@ function today(): string {
   return `${d.getFullYear()}-${month}-${day}`;
 }
 
-/** Regola del kit: `id` e' il segmento iniziale dello stem del file. */
+/** Kit rule: `id` is the leading segment of the file name stem. */
 function idMatches(planId: string, stem: string): boolean {
   return planId !== "" && (stem === planId || stem.startsWith(planId + "-"));
 }
@@ -144,7 +144,7 @@ function isFileAt(path: string): boolean {
   try {
     return statSync(path).isFile();
   } catch {
-    // file/symlink mancante o non leggibile: come Path.is_file() in python, falso
+    // missing or unreadable file/symlink: like Path.is_file() in python, false
     return false;
   }
 }
@@ -153,15 +153,15 @@ function isDirAt(path: string): boolean {
   try {
     return statSync(path).isDirectory();
   } catch {
-    // path mancante: come Path.is_dir() in python, falso
+    // missing path: like Path.is_dir() in python, false
     return false;
   }
 }
 
 /**
- * Ritorna (frontmatter | null, body). null = file legacy senza frontmatter.
- * Chiave/valore divisi dal primo ':', righe vuote/commenti/senza ':' saltate,
- * valore = testo prima del primo '#', con trim.
+ * Returns (frontmatter | null, body). null = legacy file without frontmatter.
+ * Key/value split at the first ':', empty/comment/no-':' lines skipped,
+ * value = text before the first '#', trimmed.
  */
 function splitFrontmatter(text: string): {
   fm: Map<string, string> | null;
@@ -190,7 +190,7 @@ function splitFrontmatter(text: string): {
   return { fm, body: text.slice(m[0].length) };
 }
 
-/** Prima `id,title,status,created,updated,owner,executor`, poi le restanti in ordine crescente. */
+/** First `id,title,status,created,updated,owner,executor`, then the remaining ones in ascending order. */
 function renderFrontmatter(fm: Map<string, string>, newline = "\n"): string {
   const keys: string[] = [];
   for (const k of FM_KEYS) if (fm.has(k)) keys.push(k);
@@ -209,7 +209,7 @@ function renderFrontmatter(fm: Map<string, string>, newline = "\n"): string {
   );
 }
 
-/** Solo il livello piu' alto di ogni colonna: file reali (symlink seguiti), senza `.gitkeep`, per nome. */
+/** Only the top level of each column: real files (symlinks resolved), without `.gitkeep`, by name. */
 function boardFiles(root: string): Record<string, string[]> {
   const out: Record<string, string[]> = {};
   for (const col of COLUMNS) {
@@ -221,14 +221,14 @@ function boardFiles(root: string): Record<string, string[]> {
         )
         .sort(cmp);
     } catch {
-      // directory assente: come nel python, glob su directory mancante non produce nulla
+      // missing directory: like in the python, a glob on a missing directory produces nothing
     }
     out[col] = names;
   }
   return out;
 }
 
-/** Risolve un piano per stem esatto o per id iniziale (`<id>-<slug>.md`), spogliando un eventuale `.md`. */
+/** Resolves a plan by exact stem or leading id (`<id>-<slug>.md`), stripping an eventual `.md`. */
 function findPlan(root: string, ident: string): Hit[] {
   const id = ident.endsWith(".md") ? ident.slice(0, -3) : ident;
   const hits: Hit[] = [];
@@ -251,7 +251,7 @@ function inspectFile(root: string, column: string, name: string): Inspected {
     findings.push({
       severity: "WARN",
       code: "legacy-no-frontmatter",
-      message: "file legacy senza frontmatter YAML: normalizzalo con `adopt`",
+      message: "legacy file without YAML frontmatter: normalize it with `adopt`",
     });
     return { findings, fm: null };
   }
@@ -261,13 +261,13 @@ function inspectFile(root: string, column: string, name: string): Inspected {
     findings.push({
       severity: "ERROR",
       code: "missing-id",
-      message: "frontmatter senza `id`",
+      message: "frontmatter without `id`",
     });
   } else if (!idMatches(pid, stem)) {
     findings.push({
       severity: "ERROR",
       code: "id-filename-mismatch",
-      message: `id '${pid}' non e' il segmento iniziale del nome file '${name}'`,
+      message: `id '${pid}' is not the leading segment of file name '${name}'`,
     });
   }
   const status = fm.get("status") ?? "";
@@ -275,14 +275,14 @@ function inspectFile(root: string, column: string, name: string): Inspected {
     findings.push({
       severity: "ERROR",
       code: "status-folder-mismatch",
-      message: `status '${status}' non corrisponde alla cartella '${column}'`,
+      message: `status '${status}' does not match folder '${column}'`,
     });
   }
   if (!ID_RE.test(pid || "x")) {
     findings.push({
       severity: "ERROR",
       code: "id-not-slug-safe",
-      message: `id '${pid}' non slug-safe`,
+      message: `id '${pid}' is not slug-safe`,
     });
   }
   for (const section of SECTIONS) {
@@ -290,7 +290,7 @@ function inspectFile(root: string, column: string, name: string): Inspected {
       findings.push({
         severity: "WARN",
         code: "missing-section",
-        message: `sezione mancante: ${section}`,
+        message: `missing section: ${section}`,
       });
     }
   }
@@ -305,7 +305,7 @@ function inspectFile(root: string, column: string, name: string): Inspected {
       findings.push({
         severity: "WARN",
         code: "missing-frontmatter-key",
-        message: `chiave frontmatter mancante: ${key}`,
+        message: `missing frontmatter key: ${key}`,
       });
     }
   }
@@ -314,7 +314,7 @@ function inspectFile(root: string, column: string, name: string): Inspected {
       severity: "WARN",
       code: "missing-comprehension",
       message:
-        "nessun esito di comprensione registrato (chiave `comprehension` assente)",
+        "no comprehension outcome recorded (missing `comprehension` key)",
     });
   }
   return { findings, fm };
@@ -346,7 +346,7 @@ function cmdCheck(root: string): Payload {
     errors.push({
       file: root,
       code: "missing-root",
-      message: "root della board inesistente: nessun piano verificabile",
+      message: "board root does not exist: no plans to verify",
     });
   }
   const files = boardFiles(root);
@@ -356,7 +356,7 @@ function cmdCheck(root: string): Payload {
       warnings.push({
         file: columnDir,
         code: "missing-column",
-        message: `colonna mancante: ${col}`,
+        message: `missing column: ${col}`,
       });
     }
     for (const name of files[col]) {
@@ -365,7 +365,7 @@ function cmdCheck(root: string): Payload {
         warnings.push({
           file: path,
           code: "unexpected-file",
-          message: "file non .md presente in una colonna",
+          message: "non-.md file present in a column",
         });
         continue;
       }
@@ -399,7 +399,7 @@ function cmdCheck(root: string): Payload {
       errors.push({
         file: pid,
         code: "duplicate-id",
-        message: "id presente in piu' colonne: " + paths.join(", "),
+        message: "id present in multiple columns: " + paths.join(", "),
       });
     }
   }
@@ -440,20 +440,20 @@ function cmdMove(
   if (!isColumn(to)) {
     return failPayload(
       "bad-column",
-      `colonna '${to}' non valida (usare: ${COLUMNS.join(", ")})`,
+      `invalid column '${to}' (use: ${COLUMNS.join(", ")})`,
     );
   }
   const hits = findPlan(root, ident);
   if (hits.length === 0) {
     return failPayload(
       "plan-not-found",
-      `nessun piano '${ident}' nelle colonne di ${root}`,
+      `no plan '${ident}' in the columns of ${root}`,
     );
   }
   if (hits.length > 1) {
     return failPayload(
       "plan-ambiguous",
-      `'${ident}' presente in piu' colonne: ` +
+      `'${ident}' present in multiple columns: ` +
         hits.map((h) => `${h.column}/${h.name}`).join(", "),
     );
   }
@@ -461,26 +461,26 @@ function cmdMove(
   const srcPath = join(root, hit.column, hit.name);
   const stem = stemOf(hit.name);
   if (hit.column === to) {
-    return failPayload("already-in-column", `'${hit.name}' e' gia' in '${to}'`);
+    return failPayload("already-in-column", `'${hit.name}' is already in '${to}'`);
   }
   const { fm } = splitFrontmatter(readFileSync(srcPath, "utf-8"));
   if (fm === null) {
     return failPayload(
       "legacy-requires-adopt",
-      `'${hit.name}' non ha frontmatter: esegui prima \`adopt\``,
+      `'${hit.name}' has no frontmatter: run \`adopt\` first`,
     );
   }
   if (!idMatches(fm.get("id") ?? "", stem)) {
-    // python: fm.get("id") interpolato; senza chiave id stampa "None"
+    // python: fm.get("id") interpolated; without an id key it prints "None"
     const planId = fm.has("id") ? (fm.get("id") ?? "") : "None";
     return failPayload(
       "id-filename-mismatch",
-      `id '${planId}' non e' il segmento iniziale del nome file '${hit.name}': move rifiutata`,
+      `id '${planId}' is not the leading segment of file name '${hit.name}': move rejected`,
     );
   }
   const dstPath = join(root, to, hit.name);
   if (existsSync(dstPath)) {
-    return failPayload("target-exists", `${dstPath} esiste gia'`);
+    return failPayload("target-exists", `${dstPath} already exists`);
   }
   if (to === "complete" && comprehension === null) {
     return failPayload(
@@ -490,9 +490,9 @@ function cmdMove(
     );
   }
   if (!dryRun && !isDirAt(join(root, to))) {
-    // deviazione dal python (che andrebbe in traceback): creiamo la colonna
-    // invece di fallire — una colonna vuota non versionata puo' sparire da un
-    // checkout, e il move non deve bloccarsi per questo.
+    // deviation from the python (which would traceback): we create the column
+    // instead of failing — an unversioned empty column can vanish on a
+    // checkout, and the move must not block because of this.
     mkdirSync(join(root, to), { recursive: true });
   }
   const payload: Payload = {
@@ -527,16 +527,16 @@ function cmdNew(
   dryRun: boolean,
 ): Payload {
   if (!isColumn(column)) {
-    return failPayload("bad-column", `colonna '${column}' non valida`);
+    return failPayload("bad-column", `invalid column '${column}'`);
   }
   if (!ID_RE.test(ident)) {
     return failPayload(
       "bad-id",
-      `id '${ident}' non slug-safe (ammessi [A-Za-z0-9._-])`,
+      `id '${ident}' is not slug-safe (allowed [A-Za-z0-9._-])`,
     );
   }
   if (!isFileAt(bodyFile)) {
-    return failPayload("body-missing", `body file non trovato: ${bodyFile}`);
+    return failPayload("body-missing", `body file not found: ${bodyFile}`);
   }
   const body = readFileSync(bodyFile, "utf-8");
   const missing = (SECTIONS as readonly string[]).filter(
@@ -545,24 +545,24 @@ function cmdNew(
   if (missing.length > 0) {
     return failPayload(
       "body-incomplete",
-      "sezioni mancanti nel body: " + missing.join(", "),
+      "missing sections in body: " + missing.join(", "),
     );
   }
   const dstPath = join(root, column, `${ident}.md`);
   if (existsSync(dstPath)) {
-    return failPayload("target-exists", `${dstPath} esiste gia'`);
+    return failPayload("target-exists", `${dstPath} already exists`);
   }
   const dup = findPlan(root, ident);
   if (dup.length > 0) {
     return failPayload(
       "duplicate-id",
-      `'${ident}' esiste gia' in ${dup[0].column}`,
+      `'${ident}' already exists in ${dup[0].column}`,
     );
   }
   if (!dryRun && !isDirAt(join(root, column))) {
-    // deviazione dal python (che andrebbe in traceback): creiamo la colonna
-    // invece di fallire — una colonna vuota non versionata puo' sparire da un
-    // checkout, e la creazione di una card non deve bloccarsi per questo.
+    // deviation from the python (which would traceback): we create the column
+    // instead of failing — an unversioned empty column can vanish on a
+    // checkout, and creating a card must not block because of this.
     mkdirSync(join(root, column), { recursive: true });
   }
   const fm = new Map<string, string>([
@@ -604,11 +604,11 @@ function cmdAdopt(
   if (hits.length === 0) {
     return failPayload(
       "plan-not-found",
-      `nessun piano '${name}' nelle colonne di ${root}`,
+      `no plan '${name}' in the columns of ${root}`,
     );
   }
   if (hits.length > 1) {
-    return failPayload("plan-ambiguous", `'${name}' presente in piu' colonne`);
+    return failPayload("plan-ambiguous", `'${name}' present in multiple columns`);
   }
   const hit = hits[0];
   const path = join(root, hit.column, hit.name);
@@ -616,12 +616,12 @@ function cmdAdopt(
   if (fm !== null) {
     return failPayload(
       "already-has-frontmatter",
-      `'${hit.name}' ha gia' un frontmatter`,
+      `'${hit.name}' already has a frontmatter`,
     );
   }
   const stem = stemOf(hit.name);
   if (!ID_RE.test(stem)) {
-    return failPayload("bad-id", `nome file '${stem}' non slug-safe`);
+    return failPayload("bad-id", `file name '${stem}' is not slug-safe`);
   }
   let title = stem;
   for (const line of body.split(/\r\n|\r|\n/)) {
@@ -651,7 +651,7 @@ function cmdAdopt(
         file: path,
         code: "derived-frontmatter",
         message:
-          "title/owner/executor dedotti: verifica il frontmatter dopo l'adopt",
+          "title/owner/executor inferred: verify the frontmatter after adopt",
       },
     ],
   };
@@ -667,7 +667,7 @@ function cmdAdopt(
   return payload;
 }
 
-/** Flag che consumano il token successivo, per subcomando. */
+/** Flags that consume the next token, by subcommand. */
 const VALUE_FLAGS: Record<Command, readonly string[]> = {
   check: ["root"],
   move: ["id", "to", "comprehension", "root"],
@@ -696,8 +696,8 @@ type ParseError = {
 type Parsed = { values: Map<string, string>; error?: ParseError };
 
 /**
- * Analizza `--flag valore` e i flag booleani; i flag possono seguire in qualunque
- * ordine e ripetersi (vince l'ultimo). `--json` e' globale e non passa da qui.
+ * Parses `--flag value` pairs and boolean flags; flags may appear in any
+ * order and repeat (the last one wins). `--json` is global and does not go through here.
  */
 function parseCommandArgs(command: Command, tokens: string[]): Parsed {
   const values = new Map<string, string>();
@@ -721,7 +721,7 @@ function parseCommandArgs(command: Command, tokens: string[]): Parsed {
             values,
             error: {
               code: "missing-argument",
-              message: `valore mancante per il flag '--${name}'`,
+              message: `missing value for flag '--${name}'`,
             },
           };
         }
@@ -733,7 +733,7 @@ function parseCommandArgs(command: Command, tokens: string[]): Parsed {
         values,
         error: {
           code: "bad-argument",
-          message: `flag non riconosciuto: '${token}'`,
+          message: `unrecognized flag: '${token}'`,
         },
       };
     }
@@ -741,7 +741,7 @@ function parseCommandArgs(command: Command, tokens: string[]): Parsed {
       values,
       error: {
         code: "bad-argument",
-        message: `argomento non riconosciuto: '${token}'`,
+        message: `unrecognized argument: '${token}'`,
       },
     };
   }
@@ -751,7 +751,7 @@ function parseCommandArgs(command: Command, tokens: string[]): Parsed {
         values,
         error: {
           code: "missing-argument",
-          message: `flag '--${required}' richiesto per il comando '${command}'`,
+          message: `flag '--${required}' is required for command '${command}'`,
         },
       };
     }
@@ -766,7 +766,7 @@ function parseCommandArgs(command: Command, tokens: string[]): Parsed {
         values,
         error: {
           code: "bad-argument",
-          message: `valore '--comprehension' non valido: '${comprehension}' (scelte: ${COMPREHENSION_VALUES.join(", ")})`,
+          message: `invalid '--comprehension' value: '${comprehension}' (choices: ${COMPREHENSION_VALUES.join(", ")})`,
         },
       };
     }
@@ -782,7 +782,7 @@ function runPlanBoardInner(argv: string[]): PlanBoardResult {
       asJson,
       payload: failPayload(
         "missing-argument",
-        "nessun comando: usare check|move|new|adopt (vedi --help)",
+        "no command: use check|move|new|adopt (see --help)",
       ),
     };
   }
@@ -805,7 +805,7 @@ function runPlanBoardInner(argv: string[]): PlanBoardResult {
       asJson,
       payload: failPayload(
         "bad-argument",
-        `sottocomando non riconosciuto: '${first}' (comandi: check, move, new, adopt)`,
+        `unrecognized subcommand: '${first}' (commands: check, move, new, adopt)`,
       ),
     };
   }
@@ -821,7 +821,7 @@ function runPlanBoardInner(argv: string[]): PlanBoardResult {
   const values = parsed.values;
   const rootValue = values.get("root");
   const root =
-    rootValue === undefined ? "plan" : rootValue === "" ? "." : rootValue; // python: Path("") e' "."
+    rootValue === undefined ? "plan" : rootValue === "" ? "." : rootValue; // python: Path("") is "."
   const dryRun = values.has("dry-run");
   let payload: Payload;
   if (command === "check") {
@@ -858,7 +858,7 @@ function runPlanBoardInner(argv: string[]): PlanBoardResult {
   return { ok: payload["ok"] === true, asJson, payload };
 }
 
-/** API pubblica pura: mai stdout/stderr, mai `process.exit`, mai throw. */
+/** Pure public API: never stdout/stderr, never `process.exit`, never throws. */
 export function runPlanBoard(argv: string[]): PlanBoardResult {
   try {
     return runPlanBoardInner(argv);
@@ -885,12 +885,12 @@ function firstLine(payload: Payload): string {
       (typeof payload["message"] === "string" ? payload["message"] : "")
     ).replace(/\s+$/, "");
   }
-  // python: i payload di `check` non hanno `code` -> riga "FAIL" sola (poi le righe ERROR)
+  // python: `check` payloads carry no `code` -> a bare "FAIL" line (then the ERROR rows)
   return "FAIL";
 }
 
-/** Formato human identico a `emit()` del python: "ok" o "FAIL <code> <message>" (rstrip),
- * poi due spazi prima di ERROR/WARN e due spazi dopo il codice e il file. */
+/** Human format identical to the python's `emit()`: "ok" or "FAIL <code> <message>" (rstrip),
+ * then two spaces before ERROR/WARN and two spaces after the code and the file. */
 function formatHuman(payload: Payload): string {
   const lines = [firstLine(payload)];
   const errors = Array.isArray(payload["errors"])

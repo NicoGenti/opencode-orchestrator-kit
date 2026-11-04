@@ -52,7 +52,7 @@
       }
     },
     "opencode-go-free": {
-      "label": "OpenCode Go \u2014 solo modelli gratuiti (*-free)",
+      "label": "OpenCode Go \u2014 free models only (*-free)",
       "description": "Uses exclusively the free models of the opencode-go provider (beam-free, minimax-m3.1-flash-free). longcat-2.5-preview-free and cat-jam-free remain available as manual alternatives (cat-jam-free only via Hermes). No consumption models, no ollama, no freellmapi.",
       "requires": [],
       "models": {

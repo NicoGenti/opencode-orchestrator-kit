@@ -1,14 +1,14 @@
 #!/usr/bin/env python
-"""plan-board.py — Kanban dei piani (board draft/in-progress/qa/complete).
+"""plan-board.py — plan kanban board (draft/in-progress/qa/complete).
 
-Sottocomandi:
+Subcommands:
   check  [--root DIR] [--json]
   move   --id <id> --to <column> [--comprehension V] [--root DIR] [--dry-run] [--json]
   new    --id <id> --title T --owner O --executor E --body FILE [--column draft] [--root DIR] [--dry-run] [--json]
   adopt  --file NAME --owner O --executor E [--root DIR] [--dry-run] [--json]
 
-Exit 0 = ok (i warning non fanno fallire), 1 = errore bloccante.
-Solo libreria standard (nessuna dipendenza esterna).
+Exit 0 = ok (warnings alone do not fail), 1 = blocking error.
+Standard library only (no external dependencies).
 """
 from __future__ import annotations
 
@@ -42,17 +42,17 @@ def today() -> str:
 
 
 def id_matches(pid: str, stem: str) -> bool:
-    """Regola del kit: `id` e' il segmento iniziale dello stem del file.
+    """Kit rule: `id` is the leading segment of the file name stem.
 
-    La convenzione del kit e' `<id>-<slug>.md` con `id` corto (es. `id: 0002`
-    dentro `0002-v0.3.0-human-comprehension-gate.md`), quindi vale
-    `stem == id` oppure `stem == "<id>-<slug>"`.
+    The kit convention is `<id>-<slug>.md` with a short `id` (e.g. `id: 0002`
+    inside `0002-v0.3.0-human-comprehension-gate.md`), so
+    `stem == id` or `stem == "<id>-<slug>"`.
     """
     return bool(pid) and (stem == pid or stem.startswith(pid + "-"))
 
 
 def split_frontmatter(text: str):
-    """Ritorna (frontmatter dict | None, body). None = file legacy senza frontmatter."""
+    """Returns (frontmatter dict | None, body). None = legacy file without frontmatter."""
     if not text.startswith("---"):
         return None, text
     m = FM_RE.match(text)
@@ -81,35 +81,35 @@ def board_files(root: Path) -> dict:
 
 
 def inspect_file(path: Path, column: str):
-    """Ritorna (findings, frontmatter|None). Un finding e' (severita', codice, messaggio)."""
+    """Returns (findings, frontmatter|None). A finding is (severity, code, message)."""
     findings = []
     text = path.read_text(encoding="utf-8")
     fm, body = split_frontmatter(text)
     if fm is None:
         findings.append(("WARN", "legacy-no-frontmatter",
-                         "file legacy senza frontmatter YAML: normalizzalo con `adopt`"))
+                         "legacy file without YAML frontmatter: normalize it with `adopt`"))
         return findings, None
     pid = fm.get("id", "")
     if not pid:
-        findings.append(("ERROR", "missing-id", "frontmatter senza `id`"))
+        findings.append(("ERROR", "missing-id", "frontmatter without `id`"))
     elif not id_matches(pid, path.stem):
         findings.append(("ERROR", "id-filename-mismatch",
-                         f"id '{pid}' non e' il segmento iniziale del nome file '{path.name}'"))
+                         f"id '{pid}' is not the leading segment of file name '{path.name}'"))
     status = fm.get("status", "")
     if status != column:
         findings.append(("ERROR", "status-folder-mismatch",
-                         f"status '{status}' non corrisponde alla cartella '{column}'"))
+                         f"status '{status}' does not match folder '{column}'"))
     if not ID_RE.match(pid or "x"):
-        findings.append(("ERROR", "id-not-slug-safe", f"id '{pid}' non slug-safe"))
+        findings.append(("ERROR", "id-not-slug-safe", f"id '{pid}' is not slug-safe"))
     for s in SECTIONS:
         if s not in body:
-            findings.append(("WARN", "missing-section", f"sezione mancante: {s}"))
+            findings.append(("WARN", "missing-section", f"missing section: {s}"))
     for k in ("title", "created", "updated", "owner", "executor"):
         if not fm.get(k):
-            findings.append(("WARN", "missing-frontmatter-key", f"chiave frontmatter mancante: {k}"))
+            findings.append(("WARN", "missing-frontmatter-key", f"missing frontmatter key: {k}"))
     if column in ("qa", "complete") and "comprehension" not in fm:
         findings.append(("WARN", "missing-comprehension",
-                         "nessun esito di comprensione registrato (chiave `comprehension` assente)"))
+                         "no comprehension outcome recorded (missing `comprehension` key)"))
     return findings, fm
 
 
@@ -134,16 +134,16 @@ def cmd_check(root: Path, as_json: bool) -> int:
     seen = {}
     if not root.is_dir():
         payload["errors"].append({"file": str(root), "code": "missing-root",
-                                  "message": "root della board inesistente: nessun piano verificabile"})
+                                  "message": "board root does not exist: no plans to verify"})
     for col, files in board_files(root).items():
         if root.is_dir() and not (root / col).is_dir():
             payload["warnings"].append({"file": str(root / col), "code": "missing-column",
-                                        "message": f"colonna mancante: {col}"})
+                                        "message": f"missing column: {col}"})
         payload["plans"][col] = []
         for p in files:
             if p.suffix.lower() != ".md":
                 payload["warnings"].append({"file": str(p), "code": "unexpected-file",
-                                            "message": "file non .md presente in una colonna"})
+                                            "message": "non-.md file present in a column"})
                 continue
             findings, fm = inspect_file(p, col)
             payload["plans"][col].append({"file": p.name,
@@ -158,14 +158,14 @@ def cmd_check(root: Path, as_json: bool) -> int:
     for pid, paths in sorted(seen.items()):
         if len(paths) > 1:
             payload["errors"].append({"file": pid, "code": "duplicate-id",
-                                      "message": "id presente in piu' colonne: " + ", ".join(paths)})
+                                      "message": "id present in multiple columns: " + ", ".join(paths)})
     payload["ok"] = not payload["errors"]
     emit(payload, as_json)
     return 0 if payload["ok"] else 1
 
 
 def find_plan(root: Path, ident: str):
-    """Risolve un piano per stem esatto o per id iniziale (`<id>-<slug>.md`)."""
+    """Resolves a plan by exact stem or leading id (`<id>-<slug>.md`)."""
     ident = ident[:-3] if ident.endswith(".md") else ident
     return [(col, p) for col, ps in board_files(root).items() for p in ps
             if p.stem == ident or p.stem.startswith(ident + "-")]
@@ -186,27 +186,27 @@ def update_status(path: Path, fm: dict, status: str, comprehension: str | None =
 def cmd_move(root: Path, ident: str, to: str, dry_run: bool, as_json: bool,
              comprehension: str | None = None) -> int:
     if to not in COLUMNS:
-        return fail("bad-column", f"colonna '{to}' non valida (usare: {', '.join(COLUMNS)})", as_json)
+        return fail("bad-column", f"invalid column '{to}' (use: {', '.join(COLUMNS)})", as_json)
     hits = find_plan(root, ident)
     if not hits:
-        return fail("plan-not-found", f"nessun piano '{ident}' nelle colonne di {root}", as_json)
+        return fail("plan-not-found", f"no plan '{ident}' in the columns of {root}", as_json)
     if len(hits) > 1:
-        return fail("plan-ambiguous", f"'{ident}' presente in piu' colonne: "
+        return fail("plan-ambiguous", f"'{ident}' present in multiple columns: "
                     + ", ".join(f"{c}/{p.name}" for c, p in hits), as_json)
     col, path = hits[0]
     if col == to:
-        return fail("already-in-column", f"'{path.name}' e' gia' in '{to}'", as_json)
+        return fail("already-in-column", f"'{path.name}' is already in '{to}'", as_json)
     text = path.read_text(encoding="utf-8")
     fm, _ = split_frontmatter(text)
     if fm is None:
         return fail("legacy-requires-adopt",
-                    f"'{path.name}' non ha frontmatter: esegui prima `adopt`", as_json)
+                    f"'{path.name}' has no frontmatter: run `adopt` first", as_json)
     if not id_matches(fm.get("id", ""), path.stem):
         return fail("id-filename-mismatch",
-                    f"id '{fm.get('id')}' non e' il segmento iniziale del nome file '{path.name}': move rifiutata", as_json)
+                    f"id '{fm.get('id')}' is not the leading segment of file name '{path.name}': move rejected", as_json)
     dst = root / to / path.name
     if dst.exists():
-        return fail("target-exists", f"{dst} esiste gia'", as_json)
+        return fail("target-exists", f"{dst} already exists", as_json)
     if to == "complete" and comprehension is None:
         return fail("comprehension-unrecorded",
                     "move to complete requires --comprehension <none|pass|skipped|fail|disabled|n/a>: "
@@ -214,8 +214,8 @@ def cmd_move(root: Path, ident: str, to: str, dry_run: bool, as_json: bool,
     payload = {"ok": True, "action": "move", "id": path.stem, "from": col, "to": to,
                "path": str(dst), "dry_run": dry_run}
     if not dry_run:
-        # una colonna vuota non versionata puo' sparire da un checkout: la creiamo
-        # invece di andare in traceback sulla write.
+        # an unversioned empty column can vanish on a checkout: we create it
+        # instead of raising on the write.
         (root / to).mkdir(parents=True, exist_ok=True)
         path.write_text(update_status(path, fm, to, comprehension), encoding="utf-8", newline="")
         path.replace(dst)
@@ -227,27 +227,27 @@ def cmd_move(root: Path, ident: str, to: str, dry_run: bool, as_json: bool,
 def cmd_new(root: Path, ident: str, title: str, owner: str, executor: str,
             body_file: Path, column: str, dry_run: bool, as_json: bool) -> int:
     if column not in COLUMNS:
-        return fail("bad-column", f"colonna '{column}' non valida", as_json)
+        return fail("bad-column", f"invalid column '{column}'", as_json)
     if not ID_RE.match(ident):
-        return fail("bad-id", f"id '{ident}' non slug-safe (ammessi [A-Za-z0-9._-])", as_json)
+        return fail("bad-id", f"id '{ident}' is not slug-safe (allowed [A-Za-z0-9._-])", as_json)
     if not body_file.is_file():
-        return fail("body-missing", f"body file non trovato: {body_file}", as_json)
+        return fail("body-missing", f"body file not found: {body_file}", as_json)
     body = body_file.read_text(encoding="utf-8")
     missing = [s for s in SECTIONS if s not in body]
     if missing:
-        return fail("body-incomplete", "sezioni mancanti nel body: " + ", ".join(missing), as_json)
+        return fail("body-incomplete", "missing sections in body: " + ", ".join(missing), as_json)
     dst = root / column / f"{ident}.md"
     if dst.exists(): 
-        return fail("target-exists", f"{dst} esiste gia'", as_json)
+        return fail("target-exists", f"{dst} already exists", as_json)
     dup = find_plan(root, ident)
     if dup:
-        return fail("duplicate-id", f"'{ident}' esiste gia' in {dup[0][0]}", as_json)
+        return fail("duplicate-id", f"'{ident}' already exists in {dup[0][0]}", as_json)
     fm = {"id": ident, "title": title, "status": column, "created": today(),
           "updated": today(), "owner": owner, "executor": executor}
     payload = {"ok": True, "action": "new", "id": ident, "column": column,
                "path": str(dst), "dry_run": dry_run}
     if not dry_run:
-        # vedi cmd_move: la colonna assente si crea, non si fallisce.
+        # see cmd_move: a missing column is created, not a failure.
         (root / column).mkdir(parents=True, exist_ok=True)
         dst.write_text(render_frontmatter(fm) + "\n" + body.lstrip("\n"), encoding="utf-8", newline="")
         payload["verified"] = dst.is_file()
@@ -258,16 +258,16 @@ def cmd_new(root: Path, ident: str, title: str, owner: str, executor: str,
 def cmd_adopt(root: Path, name: str, owner: str, executor: str, dry_run: bool, as_json: bool) -> int:
     hits = find_plan(root, name)
     if not hits:
-        return fail("plan-not-found", f"nessun piano '{name}' nelle colonne di {root}", as_json)
+        return fail("plan-not-found", f"no plan '{name}' in the columns of {root}", as_json)
     if len(hits) > 1:
-        return fail("plan-ambiguous", f"'{name}' presente in piu' colonne", as_json)
+        return fail("plan-ambiguous", f"'{name}' present in multiple columns", as_json)
     col, path = hits[0]
     text = path.read_text(encoding="utf-8")
     fm, body = split_frontmatter(text)
     if fm is not None:
-        return fail("already-has-frontmatter", f"'{path.name}' ha gia' un frontmatter", as_json)
+        return fail("already-has-frontmatter", f"'{path.name}' already has a frontmatter", as_json)
     if not ID_RE.match(path.stem):
-        return fail("bad-id", f"nome file '{path.stem}' non slug-safe", as_json)
+        return fail("bad-id", f"file name '{path.stem}' is not slug-safe", as_json)
     title = path.stem
     for line in body.splitlines():
         if line.startswith("# "):
@@ -278,7 +278,7 @@ def cmd_adopt(root: Path, name: str, owner: str, executor: str, dry_run: bool, a
     payload = {"ok": True, "action": "adopt", "id": path.stem, "column": col,
                "path": str(path), "dry_run": dry_run,
                "warnings": [{"file": str(path), "code": "derived-frontmatter",
-                             "message": "title/owner/executor dedotti: verifica il frontmatter dopo l'adopt"}]}
+                             "message": "title/owner/executor inferred: verify the frontmatter after adopt"}]}
     if not dry_run:
         path.write_text(render_frontmatter(fm) + "\n" + body.lstrip("\n"), encoding="utf-8", newline="")
         payload["verified"] = split_frontmatter(path.read_text(encoding="utf-8"))[0] is not None
@@ -287,7 +287,7 @@ def cmd_adopt(root: Path, name: str, owner: str, executor: str, dry_run: bool, a
 
 
 def main(argv=None) -> int:
-    ap = argparse.ArgumentParser(prog="plan-board.py", description="Kanban dei piani (draft/in-progress/qa/complete)")
+    ap = argparse.ArgumentParser(prog="plan-board.py", description="Plan kanban (draft/in-progress/qa/complete)")
     sub = ap.add_subparsers(dest="cmd", required=True)
 
     def add_common(p):
@@ -330,7 +330,7 @@ def main(argv=None) -> int:
         return cmd_new(root, a.id, a.title, a.owner, a.executor, Path(a.body), a.column, a.dry_run, a.json)
     if a.cmd == "adopt":
         return cmd_adopt(root, a.file, a.owner, a.executor, a.dry_run, a.json)
-    return fail("bad-command", "comando non riconosciuto", a.json)
+    return fail("bad-command", "unrecognized command", a.json)
 
 
 if __name__ == "__main__":

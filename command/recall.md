@@ -41,7 +41,7 @@ agent: orchestrator
 - Same header-once rule as the telemetry writer; same append-only discipline.
 - The log file `.context/comprehension-log.md` is the single sink for all dci1 rows.
 
-**Metric caveat (Retention = DCI₁/DCI₀)**: "è una nostra metrica operativa, non una metrica scientificamente validata". Retention compares the delayed DCI₁ (via `/recall`) with the immediate DCI₀ recorded at gate time; it is an operational metric, not a validated scientific one. v0.5.0 only accumulates dci1 data.
+**Metric caveat (Retention = DCI₁/DCI₀)**: "it is our own operational metric, not a scientifically validated one". Retention compares the delayed DCI₁ (via `/recall`) with the immediate DCI₀ recorded at gate time; it is an operational metric, not a validated scientific one. v0.5.0 only accumulates dci1 data.
 
 **Budget (v0.6.1 normalisation)**: before the user answers, only the plan document and the selected record's saved questions are consulted. After the answer, reads are limited to the diff/file/symbol matter pertinent to the selected plan, respecting `maxDiffLines=300` and `maxRelatedSymbols=3` — never a whole-repo scan, never a whole-file read when a bounded slice suffices.
 
