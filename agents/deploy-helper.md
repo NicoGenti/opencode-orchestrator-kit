@@ -1,7 +1,8 @@
 ---
 description: >-
-  CI/CD and deployment specialist for GitHub Actions, Vercel, and Netlify. Diagnoses pipeline and deploy failures,
-  reads PROJECT-PROFILE.md to know the target platform before acting. Does not touch application logic.
+  CI/CD and deploy specialist for GitHub Actions, Vercel and Netlify: reads PROJECT-PROFILE.md for the
+  target platform, then diagnoses pipeline and deploy failures. Not for local build tools or app
+  logic.
 mode: subagent
 model: {{TIER_FAST}}
 temperature: 0.2

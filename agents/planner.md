@@ -1,8 +1,8 @@
 ---
 description: >-
-  High-reasoning planning agent. Consumes the explorer's initial findings, produces a phased development plan using the
-  orchestrator's 9-section spec format, and hands it off to developer-fixer for execution. May request additional
-  exploration before finalizing a plan.
+  High-reasoning planner: turns exploration into a phased plan in the 9-section spec format, with
+  dependencies, acceptance criteria and per-task verification. Writes plan/draft/ only. Not for
+  executing the plan.
 mode: subagent
 model: {{TIER_REASONING}}
 temperature: 0.3
