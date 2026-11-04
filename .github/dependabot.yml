@@ -1,0 +1,42 @@
+# Dependabot keeps up to date the two things that break this repo silently:
+# the dev toolchain that builds and lints the docs site, and the GitHub Actions
+# that run the tests. The kit itself ships Markdown plus a peer-dependency-only
+# plugin, so `plugin/package.json` is not monitored.
+#
+# The `bun` ecosystem reads the committed text lockfile (`bun.lock`,
+# lockfileVersion 1); it replaces the retired issue automation as the only
+# automated maintenance in this repository.
+version: 2
+updates:
+  - package-ecosystem: "bun"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Rome"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(deps)"
+    labels:
+      - "dependencies"
+    groups:
+      toolchain:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Rome"
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: "chore(ci)"
+    labels:
+      - "dependencies"
+    groups:
+      actions:
+        patterns: ["*"]
