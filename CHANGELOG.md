@@ -10,6 +10,10 @@ All notable changes to this project are documented in this file. The format foll
 - **`/quick`**: packaged command that switches the session to `orchestrator-quick` and states the working rules (one delegation, raw verification output, stop and escalate when the task grows). Five commands are registered at runtime.
 - **Small-task triage**: `agents/orchestrator.md` tells the full router to hand a one-file or plan-free request to `/quick` instead of running the multi-agent flow, citing the measured 2-3x cost.
 
+### Changed
+
+- **English-only shipped text**: the Italian prose left in `command/recall.md`, `agents/{profiler,comprehension-coach}.md`, `templates/design-rules.md`, `templates/models.config.json`, `docs/*.md` and in the comments/messages of `scripts/` and `plugin/src/` is now English. `scripts/plan-board.py` and `plugin/src/plan-board.ts` carry the same translated messages, so the parity test still compares like with like. Test titles and comments are untouched: renaming them touches `tests/fixtures/baseline-failures.txt` and belongs to its own change.
+
 ### Removed
 
 - **GitHub automation beyond CI**: `.github/workflows/agent-issue.yml` (comment `/agent` and label `agent:run`) went away with its runner prompt (`.github/agent/agent-issue.md`) and CI model preset (`.github/agent/ci-free.json`); so did the plan-board issue mirror — `.github/workflows/plan-adopt.yml`, `.github/workflows/plan-sync.yml`, `scripts/issue_bridge.py` and the `plan:*` labels. The repository now runs only `test.yml`, `deploy.yml` and `release.yml`: code arrives through a normal pull request, and the board in `plan/` is local to the repository. `tests/no-github-automation.test.ts` fails if that set changes, if a workflow triggers on `issues`/`issue_comment`, runs `opencode run`, calls `gh issue`, reads `OPENCODE_API_KEY`, or uses a `plan:*` label. Dependabot (`.github/dependabot.yml`) covers the bun toolchain and GitHub Actions.
