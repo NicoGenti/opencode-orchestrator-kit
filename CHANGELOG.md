@@ -4,6 +4,8 @@ All notable changes to this project are documented in this file. The format foll
 
 ## [Unreleased]
 
+## [1.1.0] — 2026-11-04
+
 ### Added
 
 - **`orchestrator-quick`**: a second `mode: primary` agent (3,596-character prompt against the orchestrator's 23,961) for small tasks. Same read-only surface and the same kit invariants — it cannot edit application code, run the plan board or write `.context` — but its cycle is one classify, one delegation and one verification, with an explicit hand-back to `orchestrator` when the task needs more than one delegation, more than about five files, or must survive the session. `plugin/src/permissions.ts` now treats both routers through a `ROUTING_AGENTS` set instead of a hardcoded `"orchestrator"` in three places.
@@ -22,6 +24,8 @@ All notable changes to this project are documented in this file. The format foll
 - **GitHub automation beyond CI**: `.github/workflows/agent-issue.yml` (comment `/agent` and label `agent:run`) went away with its runner prompt (`.github/agent/agent-issue.md`) and CI model preset (`.github/agent/ci-free.json`); so did the plan-board issue mirror — `.github/workflows/plan-adopt.yml`, `.github/workflows/plan-sync.yml`, `scripts/issue_bridge.py` and the `plan:*` labels. The repository now runs only `test.yml`, `deploy.yml` and `release.yml`: code arrives through a normal pull request, and the board in `plan/` is local to the repository. `tests/no-github-automation.test.ts` fails if that set changes, if a workflow triggers on `issues`/`issue_comment`, runs `opencode run`, calls `gh issue`, reads `OPENCODE_API_KEY`, or uses a `plan:*` label. Dependabot (`.github/dependabot.yml`) covers the bun toolchain and GitHub Actions.
 
 ## [1.0.1] — 2026-11-03
+
+> Not published to npm: the release was prepared on `main` and never tagged. Its changes reach npm for the first time in 1.1.0.
 
 ### Added
 
