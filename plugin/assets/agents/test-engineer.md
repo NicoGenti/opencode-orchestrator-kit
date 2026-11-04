@@ -1,7 +1,7 @@
 ---
 description: >-
-  QA engineer that designs focused test strategy, writes behavior-level tests, analyzes coverage, and uses the prove-it
-  pattern to reproduce bugs.
+  QA engineer: focused test strategy, behavior-level tests, coverage analysis and reproduction of
+  reported bugs. Writes tests only unless told otherwise. Not for application code (developer-fixer).
 mode: subagent
 model: {{TIER_CODE}}
 temperature: 0.3
