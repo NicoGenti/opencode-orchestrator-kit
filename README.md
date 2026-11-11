@@ -2,7 +2,7 @@
 
 **A cost-aware, multi-agent workflow for [OpenCode](https://opencode.ai): one router agent that never writes code, and specialists that each run on the cheapest model able to do the job.**
 
-[![Tests](https://github.com/NicoGenti/opencode-orchestrator-kit/actions/workflows/test.yml/badge.svg)](https://github.com/NicoGenti/opencode-orchestrator-kit/actions/workflows/test.yml) [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE.txt) [![OpenCode](https://img.shields.io/badge/works%20with-OpenCode%20CLI-blue)](https://opencode.ai) [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+[![npm](https://img.shields.io/npm/v/opencode-orchestrator-kit)](https://www.npmjs.com/package/opencode-orchestrator-kit) [![npm downloads](https://img.shields.io/npm/dm/opencode-orchestrator-kit)](https://www.npmjs.com/package/opencode-orchestrator-kit) [![Tests](https://github.com/NicoGenti/opencode-orchestrator-kit/actions/workflows/test.yml/badge.svg)](https://github.com/NicoGenti/opencode-orchestrator-kit/actions/workflows/test.yml) [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE.txt) [![OpenCode](https://img.shields.io/badge/works%20with-OpenCode%20CLI-blue)](https://opencode.ai) [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
 <!-- DEMO: add a short terminal GIF of /start-session followed by a small task here -->
 
