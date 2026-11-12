@@ -1,0 +1,110 @@
+name: Security alert issues
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 4 * * 1"
+  workflow_run:
+    workflows:
+      - Snyk Code Analysis
+    types:
+      - completed
+
+permissions:
+  contents: read
+  security-events: read
+  issues: write
+
+jobs:
+  create-security-issues:
+    name: Create issues for open security alerts
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Create or update security issues
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          alerts=$(gh api \
+            "repos/${REPO}/code-scanning/alerts?state=open&per_page=100" \
+            --paginate)
+
+          echo "$alerts" | jq -c '.[]' | while read -r alert; do
+            alert_number=$(echo "$alert" | jq -r '.number')
+            title=$(echo "$alert" | jq -r '.rule.description // .rule.id')
+            severity=$(echo "$alert" | jq -r '.rule.security_severity_level // "unknown"')
+            rule=$(echo "$alert" | jq -r '.rule.id')
+            tool=$(echo "$alert" | jq -r '.tool.name')
+            html_url=$(echo "$alert" | jq -r '.html_url')
+            instance=$(echo "$alert" | jq -r '.most_recent_instance')
+            file=$(echo "$instance" | jq -r '.location.path // "unknown"')
+            line=$(echo "$instance" | jq -r '.location.start_line // "unknown"')
+            message=$(echo "$instance" | jq -r '.message.text // "No message available."')
+
+            marker="<!-- code-scanning-alert:${alert_number} -->"
+
+            existing=$(gh issue list \
+              --repo "${REPO}" \
+              --search "in:body \"${marker}\"" \
+              --json number \
+              --jq '.[0].number // ""')
+
+            if [[ -n "$existing" ]]; then
+              echo "Issue already exists for alert #${alert_number}: #$existing"
+              continue
+            fi
+
+            case "${rule}" in
+              *XSS*|*xss*)
+                remediation=$'## Suggested remediation\n\n- Identify the source of the value passed to the HTTP response and determine whether it can contain user-controlled data.\n- Do not return untrusted input as raw HTML.\n- Escape dynamic values using an HTML-aware encoder or a templating engine with automatic escaping.\n- If HTML output is intentional, render only trusted templates and never interpolate untrusted user input into markup.\n- Set an appropriate Content-Type header and add a restrictive Content Security Policy as defense in depth.\n- Add a regression test using an XSS payload such as `<script>alert(1)</script>` and assert that it is escaped, rejected, or safely encoded.\n'
+                ;;
+              *sql*|*SQL*|*injection*)
+                remediation=$'## Suggested remediation\n\n- Use parameterized queries or prepared statements for every database operation.\n- Never concatenate user-controlled values into SQL, command, query, or template strings.\n- Validate and constrain input according to its expected type, format, and range.\n- Apply least privilege to database users and avoid dynamic identifier construction where possible.\n- Add tests using injection payloads and assert that they are safely parameterized or rejected.\n'
+                ;;
+              *secret*|*credential*|*password*|*token*|*api[_-]?key*)
+                remediation=$'## Suggested remediation\n\n- Remove hardcoded credentials, tokens, passwords, and API keys from source code.\n- Store secrets in GitHub Actions secrets, a supported secrets manager, or environment-specific configuration.\n- Rotate any credential that may have been exposed.\n- Add secret-scanning checks and pre-commit hooks to prevent future regressions.\n- Ensure secrets are not logged, serialized, or included in client-side bundles.\n'
+                ;;
+              *ssrf*|*SSRF*|*request*|*url*|*URL*)
+                remediation=$'## Suggested remediation\n\n- Validate and allow-list destination hosts, schemes, ports, and IP ranges before making outbound requests.\n- Reject private, loopback, link-local, and metadata-service addresses unless explicitly required.\n- Avoid using untrusted input directly to construct request URLs or hostnames.\n- Apply timeouts, response-size limits, and protocol restrictions to outbound HTTP clients.\n- Add tests for malicious hostnames, redirects, and private-network targets.\n'
+                ;;
+              *path*|*traversal*|*file*|*directory*)
+                remediation=$'## Suggested remediation\n\n- Validate and normalize file paths before filesystem access.\n- Reject absolute paths, parent-directory sequences, null bytes, and unexpected path separators.\n- Resolve the requested path and verify that it remains within an approved base directory.\n- Use allow-lists for permitted files or directories where practical.\n- Add tests for traversal payloads such as `../` and encoded variants.\n'
+                ;;
+              *)
+                remediation=$'## Suggested remediation\n\n- Review the complete data flow from untrusted input to the vulnerable sink.\n- Apply the secure pattern recommended for the affected API or framework.\n- Validate, constrain, encode, or reject untrusted input as appropriate.\n- Add a regression test that reproduces the reported scenario.\n- Verify that the Code Scanning alert is resolved after the fix.\n'
+                ;;
+            esac
+
+            body=$(cat <<EOF
+          ${marker}
+
+          ## Security alert
+
+          **Alert:** [#${alert_number} — ${title}](${html_url})  
+          **Severity:** ${severity}  
+          **Tool:** ${tool}  
+          **Rule:** \`${rule}\`  
+          **Location:** \`${file}:${line}\`
+
+          ## Problem
+
+          ${message}
+
+          ${remediation}
+          ## Acceptance criteria
+
+          - [ ] The vulnerable data flow is identified and fixed.
+          - [ ] Automated tests cover the regression.
+          - [ ] The Code Scanning alert is resolved.
+          EOF
+          )
+
+            gh issue create \
+              --repo "${REPO}" \
+              --title "Security: ${title} (${file}:${line})" \
+              --body "$body" \
+              --label "security"
+          done
