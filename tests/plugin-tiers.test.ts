@@ -16,9 +16,8 @@ import {
 // Cross-implementation parity source: the repo-root resolver stays the
 // source of truth for tier semantics; the plugin module mirrors it
 // self-contained (scripts/ is not in the plugin package files).
-const { applyTierFallbacks, resolvePreset } = await import(
-  "../scripts/resolve-model-preset.ts"
-);
+const { applyTierFallbacks, resolvePreset } =
+  await import("../scripts/resolve-model-preset.ts");
 
 const ROOT = join(import.meta.dir, "..");
 const TEMPLATE_CONFIG = JSON.parse(

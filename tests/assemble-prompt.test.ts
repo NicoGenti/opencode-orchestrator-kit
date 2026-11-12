@@ -11,9 +11,8 @@ import { join, resolve } from "node:path";
 import { tmpdir } from "node:os";
 
 // Import the function directly rather than spawning the script
-const { extractStablePrefix, assemblePrompt } = await import(
-  "../scripts/assemble-prompt.ts"
-);
+const { extractStablePrefix, assemblePrompt } =
+  await import("../scripts/assemble-prompt.ts");
 
 const BASELINE_FILE = resolve(
   import.meta.dir,

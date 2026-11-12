@@ -12,7 +12,15 @@ import { join } from "node:path";
 
 const REPO_ROOT = join(import.meta.dir, "..");
 const WORKFLOWS = join(REPO_ROOT, ".github", "workflows");
-const ALLOWED_WORKFLOWS = ["deploy.yml", "release.yml", "test.yml"];
+// `dependabot-lockfile.yml` only re-runs `bun install` for Dependabot pull
+// requests and commits the resulting `bun.lock`: no issue reaction, no
+// `opencode run`, no model key. The loops below still cover it.
+const ALLOWED_WORKFLOWS = [
+  "dependabot-lockfile.yml",
+  "deploy.yml",
+  "release.yml",
+  "test.yml",
+];
 
 const workflowFiles = readdirSync(WORKFLOWS)
   .filter((f) => /\.ya?ml$/.test(f))
@@ -22,7 +30,7 @@ const workflows = Object.fromEntries(
 );
 
 describe("no GitHub automation beyond CI", () => {
-  test("the only workflows are deploy, release and test", () => {
+  test("the only workflows are dependabot-lockfile, deploy, release and test", () => {
     expect(workflowFiles).toEqual(ALLOWED_WORKFLOWS);
   });
 

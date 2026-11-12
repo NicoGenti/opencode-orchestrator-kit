@@ -433,8 +433,7 @@ export function formatRecallRow(row: RecallRow): string {
 }
 
 export type ComprehensionLogResult =
-  | { ok: true; path: string }
-  | { ok: false; error: string };
+  { ok: true; path: string } | { ok: false; error: string };
 
 /** First-write bootstrap header (written exactly once per file). */
 export const COMPREHENSION_LOG_HEADER =
@@ -506,8 +505,7 @@ export function renderRetentionRecord(fields: RetentionFields): string {
 }
 
 export type RetentionRecordResult =
-  | { ok: true; path: string }
-  | { ok: false; error: string; path: string };
+  { ok: true; path: string } | { ok: false; error: string; path: string };
 
 /**
  * Write the flat per-evaluation record keyed by its evaluation_id; append-safe:
