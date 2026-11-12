@@ -251,6 +251,71 @@ Caveats, in the spirit of [`docs/BENCHMARK-TOKEN-USAGE.md`](docs/BENCHMARK-TOKEN
 - **Design-first governance:** keep architecture decisions in `.context/DESIGN-RULES.md`; [`docs/DESIGN-RULES.md`](docs/DESIGN-RULES.md) describes the template, the lifecycle, and the checks run by `planner` and `code-reviewer`.
 - **Engineering baseline** (secrets hygiene, git hygiene, definition of done) lives in `CONTRIBUTING.md`.
 
+## Prompt caching and session reuse
+
+Providers cache a repeated prompt prefix, and OpenCode lets you configure how that cache is used. Cache tuning changes the cost and latency of a repeated prefix; it does not change what a session knows.
+
+### Cache configuration
+
+Cache settings live at the provider level (`providers.<id>.settings.cache`) or per model (`providers.<id>.models.<model>.settings.cache`), and a model entry overrides its provider. OpenCode sends no TTL by default, so the provider's own default applies; the TTL is set with `settings.cache.ttl` and takes the units `ms`, `s`, `m`, `h`, `d` ([cache lifetime](https://opencode.ai/docs/models/#cache-lifetime)).
+
+#### Anthropic
+
+Anthropic's default prompt-cache lifetime is 5 minutes, and its 1-hour option costs twice as much to write. Raise the TTL here, and enable [warming](https://opencode.ai/docs/warming/) so a paused session keeps its prompt cache alive:
+
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "warming": true,
+  "providers": { "anthropic": { "settings": { "cache": { "ttl": "1h" } } } }
+}
+```
+
+Warming is a periodic transient keep-alive request and is off by default. The top-level `warming` key accepts `true` or `{ prompt, interval, duration }`; a provider or model overrides it through `settings.cache.warming` (the same fields except `prompt`). `interval: "auto"` is 90% of `cache.ttl` (4 minutes without a TTL) and `duration` defaults to `"30 minutes"`. Subagent sessions are not warmed, and warming requests do not mutate durable session state.
+
+#### OpenAI-compatible providers
+
+Whether the endpoint accepts the `prompt_cache_key` body field is declared with `compatibility.supportsPromptCacheKey`, at the provider or the model level ([prompt caching](https://opencode.ai/docs/models/#prompt-caching)). Per the OpenCode docs: "Whether the endpoint accepts the `prompt_cache_key` body field. Read by: OpenAI Chat, OpenAI Responses, Mistral. OpenAI Chat only sends the key when true, which some provider packages set by default. Other APIs send it unless false."
+
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "providers": {
+    "myproxy": {
+      "package": "@opencode/ai/providers/openai-compatible",
+      "settings": { "baseURL": "https://proxy.example.com/v1" },
+      "compatibility": { "supportsPromptCacheKey": true },
+      "models": { "gpt-5.5": {} }
+    }
+  }
+}
+```
+
+#### Claude behind an OpenAI-compatible proxy
+
+A proxy such as LiteLLM cannot be detected as serving Claude models, so OpenCode does not know those models need Anthropic-style `cache_control` breakpoints. Set `compatibility.cacheFormat` to `"anthropic"` on them ([custom providers](https://opencode.ai/docs/providers/#custom)); OpenCode then marks the last tool definition, the system prompt and the latest message with `cache_control: {"type": "ephemeral"}`, and the endpoint's default 5-minute lifetime applies.
+
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "providers": {
+    "litellm": {
+      "package": "@opencode/ai/providers/openai-compatible",
+      "settings": { "baseURL": "https://litellm.example.com/v1" },
+      "models": {
+        "claude-sonnet-5-5": { "compatibility": { "cacheFormat": "anthropic" } }
+      }
+    }
+  }
+}
+```
+
+Set `cacheFormat` at the provider level instead when every model that provider serves uses the same format.
+
+### Session reuse
+
+Cache entries are provider-side and prefix-scoped: context lives in the session, so a new child session starts empty even when the provider serves the identical prefix from cache, and a hit affects only the cost and latency of that prefix. Reuse a child session only for iterative work on the same bounded objective; the delegation rules are in the orchestrator's `## Cache And Session Reuse` policy (`agents/orchestrator.md`).
+
 ## Companion kits
 
 Companion repositories are optional. This kit runs on its own. A third-party kit plugs in by installing skills and commands where OpenCode already looks; it does not need a change here unless it wants a new allowlist entry.

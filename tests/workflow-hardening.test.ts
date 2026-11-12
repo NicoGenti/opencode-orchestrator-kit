@@ -68,7 +68,7 @@ const PROMPT_BUDGETS: Record<string, number> = {
   "agents/npm-helper.md": 2_700,
   "agents/oracle.md": 3_500,
   "agents/orchestrator-quick.md": 4_200,
-  "agents/orchestrator.md": 23_000,
+  "agents/orchestrator.md": 24_000,
   "agents/plan-writer.md": 14_100,
   "agents/planner.md": 3_800,
   "agents/profiler.md": 8_100,

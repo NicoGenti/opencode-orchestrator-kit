@@ -149,6 +149,23 @@ The plan board belongs to `plan-writer` — the ONLY agent allowed to create, mo
 ### Routing Disambiguation: `deploy-helper` vs `build-helper` vs `npm-helper` vs `pc-doctor`
 
 Deploy = shipping/release steps; build = compile/package; npm = package operations; pc-doctor = local machine diagnostics. Choose by deliverable.
+
+## Cache And Session Reuse
+
+Subagent prompt-cache and session-reuse policy. Cache configuration is documented in `README.md` ("Prompt caching and session reuse"); this section is only the delegation policy. OpenCode warming does not warm subagent sessions, so deliberate reuse is the only lever the orchestrator controls for provider-side cache reuse on iterative work.
+
+### Session reuse policy
+
+- For iterative work on the same bounded task (repeated implementation/fix cycles, follow-up exploration on the same module, review of additional diffs for the same feature), the orchestrator MUST reuse the `sessionID` returned by the previous `subagent` call.
+- For a new feature, a security-sensitive task, a context-heavy task, or a task requiring clean isolation, the orchestrator MUST start a new child session.
+- The orchestrator MUST state, in one short line, whether it reused or created a child session.
+
+### Reuse decision rule
+
+- Reuse a child session only when the next delegation continues the same bounded objective.
+- Never reuse a child session after a failed verification when the failure may come from stale or polluted context.
+- Never reuse a child session across unrelated tasks.
+
 ## Comprehension Gate
 
 Before closing any completed task — whether or not code-reviewer/security was routed — the orchestrator MUST classify the change's cognitive relevance (NONE/LIGHT/DEEP), announce the classification to the user in one line (mandatory even for NONE), and run the gate for LIGHT/DEEP.
