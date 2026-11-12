@@ -1,5 +1,5 @@
 // Runtime stand-in for "@opencode/plugin" — the shipped 0.7.0 design.
-// Pinned to the @opencode/plugin 2.1.x surface per docs/PLUGIN-V2-FEASIBILITY.md
+// Pinned to the @opencode/plugin 2.1.x surface per docs/archive/PLUGIN-V2-FEASIBILITY.md
 // and the shipped OpenCode 2.2 command contract. It exists because `bun test`
 // must exercise the real plugin sources with ZERO npm dependencies installed
 // (the peer dependency declared in plugin/package.json, @opencode/plugin
@@ -89,7 +89,7 @@ export interface AgentEditor {
 
 /** Tool entry contributed through `ctx.tool.transform`; mirrors the shape
  *  recorded by the Phase-0 spike against @opencode/plugin 2.1.x type defs
- *  (tool.d.ts of @opencode/plugin@2.1.2, docs/PLUGIN-V2-FEASIBILITY.md:
+ *  (tool.d.ts of @opencode/plugin@2.1.2, docs/archive/PLUGIN-V2-FEASIBILITY.md:
  *  editor.add({ name, description, input JSON Schema, options, execute }) —
  *  tools cannot be upsert-created, only added). */
 export interface ToolInfo {
