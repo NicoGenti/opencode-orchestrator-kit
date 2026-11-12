@@ -130,12 +130,18 @@ publish `opencode-orchestrator-kit`). The workflow also sets
 
 `.github/workflows/test.yml` runs on every pull request and on `main`:
 `bun test`, `bun run typecheck`, `bun run lint`, `bun run format:check`,
-`bun run sync-assets --check`, and `bun run build`. Those are the only
-workflows besides `deploy.yml` (Pages) and `release.yml` (tags): no workflow
-reacts to an issue, runs `opencode run`, or reads a model API key
-(`tests/no-github-automation.test.ts` enforces the full set). Dependency bumps
-arrive as Dependabot pull requests (`.github/dependabot.yml`) and go through
-the same gates.
+`bun run sync-assets --check`, and `bun run build`. The full workflow set is
+`test.yml`, `deploy.yml` (Pages), `release.yml` (tags),
+`dependabot-lockfile.yml` (lockfile refresh for Dependabot pull requests),
+`snyk-code.yml` and `security-alert-issues.yml`: no workflow reacts to an
+issue, runs `opencode run`, or reads a model API key
+(`tests/no-github-automation.test.ts` enforces the full set).
+`snyk-code.yml` runs Snyk Code and uploads its SARIF to code scanning, so it
+needs the `SNYK_TOKEN` secret (configured on this repository).
+`security-alert-issues.yml` runs on a schedule, on demand and after Snyk Code
+completes, and opens GitHub issues from open code-scanning alerts. Dependency
+bumps arrive as Dependabot pull requests (`.github/dependabot.yml`) and go
+through the same gates.
 
 The plan board in `plan/` is local to the repository: it is not mirrored into
 GitHub issues, and there are no `plan:*` labels to keep in sync.
