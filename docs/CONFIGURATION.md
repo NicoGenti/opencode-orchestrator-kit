@@ -6,7 +6,10 @@ agent definitions.
 
 > **Audience:** developers using `install.sh` to install the kit, and anyone
 > editing `.opencode/models.config.json` or `templates/models.config.json` to
-> point the kit at their own provider accounts.
+> point the kit at their own provider accounts. This file is the canonical home
+> for tier and comprehension configuration; documentation ownership and the
+> prompt-length budget live in
+> [`CONTRIBUTING.md`](../CONTRIBUTING.md#documentation-ownership-and-cross-links).
 
 ## Why model tiers?
 
@@ -51,15 +54,12 @@ The chain is one hop only — there are no chained fallbacks. If the
 corresponding required tier is also missing, the preset is invalid and
 the validator fails.
 
-**Consequence for backward compatibility:** a legacy three-key preset that
-declares only `TIER_REASONING`, `TIER_CODE`, and `TIER_FAST` continues to
-work. `orchestrator` resolves to the reasoning model; `code-reviewer`
-resolves to the code model; nothing changes from the kit's pre-Phase-1
-behaviour.
-
-**Consequence for full presets:** declaring all five tiers explicitly
-takes precedence over fallback. Use this when you want a stronger or
-cheaper model for `code-reviewer` than for `developer-fixer`.
+**Backward compatibility:** a legacy three-key preset that declares only
+`TIER_REASONING`, `TIER_CODE`, and `TIER_FAST` keeps working unchanged —
+`orchestrator` resolves to the reasoning model and `code-reviewer` to the code
+model. Declaring all five tiers explicitly takes precedence over fallback, which
+is how you give `code-reviewer` a stronger or cheaper model than
+`developer-fixer`.
 
 ## Profile selection
 

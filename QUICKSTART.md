@@ -105,24 +105,15 @@ The installer resolves the tokens for you; to switch presets afterwards, re-run
 
 ## How it works
 
-A single "router" agent dispatches requests to 14 core specialist subagents
-(planner, plan-writer, developer-fixer, explorer, ...), or 16 in total with the
-`withExtras` opt-in (`pc-doctor`, `writer`), without ever touching application
-code, reducing token usage while keeping responsibilities cleanly separated.
-
-On first run, the `profiler` generates a compact `.context/repo-map.md` (hard
-300-line budget) that the `explorer` reads before broad searches. The explorer
-follows a token-aware search ladder — repo map → `rg` → optional ast-grep →
-optional Code Review Graph → targeted reads — and returns bounded, evidence-based
-findings instead of whole-file dumps. On a new or empty repository, the `profiler`
-also asks for the project's goal and seeds `.context/DESIGN-RULES.md`, so
-architecture decisions stay explicit from the first session.
-
-Operations helpers (`build-helper`, `npm-helper`, `deploy-helper`) are installed by
-default and only routed on matching failures. Extras (`pc-doctor`, `writer`) require
-`--with-extras`; the docs-lookup `librarian` ships in `agents/` and is installed by
-default, but the orchestrator routes to it only for remote documentation lookups.
-See the README's "Agent roster" section for the full responsibility map.
+A single router agent dispatches requests to 14 core specialist subagents, or 16
+in total with the `withExtras` opt-in (`pc-doctor`, `writer`), without touching
+application code. On first run `profiler` writes a compact `.context/repo-map.md`
+(hard 300-line budget) for the `explorer` to read before broad searches; on an
+empty repository it seeds `.context/DESIGN-RULES.md`. Operations helpers
+(`build-helper`, `npm-helper`, `deploy-helper`) ship by default and are routed
+only on matching failures; `librarian` ships by default and is routed only for
+remote documentation lookups. The full responsibility map is the README's
+"Agent roster" section.
 
 At close, the orchestrator classifies the change (NONE/LIGHT/DEEP) and announces the comprehension outcome before updating `progress.md`.
 
