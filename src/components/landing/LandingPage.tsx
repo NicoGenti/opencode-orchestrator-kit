@@ -336,7 +336,7 @@ function Commands() {
             Commands
           </h2>
           <p className="mt-4 text-lg text-muted-foreground">
-            The plugin registers these four commands. A companion kit registers
+            The plugin registers these five commands. A companion kit registers
             its own commands separately.
           </p>
         </div>

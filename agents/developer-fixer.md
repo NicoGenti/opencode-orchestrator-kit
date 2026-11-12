@@ -117,4 +117,4 @@ No secrets, unsafe logging, or type-safety escape hatches. No destructive Git op
 - State the selected mode in one clause.
 - List touched files as flat bullets: path + one-line change.
 - Report verification as pass/fail counts; include an exact error line only when needed.
-- One commit per task; no process narration, full file contents or diffs, or unsolicited next-steps sections.
+- No process narration, full file contents or diffs, or unsolicited next-steps sections.

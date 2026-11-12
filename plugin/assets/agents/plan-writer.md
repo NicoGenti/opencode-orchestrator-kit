@@ -192,7 +192,7 @@ Never call `question`: a dispatched subagent has no interlocutor. Step 1 is not 
    the CONTENT instead, materialise it at `.opencode/tmp/plan-body-<id>.md`. With neither, do NOT
    invent either — report `body-missing` and stop.
 2. Run `new` (V2: `plan_board`; V1: the canonical command with
-   `new <id> --title "<title>" --owner "<owner>" --executor "<executor>" --body-file "<path>" --column draft --json`).
+   `new <id> --title "<title>" --owner "<owner>" --executor "<executor>" --body "<path>" --column draft --json`).
    Take `<id>` from the board (next free number); never guess it, and never reuse an existing
    one. After a successful `new`, delete the staging body with
    `rm .context/plan-body-<id>.md` and list it in your report: an orphan body is not session
