@@ -24,8 +24,8 @@ const WARNING_PREFIX = "[opencode-orchestrator-kit]";
  * Reads the plugin options `{ preset?, withExtras? }`, resolves the tier map
  * from the bundled presets ( throwing TierConfigError early on bad config ),
  * signals unavailable tier models against `ctx.model.list()` (non-fatal), and
- * registers: four commands (`/start-session`, `/recall`, `/research-mode`,
- * `/close-session`),
+ * registers: five commands (`/start-session`, `/quick`, `/recall`,
+ * `/research-mode`, `/close-session`),
  * the 9 kit skills and the 15 packaged agents (+2 extras when `withExtras:
  * true`) via `ctx.agent.transform`.
  *

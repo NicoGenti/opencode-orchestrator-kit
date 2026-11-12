@@ -78,9 +78,9 @@ describe("plan-writer — definizione dell'agente", () => {
     for (const state of STATES) expect(b).toContain(`**${state}**`);
   });
 
-  test("descrive il percorso di creazione con body-file e vieta `question`", () => {
+  test("descrive il percorso di creazione con --body e vieta `question`", () => {
     const b = body(read(AGENT_PATH));
-    expect(b).toContain("--body-file");
+    expect(b).toContain('--body "<path>"');
     expect(b).toContain(".opencode/tmp/plan-body-");
     expect(b).toMatch(/Never call `question`/);
   });

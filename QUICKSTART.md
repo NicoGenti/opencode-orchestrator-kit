@@ -11,7 +11,7 @@
   `freellmapi`, `opencode-go-free`, `ollama`) and one editable (`generic`,
   where every tier is a `placeholder/*` sentinel). You must point at least one
   tier at a provider you actually have before `/start-session` can run agents.
-  See `docs/CONFIGURATION.md` and the README's "Choose your model profile" step.
+  See `docs/CONFIGURATION.md` and the README's _Quickstart_ section.
 
 ## Installation
 
