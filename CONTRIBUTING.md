@@ -155,14 +155,12 @@ under `skills/examples/`). After editing `agents/`, `extras/`, or `skills/`,
 run `bun run sync-assets`.
 
 `tests/skill-allowlist.test.ts` fails when an `allow` or `ask` names a skill
-that does not ship. `deny` entries and the `"*"` catch-all do not have to.
-A glob that matches zero shipped skills is allowed only for a documented
-reserved prefix:
-
-- `web-*` — reserved for web-stack skill packs (theme, scaffold, deploy, and similar). Do not use it for a skill in this repo or for a consuming project's own skill. See the README section "Companion kits".
-- `project-*` — reserved so a consuming project can add its own skills without editing this kit. `orchestrator`, `developer-fixer`, and `code-reviewer` already allow it.
-
-A glob that matches at least one shipped skill (for example `build-*`, which matches `build-debug`) does not need to be reserved.
+that does not ship; `deny` entries and the `"*"` catch-all do not have to. A
+glob that matches zero shipped skills is legal only for a documented reserved
+prefix: `web-*` (web-stack skill packs — theme, brand, scaffold, deploy) and
+`project-*` (consuming-project skills). `orchestrator`, `developer-fixer`, and
+`code-reviewer` already allow `project-*`. A glob that matches at least one
+shipped skill (for example `build-*`) needs no reservation.
 
 ## Tests
 
@@ -197,6 +195,54 @@ A glob that matches at least one shipped skill (for example `build-*`, which mat
 - MUST keep code comments and docstrings consistent with the code they describe.
 - MUST NOT leave documentation that contradicts the implemented behavior.
 - Documentation changes follow the same review and hygiene rules as code changes.
+
+## Documentation Ownership and Cross-Links
+
+Every topic has one canonical home. Restating it elsewhere is a review defect:
+add a repository-relative Markdown cross-link instead, and keep only the pinned
+strings or tokens a test requires in the secondary file.
+
+| Document | Canonical for |
+| --- | --- |
+| `AGENTS.md` | Orchestration contract: orchestrator role, runtime roster, delegation policies, workflow examples, plan-board ownership. |
+| `CONTRIBUTING.md` | Engineering discipline, repository checks, release and CI, the prompt-assembly contract, and the prompt-length budget. |
+| `README.md` | Product summary, install pointers, configuration pointers, and the companion-kit extension contract. |
+| `QUICKSTART.md` | Minimal setup and first run. |
+| [`docs/CONFIGURATION.md`](docs/CONFIGURATION.md) | Tier configuration, fallback chains, profile and preset resolution, and comprehension configuration. |
+| [`docs/MIGRATION-V1-V2.md`](docs/MIGRATION-V1-V2.md) | Moving from the copy-based installer to the plugin. |
+| [`docs/SETUP-NATIVE.md`](docs/SETUP-NATIVE.md), [`docs/SETUP-OPENCODE-STUDIO.md`](docs/SETUP-OPENCODE-STUDIO.md) | Platform-specific and manual install detail. |
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Routing flow, confirmation gate, comprehension gate flow, and repo bootstrap. |
+
+When a change touches a topic, update its canonical home and, only when a test
+pin or a user path requires it, update the secondary file's link or token list.
+
+## Prompt-Length Budget Guideline
+
+Agent prompts load on every session, so their length is a standing token cost.
+The word targets below are review guidelines; the enforced budget is the
+per-file character table in `tests/workflow-hardening.test.ts:57-79`, which caps
+each prompt at its current size plus 5% and fails the suite on growth.
+`AGENTS.md` has its own 12,000-character cap in
+`tests/agents-instructions-budget.test.ts`.
+
+| Prompt group | Word target (body) |
+| --- | --- |
+| Primary routers (`agents/orchestrator.md`, `agents/orchestrator-quick.md`, `agents/plan-writer.md`) | ≤ 3,000 |
+| Comprehension and profiler (`agents/comprehension-coach.md`, `agents/profiler.md`) | ≤ 800 |
+| All other agents (`agents/*.md`) | ≤ 500 |
+| Extras (`extras/*.md`) | ≤ 400 |
+
+These targets are guidelines; the character table is enforcement.
+
+- An addition must justify its token cost in the commit or pull request that
+  adds it.
+- A removal must not weaken a tested invariant. When a test pins the sentence,
+  keep the sentence and shrink elsewhere.
+- The character caps are the enforced mechanism: a prompt may only shrink.
+  Growing one means editing the table on purpose, in the same commit that adds
+  the content.
+- Prefer on-demand skills and commands for detail: point the prompt at
+  `skills/<name>/SKILL.md` or a command instead of restating it.
 
 ## Prompt-Assembly Stable-Prefix Contract
 

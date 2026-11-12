@@ -54,8 +54,8 @@ Before delegating to any agent that writes, edits, or deletes files — `develop
 
 This exists as a second, independent layer on top of OpenCode's native `permission` system (`allow`/`ask`/`deny` on each agent's `edit`/`bash` tools):
 
-- **Why not rely on the native `ask` permission alone**: subagents run in child sessions spawned via the `task` tool, and permission prompts from a child session are meant to bubble up to the root session where the user is chatting with the orchestrator. This bubbling is not guaranteed across every OpenCode version/nesting depth — known upstream reports describe nested-subagent permission questions getting stuck in the child session and never reaching the user, which would silently stall the workflow if it were the *only* gate.
-- **What the software-level gate guarantees**: because the orchestrator itself asks the confirmation question, in plain conversational language, in the same session the user is already in, the confirmation cannot get lost in a child-session bubbling failure — it does not depend on OpenCode's permission-prompt routing at all.
+- **Why not rely on the native `ask` permission alone**: subagents run in child sessions spawned via the `task` tool, and their permission prompts are meant to bubble up to the root session. Bubbling is not guaranteed across every OpenCode version and nesting depth — upstream reports describe nested-subagent questions stuck in the child session, which would silently stall the workflow if this were the *only* gate.
+- **What the software-level gate guarantees**: the orchestrator asks in plain conversational language in the session the user is already in, so the confirmation cannot get lost in a child-session bubbling failure.
 - **Granularity**: for multi-phase plans (see "Multi-Phase Plan Execution" in `agents/orchestrator.md`), each phase delegated to `developer-fixer` requires its own confirmation — a single upfront approval for the whole plan is not sufficient.
 - **Scope**: read-only or plan-only agents (`explorer`, `librarian`, `oracle`, `code-reviewer`, `security`, `planner`, `profiler`) never touch application files and are exempt from this gate.
 
@@ -80,7 +80,7 @@ Input to `comprehension-coach` is strictly limited to: task goal, changed file l
 - **Cheap models do discovery.** `explorer` and `profiler` run on lightweight/local models (e.g. a fast cloud or local model), since their job is pattern-matching and reporting, not reasoning.
 - **The repo map narrows exploration.** The profiler-generated `.context/repo-map.md` gives the explorer a compact starting point, so it can skip broad `find`/`rg` sweeps and go straight to targeted reads (see the explorer's search ladder).
 - **Expensive models are scoped narrowly.** `oracle` (design trade-offs) and `developer-fixer` (implementation) get stronger models, but only ever see one task spec or one plan phase at a time — never the whole project history.
-- **Context never grows unbounded.** `.context/progress.md` is a snapshot (full overwrite, not an append-only log), and it's archived once it passes roughly 3,000 tokens. Multi-phase plans are executed one phase per delegation with fresh context each time, instead of one agent holding 10+ phases in memory.
+- **Context never grows unbounded.** `.context/progress.md` is a snapshot archived once it passes roughly 3,000 tokens, and multi-phase plans run one phase per delegation with fresh context.
 - **No redundant re-exploration.** Session memory and `PROJECT-PROFILE.md` are read once at the start of routing and their relevant excerpts are forwarded into each delegation's "Inputs Available" section, so subagents don't each re-discover the same facts about the repo.
 
 ## Repo-agnostic bootstrap
