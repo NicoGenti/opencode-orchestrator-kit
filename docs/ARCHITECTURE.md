@@ -75,7 +75,7 @@ Before the first question the developer is told the gate's purpose — it checks
 
 The task closes as **HUMAN_OWNED** only after a recorded and announced comprehension outcome — `NONE (announced)`, `PASS`, `NEEDS_REVIEW`, `SKIPPED`, or `DISABLED` — not merely TECHNICALLY_DONE. Both states must hold before moving to `plan/complete/`.
 
-Input to `comprehension-coach` is strictly limited to: task goal, changed file list, focused diff, minimal surrounding symbols. Whole conversation, whole plan, whole repository, and prior agent transcripts are forbidden inputs (enforced by the coach's permission surface). Knowledge questions carry exactly one source tag (`USER_GOAL` / `USER_OBSERVED_IO` / `READING_PACKAGE`), and IMPLEMENTATION questions wait for the developer's explicit `I have read this material.` confirmation of the minimal reading package.
+Input to `comprehension-coach` is strictly limited to: task goal, changed file list, focused diff, minimal surrounding symbols, current phase, acceptance criteria, and verification test. Whole conversation, whole plan, whole repository, and prior agent transcripts are forbidden inputs (enforced by the coach's permission surface). Knowledge questions carry exactly one source tag (`USER_GOAL` / `USER_OBSERVED_IO` / `READING_PACKAGE`), and IMPLEMENTATION questions wait for the developer's explicit `I have read this material.` confirmation of the minimal reading package.
 
 ## Why this saves tokens and cost
 

@@ -132,6 +132,6 @@ DCI: <score>/<available_score>
 ```
 
 - `evaluator_confidence` — an integer 1-5, your confidence in your own verdict; on SKIPPED emit `n/a`.
-- `DCI` (v0.6.2) — emitted INSIDE this block as its last line, atomically with the verdict and the confidence; both are coach-owned values, never orchestrator-computed. On SKIPPED emit `DCI: n/a`.
+- `DCI` (v0.6.2) — emitted INSIDE this block, atomically with the verdict and the confidence; both are coach-owned values, never orchestrator-computed. On SKIPPED emit `DCI: n/a`.
 - Never include the developer's `user_confidence`: the calibration self-rating is the orchestrator's to record, not the coach's to rate or repeat.
 - No additional commentary required.
