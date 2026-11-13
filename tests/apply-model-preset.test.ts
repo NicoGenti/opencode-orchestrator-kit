@@ -86,3 +86,35 @@ maybe("apply-model-preset.py — default preset", () => {
     expect(out).not.toContain("{{TIER_");
   });
 });
+
+maybe("apply-model-preset.py — path traversal guard", () => {
+  function runWithConfig(cfg: string, extra: string[] = []) {
+    return spawnSync(pythonBin(), [SCRIPT, "--config", cfg, ...extra], {
+      encoding: "utf-8",
+    });
+  }
+
+  test("rejects a --config with a '..' segment (forward slash)", () => {
+    const r = runWithConfig("x/../../evil", ["--list"]);
+    expect(r.status).toBe(1);
+    expect(r.stderr).toContain("refusing");
+  });
+
+  test("rejects a --config with backslash separators", () => {
+    const r = runWithConfig("..\\..\\evil", ["--list"]);
+    expect(r.status).toBe(1);
+    expect(r.stderr).toContain("refusing");
+  });
+
+  test("rejects a --config with mid-path and trailing '..'", () => {
+    const r = runWithConfig("a/../..", ["--list"]);
+    expect(r.status).toBe(1);
+    expect(r.stderr).toContain("refusing");
+  });
+
+  test("passes a clean absolute --config through", () => {
+    const r = runWithConfig(join(tmp, "models.config.json"), ["--list"]);
+    expect(r.status).toBe(0);
+    expect(r.stdout).toContain("mine:");
+  });
+});
