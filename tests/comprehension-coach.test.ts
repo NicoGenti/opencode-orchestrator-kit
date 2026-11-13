@@ -360,8 +360,10 @@ describe("comprehension-coach — v0.4.0 DCI + calibration", () => {
   test("Output Format invariant: structured minimal block with all four outcomes", () => {
     const raw = readFileSync(COACH_PATH, "utf-8");
     // v0.6.1: verdict line carries the full allowed outcome set;
-    // PASS/FAIL/SKIPPED are terminals, RETRY consumes the single hint+follow-up.
-    expect(raw).toMatch(/Comprehension: <PASS \| RETRY \| FAIL \| SKIPPED>/);
+    // PASS/NEEDS_REVIEW/SKIPPED are terminals, RETRY consumes the single hint+follow-up.
+    expect(raw).toMatch(
+      /Comprehension: <PASS \| RETRY \| NEEDS_REVIEW \| SKIPPED>/,
+    );
     expect(raw).toMatch(/evaluator_confidence: <1-5>/);
   });
 
@@ -430,14 +432,14 @@ describe("comprehension-coach — #137 evidence modes + grounding contract", () 
     expect(idxConfirmation).toBeLessThan(idxEvaluate);
   });
 
-  test("declined package yields behavioral-only or SKIPPED, never automatic FAIL", () => {
+  test("declined package yields behavioral-only or SKIPPED, never automatic NEEDS_REVIEW", () => {
     const raw = readFileSync(COACH_PATH, "utf-8");
     const modes = raw.substring(
       raw.indexOf("## Comprehension Modes"),
       raw.indexOf("## Grounding Contract"),
     );
     expect(modes).toMatch(
-      /declined.*BEHAVIORAL.*SKIPPED.*never an automatic FAIL/,
+      /declined.*BEHAVIORAL.*SKIPPED.*never an automatic NEEDS_REVIEW/,
     );
   });
 

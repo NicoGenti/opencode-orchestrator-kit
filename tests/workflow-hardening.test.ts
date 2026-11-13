@@ -60,7 +60,7 @@ const START = readFileSync(
 const PROMPT_BUDGETS: Record<string, number> = {
   "agents/build-helper.md": 2_800,
   "agents/code-reviewer.md": 3_600,
-  "agents/comprehension-coach.md": 6_500,
+  "agents/comprehension-coach.md": 7_500,
   "agents/deploy-helper.md": 3_300,
   "agents/developer-fixer.md": 4_300,
   "agents/explorer.md": 5_000,
@@ -132,10 +132,14 @@ describe("workflow-hardening — W2 on-demand loading", () => {
 });
 
 describe("workflow-hardening — W3 coach contract (v0.6.1)", () => {
-  test("allowed outcomes are exactly PASS | RETRY | FAIL | SKIPPED", () => {
-    expect(COACH).toContain("Comprehension: <PASS | RETRY | FAIL | SKIPPED>");
-    // FAIL is a documented terminal outcome, not an alias
-    expect(COACH).toMatch(/\*\*FAIL\*\*[^\n]*terminal negative outcome/);
+  test("allowed outcomes are exactly PASS | RETRY | NEEDS_REVIEW | SKIPPED", () => {
+    expect(COACH).toContain(
+      "Comprehension: <PASS | RETRY | NEEDS_REVIEW | SKIPPED>",
+    );
+    // NEEDS_REVIEW is a documented terminal outcome, not an alias
+    expect(COACH).toMatch(
+      /\*\*NEEDS_REVIEW\*\*[^\n]*terminal negative outcome/,
+    );
     // RETRY still carries the frozen hint invariant
     expect(COACH).toContain("exactly one focused hint");
   });
@@ -150,7 +154,7 @@ describe("workflow-hardening — W3 coach contract (v0.6.1)", () => {
     const idxRetry = COACH.indexOf("## Retry Protocol");
     const rubric = COACH.slice(idxDci, idxRetry);
     expect(rubric).toContain("does NOT influence the verdict");
-    expect(rubric).toMatch(/PASS\/RETRY\/FAIL\/SKIPPED/);
+    expect(rubric).toMatch(/PASS\/RETRY\/NEEDS_REVIEW\/SKIPPED/);
   });
 
   test("structured minimal output with normalised evaluator confidence", () => {
@@ -345,7 +349,9 @@ describe("workflow-hardening — W10 coach atomic output includes DCI (v0.6.2)",
     );
     const closing = out.indexOf("```", out.indexOf("```") + 3);
     const block = out.slice(0, closing);
-    expect(block).toContain("Comprehension: <PASS | RETRY | FAIL | SKIPPED>");
+    expect(block).toContain(
+      "Comprehension: <PASS | RETRY | NEEDS_REVIEW | SKIPPED>",
+    );
     expect(block).toContain("evaluator_confidence: <1-5>");
     expect(block).toContain("DCI: <score>/<available_score>");
   });
@@ -356,7 +362,7 @@ describe("workflow-hardening — W10 coach atomic output includes DCI (v0.6.2)",
 
   test("coach file keeps a single Output block (no second DCI-bearing block elsewhere)", () => {
     const fenceCount = COACH.split("```").filter((b) =>
-      b.includes("Comprehension: <PASS | RETRY | FAIL | SKIPPED>"),
+      b.includes("Comprehension: <PASS | RETRY | NEEDS_REVIEW | SKIPPED>"),
     ).length;
     expect(fenceCount).toBe(1);
   });
