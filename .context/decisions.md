@@ -30,3 +30,13 @@
   chiuso in plan/complete con `comprehension: skipped` (check 0 errori, root assoluto). Le fix di
   review F1–F6 sono in b465b74; il pin `--body-file`→`--body` in tests/plan-writer-contract.test.ts è
   il primo edit deliberato a un pin che codificava un errore fattuale (DR-8, giustificato in fase).
+- 2026-11-13 (issue #120, piano 0004): scope minimo confermato dall'utente — regola stable/variable
+  in README `## Cache-aware prompt design` + cross-link 1 riga in CONTRIBUTING (ownership dei
+  contenuti); unico edit prompt: orchestrator.md (Scope=paths espliciti, Inputs=simboli path:line) e
+  orchestrator-quick.md (Inputs), zero altri refactor (audit espresso: 18 file già conformi ai 5
+  requisiti issue); branch `feat/issue-120-cache-stable-prompts` + PR a fine lavori (schema 0003).
+- 2026-11-13 (piano 0004): regola operativa board RAFFINATA: le mutazioni board in questo ambiente
+  vanno eseguite SOLO via fallback V1 `python scripts/plan-board.py --root <abs> --json` — il tool
+  nativo `plan_board` ha fallito fisicamente 2 dispatch consecutivi (ok:true riportato, card mai
+  creata nel repo, payload con slug di fantasia "sample-*"); DOPO ogni board-op va sempre
+  verificata la prova fisica (glob/ls del repo).

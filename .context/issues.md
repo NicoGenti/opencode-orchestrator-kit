@@ -23,3 +23,21 @@
   solo `rm .context/plan-body-*.md`); developer-fixer rimanda a `question` (i subagenti non hanno
   interlocutore, orchestrator.md:79); planner passo 2 ancora spelling V1 `via \`task\``; CHANGELOG
   storico dice ancora "four commands" (righe 53/64, append-only, intoccabile qui).
+- 2026-11-13 (piano 0004): baseline `format:check` DRIFTATA rispetto alla nota 2026-11-12 (9 file):
+  ora 6 file — `plugin/src/index.ts`, `plugin/src/runtime/opencode-plugin.ts`, `QUICKSTART.md`,
+  `README.md`, `src/components/landing/LandingPage.tsx`, `tests/plan-writer-contract.test.ts`;
+  overlap col vecchio set: solo README.md. Tutti content-clean: falliscono SOLO su `endOfLine: lf`
+  vs checkout CRLF (prova: `prettier --check --end-of-line crlf` → exit 0 su tutti; blob committati
+  LF-puliti via git cat-file). I 5 nuovi derivano da commit 0003 (e2930e7/c357d0a) sul base del
+  branch — NON regressioni di #120. Questa riga sostituisce il vecchio set di riferimento; rimedio
+  candidato invariato: `.gitattributes` con `* text=auto eol=lf`.
+- 2026-11-13 (piano 0004): DANGLE `.context/plan-body-0004.md` — il body di staging resta su disco
+  con la card già a complete: ogni `rm`/`del`/`Remove-Item` è negato dal permission layer (anche
+  all'orchestrator e ai subagenti); file UNTRACKED, non entra nei commit. Cleanup: cancellazione
+  manuale utente; rimedio candidato permanente: `.gitignore` per `.context/plan-body-*.md`
+  (staging bodies non sono session memory, AGENTS.md board-contract).
+- 2026-11-13 (piano 0004): TOOL-ROOT reconfirm ×2 — due dispatch plan-writer consecutivi via
+  `plan_board` NATIVO (con root assoluto istruito) hanno riportato ok:true ma la card non è mai
+  comparsa nel repo; payload con slug di fantasia ("sample-qa-1" ecc.) non corrispondenti ai file
+  reali. Con il fallback python CLI ogni op ha corrisposto alla prova fisica. La regola della nota
+  2026-11-12 resta: in questo ambiente la regola è SOLO python CLI + prova fisica per ogni op.
