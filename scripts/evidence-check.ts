@@ -9,8 +9,10 @@
  * `path:line` citations outside fenced code blocks. Every cited file and line
  * is resolved under `--root` (default `.`) and every marker is matched
  * literally: the gate never judges semantics, never rewrites a file, and never
- * calls an LLM. One JSON report goes to stdout; exit code 0 on
- * `verdict: "pass"`, 1 on `verdict: "fail"` and on any usage/IO error.
+ * calls an LLM. An absolute or traversing citation is refused before any
+ * filesystem access, so evidence can never read outside `--root`. One JSON
+ * report goes to stdout; exit code 0 on `verdict: "pass"`, 1 on
+ * `verdict: "fail"` and on any usage/IO error.
  *
  * The pure cores (`checkEvidenceClaims`, `extractCitations`) receive file text
  * through an injected reader and touch no filesystem, clock, or environment;
@@ -23,6 +25,7 @@ import { isAbsolute, join } from "node:path";
 import {
   CLAIMS_MANIFEST_FIELDS,
   hasTraversalSegment,
+  isAbsolutePath,
 } from "./lib/check-common";
 import type {
   ClaimResult,
@@ -92,6 +95,8 @@ const UNVERIFIED_GUIDANCE =
 
 const BLOCKING_REASONS: Record<string, string> = {
   "missing-evidence": "no file:line evidence was provided",
+  "absolute-path":
+    "the evidence path is absolute; citations must be repository-relative",
   "path-traversal": "the evidence path contains a `..` segment",
   "file-not-found": "the cited file does not exist",
   "line-out-of-range": "the cited line is outside the file",
@@ -134,6 +139,14 @@ function classifyClaim(
     return {
       status: "unverified",
       note: "path-traversal",
+      detail: parsed.path,
+    };
+  }
+  // An absolute path would escape `--root`, so it never reaches the reader.
+  if (isAbsolutePath(parsed.path)) {
+    return {
+      status: "unverified",
+      note: "absolute-path",
       detail: parsed.path,
     };
   }
@@ -502,12 +515,14 @@ function readSourceOrFail(file: string, root: string): string {
 
 /**
  * Filesystem-backed reader for the CLI. Evidence paths resolve under `root`;
- * a traversing path is refused here as well, so the guard does not depend on
- * the caller (the pure core refuses it first).
+ * a traversing or absolute path is refused here as well, so the guard does not
+ * depend on the caller (the pure core refuses it first).
  */
 function makeContentReader(root: string): ContentReader {
   return (relPath: string): FileContent => {
-    if (hasTraversalSegment(relPath)) return { exists: false, text: null };
+    if (hasTraversalSegment(relPath) || isAbsolutePath(relPath)) {
+      return { exists: false, text: null };
+    }
     const resolved = resolvePath(relPath, root);
     try {
       return { exists: true, text: readFileSync(resolved, "utf-8") };

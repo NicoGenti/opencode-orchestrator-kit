@@ -347,7 +347,7 @@ bun scripts/evidence-check.ts --doc plan.md [--root <dir>]
 bun run evidence-check --claims claims.json
 ```
 
-Both commands print one JSON object (indent 2) and exit `0` on `verdict: "pass"`, `1` on `verdict: "fail"` and on any usage or IO error. Every path argument — and every `evidence` path inside a claims manifest — is rejected before any filesystem access when it contains a `..` segment.
+Both commands print one JSON object (indent 2) and exit `0` on `verdict: "pass"`, `1` on `verdict: "fail"` and on any usage or IO error. Every CLI path argument is rejected before any filesystem access when it contains a `..` segment. An `evidence` path inside a claims manifest must be repository-relative: a `..` segment or an absolute path (POSIX `/...`, Windows `C:\...`, a drive-relative `C:...`, or a UNC `\\server\share`) is classified `unverified` / `absolute-path` without any read, so no claim can reach a file outside `--root`.
 
 ### Context budget
 
@@ -383,6 +383,7 @@ Every claim is classified by mechanical rules; markers are matched literally, ne
 | --- | --- | --- | --- |
 | `unverified` | `missing-evidence` | The claim carries no `file:line` evidence. | yes |
 | `unverified` | `path-traversal` | The evidence path contains a `..` segment. | yes |
+| `unverified` | `absolute-path` | The evidence path is absolute rather than repository-relative, so it would escape `--root`. | yes |
 | `unverified` | `file-not-found` | The cited file does not exist. | yes |
 | `unverified` | `line-out-of-range` | The cited line is beyond the end of the file. | yes |
 | `unverified` | `marker-not-found` | The marker does not appear anywhere in the cited file. | yes |
@@ -391,7 +392,7 @@ Every claim is classified by mechanical rules; markers are matched literally, ne
 | `verified` | `citation-imprecise` | The marker is elsewhere in the cited file; `resolved_evidence` names the first match. | no |
 | `contradicted` | `counter-marker-present` | The declared `counterMarker` appears in the cited file. | yes |
 
-Doc mode scans only `path:line` citations outside fenced code blocks and checks that each location resolves (location-only), because prose carries no markers. The verdict is `fail` when at least one claim blocks, and `blocking_issues` names the follow-up question.
+Doc mode scans only `path:line` citations outside fenced code blocks and checks that each location resolves (location-only), because prose carries no markers. A `counterMarker` found anywhere in the cited file takes precedence over the marker: the claim is `contradicted` even when the marker is also present on the cited line. The verdict is `fail` when at least one claim blocks, and `blocking_issues` names the follow-up question.
 
 ### Config schema and precedence
 
@@ -405,7 +406,7 @@ Doc mode scans only `path:line` citations outside fenced code blocks and checks 
 }
 ```
 
-Precedence: `.opencode/gates.config.json` (merged per role entry) > `templates/gates.config.json` (canonical defaults) > built-in defaults. A missing user config is the expected default state; a malformed one falls back to the built-ins and adds `config_warning` to the report rather than failing. A role without pinned limits uses the `default` entry, so an unknown role is never a blocking error.
+Precedence is two-tier: `.opencode/gates.config.json` — or the budget gate's explicit `--config <file>` — is merged per role entry over the built-in defaults in `scripts/lib/check-common.ts`. `templates/gates.config.json` is the committed source of those built-ins, not a runtime layer: nothing reads it while a gate runs, and a test pins the built-ins equal to it. A missing user config is the expected default state; a malformed one falls back to the built-ins and adds `config_warning` to the report rather than failing. A role without pinned limits uses the `default` entry, so an unknown role is never a blocking error.
 
 ### Role defaults
 

@@ -6,7 +6,7 @@ import {
   rmSync,
   writeFileSync,
 } from "node:fs";
-import { join } from "node:path";
+import { join, sep } from "node:path";
 import { tmpdir } from "node:os";
 
 import {
@@ -18,6 +18,7 @@ import {
   ROLE_DEFAULTS,
   estimateTokens,
   hasTraversalSegment,
+  isAbsolutePath,
   loadGateConfig,
   mergeGateConfig,
   validateBudgetReport,
@@ -126,6 +127,24 @@ describe("hasTraversalSegment", () => {
   });
 });
 
+describe("isAbsolutePath", () => {
+  test("rejects absolute paths on both platforms", () => {
+    expect(isAbsolutePath("/etc/passwd")).toBe(true);
+    expect(isAbsolutePath("C:\\Windows\\win.ini")).toBe(true);
+    expect(isAbsolutePath("c:/temp/a.ts")).toBe(true);
+    expect(isAbsolutePath("C:relative")).toBe(true);
+    expect(isAbsolutePath("\\\\server\\share\\a.ts")).toBe(true);
+    expect(isAbsolutePath("\\foo")).toBe(true);
+  });
+
+  test("accepts repository-relative citations", () => {
+    expect(isAbsolutePath("scripts/lib/check-common.ts")).toBe(false);
+    expect(isAbsolutePath("src/a.ts")).toBe(false);
+    expect(isAbsolutePath("a/b/../c.ts")).toBe(false);
+    expect(isAbsolutePath("")).toBe(false);
+  });
+});
+
 describe("mergeGateConfig", () => {
   test("overrides one key of one role and leaves every other role untouched", () => {
     const defaults: GateConfig = { roles: structuredClone(ROLE_DEFAULTS) };
@@ -220,6 +239,35 @@ describe("loadGateConfig", () => {
     expect(() => loadGateConfig(".", "..\\..\\evil.json")).toThrow(
       /Path traversal detected/,
     );
+  });
+
+  test("rejects a traversing root before any filesystem access", () => {
+    expect(() => loadGateConfig("x/../../evil")).toThrow(
+      /Path traversal detected: .*\.opencode[\\/]gates\.config\.json/,
+    );
+    expect(() => loadGateConfig("a/../..")).toThrow(/Path traversal detected/);
+    expect(() => loadGateConfig("..")).toThrow(/Path traversal detected/);
+  });
+
+  test("rejects a traversing root by guarding the path actually read", () => {
+    const parent = mkdtempSync(join(tmpdir(), "gates-config-parent-"));
+    const child = join(parent, "child");
+    mkdirSync(child);
+    mkdirSync(join(parent, ".opencode"));
+    writeFileSync(
+      join(parent, ".opencode", "gates.config.json"),
+      JSON.stringify({ gates: { roles: { explorer: { maxFiles: 99 } } } }),
+    );
+    try {
+      // A root ending in `..` resolves to `parent`: the old guard inspected
+      // the clean default suffix and read this file outside `child`; the fixed
+      // guard rejects the traversing root before any filesystem access.
+      expect(() => loadGateConfig(`${child}${sep}..`)).toThrow(
+        /Path traversal detected/,
+      );
+    } finally {
+      rmSync(parent, { recursive: true, force: true });
+    }
   });
 
   test("an explicit config path is read when it is not traversing", () => {
