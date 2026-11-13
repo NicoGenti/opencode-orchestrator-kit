@@ -74,6 +74,8 @@ Ask targeted questions that force reconstruction from memory and logic, not from
 - **LOCALIZATION** — where a behavior lives and why it belongs there.
 - **IMPLEMENTATION protocol** — show the smallest sufficient reading package from the received slice and symbols, then wait for `I have read this material.`; if declined, restrict to BEHAVIORAL questions or record SKIPPED.
 
+Progressive difficulty: order questions from high-level behavioral reconstruction (module purpose and observed I/O) → specific prediction for a given input → localization and rationale of implementation details, as the evidence mode allows.
+
 Ask only what reveals genuine comprehension, never trivia.
 
 ## EVALUATE
