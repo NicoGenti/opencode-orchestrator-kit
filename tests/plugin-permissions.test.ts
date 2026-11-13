@@ -458,6 +458,7 @@ describe("MCP default deny — le allowlist dichiarate sono reali", () => {
       "agents/orchestrator.md",
       "agents/planner.md",
       "agents/developer-fixer.md",
+      "agents/test-engineer.md",
       "agents/profiler.md",
     ]) {
       declared(rel, "apply_refactor_tool", "deny");
@@ -484,6 +485,19 @@ describe("MCP default deny — le allowlist dichiarate sono reali", () => {
       "query_graph_tool",
     ])
       declared("agents/developer-fixer.md", t, "deny");
+  });
+  test("test-engineer: allow solo i due dichiarati, deny il resto", () => {
+    for (const t of ["get_impact_radius_tool", "get_review_context_tool"])
+      declared("agents/test-engineer.md", t, "allow");
+    for (const t of [
+      "apply_refactor_tool",
+      "build_or_update_graph_tool",
+      "semantic_search_nodes_tool",
+      "get_architecture_overview_tool",
+      "get_minimal_context_tool",
+      "query_graph_tool",
+    ])
+      declared("agents/test-engineer.md", t, "deny");
   });
   test("explorer: allow solo i quattro dichiarati, deny il resto", () => {
     for (const t of [
@@ -526,6 +540,7 @@ describe("MCP default deny — le allowlist dichiarate sono reali", () => {
       "agents/code-reviewer.md",
       "agents/security.md",
       "agents/developer-fixer.md",
+      "agents/test-engineer.md",
     ]) {
       expect(readFileSync(join(ROOT, rel), "utf-8")).toContain(
         "Your tool catalog is the source of truth",
@@ -540,6 +555,17 @@ describe("MCP default deny — le allowlist dichiarate sono reali", () => {
     );
     expect(body).toContain("Never call graph mutation tools.");
     expect(body).toContain("this agent never refreshes the graph");
+  });
+  test("test-engineer: regole d'uso del grafo dichiarate nel prompt", () => {
+    const body = readFileSync(join(ROOT, "agents/test-engineer.md"), "utf-8");
+    expect(body).toContain("Your tool catalog is the source of truth");
+    expect(body).toContain(
+      "for a single-file, self-contained change do not use the graph",
+    );
+    expect(body).toContain("Never call graph mutation tools.");
+    expect(body).toContain("this agent never refreshes the graph");
+    expect(body).toContain("Prioritize direct tests");
+    expect(body).toContain("candidate list, never as proof of coverage");
   });
   test("solo code-reviewer istruisce un refresh del grafo", () => {
     const canonical =

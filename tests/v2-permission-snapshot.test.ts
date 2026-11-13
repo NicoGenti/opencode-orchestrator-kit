@@ -43,6 +43,10 @@ import type { PermissionRule } from "../plugin/src/permissions.ts";
  *   that family deny: `get_impact_radius_tool` and `get_review_context_tool`
  *   (issue #153 phase 1). Both are read-only; every other tool of the family
  *   (including the mutation tools) stays denied by the family default.
+ * - agents/test-engineer.md — the same two read-only per-tool CRG allows on
+ *   top of that family deny: `get_impact_radius_tool` and
+ *   `get_review_context_tool` (issue #153 phase 2). Both are read-only; the
+ *   mutation tools stay denied by the family default.
  *
  * Every other agent translates to the same rule list as before.
  */
@@ -198,6 +202,41 @@ describe("V2 permission translation snapshot", () => {
     ]) {
       expect(
         has("agents/developer-fixer.md", {
+          action: resource,
+          resource: "*",
+          effect: "allow",
+        }),
+      ).toBe(false);
+    }
+    // Issue #153 phase 2 — test-engineer read-only CRG allowlist. Same shape
+    // as phase 1: the family default denies every undeclared tool of the
+    // family, so the pins assert the family deny is present and that no
+    // per-tool mutation allow exists.
+    for (const resource of [
+      "code-review-graph_get_impact_radius_tool",
+      "code-review-graph_get_review_context_tool",
+    ]) {
+      expect(
+        has("agents/test-engineer.md", {
+          action: resource,
+          resource: "*",
+          effect: "allow",
+        }),
+      ).toBe(true);
+    }
+    expect(
+      has("agents/test-engineer.md", {
+        action: "code-review-graph_*",
+        resource: "*",
+        effect: "deny",
+      }),
+    ).toBe(true);
+    for (const resource of [
+      "code-review-graph_apply_refactor_tool",
+      "code-review-graph_build_or_update_graph_tool",
+    ]) {
+      expect(
+        has("agents/test-engineer.md", {
           action: resource,
           resource: "*",
           effect: "allow",

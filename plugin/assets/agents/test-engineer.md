@@ -5,9 +5,13 @@ description: >-
 mode: subagent
 model: {{TIER_CODE}}
 temperature: 0.3
-tools: {}
+tools:
+  code-review-graph_get_impact_radius_tool: true
+  code-review-graph_get_review_context_tool: true
 permission:
   task: deny
+  code-review-graph_get_impact_radius_tool: allow
+  code-review-graph_get_review_context_tool: allow
   edit:
     "*.test.*": ask
     "*.spec.*": ask
@@ -39,6 +43,10 @@ QA engineer: test strategy, test writing, coverage. Analyze behavior first, test
 
 - Understand behavior, public API, and edge cases; test at the lowest level that captures it (unit → integration → E2E).
 - Bug reproduction: write a failing test, confirm it fails for the right reason, then report ready for fix. Use Arrange → Act → Assert.
+
+## Optional Code Graph
+
+Your tool catalog is the source of truth: if no `code-review-graph_*` tool is listed for this agent, CRG is not configured — do not attempt the call, go straight to the fallback. For changes that span more than one file or module, query `get_impact_radius_tool` before choosing tests; with an ambiguous Scope make at most one call; for a single-file, self-contained change do not use the graph. Prioritize direct tests of the changed symbols, then tests covering affected callers or dependents as candidates. Treat graph output as a candidate list, never as proof of coverage. Never call graph mutation tools. If a call errors, times out, or returns not_ready / stale_graph, fall back to file names, diffs, and direct reads — this agent never refreshes the graph. Call it through the tools map: `await tools["code-review-graph"].get_impact_radius_tool({ ... })`.
 
 ## Test Rules
 
