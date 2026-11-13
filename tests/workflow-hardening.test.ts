@@ -81,7 +81,12 @@ const PROMPT_BUDGETS: Record<string, number> = {
   "agents/planner.md": 3_800,
   "agents/profiler.md": 8_100,
   "agents/security.md": 4_400,
-  "agents/test-engineer.md": 2_400,
+  // Raised from 2_400 in issue #153 phase 2 (read-only CRG allowlist and the
+  // `## Optional Code Graph` section): 2_199 + 1_085 for the section = 3_284,
+  // and ceil(3284 * 1.05 / 100) * 100 = 3_500. The short form (without the
+  // ambiguous-Scope clause and the call example) still measured 3_138, over
+  // the old cap, so the canonical text needed the full section.
+  "agents/test-engineer.md": 3_500,
   "extras/pc-doctor.md": 2_900,
   "extras/writer.md": 5_000,
 };
