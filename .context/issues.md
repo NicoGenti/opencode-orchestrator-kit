@@ -58,4 +58,11 @@
   working copy CRLF di `CHANGELOG.md` fa fallire il pin `startsWith("# Changelog\n")`, blob e status
   invariati, solo `core.autocrlf=true`); `format:check` 10 file (ex 6: stesso criterio `endOfLine: lf`
   su working-copy CRLF, set pre-sessione). Typecheck/lint 0 invariati. Baseline corrente per il piano
+- 2026-11-13 (piano 0007): BASELINE AMBIENTALE DRIFTATA pre-sessione (batch checkout 11:35:45Z, mtime
+  file pre-esistenti alla sessione): `bun test` 14 fail (ex 13: nuovo `tests/version-sync.test.ts:39` —
+  working copy CRLF di `CHANGELOG.md` fa fallire il pin `startsWith("# Changelog\n")`, blob e status
+  invariati, solo `core.autocrlf=true`); `format:check` 10 file (ex 6: stesso criterio `endOfLine: lf`
+  su working-copy CRLF, set pre-sessione). Typecheck/lint 0 invariati. Baseline corrente per il piano
   0007 = 14 / 0 / 0 / 10 (set fallimenti invariato ⇒ non regressiva; il conteggio precedente era 13/0/0/6).
+
+- 2026-11-13 (piano 0008 / issue #151): due artefatti sessione orfani da cleanup manuale — record comprehension `ev-20261113-142509-75ee5dc9fedb2df1f4c56a7a7e771957.md` con id non emesso dallo script (emitter produce solo `res-`), e due righe telemetria (14:25:51Z e 14:26:16Z) per lo stesso evaluation a causa di dispatch duplicati accidentali. Il record valido `ev-20261113-142509-d5f6e7e71ab99b5b2ddf61d8e2ddb61a.md` è stato creato; log e file non vanno cancellati per il contract append-only. Nessun impatto sui test.

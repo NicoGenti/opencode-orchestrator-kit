@@ -76,5 +76,16 @@
   `feat/issue-141-comprehension-dev-support`), review APPROVED post-fix F1–F4 (09203a1). Gate comprehension
   DEEP: l'utente ha dichiarato `skip comprehension` a CHALLENGE (calibrazione 2, nessun tentativo) → outcome
   finale SKIPPED (telemetria 2026-11-13T12:55:36Z; record ev-20261113-125519-4494898ada9f2c500c18223e467b4887;
+- 2026-11-13 (piano 0007, issues #141): design confermato dall'utente — rename additivo `FAIL`→`NEEDS_REVIEW`
+  (enum board a 7 valori con `fail` alias deprecato, NESSUNA riscrittura di sink append-only/CHANGELOG),
+  OPERATE domanda extra opzionale NON punteggiata (denominatore DCI 2–8 invariato), whitelist coach +3
+  (fase corrente, acceptance criteria, verification test) in lockstep orchestrator↔coach, LIGHT MAY-trim-1
+  con default invariato, cap coach 6.500→7.500 (evidenza W1 6528>6500, pull-forward autorizzato dal piano),
+  `/explain-change` DIFFERITO a card futura, edit autorizzato di `plan/README.md:38`. 11 commit + push (
+  `feat/issue-141-comprehension-dev-support`), review APPROVED post-fix F1–F4 (09203a1). Gate comprehension
+  DEEP: l'utente ha dichiarato `skip comprehension` a CHALLENGE (calibrazione 2, nessun tentativo) → outcome
+  finale SKIPPED (telemetria 2026-11-13T12:55:36Z; record ev-20261113-125519-4494898ada9f2c500c18223e467b4887;
   prefisso ev- adattato come da 0003/0005/0006 — l'emettitore produce solo `res-`; append telemetria eseguito
   via `fs.appendFileSync` in bun perché il layer nega Add-Content/Get-Content all'orchestrator E ai subagenti).
+
+- 2026-11-13 (piano 0008, issue #151): design confermato dall'utente — due gate deterministici (`scripts/context-budget.ts`, `scripts/evidence-check.ts`) via lib condivisa `check-common.ts`, default per ruolo, config `.opencode/gates.config.json`, una sola riga fail-handling in `orchestrator.md`, documentazione in `docs/CONFIGURATION.md`. Review code-reviewer: fix H1 (absolute evidence path), M1 (loader traversal su root), M2 (precedenza config), L4 (counterMarker). Gate comprehension classificato DEEP; utente ha risposto calibrazione 2 e poi `skip comprehension` → outcome finale SKIPPED (record valido `ev-20261113-142509-d5f6e7e71ab99b5b2ddf61d8e2ddb61a.md`). Branch `feat/issue-151-deterministic-gates` a `ff6ac89`, push riuscito; PR apertura manuale.
