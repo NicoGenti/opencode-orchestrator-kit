@@ -43,6 +43,23 @@ function run(extra: string[] = []) {
   );
 }
 
+function runWithConfig(cfg: string, extra: string[] = []) {
+  return spawnSync(
+    "python",
+    [
+      SCRIPT,
+      "--config",
+      cfg,
+      "--agents-dir",
+      join(dir, ".opencode", "agents"),
+      "--key",
+      "k-test",
+      ...extra,
+    ],
+    { encoding: "utf-8" },
+  );
+}
+
 describe("apply-freellmapi-profile.py", () => {
   test("--dry-run non scrive", () => {
     writeAgent("orchestrator", "freellmapi/auto:smart");
@@ -126,5 +143,35 @@ describe("apply-freellmapi-profile.py", () => {
     const r = run();
     expect(r.status).toBe(1);
     expect(r.stderr).toContain("non risolti");
+  });
+});
+
+describe("apply-freellmapi-profile.py - path traversal guard", () => {
+  test("rifiuta --config con segmento '..' senza toccare il filesystem", () => {
+    writeAgent("orchestrator", "freellmapi/auto:smart");
+    const r = runWithConfig("x/../../evil");
+    expect(r.status).toBe(1);
+    expect(r.stderr).toContain("refusing");
+    expect(existsSync(join(dir, ".opencode", "opencode.jsonc"))).toBe(false);
+  });
+
+  test("rifiuta --config con separatori backslash", () => {
+    writeAgent("orchestrator", "freellmapi/auto:smart");
+    const r = runWithConfig("..\\..\\evil");
+    expect(r.status).toBe(1);
+    expect(r.stderr).toContain("refusing");
+  });
+
+  test("rifiuta --config con '..' centrale e finale", () => {
+    writeAgent("orchestrator", "freellmapi/auto:smart");
+    const r = runWithConfig("a/../..");
+    expect(r.status).toBe(1);
+    expect(r.stderr).toContain("refusing");
+  });
+
+  test("lascia passare un path assoluto pulito", () => {
+    writeAgent("orchestrator", "freellmapi/auto:smart");
+    const r = runWithConfig(join(dir, "clean-absolute.jsonc"), ["--dry-run"]);
+    expect(r.status).toBe(0);
   });
 });

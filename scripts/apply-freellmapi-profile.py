@@ -23,6 +23,15 @@ MODEL_LINE_RE = re.compile(r"^model:[ \t]*(\S+)[ \t]*\r?$", re.MULTILINE)
 FRONTMATTER_RE = re.compile(r"\A---\r?\n.*?\r?\n---", re.DOTALL)
 
 
+def _is_traversal(raw: str) -> bool:
+    """DR-9: argv path values are untrusted - refuse any '..' segment.
+
+    Both separators are split explicitly: on POSIX a literal '..\\'
+    is a single filename, and CI runs this suite on Linux.
+    """
+    return ".." in raw.replace("\\", "/").split("/")
+
+
 def strip_jsonc(text: str) -> str:
     out, i, n, in_str, esc = [], 0, len(text), False, False
     while i < n:
@@ -132,6 +141,11 @@ def main(argv=None) -> int:
     ap.add_argument("--force-config", action="store_true")
     ap.add_argument("--dry-run", action="store_true")
     a = ap.parse_args(argv)
+
+    if _is_traversal(a.config):
+        print("ERROR: --config contains '..' segment(s), refusing: %s" % a.config,
+              file=sys.stderr)
+        return 1
 
     agent_models = read_agent_models(a.agents_dir)
     if not agent_models:
