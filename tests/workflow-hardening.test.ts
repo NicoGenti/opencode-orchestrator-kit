@@ -78,7 +78,13 @@ const PROMPT_BUDGETS: Record<string, number> = {
   "agents/orchestrator-quick.md": 4_200,
   "agents/orchestrator.md": 24_000,
   "agents/plan-writer.md": 14_100,
-  "agents/planner.md": 3_800,
+  // Raised from 3_800 in issue #153 phase 3 (MAY-level CRG allowlist, the
+  // `## Optional Code Graph` section and the `### Structural Impact` rule):
+  // 3_274 + 321 for the frontmatter + 940 for the section + 288 for the
+  // step-4 sentence = 4_823, and ceil(4823 * 1.05 / 100) * 100 = 5_100.
+  // The minimal form (frontmatter plus the step-4 sentence, no section)
+  // still measured 3_879, over the old cap.
+  "agents/planner.md": 5_100,
   "agents/profiler.md": 8_100,
   "agents/security.md": 4_400,
   // Raised from 2_400 in issue #153 phase 2 (read-only CRG allowlist and the

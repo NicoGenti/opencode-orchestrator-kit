@@ -499,6 +499,22 @@ describe("MCP default deny — le allowlist dichiarate sono reali", () => {
     ])
       declared("agents/test-engineer.md", t, "deny");
   });
+  test("planner: allow solo i tre dichiarati, deny il resto", () => {
+    for (const t of [
+      "get_architecture_overview_tool",
+      "get_impact_radius_tool",
+      "semantic_search_nodes_tool",
+    ])
+      declared("agents/planner.md", t, "allow");
+    for (const t of [
+      "get_review_context_tool",
+      "get_minimal_context_tool",
+      "query_graph_tool",
+      "apply_refactor_tool",
+      "build_or_update_graph_tool",
+    ])
+      declared("agents/planner.md", t, "deny");
+  });
   test("explorer: allow solo i quattro dichiarati, deny il resto", () => {
     for (const t of [
       "get_minimal_context_tool",
@@ -541,6 +557,7 @@ describe("MCP default deny — le allowlist dichiarate sono reali", () => {
       "agents/security.md",
       "agents/developer-fixer.md",
       "agents/test-engineer.md",
+      "agents/planner.md",
     ]) {
       expect(readFileSync(join(ROOT, rel), "utf-8")).toContain(
         "Your tool catalog is the source of truth",
@@ -601,5 +618,36 @@ describe("tool surface documentata per explorer e planner", () => {
     const t = body("agents/planner.md");
     expect(t).toContain("You have no native `ls` and no `sed`");
     expect(t).toContain("restricted to `ls`, `cat` and read-only git commands");
+  });
+  test("planner: regole d'uso del grafo dichiarate nel prompt", () => {
+    const t = body("agents/planner.md");
+    expect(t).toContain("Your tool catalog is the source of truth");
+    expect(t).toContain(
+      "Graph tools are MAY-level accelerators: every plan must be completable without them.",
+    );
+    expect(t).toContain(
+      "Never treat CRG output as ground truth: verify with `read` every file or symbol the plan will cite.",
+    );
+    expect(t).toContain(
+      "use `semantic_search_nodes_tool` only when file names and known symbols are insufficient",
+    );
+    expect(t).toContain("Never call graph mutation tools.");
+    expect(t).toContain("this agent never refreshes the graph");
+    expect(t).toContain(
+      'tools["code-review-graph"].get_architecture_overview_tool',
+    );
+  });
+  test("planner: il workflow definisce la sotto-sezione Structural Impact", () => {
+    const t = body("agents/planner.md");
+    expect(t).toContain(
+      "add a `### Structural Impact` sub-section under `## Scope`",
+    );
+    expect(t).toContain("never a tenth canonical heading");
+    expect(t).toContain("primary modules and files");
+    expect(t).toContain(
+      "affected callers/dependents (graph-assisted, read-verified)",
+    );
+    expect(t).toContain("likely test surface");
+    expect(t).toContain("phase order that minimizes cross-module churn");
   });
 });
