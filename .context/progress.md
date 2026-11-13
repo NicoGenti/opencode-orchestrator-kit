@@ -2,31 +2,34 @@
 
 Stato corrente della sessione. Storia dei piani completati: `git log`, `plan/complete/`, `plan/qa/`.
 
-## Chiuso: piano 0004 (issue #120) — cache-aware prompt design
+## Sessione senza piani attivi — piano 0005 (issue #137) chiuso
 
-- Board: `plan/complete/0004.md` (status complete, comprehension: pass). Branch:
-  `feat/issue-120-cache-stable-prompts`, 4 commit (80450c0, 3b0baab, 62a25d2 + close in corso dal
-  fixer). PR verso main: aperta dopo il commit di chiusura (URL in chat/GitHub).
-- Contenuto: contratto di delega esplicito — `agents/orchestrator.md:248` (Scope "name the relevant
-  file paths explicitly") e `:250` (Inputs Available "relevant symbols to inspect, as `path:line`
-  identifiers"); `agents/orchestrator-quick.md:74` (Inputs = file paths + symbols); README
-  `## Cache-aware prompt design` (regola stabile/variabile + esempio verbatim developer-fixer vs
-  dispatch variabile + meccanica prefix-cache); CONTRIBUTING 1 riga cross-link in `### Boundary`.
-  Mirror `plugin/assets` rigenerato (parity verde).
-- Garanzie: scope audit 6 file (2 agenti + 2 mirror + README + CONTRIBUTING); frontmatter, permessi,
-  `{{TIER_*}}`, fixture `prompt-prefix-boundary.txt` intatti; cap budget 22.408/24.000 e
-  3.784/4.200 (CRLF-normalized); nessun refactor ad altri agent/extras (audit: 18 file già conformi
-  ai 5 requisiti della issue).
-- Verifiche: fase 4 = 6/6 gate — sync-assets --check 0; `bun test` 1099 pass / 13 fail (baseline
-  ambientale esatta, zeri nuovi); typecheck/lint 0; format:check 6 file ambient (0 nuovi, README
-  content-clean: solo endOfLine vs CRLF checkout); board check 0 errori. code-reviewer fase 5 PASS
-  senza findings.
-- Comprehension: LIGHT → 2 domande CHALLENGE; verdict coach PASS DCI 4/4 evaluator_conf 5;
-  user_conf 2 (telemetria 2026-11-13T09:15:28Z; record
-  `ev-20261113-091521-d85f492eddf75357463b66d4316a0352`). HUMAN_OWNED: PASS.
-- Follow-up aperti in `.context/issues.md`: baseline format drift (9→6 file), dangle
-  `.context/plan-body-0004.md` (rm negato dal permission layer, cleanup manuale), tool-root nativo
-  inaffidabile reconfirmato ×2 (board-op SOLO via python CLI + prova fisica).
-- Warn configurazione: `.opencode/comprehension.config.json` assente → default built-in LIGHT.
-- Da fare dopo questa riga: commit di chiusura (card complete + memoria sessione + record) e PR —
-  in corso dal fixer.
+- Nessun piano in corso. L'ultima attività: piano 0005 "Split comprehension-coach into BEHAVIORAL and
+  IMPLEMENTATION evidence modes with source tags - issue 137", card in `plan/complete/0005.md`
+  (comprehension: skipped), branch `feat/issue-137-comprehension-modes`, 4 commit: de73f73 (fase 1:
+  `## Comprehension Modes` + `## Grounding Contract` + CHALLENGE/DCI amendments + mirror), 2d7e14c
+  (fase 2: 14 pin net-new/windowed), d648bfb (fase 3: CHANGELOG + ARCHITECTURE), ad8ffc5 (review-fix
+  F1–F10: gate scoring EVALUATE + precedenza BEHAVIORAL su DEEP + finestre pin + compressione prosa).
+- Consegna issue #137 coach: BEHAVIORAL/IMPLEMENTATION, tag USER_GOAL/USER_OBSERVED_IO/READING_PACKAGE
+  (`Q1 [USER_OBSERVED_IO]`), Grounding Contract, reading package dallo slice + conferma
+  `I have read this material.`, declined → BEHAVIORAL-only/SKIPPED mai FAIL, FLOW/LOCALIZATION N/A
+  (not zero) in BEHAVIORAL con precedenza sul default DEEP, no-reveal intatto, ZERO modifiche a
+  orchestrator.md e a schema record/telemetria, cap 6.500 car non toccato (file 6.472 con CR-strip).
+- Verifiche: suite mirate 240/0; `bun test` 1110 pass / 13 fail = baseline ambientale esatta (0 nuovi);
+  typecheck/lint exit 0; format:check solo 6 file CRLF ambient; sync-assets --check ok; review APPROVED
+  + re-check APPROVED; board check errors:[] con card in complete.
+- Comprehension: LIGHT → coach FAIL DCI 0/4 evaluator_conf 4 (nessun tentativo a Q1/Q2; user_conf
+  calibrazione 2) → l'utente ha dichiarato `skip comprehension` → outcome finale SKIPPED; telemetria
+  riga 2026-11-13T10:27:17Z appesa (append-only 336→430 byte via bun -e, log non leggibile in sessione);
+  record `.context/comprehension/ev-20261113-102717-3580f2afdb19a1d10035d138498d6022.md` (prefisso ev-
+  adattato dal res- dell'emitter, precedente 0003). HUMAN_OWNED: SKIPPED.
+- Residui manuali (permessi negati in sessione): `git push -u origin
+  feat/issue-137-comprehension-modes` + `gh pr create --base main` (PR da fare a mano); cancellare i
+  dangle `.context/plan-body-0004.md` e `.context/plan-body-0005.md` (rm denied, untracked, esclusi dai
+  commit); follow-up candidata fix `scripts/plan-board.py:66` (split `#` tronca valori frontmatter con
+  `#`, vedi issues.md) — decisione solo-utente.
+- Ambiente (vedi `.context/issues.md`): invariato — board-op solo via `python scripts/plan-board.py
+  --root <abs> --json` + prova fisica (`plan_board` nativo inaffidabile ×2, reconfirm piano 0004);
+  baseline format:check = 6 file ambient CRLF content-clean; baseline bun test = 13 fail
+  POSIX/symlink non-regressivi; `.opencode/comprehension.config.json` assente → default built-in;
+  identità autore miste accettate (live.it / corporate, già miste su main).
