@@ -63,6 +63,15 @@ MODEL_LINE_RE = re.compile(r"^model:\s*(\S+)\s*$", re.MULTILINE)
 PLACEHOLDER_PREFIX = "placeholder/"
 
 
+def _is_traversal(raw: str) -> bool:
+    """DR-9: argv path values are untrusted - refuse any '..' segment.
+
+    Both separators are split explicitly: on POSIX a literal '..\\'
+    is a single filename, and CI runs this suite on Linux.
+    """
+    return ".." in raw.replace("\\", "/").split("/")
+
+
 def load_config(config_path: Path) -> dict:
     if not config_path.exists():
         sys.exit(f"error: config file not found: {config_path}")
@@ -204,6 +213,9 @@ def main():
     parser.add_argument("--restore", action="store_true", help="Rewrite concrete model IDs back to {{TIER_*}} tokens")
     parser.add_argument("--force", action="store_true", help="Reserved for future use")
     args = parser.parse_args()
+
+    if _is_traversal(args.config):
+        sys.exit(f"error: --config contains '..' segment(s), refusing: {args.config}")
 
     config = load_config(Path(args.config))
     presets = config.get("presets", {})
