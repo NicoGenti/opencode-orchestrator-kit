@@ -150,6 +150,14 @@ describe("unverified claims", () => {
       "path-traversal",
       { claim: "a traversing claim", evidence: "../outside.ts:1" },
     ],
+    [
+      "absolute-path",
+      { claim: "a POSIX absolute claim", evidence: "/usr/local/lib/a.ts:1" },
+    ],
+    [
+      "absolute-path",
+      { claim: "a Windows absolute claim", evidence: "C:\\Windows\\win.ini:1" },
+    ],
   ];
 
   test("every unverified case is blocking and carries its code", () => {
@@ -176,6 +184,34 @@ describe("unverified claims", () => {
     expect(report.blocking_issues[0]).toContain(
       "route the task back to explorer",
     );
+  });
+});
+
+describe("absolute evidence paths", () => {
+  test("an absolute path is classified without ever calling the reader", () => {
+    const seen: string[] = [];
+    const reader: ContentReader = (relPath: string) => {
+      seen.push(relPath);
+      return { exists: true, text: TOKEN_SOURCE };
+    };
+
+    const report = checkEvidenceClaims(
+      [
+        {
+          claim: "a marker that would match outside the root",
+          evidence: `${join(tmpdir(), "outside-token.ts")}:2`,
+          marker: "issueToken",
+        },
+      ],
+      reader,
+    );
+
+    expect(seen).toEqual([]);
+    expect(report.verdict).toBe("fail");
+    expect(report.claims[0].status).toBe("unverified");
+    expect(report.claims[0].note).toBe("absolute-path");
+    expect(report.blocking_issues[0]).toContain("absolute-path");
+    expect(validateEvidenceReport(report).valid).toBe(true);
   });
 });
 
@@ -513,6 +549,31 @@ describe("CLI envelope", () => {
       expect(report.verdict).toBe("fail");
       expect(report.claims[0].note).toBe("path-traversal");
       expect(report.blocking_issues[0]).toContain("path-traversal");
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("an absolute evidence path is rejected without reading it, exit 1", () => {
+    const root = tempWorkspace();
+    try {
+      writeFileSync(
+        join(root, "claims.json"),
+        JSON.stringify({
+          claims: [
+            { claim: "points outside the root", evidence: "/etc/passwd:1" },
+          ],
+        }),
+      );
+
+      const result = runCli(["--root", root, "--claims", "claims.json"]);
+
+      expect(result.status).toBe(1);
+      const report = JSON.parse(result.stdout);
+      expect(report.verdict).toBe("fail");
+      expect(report.claims[0].status).toBe("unverified");
+      expect(report.claims[0].note).toBe("absolute-path");
+      expect(report.blocking_issues[0]).toContain("absolute-path");
     } finally {
       rmSync(root, { recursive: true, force: true });
     }

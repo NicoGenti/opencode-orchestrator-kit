@@ -14,7 +14,7 @@
  */
 
 import { readFileSync } from "node:fs";
-import { join } from "node:path";
+import { join, posix, win32 } from "node:path";
 
 // ── limits + config ──
 
@@ -170,6 +170,19 @@ export function hasTraversalSegment(raw: string): boolean {
   return raw.replace(/\\/g, "/").split("/").includes("..");
 }
 
+/**
+ * Lexical absolute-path guard: true for a POSIX absolute path (`/...`), a
+ * drive-qualified Windows path (`C:\...`, `C:/...`, and drive-relative
+ * `C:...`), a UNC path (`\\server\share`), or a Windows root-relative path
+ * (`\foo`). Both separators and both platforms are checked, so the verdict
+ * never depends on the host OS. Checked before any filesystem access.
+ */
+export function isAbsolutePath(raw: string): boolean {
+  return (
+    /^[A-Za-z]:/.test(raw) || posix.isAbsolute(raw) || win32.isAbsolute(raw)
+  );
+}
+
 /** Narrow an unknown value to a plain (non-array) object. */
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -239,15 +252,20 @@ const CONFIG_FILE = "gates.config.json";
  * Precedence: `.opencode/gates.config.json` (or the explicit path) over the
  * built-in `ROLE_DEFAULTS`. An absent/unreadable file yields pure defaults with
  * no warning; invalid JSON or an invalid shape yields defaults plus
- * `configWarning: "invalid-config"` (never throws for content). A traversing
- * path is rejected before any filesystem access.
+ * `configWarning: "invalid-config"` (never throws for content). Traversal is
+ * rejected on the raw `root` and on the path that is actually read, before any
+ * filesystem access, so neither a traversing root nor a traversing explicit
+ * path can reach a file outside the tree.
  */
 export function loadGateConfig(
   root = ".",
   explicitPath?: string,
 ): LoadGateConfigResult {
   const configPath = explicitPath ?? join(root, CONFIG_DIR, CONFIG_FILE);
-  if (hasTraversalSegment(explicitPath ?? join(CONFIG_DIR, CONFIG_FILE))) {
+  // `join` normalizes a `..` segment away, so the raw root is checked too: a
+  // root ending in `..` would otherwise resolve outside itself. Both checks
+  // run before any filesystem access; the message names the path to be read.
+  if (hasTraversalSegment(root) || hasTraversalSegment(configPath)) {
     throw new Error(`Path traversal detected: ${configPath}`);
   }
 
