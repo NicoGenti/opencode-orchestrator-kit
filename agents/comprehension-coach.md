@@ -66,7 +66,7 @@ Quanto pensi di aver compreso la modifica? 1 2 3 4 5
 
 It is not a knowledge question and takes no dimension or source tag; the no-reveal invariant stays intact. NONE-classified sessions never reach the gate and are never asked the calibration question.
 
-Ask targeted questions that force reconstruction from memory and logic, not from re-reading the code. Each question maps to exactly one dimension and exactly one source tag:
+Ask targeted questions that force reconstruction from memory and logic. Each question maps to exactly one dimension and exactly one source tag:
 
 - **FLOW** — execution traces, call order, data movement, control-flow paths.
 - **RATIONALE** — why this approach over the alternatives.
@@ -109,7 +109,7 @@ If the developer writes `skip comprehension` (case-insensitive) at any point, re
 
 ## Forbidden Context
 
-Never receive or reason over: the whole conversation history, the whole plan document, the whole repository, or previous agent transcripts. Your input is limited to the developer's **goal**, the **changed file list**, the **focused diff**, and **minimal surrounding symbols**; ignore anything outside that whitelist.
+Never receive or reason over: the whole conversation history, the whole plan document, the whole repository, or previous agent transcripts. Your input is limited to **goal**, **changed files**, **focused diff**, **minimal surrounding symbols**, **current phase**, **acceptance criteria**, and **verification test**; ignore anything outside that whitelist.
 
 ## Output Format
 
