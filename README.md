@@ -182,6 +182,7 @@ Caveats, in the spirit of [`docs/BENCHMARK-TOKEN-USAGE.md`](docs/BENCHMARK-TOKEN
 - **Measure token impact:** follow the A/B protocol in [`docs/BENCHMARK-TOKEN-USAGE.md`](docs/BENCHMARK-TOKEN-USAGE.md) to compare exploration with and without the repo map.
 - **Design-first governance:** keep architecture decisions in `.context/DESIGN-RULES.md`; [`docs/DESIGN-RULES.md`](docs/DESIGN-RULES.md) describes the template, the lifecycle, and the checks run by `planner` and `code-reviewer`.
 - **Engineering baseline** (secrets hygiene, git hygiene, definition of done) lives in `CONTRIBUTING.md`.
+- **Run the deterministic gates:** validate delegation context and plan claims with `scripts/context-budget.ts` and `scripts/evidence-check.ts`. See [docs/CONFIGURATION.md](docs/CONFIGURATION.md#deterministic-gates-context-budget-evidence-check).
 
 ## Prompt caching and session reuse
 

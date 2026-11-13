@@ -14,6 +14,8 @@
     "lint": "eslint .",
     "format:check": "prettier --check .",
     "sync-assets": "bun scripts/sync-assets.ts",
+    "context-budget": "bun scripts/context-budget.ts",
+    "evidence-check": "bun scripts/evidence-check.ts",
     "bump-version": "bun scripts/bump-version.ts",
     "bun:audit": "bun test && bun run lint"
   },

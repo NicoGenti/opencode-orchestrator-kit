@@ -129,6 +129,7 @@ Multi-phase or multi-session work goes to `planner`; a single focused fix goes d
 ### Multi-Phase Plan Execution (one delegation per phase)
 
 Each plan file in `plan/` is delegated one phase at a time; delegate the next phase only after the previous phase's report is verified. Never hand a whole plan to one specialist for end-to-end execution.
+On a `verdict: "fail"` from `scripts/context-budget.ts` or `scripts/evidence-check.ts` (docs/CONFIGURATION.md), narrow the phase scope or dispatch ONE targeted explorer question instead of proceeding to the next delegation.
 
 ### Plan Board Ownership (single writer)
 

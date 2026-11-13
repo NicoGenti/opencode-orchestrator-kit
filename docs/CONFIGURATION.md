@@ -325,6 +325,102 @@ Since v0.5.0, `/recall` appends delayed-evaluation rows of type `dci1` to the sa
 
 Setting `enabled: false` short-circuits the entire comprehension gate. The orchestrator proceeds straight to close and records `comprehension=DISABLED` in the progress notes — effectively restoring the v0.2.2 behaviour without downgrading.
 
+## Deterministic gates (context-budget, evidence-check)
+
+Two deterministic, offline gates ship with the kit. Both are report-only: they read files, classify what they find and print one JSON object — they never modify a repository file, never call an LLM and never touch the network. Run them from the repository root, or point them at another tree with `--root`.
+
+### When each gate runs
+
+- `scripts/context-budget.ts` audits the context a delegation would carry: run it before handing a spec or a file list to `explorer`, `planner`, `developer-fixer`, `code-reviewer`, or any other role.
+- `scripts/evidence-check.ts` audits claims: claims mode runs on `planner` output before the `developer-fixer` handoff, and on any security-sensitive claim before `security` review; doc mode scans a markdown document's `path:line` citations.
+
+### Invocation
+
+```bash
+# Context budget: a manifest file, or - for stdin
+bun scripts/context-budget.ts --manifest budget.json [--root <dir>] [--config <file>]
+bun run context-budget --manifest -
+
+# Claim evidence: exactly one of --claims / --doc
+bun scripts/evidence-check.ts --claims claims.json [--root <dir>]
+bun scripts/evidence-check.ts --doc plan.md [--root <dir>]
+bun run evidence-check --claims claims.json
+```
+
+Both commands print one JSON object (indent 2) and exit `0` on `verdict: "pass"`, `1` on `verdict: "fail"` and on any usage or IO error. Every path argument — and every `evidence` path inside a claims manifest — is rejected before any filesystem access when it contains a `..` segment.
+
+### Context budget
+
+```json
+{
+  "role": "explorer",
+  "mode": "input",
+  "spec": "### Phase 1 — ...",
+  "files": [{ "path": "src/service.ts", "lines": 820, "extractedLines": 60 }],
+  "scope": "diff",
+  "output": "optional, read when mode is output"
+}
+```
+
+`mode` is `"input"` or `"output"`. `lines`, `chars` and `extractedLines` are declared by the manifest author — the gate audits the assembled context, not the disk — and a missing `chars` is approximated as `lines × 40`. The report carries `role`, `verdict`, `input_tokens_estimate`, `output_tokens_estimate`, `file_count`, `oversized_files[{path, lines, reason}]` and `blocking_issues`.
+
+| Blocking issue | Raised when |
+| --- | --- |
+| `too_many_files` | `files` exceeds the role's `maxFiles`. |
+| `exceeds_max_lines` (in `oversized_files`) | One file declares more than `maxFileLines` lines. |
+| `extracted_lines_exceeded` | Summed `extractedLines` exceeds `maxExtractedLines`. |
+| `phase_count_exceeded` | The spec carries more `### Phase` headings than `maxPhases`. |
+| `not_diff_scoped` | A `diffOnly` role receives a manifest whose `scope` is not `"diff"`. |
+| `input_tokens_exceeded` / `output_tokens_exceeded` | The estimate exceeds a configured token cap; no cap is set by default. |
+
+Token counts are the documented `ceil(chars / 4)` heuristic and are informational unless a config sets `maxInputTokens` or `maxOutputTokens`.
+
+### Evidence semantics
+
+Every claim is classified by mechanical rules; markers are matched literally, never semantically.
+
+| Status | Note | Meaning | Blocking |
+| --- | --- | --- | --- |
+| `unverified` | `missing-evidence` | The claim carries no `file:line` evidence. | yes |
+| `unverified` | `path-traversal` | The evidence path contains a `..` segment. | yes |
+| `unverified` | `file-not-found` | The cited file does not exist. | yes |
+| `unverified` | `line-out-of-range` | The cited line is beyond the end of the file. | yes |
+| `unverified` | `marker-not-found` | The marker does not appear anywhere in the cited file. | yes |
+| `unverified` | `strict-evidence-required` | A `securitySensitive` claim is not verified at the exact cited line. | yes |
+| `verified` | `location-only` | No marker was declared and the citation resolves. | no |
+| `verified` | `citation-imprecise` | The marker is elsewhere in the cited file; `resolved_evidence` names the first match. | no |
+| `contradicted` | `counter-marker-present` | The declared `counterMarker` appears in the cited file. | yes |
+
+Doc mode scans only `path:line` citations outside fenced code blocks and checks that each location resolves (location-only), because prose carries no markers. The verdict is `fail` when at least one claim blocks, and `blocking_issues` names the follow-up question.
+
+### Config schema and precedence
+
+```json
+{
+  "gates": {
+    "roles": {
+      "explorer": { "maxFiles": 8, "maxExtractedLines": 300, "maxFileLines": 400 }
+    }
+  }
+}
+```
+
+Precedence: `.opencode/gates.config.json` (merged per role entry) > `templates/gates.config.json` (canonical defaults) > built-in defaults. A missing user config is the expected default state; a malformed one falls back to the built-ins and adds `config_warning` to the report rather than failing. A role without pinned limits uses the `default` entry, so an unknown role is never a blocking error.
+
+### Role defaults
+
+| Role | Limits |
+| --- | --- |
+| `explorer` | `maxFiles: 8`, `maxExtractedLines: 300`, `maxFileLines: 400` |
+| `planner` | `maxFiles: 2`, `maxPhases: 1` |
+| `developer-fixer` | `maxFiles: 5`, `maxPhases: 1` |
+| `code-reviewer` | `diffOnly: true` |
+| `default` (fallback) | `maxFiles: 12`, `maxExtractedLines: 500`, `maxFileLines: 400` |
+
+### Handling a fail verdict
+
+On a `verdict: "fail"` the orchestrator narrows the phase scope or dispatches ONE targeted explorer question instead of proceeding to the next delegation — the same rule the orchestrator prompt carries. The gates only advise: correcting the manifest or the claim is the caller's decision, and neither gate ever edits a file.
+
 ## FreeLLMAPI profile (local app)
 
 The `freellmapi` preset routes every tier to the FreeLLMAPI app installed on the PC
