@@ -37,6 +37,15 @@ ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 FM_RE = re.compile(r"^---\r?\n(.*?)\r?\n---\r?\n?", re.DOTALL)
 
 
+def _is_traversal(raw: str) -> bool:
+    """DR-9: argv path values are untrusted - refuse any '..' segment.
+
+    Both separators are split explicitly: on POSIX a literal '..\\'
+    is a single filename, and CI runs this suite on Linux.
+    """
+    return ".." in raw.replace("\\", "/").split("/")
+
+
 def today() -> str:
     return dt.date.today().isoformat()
 
@@ -321,6 +330,11 @@ def main(argv=None) -> int:
     add_common(p)
 
     a = ap.parse_args(argv)
+    for opt in ("root", "body"):
+        raw = getattr(a, opt, None)
+        if raw is not None and _is_traversal(raw):
+            return fail("path-traversal",
+                        f"--{opt} contains '..' segment(s), refusing: {raw}", a.json)
     root = Path(a.root)
     if a.cmd == "check":
         return cmd_check(root, a.json)
