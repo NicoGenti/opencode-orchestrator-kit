@@ -274,6 +274,7 @@ describe("registrazione del tool nativo plan_board", () => {
       "none",
       "pass",
       "skipped",
+      "needs_review",
       "fail",
       "disabled",
       "n/a",

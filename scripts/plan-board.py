@@ -32,7 +32,7 @@ SECTIONS = (
     "## Notes / Edge Cases",
 )
 FM_KEYS = ("id", "title", "status", "created", "updated", "owner", "executor")
-COMPREHENSION_VALUES = ("none", "pass", "skipped", "fail", "disabled", "n/a")
+COMPREHENSION_VALUES = ("none", "pass", "skipped", "needs_review", "fail", "disabled", "n/a")
 ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 FM_RE = re.compile(r"^---\r?\n(.*?)\r?\n---\r?\n?", re.DOTALL)
 
@@ -218,7 +218,7 @@ def cmd_move(root: Path, ident: str, to: str, dry_run: bool, as_json: bool,
         return fail("target-exists", f"{dst} already exists", as_json)
     if to == "complete" and comprehension is None:
         return fail("comprehension-unrecorded",
-                    "move to complete requires --comprehension <none|pass|skipped|fail|disabled|n/a>: "
+                    "move to complete requires --comprehension <none|pass|skipped|needs_review|fail|disabled|n/a>: "
                     "record the announced comprehension outcome", as_json)
     payload = {"ok": True, "action": "move", "id": path.stem, "from": col, "to": to,
                "path": str(dst), "dry_run": dry_run}

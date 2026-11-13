@@ -31,6 +31,7 @@ const COMPREHENSION_VALUES = [
   "none",
   "pass",
   "skipped",
+  "needs_review",
   "fail",
   "disabled",
   "n/a",

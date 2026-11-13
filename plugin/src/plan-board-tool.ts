@@ -42,7 +42,15 @@ export const PLAN_BOARD_TOOL_INPUT: Record<string, unknown> = {
     },
     comprehension: {
       type: "string",
-      enum: ["none", "pass", "skipped", "fail", "disabled", "n/a"],
+      enum: [
+        "none",
+        "pass",
+        "skipped",
+        "needs_review",
+        "fail",
+        "disabled",
+        "n/a",
+      ],
       description: "Comprehension verdict recorded when moving to complete.",
     },
     title: {

@@ -66,6 +66,7 @@ const COMPREHENSION_VALUES = [
   "none",
   "pass",
   "skipped",
+  "needs_review",
   "fail",
   "disabled",
   "n/a",
@@ -489,7 +490,7 @@ function cmdMove(
   if (to === "complete" && comprehension === null) {
     return failPayload(
       "comprehension-unrecorded",
-      "move to complete requires --comprehension <none|pass|skipped|fail|disabled|n/a>: " +
+      "move to complete requires --comprehension <none|pass|skipped|needs_review|fail|disabled|n/a>: " +
         "record the announced comprehension outcome",
     );
   }
