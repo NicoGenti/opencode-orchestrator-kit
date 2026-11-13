@@ -1955,6 +1955,21 @@
       "effect": "deny"
     },
     {
+      "action": "code-review-graph_get_architecture_overview_tool",
+      "resource": "*",
+      "effect": "allow"
+    },
+    {
+      "action": "code-review-graph_get_impact_radius_tool",
+      "resource": "*",
+      "effect": "allow"
+    },
+    {
+      "action": "code-review-graph_semantic_search_nodes_tool",
+      "resource": "*",
+      "effect": "allow"
+    },
+    {
       "action": "subagent",
       "resource": "*",
       "effect": "deny"

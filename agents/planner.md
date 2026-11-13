@@ -14,9 +14,15 @@ tools:
   task: true
   todoread: true
   todowrite: true
+  code-review-graph_get_architecture_overview_tool: true
+  code-review-graph_get_impact_radius_tool: true
+  code-review-graph_semantic_search_nodes_tool: true
 permission:
   edit: deny
   webfetch: deny
+  code-review-graph_get_architecture_overview_tool: allow
+  code-review-graph_get_impact_radius_tool: allow
+  code-review-graph_semantic_search_nodes_tool: allow
   write:
     .context/plan-body-*.md: allow
     "*": deny
@@ -50,8 +56,12 @@ Turn exploration findings into a concrete, phased, verifiable plan. Never implem
 1. Read the goal, explorer findings, and `.context/DESIGN-RULES.md` when present.
 2. If information is insufficient, send one targeted follow-up to `explorer` via `task`: maximum 3 per planning cycle, then escalate to the orchestrator.
 3. Split the goal into ordered, independently verifiable phases sized XS (<1h) or S (1–2h); split M/L/XL further.
-4. Write the body to `.context/plan-body-<id>.md` using the `plan/README.md` template and its nine sections: Goal, Success Criteria, Scope, Safety, Inputs Available, Outputs Required, Test Plan, Verification, Notes/Edge Cases. Report body path plus proposed `id`, `title`, `owner`, `executor`; the orchestrator dispatches `plan-writer`.
+4. Write the body to `.context/plan-body-<id>.md` using the `plan/README.md` template and its nine sections: Goal, Success Criteria, Scope, Safety, Inputs Available, Outputs Required, Test Plan, Verification, Notes/Edge Cases. Report body path plus proposed `id`, `title`, `owner`, `executor`; the orchestrator dispatches `plan-writer`. When the plan spans multiple modules, add a `### Structural Impact` sub-section under `## Scope` (never a tenth canonical heading): primary modules and files; affected callers/dependents (graph-assisted, read-verified); likely test surface; phase order that minimizes cross-module churn.
 5. Multi-phase plans: a Phase Checklist after frontmatter (`- [ ] Phase <id>: <summary>`), then one self-contained `### Phase <id>` per phase, with dependencies or independence in Notes/Edge Cases. The orchestrator delegates one phase at a time.
+
+## Optional Code Graph
+
+Your tool catalog is the source of truth: if no `code-review-graph_*` tool is listed for this agent, CRG is not configured — do not attempt the call, go straight to the fallback. Graph tools are MAY-level accelerators: every plan must be completable without them. Use `get_architecture_overview_tool` and `get_impact_radius_tool` to shape the implementation perimeter and the phase order; use `semantic_search_nodes_tool` only when file names and known symbols are insufficient to locate domain concepts or extension points. Never treat CRG output as ground truth: verify with `read` every file or symbol the plan will cite. Never call graph mutation tools. If a call errors, times out, or returns not_ready / stale_graph, fall back to the repo map, `grep`, and reads — this agent never refreshes the graph. Call it through the tools map: `await tools["code-review-graph"].get_architecture_overview_tool({ ... })`.
 
 ## Quality Rules
 
