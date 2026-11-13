@@ -39,3 +39,41 @@ For each run, capture:
 - Results depend on repo size, language, and task type.
 - This is an operational engineering metric, not a scientific benchmark.
 - Do not publish numbers without stating the repo, task set, and run count.
+
+## Graph-aware delivery (configuration C)
+
+Compare these configurations:
+
+| Configuration | Setup |
+|---|---|
+| Baseline | Kit, graph forbidden |
+| Current integration | Kit, graph available and used |
+| Proposed integration | Kit, graph-aware developer/test/planner |
+
+Use a fixed task set of multi-module tasks with real structural dependencies.
+A single-file task will not demonstrate the value of graph-aware delivery.
+
+## Metrics to record
+
+For each run, capture:
+
+- Tool calls.
+- Input tokens.
+- Output tokens.
+- Cache reads.
+- Files modified.
+- Tests selected.
+- Acceptance result.
+
+## Configuration C recording template
+
+| Task | Run | Configuration | Tool calls | Input tokens | Output tokens | Cache reads | Files modified | Tests selected | Acceptance result | Notes |
+|---|---|---|---|---|---|---|---|---|---|---|
+|  |  |  |  |  |  |  |  |  |  |  |
+
+## Interpretation rules
+
+- Compare configurations per task, not as a single aggregate.
+- Report all runs; do not cherry-pick.
+- Repeat each task in each configuration at least twice before drawing conclusions.
+- Record configuration A/B runs in the existing recording template above.
