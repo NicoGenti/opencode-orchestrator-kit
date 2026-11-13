@@ -1,0 +1,27 @@
+{
+  "gates": {
+    "roles": {
+      "explorer": {
+        "maxFiles": 8,
+        "maxExtractedLines": 300,
+        "maxFileLines": 400
+      },
+      "planner": {
+        "maxFiles": 2,
+        "maxPhases": 1
+      },
+      "developer-fixer": {
+        "maxFiles": 5,
+        "maxPhases": 1
+      },
+      "code-reviewer": {
+        "diffOnly": true
+      },
+      "default": {
+        "maxFiles": 12,
+        "maxExtractedLines": 500,
+        "maxFileLines": 400
+      }
+    }
+  }
+}
