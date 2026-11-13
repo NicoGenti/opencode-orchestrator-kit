@@ -65,7 +65,7 @@ After **every** `comprehension-coach` evaluation reaches a final verdict — `PA
 Line format (single space-separated fields, no user-answer content):
 
 ```
-`<ISO 8601 timestamp> mode=<LIGHT|DEEP> DCI=<score>/<available_score>|skipped evaluator_conf=<1-5>|n/a outcome=<PASS|FAIL|RETRY|SKIPPED> user_conf=<1-5>|n/a`
+`<ISO 8601 timestamp> mode=<LIGHT|DEEP> DCI=<score>/<available_score>|skipped evaluator_conf=<1-5>|n/a outcome=<PASS|FAIL|NEEDS_REVIEW|RETRY|SKIPPED> user_conf=<1-5>|n/a`
 ```
 
 **Hard boundary (v0.6.4)**: `.context/comprehension-log.md` and `.context/research-dataset.jsonl` are append-only telemetry artifacts — the orchestrator appends rows and performs only one sanctioned bounded edit, and may read them ONLY under explicit user invocation (`/recall` for the log; the research lifecycle for the dataset). Sanctioned dataset flow: `/recall` APPENDS a new row linked by `research_id` (no backfill, no modification of existing rows). The dataset has NO edit permission (v0.6.5 least privilege — append-only by permission, not just by convention). Sanctioned log edit: normalise a malformed row to the canonical format. No other edits, no deletes, no history rewrites, no writes from other steps. Neither is ever read during bootstrap.

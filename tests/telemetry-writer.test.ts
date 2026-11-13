@@ -68,7 +68,7 @@ describe("telemetry writer — orchestrator contract (v0.4.0)", () => {
     );
     expect(sec).toMatch(/DCI=<score>\/<available_score>\|skipped/);
     expect(sec).toMatch(/conf=<1-5>\|n\/a/);
-    expect(sec).toMatch(/outcome=<PASS\|FAIL\|RETRY\|SKIPPED>/);
+    expect(sec).toMatch(/outcome=<PASS\|FAIL\|NEEDS_REVIEW\|RETRY\|SKIPPED>/);
     expect(sec).toMatch(
       /MUST NOT include any user answer text|no user answers|privacy/i,
     );

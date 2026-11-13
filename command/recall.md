@@ -22,7 +22,7 @@ agent: orchestrator
 9. **Outcome**: append dci1-format row to `.context/comprehension-log.md` AND full-overwrite `.context/progress.md` (snapshot of the CURRENT state — pointer removal on completion, never a per-task history line); the immediate baseline (dci_immediate, user_confidence_immediate, outcome_immediate) is immutable — never rewritten; a new recall event is a NEW line — no in-place rewrite of the record or the dataset (v0.6.1+ normalisation). Format:
 
 ```
-<date> | plan=<NNNN> | type=dci1 | src=stored|reconstructed | retry=<0|1> | user_conf=<1-5>|n/a | evaluator_conf=<1-5>|n/a | DCI=<score>/<available_score> | DCI=skipped | outcome=PASS|FAIL|RETRY|SKIPPED
+<date> | plan=<NNNN> | type=dci1 | src=stored|reconstructed | retry=<0|1> | user_conf=<1-5>|n/a | evaluator_conf=<1-5>|n/a | DCI=<score>/<available_score> | DCI=skipped | outcome=PASS|FAIL|NEEDS_REVIEW|RETRY|SKIPPED
 ```
 
 - `outcome=SKIPPED` row format: `user_conf=n/a | evaluator_conf=n/a | DCI=skipped | outcome=SKIPPED` (no numeric confidence fields).

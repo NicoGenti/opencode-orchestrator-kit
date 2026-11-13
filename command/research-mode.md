@@ -122,7 +122,7 @@ lines mark the coach verdict block.
    Comprehension: PASS
    evaluator_confidence: 4
    DCI: 4/4
- → a wrong answer at the second check would instead yield Comprehension: FAIL — a terminal
+ → a wrong answer at the second check would instead yield Comprehension: NEEDS_REVIEW — a terminal
    outcome, never retried a second time. The delayed reading (DCI1) belongs to /recall: outside
    the task lifecycle, only between tasks, on explicit user invocation.
  → task delegations: 4 — explorer, coach evaluation, coach re-check (the single escalation),

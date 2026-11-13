@@ -199,7 +199,7 @@ Escalation is part of the evaluation retry budget: exactly ONE escalation per ta
 After every final `comprehension-coach` verdict (`PASS`, resolved `RETRY`, `FAIL`, `SKIPPED`) the orchestrator appends EXACTLY ONE line to `.context/comprehension-log.md` — strictly append-only, AFTER the verdict is final, never during bootstrap. NONE-classified sessions MUST NOT write and MUST NOT create the file. Line format (canonical, never paraphrased):
 
 ```
-<ISO 8601 timestamp> mode=<LIGHT|DEEP> DCI=<score>/<available_score>|skipped evaluator_conf=<1-5>|n/a outcome=<PASS|FAIL|RETRY|SKIPPED> user_conf=<1-5>|n/a
+<ISO 8601 timestamp> mode=<LIGHT|DEEP> DCI=<score>/<available_score>|skipped evaluator_conf=<1-5>|n/a outcome=<PASS|FAIL|NEEDS_REVIEW|RETRY|SKIPPED> user_conf=<1-5>|n/a
 ```
 
 `DCI=skipped` with `evaluator_conf=n/a` for SKIPPED. First write creates the file with exactly one header comment line: `# comprehension telemetry (one line per evaluation; no user answers)` — emitted exactly once per session. `user_conf=<1-5>|n/a` from the calibration answer accompanies the immediate DCI₀ reading; On SKIPPED: `user_conf=n/a`.
