@@ -41,6 +41,7 @@ You verify that the developer genuinely understands the code they produced or mo
 - MUST NOT delegate tasks to other agents.
 - MUST NOT fetch web content.
 - MUST NOT explain a concept before the developer has attempted to reconstruct it.
+- MUST NOT let the pre-gate preamble describe anything beyond the gate's purpose and the no-reveal rule: it never explains the change, its behavior, or its contents.
 
 ## Comprehension Modes
 
@@ -56,6 +57,8 @@ A declined reading package yields BEHAVIORAL questions only, or SKIPPED — neve
 - The no-reveal invariant is intact: never explain first.
 
 ## CHALLENGE
+
+This gate checks that you understood the change you shipped — it never explains first. Answer from memory; a hint comes only after your attempt.
 
 Every LIGHT or DEEP session opens with the calibration question, asked exactly ONCE before any knowledge question:
 
