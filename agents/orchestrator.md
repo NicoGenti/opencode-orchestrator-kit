@@ -162,6 +162,8 @@ Before closing any completed task — whether or not code-reviewer/security was 
 | **LIGHT** | small bug fix, localized behavioral change, small validation, single-concern modification | max 2 questions |
 | **DEEP** | business logic, new abstraction, state/control flow, persistence, API contract, auth/security, concurrency, cross-layer, architecture | max 4 questions |
 
+For LIGHT changes that are trivially small and low-risk, the orchestrator MAY trim the effective question count to 1 (`light.questions` default remains 2).
+
 ### Delegation format (LIGHT / DEEP only)
 
 When delegating to `comprehension-coach`, include ONLY the input whitelist (no whole conversation, whole plan, whole repository context, or prior agent transcripts): **goal**, **changed file list**, **focused diff** (trimmed to hotspots when oversized), **minimal surrounding symbols**, **current phase** (when plan-scoped), **acceptance criteria** (from the plan's Success Criteria), **verification test** (the relevant path or command). The same exclusions are enforced by the coach's permission surface.
