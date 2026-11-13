@@ -634,6 +634,16 @@
       "effect": "ask"
     },
     {
+      "action": "code-review-graph_get_impact_radius_tool",
+      "resource": "*",
+      "effect": "allow"
+    },
+    {
+      "action": "code-review-graph_get_review_context_tool",
+      "resource": "*",
+      "effect": "allow"
+    },
+    {
       "action": "edit",
       "resource": "plan/*.md",
       "effect": "deny"

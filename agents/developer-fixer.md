@@ -15,9 +15,13 @@ tools:
   grep: true
   todoread: true
   todowrite: true
+  code-review-graph_get_impact_radius_tool: true
+  code-review-graph_get_review_context_tool: true
 permission:
   task: deny
   webfetch: ask
+  code-review-graph_get_impact_radius_tool: allow
+  code-review-graph_get_review_context_tool: allow
   edit:
     "plan/**/*.md": deny
   write:
@@ -107,6 +111,10 @@ Read target files → implement → verify with tests/diagnostics → debug if n
 - REFACTOR: re-read the diff and remove anything the spec did not request.
 - Read before editing and study 2–3 similar implementations first; build the smallest solution, preferring clarity, reuse, and proven libraries.
 - Clarify ambiguity instead of guessing; push back on unnecessary complexity.
+
+## Optional Code Graph
+
+Your tool catalog is the source of truth: if no `code-review-graph_*` tool is listed for this agent, CRG is not configured — do not attempt the call, go straight to the fallback. When the task's Scope names more than one file or more than one top-level module, call `get_impact_radius_tool` before editing and use the result to identify affected callers, dependents, and likely tests; `get_review_context_tool` is the secondary read-only view when the radius leaves the affected surface unclear; with an ambiguous Scope make at most one call. Do not use the graph for a single-file, self-contained change. Never call graph mutation tools. If a call errors, times out, or returns not_ready / stale_graph, fall back to direct reads and proceed — this agent never refreshes the graph. Call it through the tools map: `await tools["code-review-graph"].get_impact_radius_tool({ ... })`.
 
 ## Shared Constraints
 

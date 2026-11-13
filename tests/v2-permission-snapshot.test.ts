@@ -39,6 +39,10 @@ import type { PermissionRule } from "../plugin/src/permissions.ts";
  *   non-owner that falls back instead — plus `get_minimal_context_tool`
  *   (allow) for agents/orchestrator.md, the read-only entry point. The write
  *   tool `apply_refactor_tool` stays deny.
+ * - agents/developer-fixer.md — two read-only per-tool CRG allows on top of
+ *   that family deny: `get_impact_radius_tool` and `get_review_context_tool`
+ *   (issue #153 phase 1). Both are read-only; every other tool of the family
+ *   (including the mutation tools) stays denied by the family default.
  *
  * Every other agent translates to the same rule list as before.
  */
@@ -163,6 +167,42 @@ describe("V2 permission translation snapshot", () => {
         expect(rule.action).not.toBe("query");
         expect(rule.action).not.toBe("check_diagnostics");
       }
+    }
+    // Issue #153 phase 1 — developer-fixer read-only CRG allowlist. The
+    // mutation tools are not separate deny entries: the family default
+    // `{ action: "code-review-graph_*", effect: "deny" }` denies every
+    // undeclared tool of the family, so the pins below assert the family
+    // deny is present and that no per-tool mutation allow exists.
+    for (const resource of [
+      "code-review-graph_get_impact_radius_tool",
+      "code-review-graph_get_review_context_tool",
+    ]) {
+      expect(
+        has("agents/developer-fixer.md", {
+          action: resource,
+          resource: "*",
+          effect: "allow",
+        }),
+      ).toBe(true);
+    }
+    expect(
+      has("agents/developer-fixer.md", {
+        action: "code-review-graph_*",
+        resource: "*",
+        effect: "deny",
+      }),
+    ).toBe(true);
+    for (const resource of [
+      "code-review-graph_apply_refactor_tool",
+      "code-review-graph_build_or_update_graph_tool",
+    ]) {
+      expect(
+        has("agents/developer-fixer.md", {
+          action: resource,
+          resource: "*",
+          effect: "allow",
+        }),
+      ).toBe(false);
     }
   });
 });
