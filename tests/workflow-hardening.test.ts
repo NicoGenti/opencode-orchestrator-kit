@@ -428,14 +428,16 @@ describe("workflow-hardening — W14 behavioral A/B flow (v0.6.2)", () => {
     expect(simCoach).toBe(2); // coach verdict blocks for both slots
   });
 
-  test("flow shows a real pass and a real fail of the comprehension gate", () => {
+  test("flow shows a real pass and a real needs-review of the comprehension gate", () => {
     // gate outcomes read from parsed example tuples and normalized coach verdicts
     expect(TASK_EXAMPLES[0].gate_type).toBe("n/a"); // slot A control: no gate
     expect(TASK_EXAMPLES[1].gate_type).toBe("LIGHT"); // slot B
     expect(TASK_EXAMPLES[1].retries).toBe(1);
     expect((RESEARCH.match(/Comprehension: PASS/g) || []).length).toBe(1);
     expect((RESEARCH.match(/Comprehension: RETRY/g) || []).length).toBe(1);
-    expect((RESEARCH.match(/Comprehension: FAIL/g) || []).length).toBe(1);
+    expect((RESEARCH.match(/Comprehension: NEEDS_REVIEW/g) || []).length).toBe(
+      1,
+    );
   });
 
   test("the task/recall tuples emitted in the flow match the typed contracts exactly", () => {

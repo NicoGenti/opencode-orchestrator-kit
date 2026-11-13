@@ -295,6 +295,21 @@ describe("formatters", () => {
     );
   });
 
+  test("formatImmediateRow emits the NEEDS_REVIEW variant (dual vocabulary)", () => {
+    expect(
+      formatImmediateRow({
+        timestamp: new Date("2026-11-13T10:00:00.000Z"),
+        mode: "DEEP",
+        dci: "0/8",
+        evaluatorConf: 2,
+        outcome: "NEEDS_REVIEW",
+        userConf: 3,
+      }),
+    ).toBe(
+      "2026-11-13T10:00:00.000Z mode=DEEP DCI=0/8 evaluator_conf=2 outcome=NEEDS_REVIEW user_conf=3",
+    );
+  });
+
   test("formatImmediateRow emits the SKIPPED variant with verbatim n/a fields", () => {
     expect(
       formatImmediateRow({
