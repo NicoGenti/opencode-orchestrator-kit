@@ -53,3 +53,9 @@
   idem nota 0004: rm/del negati dal permission layer anche a orchestrator e subagenti; UNTRACKED, non
   entrano nei commit; cleanup manuale utente; rimedio candidato permanente invariato: `.gitignore` per
   `.context/plan-body-*.md`.
+- 2026-11-13 (piano 0007): BASELINE AMBIENTALE DRIFTATA pre-sessione (batch checkout 11:35:45Z, mtime
+  file pre-esistenti alla sessione): `bun test` 14 fail (ex 13: nuovo `tests/version-sync.test.ts:39` —
+  working copy CRLF di `CHANGELOG.md` fa fallire il pin `startsWith("# Changelog\n")`, blob e status
+  invariati, solo `core.autocrlf=true`); `format:check` 10 file (ex 6: stesso criterio `endOfLine: lf`
+  su working-copy CRLF, set pre-sessione). Typecheck/lint 0 invariati. Baseline corrente per il piano
+  0007 = 14 / 0 / 0 / 10 (set fallimenti invariato ⇒ non regressiva; il conteggio precedente era 13/0/0/6).
