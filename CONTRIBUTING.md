@@ -262,6 +262,8 @@ The repository-controlled stable prefix consists only of the following prompt-so
 
 Anything else — `tests/`, `skills/`, `.context/`, `plan/`, `docs/`, the site/ directory, lockfiles, etc. — is out of scope for the stable prefix.
 
+What belongs in the stable prompt versus what travels in the delegation prompt is documented in [`README.md`](README.md) `## Cache-aware prompt design`.
+
 ### Explicit Exclusions
 
 The following paths are **deliberately excluded** from the stable prefix:
