@@ -5,6 +5,7 @@ All notable changes to this project are documented in this file. The format foll
 ## [Unreleased]
 
 - **`comprehension-coach` evidence modes (#137)**: the coach contract now splits BEHAVIORAL from IMPLEMENTATION evidence, tags every knowledge question with a verbatim source (`USER_GOAL` / `USER_OBSERVED_IO` / `READING_PACKAGE`), and grounds IMPLEMENTATION questions in a minimal reading package confirmed by `I have read this material.`; a declined package yields behavioral-only questions or SKIPPED — never an automatic FAIL.
+- **Path-traversal guards for the Python helper scripts (#128-#135)**: `scripts/plan-board.py` (`--root`, `--body`), `scripts/apply-model-preset.py` (`--config`) and `scripts/apply-freellmapi-profile.py` (`--config`) now refuse any argv path containing a `..` segment (both separators) before any filesystem access; clean relative and absolute paths behave exactly as before. plan-board rejections use the existing JSON envelope with the additive code `path-traversal`; the other two scripts keep their exit styles.
 
 ## [1.1.1] — 2026-11-04
 
