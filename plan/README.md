@@ -35,7 +35,7 @@ exit `0` on success and `1` on a blocking error):
 
 ```
 python scripts/plan-board.py check  [--root <board root>] [--json]
-python scripts/plan-board.py move   --id <id> --to <column> [--comprehension <none|pass|skipped|fail|disabled|n/a>] [--root <board root>] [--dry-run] [--json]
+python scripts/plan-board.py move   --id <id> --to <column> [--comprehension <none|pass|skipped|needs_review|fail|disabled|n/a>] [--root <board root>] [--dry-run] [--json]
 python scripts/plan-board.py new    --id <id> --title <t> --owner <o> --executor <e> --body <file> [--column draft] [--root <board root>] [--json]
 python scripts/plan-board.py adopt  --file <name> --owner <o> --executor <e> [--root <board root>] [--json]
 ```
