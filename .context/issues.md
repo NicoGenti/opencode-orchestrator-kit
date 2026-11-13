@@ -41,3 +41,15 @@
   comparsa nel repo; payload con slug di fantasia ("sample-qa-1" ecc.) non corrispondenti ai file
   reali. Con il fallback python CLI ogni op ha corrisposto alla prova fisica. La regola della nota
   2026-11-12 resta: in questo ambiente la regola è SOLO python CLI + prova fisica per ogni op.
+- 2026-11-13 (piano 0005): BUG SCRIPT BOARD — `scripts/plan-board.py:66` applica `v.split("#")[0].strip()`
+  ai valori frontmatter: un `#` dentro il valore viene trattato come commento inline e il valore viene
+  TRONCATO al re-render di ogni `move` (new scrive il valore grezzo, move lo riemette). Preesistente:
+  aveva già troncato `plan/complete/0004.md` ("Cache-aware prompt design (" ); su 0005 ha troncato il
+  title alla prima mossa (dopo new il file in draft era integro). Fix user-only (parser consapevole dei
+  commenti solo dopo spazio); qualunque title con `#` va ri-troncato: usare titoli senza `#` (0005
+  normalizzato via Mutation Summary approvata). Warning `missing-comprehension` su qa/0005 atteso e
+  risolto al move a complete con `--comprehension skipped`.
+- 2026-11-13 (piano 0005): DANGLE doppio `.context/plan-body-0004.md` + `.context/plan-body-0005.md` —
+  idem nota 0004: rm/del negati dal permission layer anche a orchestrator e subagenti; UNTRACKED, non
+  entrano nei commit; cleanup manuale utente; rimedio candidato permanente invariato: `.gitignore` per
+  `.context/plan-body-*.md`.

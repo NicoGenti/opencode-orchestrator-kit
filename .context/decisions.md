@@ -40,3 +40,13 @@
   nativo `plan_board` ha fallito fisicamente 2 dispatch consecutivi (ok:true riportato, card mai
   creata nel repo, payload con slug di fantasia "sample-*"); DOPO ogni board-op va sempre
   verificata la prova fisica (glob/ls del repo).
+- 2026-11-13 (issue #137, piano 0005): design confermato dall'utente — reading package derivato dallo slice
+  ricevuto dal coach (ZERO modifiche ad `agents/orchestrator.md`), tag di fonte dentro le stringhe domanda
+  verbatim (nessun cambio schema record/telemetria), cap parole 800 superato e cap caratteri 6.500 INTATTO
+  (compressione prosa non pinnata nel review-fix), identità autore miste sui commit lasciate com'è (già miste
+  su main), title scheda normalizzato SENZA `#` (bug split di scripts/plan-board.py:66, vedi issues).
+  Review APPROVED + re-check APPROVED post review-fix F1–F10 (ad8ffc5). Gate comprehension LIGHT: coach
+  FAIL DCI 0/4 conf 4 (nessun tentativo); l'utente ha dichiarato `skip comprehension` → outcome finale
+  SKIPPED (telemetria 2026-11-13T10:27:17Z; record ev-20261113-102717-3580f2afdb19a1d10035d138498d6022;
+  prefisso ev- adattato come da precedente 0003 — l'emitter produce solo res-). Board rule: python CLI +
+  prova fisica (reconfirm piano 0004).
