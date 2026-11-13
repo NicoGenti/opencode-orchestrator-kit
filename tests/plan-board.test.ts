@@ -521,3 +521,55 @@ maybe("plan-board.py — colonne create su richiesta", () => {
     expect(existsSync(join(root, "draft", "9111-democol.md"))).toBe(false);
   });
 });
+
+maybe("plan-board.py — path traversal guard", () => {
+  test("rifiuta --root con segmento '..' (separatore forward)", () => {
+    const r = run(["check"], "x/../../evil");
+    expect(r.status).toBe(1);
+    expect(r.json?.ok).toBe(false);
+    expect(r.json?.code).toBe("path-traversal");
+  });
+
+  test("rifiuta --root con separatori backslash", () => {
+    const r = run(["check"], "..\\..\\evil");
+    expect(r.status).toBe(1);
+    expect(r.json?.ok).toBe(false);
+    expect(r.json?.code).toBe("path-traversal");
+  });
+
+  test("rifiuta --root con '..' centrale e finale", () => {
+    const r = run(["check"], "a/../..");
+    expect(r.status).toBe(1);
+    expect(r.json?.ok).toBe(false);
+    expect(r.json?.code).toBe("path-traversal");
+  });
+
+  test("rifiuta --body con '..' senza creare file", () => {
+    const root = makeBoard();
+    const r = run(
+      [
+        "new",
+        "--id",
+        "9500-trav",
+        "--title",
+        "T",
+        "--owner",
+        "plan-writer",
+        "--executor",
+        "developer-fixer",
+        "--body",
+        "../evil-body.md",
+      ],
+      root,
+    );
+    expect(r.status).toBe(1);
+    expect(r.json?.code).toBe("path-traversal");
+    expect(existsSync(join(root, "draft", "9500-trav.md"))).toBe(false);
+  });
+
+  test("lascia passare un --root assoluto pulito", () => {
+    const r = run(["check"], makeBoard());
+    expect(r.status).toBe(0);
+    expect(r.json?.ok).toBe(true);
+  });
+});
