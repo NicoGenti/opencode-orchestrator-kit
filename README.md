@@ -248,6 +248,42 @@ Set `cacheFormat` at the provider level instead when every model that provider s
 
 Cache entries are provider-side and prefix-scoped: context lives in the session, so a new child session starts empty even when the provider serves the identical prefix from cache, and a hit affects only the cost and latency of that prefix. Reuse a child session only for iterative work on the same bounded objective; the delegation rules are in the orchestrator's `## Cache And Session Reuse` policy (`agents/orchestrator.md`).
 
+## Cache-aware prompt design
+
+An agent prompt has two halves, and only the second one changes per task. The **stable** half is the system prompt shipped with the agent: identity, operating contract, output format, safety rules. The **variable** half is the delegation prompt the orchestrator writes for one task: the goal, the files in play, the relevant file paths and symbols, the verification commands, the edge cases. Keep the stable half byte-identical from session to session and let the variable half change freely, appended after it.
+
+The stable prefix is exactly `AGENTS.md`, `agents/*.md` and `extras/*.md`, in that enumeration order; [`CONTRIBUTING.md`](CONTRIBUTING.md) (`## Prompt-Assembly Stable-Prefix Contract`) fixes the order, the frontmatter key order and the committed boundary, so a change to the stable prefix is a contract change, not an edit.
+
+### Stable versus variable
+
+Stable — excerpts from `agents/developer-fixer.md`, identical bytes in every session:
+
+```text
+# Developer-Fixer
+
+Unified implementation agent. Pick the mode from the incoming spec’s completeness; never ask which mode to use.
+
+- State the selected mode in one clause.
+- List touched files as flat bullets: path + one-line change.
+- Report verification as pass/fail counts; include an exact error line only when needed.
+```
+
+Variable — one orchestrator dispatch, rewritten for every task:
+
+```text
+Goal: make the parser reject trailing commas with a typed error.
+Scope: src/parser.ts and tests/parser.test.ts; nothing under src/cli/.
+Inputs Available: src/parser.ts:88 (parseObject), src/errors.ts:12 (TrailingCommaError).
+Verification: bun test tests/parser.test.ts
+Notes/Edge Cases: keep the existing message for every other parse failure.
+```
+
+The first block is the same text on every dispatch; the second block is new each time. The rules for the variable half are in `## Delegation Rules` of [`agents/orchestrator.md`](agents/orchestrator.md).
+
+### Why the split pays off
+
+A prompt cache is prefix-scoped: the provider stores a tokenized prefix and reuses it when the next request starts with the same bytes, so a cache hit changes the cost and the latency of that span without changing what the session knows. A stable agent prompt makes the cacheable span as long as possible and hits it from the first token; rewriting any contract line invalidates everything after the point of divergence. Read this together with [Prompt caching and session reuse](#prompt-caching-and-session-reuse) above for the provider-side settings. It only pays off where the provider supports prompt caching — elsewhere the split is still readable, just not cheaper.
+
 ## Companion kits
 
 Companion repositories are optional. This kit runs on its own. A third-party kit plugs in by installing skills and commands where OpenCode already looks; it does not need a change here unless it wants a new allowlist entry.
