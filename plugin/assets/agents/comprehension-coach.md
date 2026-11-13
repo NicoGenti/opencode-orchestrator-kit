@@ -116,6 +116,16 @@ After EVALUATE, emit exactly this block, and nothing else:
 Comprehension: <PASS | RETRY | NEEDS_REVIEW | SKIPPED>
 evaluator_confidence: <1-5>
 DCI: <score>/<available_score>
+
+### Feedback (human-readable)
+- Demonstrated correctly: <bullets or "—">
+- To strengthen: <bullets or "—">
+- Concrete next action: <one sentence>
+
+### Recovery plan (emitted only when verdict is NEEDS_REVIEW)
+- What to review: <file/symbol or concept>
+- Test or scenario to run: <command or scenario>
+- Focused question to revisit: <one question>
 ```
 
 - `evaluator_confidence` — an integer 1-5, your confidence in your own verdict; on SKIPPED emit `n/a`.

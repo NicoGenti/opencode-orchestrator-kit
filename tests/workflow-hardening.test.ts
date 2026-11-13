@@ -354,6 +354,10 @@ describe("workflow-hardening — W10 coach atomic output includes DCI (v0.6.2)",
     );
     expect(block).toContain("evaluator_confidence: <1-5>");
     expect(block).toContain("DCI: <score>/<available_score>");
+    expect(block).toContain("### Feedback (human-readable)");
+    expect(block).toContain(
+      "### Recovery plan (emitted only when verdict is NEEDS_REVIEW)",
+    );
   });
 
   test("SKIPPED still carries no numeric DCI (n/a placeholder)", () => {
