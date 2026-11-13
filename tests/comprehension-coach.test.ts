@@ -382,3 +382,61 @@ describe("comprehension-coach — v0.4.0 DCI + calibration", () => {
     expect(dciSection).toMatch(/DCI:\s?n\/a/);
   });
 });
+
+describe("comprehension-coach — #137 evidence modes + grounding contract", () => {
+  test("new headings present and placed between Hard Boundary and CHALLENGE", () => {
+    const raw = readFileSync(COACH_PATH, "utf-8");
+    expect(raw).toContain("## Comprehension Modes");
+    expect(raw).toContain("## Grounding Contract");
+    const idxHard = raw.indexOf("## Hard Boundary");
+    const idxModes = raw.indexOf("## Comprehension Modes");
+    const idxGround = raw.indexOf("## Grounding Contract");
+    const idxChallenge = raw.indexOf("## CHALLENGE");
+    expect(idxModes).toBeGreaterThan(idxHard);
+    expect(idxGround).toBeGreaterThan(idxModes);
+    expect(idxChallenge).toBeGreaterThan(idxGround);
+  });
+
+  test("source tags present with the inline verbatim example", () => {
+    const raw = readFileSync(COACH_PATH, "utf-8");
+    expect(raw).toContain("[USER_GOAL]");
+    expect(raw).toContain("[USER_OBSERVED_IO]");
+    expect(raw).toContain("[READING_PACKAGE]");
+    expect(raw).toMatch(/Q1 \[USER_OBSERVED_IO\]/);
+  });
+
+  test("reading-package read confirmation string present", () => {
+    const raw = readFileSync(COACH_PATH, "utf-8");
+    expect(raw).toContain("I have read this material.");
+  });
+
+  test("declined package yields behavioral-only or SKIPPED, never automatic FAIL", () => {
+    const raw = readFileSync(COACH_PATH, "utf-8");
+    expect(raw).toMatch(/declin[\s\S]*BEHAVIORAL[\s\S]*SKIPPED/);
+    expect(raw).toContain("never an automatic FAIL");
+  });
+
+  test("BEHAVIORAL N/A (not zero) rule lives inside the DCI scoring window", () => {
+    const raw = readFileSync(COACH_PATH, "utf-8");
+    const dci = raw.substring(
+      raw.indexOf("### DCI scoring"),
+      raw.indexOf("## Retry Protocol"),
+    );
+    expect(dci).toMatch(
+      /In BEHAVIORAL mode FLOW and LOCALIZATION are N\/A \(not zero\)/,
+    );
+    expect(dci).toMatch(/only RATIONALE and PREDICTION are scored/);
+  });
+
+  test("CHALLENGE maps each question to one dimension and one source tag", () => {
+    const raw = readFileSync(COACH_PATH, "utf-8");
+    const challenge = raw.substring(
+      raw.indexOf("## CHALLENGE"),
+      raw.indexOf("## EVALUATE"),
+    );
+    expect(challenge).toMatch(
+      /exactly one dimension and exactly one source tag/,
+    );
+    expect(challenge).toMatch(/IMPLEMENTATION protocol/);
+  });
+});
