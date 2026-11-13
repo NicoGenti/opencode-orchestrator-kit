@@ -32,6 +32,7 @@ lerna-debug.log*
 .env
 .env.*
 !.env.example
+.context/plan-body-*.md
 
 # Editor / OS
 .DS_Store

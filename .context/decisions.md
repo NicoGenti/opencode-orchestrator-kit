@@ -50,3 +50,20 @@
   SKIPPED (telemetria 2026-11-13T10:27:17Z; record ev-20261113-102717-3580f2afdb19a1d10035d138498d6022;
   prefisso ev- adattato come da precedente 0003 — l'emitter produce solo res-). Board rule: python CLI +
   prova fisica (reconfirm piano 0004).
+- 2026-11-13 (piano 0006, issues #128–#135): scope confermato dall'utente — UNA guardia lessicale
+  `_is_traversal` (segmento `..` esatto via membership in lista dopo split di ENTRAMBI i separatori)
+  al parse di `--root`/`--body`/`--config` nei 3 script Python, prima di ogni accesso FS; rifiuti nei
+  tre stili esistenti (`ERROR:` stderr exit 1, `sys.exit("error: …")` exit 1, envelope `fail()` con
+  code additivo `path-traversal`); NESSUNA reassegnazione da `resolve()` (payload raw `str(root)` +
+  parità byte-for-byte Python↔TS), `tests/plan-board-parity.test.ts` intoccato, `--agents-dir` e porta
+  TS `plugin/src/plan-board.ts` follow-up espliciti; branch unico `fix/issues-128-135-path-traversal`,
+  4 commit (e227016, a4d63f6, bc8820e, cb51748), push riuscito, PR da aprire a mano (`gh pr create`
+  negato ×1; body pronto in `C:\Users\NicolasGentilucci\AppData\Local\Temp\opencode\pr-body-0006.md`
+  con `Fixes #128`…`#135`). Review: code-reviewer APPROVED dopo re-check (P1 refutato: `in` su lista
+  è membership per uguaglianza, non substring); security PASS-WITH-FINDINGS (8/8 flussi chiusi; 2
+  Medium follow-up: guard `--agents-dir` in apply-model-preset:210/freellmapi:135, porta guard su
+  plugin/src/plan-board.ts). Gate comprehension DEEP: coach FAIL DCI 0/8 conf 5 (nessun tentativo a
+  Q1–Q4; user_conf calibrazione 3) → l'utente ha dichiarato `skip comprehension` → outcome finale
+  SKIPPED (telemetria 2026-11-13T11:26:20Z; record ev-20261113-112614-93ada9643e548a5c26457c96aca784e6;
+  prefisso ev- adattato come da 0003/0005). Board: python CLI + prova fisica, card completata con
+  `--comprehension skipped`; check errors:[] (solo warning pre-esistente su qa/0001).
