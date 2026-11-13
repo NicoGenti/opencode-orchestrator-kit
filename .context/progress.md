@@ -2,24 +2,31 @@
 
 Stato corrente della sessione. Storia dei piani completati: `git log`, `plan/complete/`, `plan/qa/`.
 
-## Chiuso: piano 0003 (issue #121) — shorten agent prompts and docs
+## Chiuso: piano 0004 (issue #120) — cache-aware prompt design
 
-- Board: `plan/complete/0003.md` (status complete, comprehension: skipped). Branch:
-  `feat/issue-121-shorten-prompts-docs`, 15 commit (45a9f95 … b465b74).
-- Risultato: 18 prompt ridotti (11.889→10.422 parole body, −12,34%; 98.583→88.875 char, −9,85%),
-  tutti sotto cap (min. margine 131 char su code-reviewer); AGENTS.md 9.832/12.000; docs de-duplicati
-  con ownership model + guideline parole in CONTRIBUTING (meccanismo di enforcement = tabella cap
-  `tests/workflow-hardening.test.ts:57-79`); 6 doc una tantum → docs/archive/ (R100 verbatim).
-- Garanzie: zero edit ad agents/extras frontmatter e permessi; zero test/fixture changed alla review
-  (unico edit deliberato: pin `--body-file`→`--body` in plan-writer-contract dopo correzione
-  fattuale, DR-8, commit b465b74); fail-set `bun test` ⊆ baseline ambientale (13 fail Windows);
-  mirror parity verde.
-- Verifiche: code-reviewer PASS con 5 correttivi applicati (F1-F6); suite mirate 249/249;
-  pin-suites 536/0 in fase 10.
-- Comprehension: DEEP → CHALLENGE/EVALUATE eseguiti; verdict coach FAIL DCI 0/8 (nessuna risposta
-  ricostruttiva); utente ha dichiarato skip → SKIPPED (telemetria 16:51:07Z; record
-  ev-20261112-164744-84a0e0893de545c236ba8695986b86f5). HUMAN_OWNED: SKIPPED.
-- Restituti all'utente: eventuali follow-up in `.context/issues.md` (F7 staging-path dangle,
-  `question` in developer-fixer, planner `via task`, CHANGELOG "four commands", drift prettier CRLF,
-  anomalia tool-root plan_board) + eventuale card 0003 fantasma su board esterna (cleanup utente).
-- Da fare dopo questa riga: commit di chiusura (plan card move + memoria sessione) — in corso dal fixer.
+- Board: `plan/complete/0004.md` (status complete, comprehension: pass). Branch:
+  `feat/issue-120-cache-stable-prompts`, 4 commit (80450c0, 3b0baab, 62a25d2 + close in corso dal
+  fixer). PR verso main: aperta dopo il commit di chiusura (URL in chat/GitHub).
+- Contenuto: contratto di delega esplicito — `agents/orchestrator.md:248` (Scope "name the relevant
+  file paths explicitly") e `:250` (Inputs Available "relevant symbols to inspect, as `path:line`
+  identifiers"); `agents/orchestrator-quick.md:74` (Inputs = file paths + symbols); README
+  `## Cache-aware prompt design` (regola stabile/variabile + esempio verbatim developer-fixer vs
+  dispatch variabile + meccanica prefix-cache); CONTRIBUTING 1 riga cross-link in `### Boundary`.
+  Mirror `plugin/assets` rigenerato (parity verde).
+- Garanzie: scope audit 6 file (2 agenti + 2 mirror + README + CONTRIBUTING); frontmatter, permessi,
+  `{{TIER_*}}`, fixture `prompt-prefix-boundary.txt` intatti; cap budget 22.408/24.000 e
+  3.784/4.200 (CRLF-normalized); nessun refactor ad altri agent/extras (audit: 18 file già conformi
+  ai 5 requisiti della issue).
+- Verifiche: fase 4 = 6/6 gate — sync-assets --check 0; `bun test` 1099 pass / 13 fail (baseline
+  ambientale esatta, zeri nuovi); typecheck/lint 0; format:check 6 file ambient (0 nuovi, README
+  content-clean: solo endOfLine vs CRLF checkout); board check 0 errori. code-reviewer fase 5 PASS
+  senza findings.
+- Comprehension: LIGHT → 2 domande CHALLENGE; verdict coach PASS DCI 4/4 evaluator_conf 5;
+  user_conf 2 (telemetria 2026-11-13T09:15:28Z; record
+  `ev-20261113-091521-d85f492eddf75357463b66d4316a0352`). HUMAN_OWNED: PASS.
+- Follow-up aperti in `.context/issues.md`: baseline format drift (9→6 file), dangle
+  `.context/plan-body-0004.md` (rm negato dal permission layer, cleanup manuale), tool-root nativo
+  inaffidabile reconfirmato ×2 (board-op SOLO via python CLI + prova fisica).
+- Warn configurazione: `.opencode/comprehension.config.json` assente → default built-in LIGHT.
+- Da fare dopo questa riga: commit di chiusura (card complete + memoria sessione + record) e PR —
+  in corso dal fixer.
