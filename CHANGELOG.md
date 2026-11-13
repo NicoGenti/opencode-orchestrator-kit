@@ -4,6 +4,8 @@ All notable changes to this project are documented in this file. The format foll
 
 ## [Unreleased]
 
+- **`comprehension-coach` evidence modes (#137)**: the coach contract now splits BEHAVIORAL from IMPLEMENTATION evidence, tags every knowledge question with a verbatim source (`USER_GOAL` / `USER_OBSERVED_IO` / `READING_PACKAGE`), and grounds IMPLEMENTATION questions in a minimal reading package confirmed by `I have read this material.`; a declined package yields behavioral-only questions or SKIPPED — never an automatic FAIL.
+
 ## [1.1.1] — 2026-11-04
 
 ### Changed
