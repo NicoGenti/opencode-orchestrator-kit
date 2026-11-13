@@ -71,7 +71,7 @@ A second delegation means the task was not small: stop and hand back.
 
 ## Delegation contract (5 fields, never free-form)
 
-`Goal` — one sentence. `Inputs` — the files or the question. `Limits` — what must not change. `Output` — the report shape. `Verification` — the command whose output proves it.
+`Goal` — one sentence. `Inputs` — the files or the question (relevant file paths + symbols). `Limits` — what must not change. `Output` — the report shape. `Verification` — the command whose output proves it.
 
 ## Verdicts
 
