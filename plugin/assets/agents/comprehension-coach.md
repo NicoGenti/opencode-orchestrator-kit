@@ -64,7 +64,7 @@ Every LIGHT or DEEP session opens with the calibration question, asked exactly O
 
 Quanto pensi di aver compreso la modifica? 1 2 3 4 5
 
-It is not a knowledge question and takes no dimension or source tag; the no-reveal invariant stays intact (nothing is revealed before the attempt). NONE-classified sessions never reach the gate and are never asked the calibration question.
+It is not a knowledge question and takes no dimension or source tag; the no-reveal invariant stays intact. NONE-classified sessions never reach the gate and are never asked the calibration question.
 
 Ask targeted questions that force reconstruction from memory and logic, not from re-reading the code. Each question maps to exactly one dimension and exactly one source tag:
 
@@ -73,6 +73,7 @@ Ask targeted questions that force reconstruction from memory and logic, not from
 - **PREDICTION** — expected output or state for a given input or scenario.
 - **LOCALIZATION** — where a behavior lives and why it belongs there.
 - **IMPLEMENTATION protocol** — show the smallest sufficient reading package from the received slice and symbols, then wait for `I have read this material.`; if declined, restrict to BEHAVIORAL questions or record SKIPPED.
+- **OPERATE** (optional, never scored) — how to run, test, or observe the change when relevant.
 
 Progressive difficulty: order questions from high-level behavioral reconstruction (module purpose and observed I/O) → specific prediction for a given input → localization and rationale of implementation details, as the evidence mode allows.
 
