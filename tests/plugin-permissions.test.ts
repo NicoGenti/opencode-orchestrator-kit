@@ -453,7 +453,7 @@ describe("MCP default deny — le allowlist dichiarate sono reali", () => {
   const declared = (rel: string, tool: string, expected: "allow" | "deny") => {
     expect(resolveEffect(rulesOf(rel), `${CRG}_${tool}`, "*")).toBe(expected);
   };
-  test("ogni agente nega i tool CRG non dichiarati", () => {
+  test("ogni agente nega apply_refactor_tool", () => {
     for (const rel of [
       "agents/orchestrator.md",
       "agents/planner.md",
@@ -461,8 +461,29 @@ describe("MCP default deny — le allowlist dichiarate sono reali", () => {
       "agents/profiler.md",
     ]) {
       declared(rel, "apply_refactor_tool", "deny");
+    }
+  });
+  test("ogni agente nega get_review_context_tool se non dichiarato", () => {
+    for (const rel of [
+      "agents/orchestrator.md",
+      "agents/planner.md",
+      "agents/profiler.md",
+    ]) {
       declared(rel, "get_review_context_tool", "deny");
     }
+  });
+  test("developer-fixer: allow solo i due dichiarati, deny il resto", () => {
+    for (const t of ["get_impact_radius_tool", "get_review_context_tool"])
+      declared("agents/developer-fixer.md", t, "allow");
+    for (const t of [
+      "apply_refactor_tool",
+      "build_or_update_graph_tool",
+      "semantic_search_nodes_tool",
+      "get_architecture_overview_tool",
+      "get_minimal_context_tool",
+      "query_graph_tool",
+    ])
+      declared("agents/developer-fixer.md", t, "deny");
   });
   test("explorer: allow solo i quattro dichiarati, deny il resto", () => {
     for (const t of [
@@ -499,16 +520,26 @@ describe("MCP default deny — le allowlist dichiarate sono reali", () => {
     declared("agents/orchestrator.md", "build_or_update_graph_tool", "deny");
     declared("agents/orchestrator.md", "apply_refactor_tool", "deny");
   });
-  test("i tre agenti CRG dichiarano il catalogo come fonte di verita'", () => {
+  test("gli agenti CRG dichiarano il catalogo come fonte di verita'", () => {
     for (const rel of [
       "agents/explorer.md",
       "agents/code-reviewer.md",
       "agents/security.md",
+      "agents/developer-fixer.md",
     ]) {
       expect(readFileSync(join(ROOT, rel), "utf-8")).toContain(
         "Your tool catalog is the source of truth",
       );
     }
+  });
+  test("developer-fixer: regole d'uso del grafo dichiarate nel prompt", () => {
+    const body = readFileSync(join(ROOT, "agents/developer-fixer.md"), "utf-8");
+    expect(body).toContain("Your tool catalog is the source of truth");
+    expect(body).toContain(
+      "Do not use the graph for a single-file, self-contained change.",
+    );
+    expect(body).toContain("Never call graph mutation tools.");
+    expect(body).toContain("this agent never refreshes the graph");
   });
   test("solo code-reviewer istruisce un refresh del grafo", () => {
     const canonical =

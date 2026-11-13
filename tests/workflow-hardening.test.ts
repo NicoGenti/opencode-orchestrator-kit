@@ -65,7 +65,12 @@ const PROMPT_BUDGETS: Record<string, number> = {
   "agents/code-reviewer.md": 3_900,
   "agents/comprehension-coach.md": 7_500,
   "agents/deploy-helper.md": 3_300,
-  "agents/developer-fixer.md": 4_300,
+  // Raised from 4_300 in issue #153 phase 1 (read-only CRG allowlist and the
+  // `## Optional Code Graph` section): 4_222 + 906 for the section = 5_128,
+  // and ceil(5128 * 1.05 / 100) * 100 = 5_400. The short form (without the
+  // review-context sentence and the call example) still measured 4_918, over
+  // the old cap, so the canonical text needed the full section.
+  "agents/developer-fixer.md": 5_400,
   "agents/explorer.md": 5_000,
   "agents/librarian.md": 2_500,
   "agents/npm-helper.md": 2_700,
