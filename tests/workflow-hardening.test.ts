@@ -59,7 +59,10 @@ const START = readFileSync(
  *  table on purpose, in the same commit that adds the content. */
 const PROMPT_BUDGETS: Record<string, number> = {
   "agents/build-helper.md": 2_800,
-  "agents/code-reviewer.md": 3_600,
+  // Raised from 3_600 in issue #153 P0 (sole refresh owner): 3_469 + 200
+  // for the canonical refresh line - 15 trim = 3_654, and
+  // ceil(3654 * 1.05 / 100) * 100 = 3_900.
+  "agents/code-reviewer.md": 3_900,
   "agents/comprehension-coach.md": 7_500,
   "agents/deploy-helper.md": 3_300,
   "agents/developer-fixer.md": 4_300,

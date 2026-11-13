@@ -472,7 +472,7 @@ describe("MCP default deny — le allowlist dichiarate sono reali", () => {
       "get_architecture_overview_tool",
     ])
       declared("agents/explorer.md", t, "allow");
-    declared("agents/explorer.md", "build_or_update_graph_tool", "allow");
+    declared("agents/explorer.md", "build_or_update_graph_tool", "deny");
     declared("agents/explorer.md", "apply_refactor_tool", "deny");
   });
   test("code-reviewer: allow i tre dichiarati, deny il resto", () => {
@@ -508,6 +508,26 @@ describe("MCP default deny — le allowlist dichiarate sono reali", () => {
       expect(readFileSync(join(ROOT, rel), "utf-8")).toContain(
         "Your tool catalog is the source of truth",
       );
+    }
+  });
+  test("solo code-reviewer istruisce un refresh del grafo", () => {
+    const canonical =
+      "On status: not_ready / reason: stale_graph, call build_or_update_graph_tool once, retry the same entry call, then fall back silently if it is still not ready.";
+    const duty =
+      "You are the sole refresh owner: after your review is accepted, call `build_or_update_graph_tool` once to bring the graph to HEAD before the phase is marked complete.";
+    for (const file of readdirSync(join(ROOT, "agents"))
+      .filter((name) => name.endsWith(".md"))
+      .sort()) {
+      const body = readFileSync(join(ROOT, "agents", file), "utf-8");
+      if (file === "code-reviewer.md") {
+        expect(body).toContain(canonical);
+        expect(body).toContain(duty);
+        continue;
+      }
+      // The bare name subsumes the backticked form; both are pinned so a
+      // future rewrite cannot reintroduce the instruction in either style.
+      expect(body).not.toContain("build_or_update_graph_tool");
+      expect(body).not.toContain("`build_or_update_graph_tool`");
     }
   });
 });

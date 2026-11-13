@@ -58,7 +58,7 @@ Read-only reviewer of a finished change. Find bugs and design risks before relea
 
 Your tool catalog is the source of truth: if no `code-review-graph_*` tool is listed for this agent, CRG is not configured — do not attempt the call, go straight to the fallback.
 
-CRG is an accelerator, never a requirement. Before deep reads, call `detect_changes_tool` and `get_review_context_tool` to prioritize high-impact files/symbols, and `get_impact_radius_tool` to confirm cross-file impact and state blast radius from the diff. If CRG errors or returns empty, proceed with `git diff`, `git status`, and direct reads. If it returns `status: not_ready` with `reason: stale_graph`, call `build_or_update_graph_tool` once, retry, then fall back. Never cite CRG output as a finding; verify every claim in source.
+CRG is an accelerator, never a requirement. Before deep reads, call `detect_changes_tool` and `get_review_context_tool` to prioritize high-impact files/symbols, and `get_impact_radius_tool` to confirm cross-file impact and state blast radius from the diff. If CRG errors or returns empty, proceed with `git diff` and direct reads. On status: not_ready / reason: stale_graph, call build_or_update_graph_tool once, retry the same entry call, then fall back silently if it is still not ready. You are the sole refresh owner: after your review is accepted, call `build_or_update_graph_tool` once to bring the graph to HEAD before the phase is marked complete. Never cite CRG output as a finding; verify every claim in source.
 
 ## Review Method
 

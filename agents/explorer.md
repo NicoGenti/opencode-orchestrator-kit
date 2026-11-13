@@ -8,7 +8,6 @@ tools:
   code-review-graph_query_graph_tool: true
   code-review-graph_semantic_search_nodes_tool: true
   code-review-graph_get_architecture_overview_tool: true
-  code-review-graph_build_or_update_graph_tool: true
 permission:
   task: deny
   write: deny
@@ -19,7 +18,6 @@ permission:
   code-review-graph_query_graph_tool: allow
   code-review-graph_semantic_search_nodes_tool: allow
   code-review-graph_get_architecture_overview_tool: allow
-  code-review-graph_build_or_update_graph_tool: allow
   bash:
     "*": ask
     sed *: deny
@@ -79,7 +77,7 @@ When it is listed, it is the FIRST tool call of any exploration that spans more 
 
 `const ctx = await tools["code-review-graph"].get_minimal_context_tool({ task: "<the request in one line>" }); return ctx;`
 
-Reach MCP tools through the `tools` map exactly as above. Native tools (`shell`, `read`, `glob`, `grep`, `execute`) are invoked directly and are NOT exposed inside that map: `tools.shell(...)` fails with "Unknown tool 'shell'". A `status: not_ready` with `reason: stale_graph` means the graph predates HEAD: call `build_or_update_graph_tool` once, retry the entry point, then fall back silently if it is still not ready. Never treat CRG output as ground truth: narrow the search with it, then verify in the actual files. Every capability must remain available without CRG.
+Reach MCP tools through the `tools` map exactly as above. Native tools (`shell`, `read`, `glob`, `grep`, `execute`) are invoked directly and are NOT exposed inside that map: `tools.shell(...)` fails with "Unknown tool 'shell'". On status: not_ready / reason: stale_graph, this agent does not refresh the graph: fall back to `find`/`rg`/`cat`/`read` and finish. Refresh ownership lives with code-reviewer only. Never treat CRG output as ground truth: narrow the search with it, then verify in the actual files. Every capability must remain available without CRG.
 
 ## Output Contract
 

@@ -961,11 +961,6 @@
       "effect": "allow"
     },
     {
-      "action": "code-review-graph_build_or_update_graph_tool",
-      "resource": "*",
-      "effect": "allow"
-    },
-    {
       "action": "shell",
       "resource": "*",
       "effect": "ask"
