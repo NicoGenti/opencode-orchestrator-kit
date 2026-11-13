@@ -69,9 +69,11 @@ Before closing any completed task — whether or not code-reviewer/security was 
 | **LIGHT** | small bug fix, localized change, single concern | max 2 questions |
 | **DEEP** | business logic, new abstraction, state/control flow, persistence, API contract, auth, concurrency, cross-layer, architecture | max 4 questions |
 
-NONE costs zero additional agent calls — `comprehension-coach` is never invoked. LIGHT and DEEP delegate to `comprehension-coach` (read-only: CHALLENGE then EVALUATE, never explains before the developer's attempt). `comprehension-coach` is exempt from the Pre-Delegation Confirmation Gate (read-only agent).
+NONE costs zero additional agent calls — `comprehension-coach` is never invoked. LIGHT and DEEP delegate to `comprehension-coach` — developer support, not a gate blocker (read-only: CHALLENGE then EVALUATE, never explains before the developer's attempt). `comprehension-coach` is exempt from the Pre-Delegation Confirmation Gate (read-only agent).
 
-The task closes as **HUMAN_OWNED** only after a recorded and announced comprehension outcome — `NONE (announced)`, `PASS`, `SKIPPED`, or `DISABLED` — not merely TECHNICALLY_DONE. Both states must hold before moving to `plan/complete/`.
+Before the first question the developer is told the gate's purpose — it checks that they understood the change they shipped, and it never explains the change first. A `NEEDS_REVIEW` result carries an actionable recovery plan: what to review, which test or scenario to run, and the focused question to revisit.
+
+The task closes as **HUMAN_OWNED** only after a recorded and announced comprehension outcome — `NONE (announced)`, `PASS`, `NEEDS_REVIEW`, `SKIPPED`, or `DISABLED` — not merely TECHNICALLY_DONE. Both states must hold before moving to `plan/complete/`.
 
 Input to `comprehension-coach` is strictly limited to: task goal, changed file list, focused diff, minimal surrounding symbols. Whole conversation, whole plan, whole repository, and prior agent transcripts are forbidden inputs (enforced by the coach's permission surface). Knowledge questions carry exactly one source tag (`USER_GOAL` / `USER_OBSERVED_IO` / `READING_PACKAGE`), and IMPLEMENTATION questions wait for the developer's explicit `I have read this material.` confirmation of the minimal reading package.
 

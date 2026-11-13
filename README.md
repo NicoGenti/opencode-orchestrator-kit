@@ -34,7 +34,7 @@ On **OpenCode 2** the kit is the `opencode-orchestrator-kit` plugin, published o
 | 4    | `developer-fixer`     | Implements one phase at a time, with fresh context each time.                                |
 | 5    | `test-engineer`       | Writes and runs tests for the new logic.                                                     |
 | 6    | `security`            | Reviews the auth-sensitive change before it reaches `plan/complete/`.                        |
-| 7    | `comprehension-coach` | Optional human comprehension check, scaled to the change (NONE / LIGHT / DEEP).              |
+| 7    | `comprehension-coach` | Developer-support comprehension check, scaled to the change (NONE / LIGHT / DEEP).           |
 
 Every delegation uses a 9-section task spec (Goal, Success Criteria, Scope, Safety, Inputs, Outputs, Test Plan, Verification, Edge Cases), never a free-form prompt. The orchestrator itself never edits `auth.ts`.
 
@@ -43,24 +43,24 @@ Every delegation uses a 9-section task spec (Goal, Success Criteria, Scope, Safe
 - **Routing is separated from execution.** `agents/orchestrator.md` is the default `mode: primary` agent and can only classify and delegate, so orchestration mistakes cannot silently change the codebase. `agents/orchestrator-quick.md` is the opt-in alternate for small tasks, with the same write surface and a shorter cycle.
 - **Logical model tiers instead of hardcoded IDs.** Agents reference `{{TIER_ROUTER}}`, `{{TIER_REASONING}}`, `{{TIER_CODE}}`, `{{TIER_FAST}}` and `{{TIER_REVIEW}}`. Switching provider means editing one config file, and a validator runs before install.
 - **Plans are files, not chat history.** The kanban in `plan/` is the source of truth, so work is resumable and reviewable in Git.
-- **Technical review is separate from human comprehension.** `code-reviewer` and `security` verify the code; `comprehension-coach` checks that the developer understood it.
+- **Technical review is separate from human comprehension.** `code-reviewer` and `security` verify the code; `comprehension-coach` checks that the developer understood it. `comprehension-coach` is developer support, not a gate blocker.
 
 ## Agent roster
 
 ### Who does what
 
-| Concern                                                 | Primary agent         | Notes                                                        |
-| ------------------------------------------------------- | --------------------- | ------------------------------------------------------------ |
-| **Orchestration** (routing, checkpointing)              | `orchestrator`        | Default entry point. Never writes application code.          |
-| **Orchestration, small tasks** (one delegation)         | `orchestrator-quick`  | Opt-in via `/quick`. Same write surface, no plan board.      |
-| **Exploration** (codebase, file, symbol research)       | `explorer`            | Read-only.                                                   |
-| **Planning** (turns exploration into phased plans)      | `planner`             | Writes to `plan/draft/` only.                                |
-| **Plan board** (create, move, check, adopt plan files)  | `plan-writer`         | Sole owner of the board.                                     |
-| **Implementation** (one phase at a time, TDD)           | `developer-fixer`     | Follows the 9-section task spec.                             |
-| **Testing** (test authoring, coverage, reproduction)    | `test-engineer`       |                                                              |
-| **Review** (general correctness and quality)            | `code-reviewer`       | Distinct from security review.                               |
-| **Security** (vulnerabilities, threat model, hardening) | `security`            | Routed for auth, crypto, input handling and secrets changes. |
-| **Human comprehension** (post-review check)             | `comprehension-coach` | Read-only. Distinct from technical verification.             |
+| Concern                                                  | Primary agent         | Notes                                                        |
+| -------------------------------------------------------- | --------------------- | ------------------------------------------------------------ |
+| **Orchestration** (routing, checkpointing)               | `orchestrator`        | Default entry point. Never writes application code.          |
+| **Orchestration, small tasks** (one delegation)          | `orchestrator-quick`  | Opt-in via `/quick`. Same write surface, no plan board.      |
+| **Exploration** (codebase, file, symbol research)        | `explorer`            | Read-only.                                                   |
+| **Planning** (turns exploration into phased plans)       | `planner`             | Writes to `plan/draft/` only.                                |
+| **Plan board** (create, move, check, adopt plan files)   | `plan-writer`         | Sole owner of the board.                                     |
+| **Implementation** (one phase at a time, TDD)            | `developer-fixer`     | Follows the 9-section task spec.                             |
+| **Testing** (test authoring, coverage, reproduction)     | `test-engineer`       |                                                              |
+| **Review** (general correctness and quality)             | `code-reviewer`       | Distinct from security review.                               |
+| **Security** (vulnerabilities, threat model, hardening)  | `security`            | Routed for auth, crypto, input handling and secrets changes. |
+| **Human comprehension** (developer support, post-review) | `comprehension-coach` | Read-only. Distinct from technical verification.             |
 
 Full contracts, permissions and model fallbacks are in each `agents/*.md` file (the `pc-doctor` and `writer` specialists live in `extras/*.md`) and are summarized in `AGENTS.md`.
 
@@ -318,7 +318,7 @@ Changes are tracked in `CHANGELOG.md`.
 
 ## Experimental: comprehension metrics
 
-The kit includes an opt-in measurement layer (DCI scores, the `/recall` command, and a research A/B mode with a Cognitive Overhead Ratio). These are operational engineering metrics, not scientifically validated ones. Details: [`docs/MEASUREMENT-AND-RESEARCH.md`](docs/MEASUREMENT-AND-RESEARCH.md).
+The kit includes an opt-in measurement layer (DCI scores, the `/recall` command, and a research A/B mode with a Cognitive Overhead Ratio). These are operational engineering metrics, not scientifically validated ones. The layer exists to help the developer understand and improve their own comprehension of the changes they ship. Details: [`docs/MEASUREMENT-AND-RESEARCH.md`](docs/MEASUREMENT-AND-RESEARCH.md).
 
 ## License
 
