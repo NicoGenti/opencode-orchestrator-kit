@@ -399,21 +399,77 @@ describe("comprehension-coach — #137 evidence modes + grounding contract", () 
 
   test("source tags present with the inline verbatim example", () => {
     const raw = readFileSync(COACH_PATH, "utf-8");
-    expect(raw).toContain("[USER_GOAL]");
-    expect(raw).toContain("[USER_OBSERVED_IO]");
-    expect(raw).toContain("[READING_PACKAGE]");
-    expect(raw).toMatch(/Q1 \[USER_OBSERVED_IO\]/);
+    const grounding = raw.substring(
+      raw.indexOf("## Grounding Contract"),
+      raw.indexOf("## CHALLENGE"),
+    );
+    expect(grounding).toContain("[USER_GOAL]");
+    expect(grounding).toContain("[USER_OBSERVED_IO]");
+    expect(grounding).toContain("[READING_PACKAGE]");
+    expect(grounding).toMatch(/Q1 \[USER_OBSERVED_IO\]/);
   });
 
-  test("reading-package read confirmation string present", () => {
+  test("reading-package read confirmation string present in the modes window", () => {
     const raw = readFileSync(COACH_PATH, "utf-8");
-    expect(raw).toContain("I have read this material.");
+    const modes = raw.substring(
+      raw.indexOf("## Comprehension Modes"),
+      raw.indexOf("## Grounding Contract"),
+    );
+    expect(modes).toContain("I have read this material.");
+  });
+
+  test("read confirmation precedes the scoring section", () => {
+    const raw = readFileSync(COACH_PATH, "utf-8");
+    const idxChallenge = raw.indexOf("## CHALLENGE");
+    const idxEvaluate = raw.indexOf("## EVALUATE");
+    const idxConfirmation = raw.indexOf(
+      "I have read this material.",
+      idxChallenge,
+    );
+    expect(idxConfirmation).toBeGreaterThan(idxChallenge);
+    expect(idxConfirmation).toBeLessThan(idxEvaluate);
   });
 
   test("declined package yields behavioral-only or SKIPPED, never automatic FAIL", () => {
     const raw = readFileSync(COACH_PATH, "utf-8");
-    expect(raw).toMatch(/declin[\s\S]*BEHAVIORAL[\s\S]*SKIPPED/);
-    expect(raw).toContain("never an automatic FAIL");
+    const modes = raw.substring(
+      raw.indexOf("## Comprehension Modes"),
+      raw.indexOf("## Grounding Contract"),
+    );
+    expect(modes).toMatch(
+      /declined.*BEHAVIORAL.*SKIPPED.*never an automatic FAIL/,
+    );
+  });
+
+  test("BEHAVIORAL mode asks only RATIONALE and PREDICTION", () => {
+    const raw = readFileSync(COACH_PATH, "utf-8");
+    const modes = raw.substring(
+      raw.indexOf("## Comprehension Modes"),
+      raw.indexOf("## Grounding Contract"),
+    );
+    expect(modes).toContain("only RATIONALE and PREDICTION are asked");
+    expect(modes).toMatch(/FLOW and LOCALIZATION are N\/A/);
+  });
+
+  test("IMPLEMENTATION protocol bullet carries the package and confirmation", () => {
+    const raw = readFileSync(COACH_PATH, "utf-8");
+    const start = raw.indexOf("**IMPLEMENTATION protocol**");
+    expect(start).toBeGreaterThan(-1);
+    const bullet = raw.slice(start, raw.indexOf("\n", start));
+    expect(bullet).toContain("reading package");
+    expect(bullet).toContain("I have read this material.");
+  });
+
+  test("no-reveal invariant survives the evidence-mode split", () => {
+    const raw = readFileSync(COACH_PATH, "utf-8");
+    expect(raw).toContain(
+      "MUST NOT explain a concept before the developer has attempted to reconstruct it.",
+    );
+    const grounding = raw.substring(
+      raw.indexOf("## Grounding Contract"),
+      raw.indexOf("## CHALLENGE"),
+    );
+    expect(grounding).toContain("no-reveal invariant");
   });
 
   test("BEHAVIORAL N/A (not zero) rule lives inside the DCI scoring window", () => {
@@ -426,6 +482,16 @@ describe("comprehension-coach — #137 evidence modes + grounding contract", () 
       /In BEHAVIORAL mode FLOW and LOCALIZATION are N\/A \(not zero\)/,
     );
     expect(dci).toMatch(/only RATIONALE and PREDICTION are scored/);
+  });
+
+  test("IMPLEMENTATION scoring gate sentence lives inside the DCI scoring window", () => {
+    const raw = readFileSync(COACH_PATH, "utf-8");
+    const dci = raw.substring(
+      raw.indexOf("### DCI scoring"),
+      raw.indexOf("## Retry Protocol"),
+    );
+    expect(dci).toMatch(/Score IMPLEMENTATION dimensions only/);
+    expect(dci).toContain("I have read this material.");
   });
 
   test("CHALLENGE maps each question to one dimension and one source tag", () => {
