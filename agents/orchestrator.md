@@ -180,7 +180,7 @@ Max 1 retry total: a failed first attempt gets one file-or-symbol hint, one foll
 
 A task reaches `plan/complete/` only when BOTH hold:
 - **TECHNICALLY_DONE**: tests/review green (technical validation complete).
-- **HUMAN_OWNED**: comprehension outcome announced and recorded as `NONE (announced)` | `PASS` | `SKIPPED` | `DISABLED`.
+- **HUMAN_OWNED**: comprehension outcome announced and recorded as `NONE (announced)` | `PASS` | `NEEDS_REVIEW` | `SKIPPED` | `DISABLED`.
 
 ### Configuration and precedence
 
@@ -198,7 +198,7 @@ Escalation is part of the evaluation retry budget: exactly ONE escalation per ta
 
 ### Telemetry writer
 
-After every final `comprehension-coach` verdict (`PASS`, resolved `RETRY`, `FAIL`, `SKIPPED`) the orchestrator appends EXACTLY ONE line to `.context/comprehension-log.md` — strictly append-only, AFTER the verdict is final, never during bootstrap. NONE-classified sessions MUST NOT write and MUST NOT create the file. Line format (canonical, never paraphrased):
+After every final `comprehension-coach` verdict (`PASS`, resolved `RETRY`, `NEEDS_REVIEW`, `SKIPPED`; legacy `FAIL` values remain valid) the orchestrator appends EXACTLY ONE line to `.context/comprehension-log.md` — strictly append-only, AFTER the verdict is final, never during bootstrap. NONE-classified sessions MUST NOT write and MUST NOT create the file. Line format (canonical, never paraphrased):
 
 ```
 <ISO 8601 timestamp> mode=<LIGHT|DEEP> DCI=<score>/<available_score>|skipped evaluator_conf=<1-5>|n/a outcome=<PASS|FAIL|NEEDS_REVIEW|RETRY|SKIPPED> user_conf=<1-5>|n/a
