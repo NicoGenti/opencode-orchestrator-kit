@@ -9,6 +9,7 @@
  *   skills/<id>/SKILL.md                                  -> assets/skills/
  *   agents/*.md                                           -> assets/agents/
  *   extras/*.md                                           -> assets/extras/
+ *   README.md                                             -> plugin/README.md
  *
  * `bun run sync-assets` writes the mirror and deletes packaged files that
  * no longer have a source. `bun run sync-assets --check` compares bytes and
@@ -132,6 +133,20 @@ export function syncAssets(root: string, check: boolean): SyncAssetsResult {
   const expected = new Set(bindings.map((binding) => binding.assetRel));
   const problems: string[] = [];
 
+  const readmeSource = join(root, "README.md");
+  const readmeBytes = readIfPresent(readmeSource);
+  if (readmeBytes !== null) {
+    const readmeDest = join(root, "plugin", "README.md");
+    const readmeDestBytes = readIfPresent(readmeDest);
+    if (readmeDestBytes === null || !readmeBytes.equals(readmeDestBytes)) {
+      problems.push("README.md");
+      if (!check) {
+        mkdirSync(dirname(readmeDest), { recursive: true });
+        writeFileSync(readmeDest, readmeBytes);
+      }
+    }
+  }
+
   for (const binding of bindings) {
     const dest = join(assetsDir, ...binding.assetRel.split("/"));
     const sourceBytes = readFileSync(binding.source);
@@ -168,14 +183,14 @@ function main(): void {
     console.error("plugin/assets is out of date:");
     for (const problem of result.problems) console.error(`  ${problem}`);
     console.error(
-      "Run `bun run sync-assets` to regenerate plugin/assets from command/, skills/, agents/, and extras/.",
+      "Run `bun run sync-assets` to regenerate plugin/assets from command/, skills/, agents/, and extras/, plus plugin/README.md from the root README.md.",
     );
     process.exitCode = 1;
     return;
   }
 
   console.log(
-    `Updated plugin/assets (${result.problems.length} change(s), ${result.fileCount} files).`,
+    `Updated plugin/assets and plugin/README.md (${result.problems.length} change(s), ${result.fileCount} asset files).`,
   );
   for (const problem of result.problems) console.log(`  ${problem}`);
 }

@@ -33,3 +33,6 @@ plugin/assets/extras/
 # prevents a later `prettier --write` from formatting only one side.
 plugin/assets/agents/
 plugin/assets/skills/
+
+# Generated from the canonical root README; never format this copy directly.
+plugin/README.md

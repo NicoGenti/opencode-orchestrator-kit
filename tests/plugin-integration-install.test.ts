@@ -26,7 +26,7 @@
  * it instead of assuming it.
  *
  * Scenarios:
- *  1. packaged artifact — the tarball is exactly the expected 45 files, the
+ *  1. packaged artifact — the tarball is exactly the expected 46 files, the
  *     package declares zero runtime dependencies, `files`/`exports` cover
  *     everything registration needs, and the packed assets are the repo-root
  *     sources;
@@ -114,12 +114,13 @@ const COMMAND_NAMES = [
 ] as const;
 
 /**
- * The exact file surface of the published package (45 entries, relative to
+ * The exact file surface of the published package (46 entries, relative to
  * the package root). Any drift is a packaging change that must be reviewed
  * explicitly — the plugin is self-contained and ships nothing else.
  */
 const EXPECTED_PACKAGE_FILES = [
   "package.json",
+  "README.md",
   "src/agents.ts",
   "src/assets.ts",
   "src/command.ts",
@@ -736,7 +737,7 @@ describe("packaged artifact — offline pack and self-containment", () => {
       expect(pack.log).toContain("opencode-orchestrator-kit-");
     }
     expect(packageFiles()).toEqual([...EXPECTED_PACKAGE_FILES].sort());
-    expect(packageFiles()).toHaveLength(45);
+    expect(packageFiles()).toHaveLength(46);
     if (extractedFiles !== null) {
       expect(extractedFiles).toEqual([...EXPECTED_PACKAGE_FILES].sort());
     }
@@ -766,7 +767,12 @@ describe("packaged artifact — offline pack and self-containment", () => {
     const raw = packedPackageJson.exports["."];
     const target = typeof raw === "string" ? raw : (raw.import ?? raw.default)!;
     expect(existsSync(join(packageRoot, ...target.split("/")))).toBe(true);
-    expect(packedPackageJson.files).toEqual(["src", "types", "assets"]);
+    expect(packedPackageJson.files).toEqual([
+      "src",
+      "types",
+      "assets",
+      "README.md",
+    ]);
     for (const entry of packedPackageJson.files) {
       expect(existsSync(join(packageRoot, entry))).toBe(true);
     }
@@ -795,6 +801,7 @@ describe("packaged artifact — offline pack and self-containment", () => {
 
   test("the packed assets are the repo-root sources (content-identical)", () => {
     const bindings = [
+      ["README.md", "README.md"] as [string, string],
       ...COMMAND_NAMES.map((name): [string, string] => [
         `command/${name}.md`,
         `assets/commands/${name}.md`,

@@ -37,6 +37,7 @@ function writeFixture(root: string): void {
   writeFileSync(join(root, "skills", "demo", "SKILL.md"), "skill\n");
   writeFileSync(join(root, "agents", "orchestrator.md"), "agent\n");
   writeFileSync(join(root, "extras", "writer.md"), "extra\n");
+  writeFileSync(join(root, "README.md"), "project readme\n");
 }
 
 describe("sync-assets", () => {
@@ -92,6 +93,9 @@ describe("sync-assets", () => {
       ).toBe("extra\n");
       expect(existsSync(stale)).toBe(false);
       expect(
+        readFileSync(join(root, "plugin", "README.md"), "utf-8"),
+      ).toBe("project readme\n");
+      expect(
         readFileSync(
           join(root, "plugin", "assets", "commands", "close-session.md"),
           "utf-8",
@@ -105,6 +109,26 @@ describe("sync-assets", () => {
 
       const clean = syncAssets(root, true);
       expect(clean.problems).toEqual([]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("README drift is reported and a missing root README is skipped", () => {
+    const root = mkdtempSync(join(tmpdir(), "sync-assets-readme-"));
+    try {
+      writeFixture(root);
+      const readme = syncAssets(root, false);
+      expect(readme.problems).toContain("README.md");
+      expect(
+        readFileSync(join(root, "plugin", "README.md"), "utf-8"),
+      ).toBe("project readme\n");
+
+      writeFileSync(join(root, "plugin", "README.md"), "stale\n");
+      expect(syncAssets(root, true).problems).toContain("README.md");
+
+      rmSync(join(root, "README.md"));
+      expect(syncAssets(root, true).problems).toEqual([]);
     } finally {
       rmSync(root, { recursive: true, force: true });
     }

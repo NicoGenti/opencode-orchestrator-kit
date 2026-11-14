@@ -27,7 +27,8 @@
   "files": [
     "src",
     "types",
-    "assets"
+    "assets",
+    "README.md"
   ],
   "peerDependencies": {
     "@opencode/plugin": "^2.1.0"

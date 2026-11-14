@@ -144,6 +144,12 @@ describe("plugin/assets packaging parity", () => {
     expect(normalizeEol(respaced)).not.toBe(normalizeEol(source));
   });
 
+  test("plugin/README.md is content-identical to the canonical root README", () => {
+    const source = readFileSync(join(ROOT, "README.md"), "utf-8");
+    const packaged = readFileSync(join(ROOT, "plugin", "README.md"), "utf-8");
+    expect(normalizeEol(packaged)).toBe(normalizeEol(source));
+  });
+
   test("every packaged asset is content-identical to its repo-root source", () => {
     for (const binding of bindings) {
       const packaged = join(ASSETS_DIR, ...binding.assetRel.split("/"));
