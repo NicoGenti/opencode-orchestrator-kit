@@ -66,3 +66,4 @@
   0007 = 14 / 0 / 0 / 10 (set fallimenti invariato ⇒ non regressiva; il conteggio precedente era 13/0/0/6).
 
 - 2026-11-13 (piano 0008 / issue #151): due artefatti sessione orfani da cleanup manuale — record comprehension `ev-20261113-142509-75ee5dc9fedb2df1f4c56a7a7e771957.md` con id non emesso dallo script (emitter produce solo `res-`), e due righe telemetria (14:25:51Z e 14:26:16Z) per lo stesso evaluation a causa di dispatch duplicati accidentali. Il record valido `ev-20261113-142509-d5f6e7e71ab99b5b2ddf61d8e2ddb61a.md` è stato creato; log e file non vanno cancellati per il contract append-only. Nessun impatto sui test.
+- 2026-11-14 (issue #153, verifica finale): `bun test` mantiene le 14 failure ambientali del baseline, senza nuove; `format:check` segnala 32 file CRLF-only, set identico tra Phase 2 e Phase 3 e nessuna regressione. Nessun rimedio CRLF applicato in questa issue.
