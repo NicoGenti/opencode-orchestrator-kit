@@ -95,6 +95,10 @@ when the mirror has drifted, and `tests/plugin-assets-parity.test.ts` fails with
 the same instruction. The plugin package runs the writer from its `prepack`
 script. Do not edit files under `plugin/assets/` by hand.
 
+`plugin/README.md` is generated from the canonical root `README.md` by
+`bun run sync-assets`, ships in the npm package, and must never be edited by
+hand.
+
 `extras/`, `agents/`, `skills/`, and their packaged mirrors are excluded from
 Prettier. An unquoted `model: {{TIER_*}}` YAML scalar is rewritten by Prettier
 into a flow mapping, which destroys the install-time tier token, and formatting
