@@ -9,15 +9,15 @@ Snapshot dello stato corrente della sessione; nessun piano attivo.
 
 ## Stato corrente
 
-- Issue #153 completata; scheda 153 è in `complete` con `comprehension: skipped` e presente su `main`.
-- Branch corrente `main`, HEAD `7ddbffc79e68730cdd056232a0cf388fc7a29288`; avanti di un commit rispetto a `origin/main`. Nessun push eseguito dopo questo commit.
-- Il pull fast-forward ha portato su `main` i commit dell’issue #153 e la board card. Il commit locale `chore(plan-153): session memory + comprehension record` contiene i quattro file `.context` autorizzati.
-- Gate finali: `bun test` 1214 pass / 14 failure, identiche al baseline ambientale; typecheck, lint, sync-assets e structure guards passano. `format:check` resta in errore su 32 file CRLF, stesso set del baseline e nessun file nuovo; Prettier sul benchmark passa.
-- Review delle fasi implementative senza finding bloccanti; due osservazioni non bloccanti della Phase 2 non modificate.
-- Comprehension DEEP: SKIPPED. Record `.context/comprehension/ev-20261113-170903-e38ec4ecf451ea57135d6e8d91ce7652.md`; telemetria append-only emessa con `DCI=skipped`, `evaluator_conf=n/a`, `user_conf=n/a`.
-- Warning gate: `.opencode/comprehension.config.json` assente; applicati i default built-in.
-- Questo aggiornamento di `.context/progress.md` è successivo al commit autorizzato e resta non committato; nessun secondo commit è stato autorizzato.
+- Issue #153 completata; scheda 153 in `plan/complete/153.md`, con `comprehension: skipped`.
+- Branch corrente `main`, HEAD `a172a291686cf9a7434cad8b1ac6713138ecc016`; `git pull --ff-only origin main` ha restituito `Already up to date`. Il branch è avanti di 2 commit e indietro di 0 rispetto a `origin/main`; nessun push eseguito.
+- I due commit locali da pubblicare al prossimo rilascio sono `7ddbffc` (`chore(plan-153): session memory + comprehension record`) e `a172a29` (`chore(plan-153): update session progress`).
+- Grafo CRG locale aggiornato e verificato su HEAD `a172a291686cf9a7434cad8b1ac6713138ecc016` (`head_matches_build: true`). Nessuna modifica a source o workflow CI.
+- Push rinviato al prossimo rilascio della nuova versione; nessuna operazione di push eseguita.
+- Verifica finale nota per issue #153: `bun test` 1214 pass / 14 failure ambientali invariate; typecheck, lint, sync-assets e structure guards passano; `format:check` segnala lo stesso baseline di 32 file CRLF-only.
+- Comprehension DEEP dell’issue #153: SKIPPED e registrata; nessun gate di comprensione richiesto per questa operazione Git/CRG (classificazione NONE).
+- Questo aggiornamento di `.context/progress.md` resta locale e non committato; nessun altro file deve essere incluso implicitamente.
 
 ## Next steps
 
-- Nessun piano attivo. Push del commit su `main` e commit di questo ultimo aggiornamento restano da autorizzare.
+- Al prossimo rilascio della nuova versione, pianificare e autorizzare il push dei due commit locali su `main`.
