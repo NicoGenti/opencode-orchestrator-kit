@@ -177,7 +177,7 @@ describe("site head tokens and npm metadata", () => {
     );
   });
 
-  test("plugin/package.json advertises the site and every command without a version bump", () => {
+  test("plugin/package.json advertises the site and every command for the current release", () => {
     const pkg = JSON.parse(
       readFileSync(join(REPO_ROOT, "plugin/package.json"), "utf8"),
     ) as {
@@ -186,7 +186,7 @@ describe("site head tokens and npm metadata", () => {
       homepage: string;
       keywords: string[];
     };
-    expect(pkg.version).toBe("1.1.1");
+    expect(pkg.version).toBe("1.2.0");
     expect(pkg.homepage).toBe(
       "https://nicogenti.github.io/opencode-orchestrator-kit/",
     );
