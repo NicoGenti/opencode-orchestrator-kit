@@ -92,9 +92,9 @@ describe("sync-assets", () => {
         ),
       ).toBe("extra\n");
       expect(existsSync(stale)).toBe(false);
-      expect(
-        readFileSync(join(root, "plugin", "README.md"), "utf-8"),
-      ).toBe("project readme\n");
+      expect(readFileSync(join(root, "plugin", "README.md"), "utf-8")).toBe(
+        "project readme\n",
+      );
       expect(
         readFileSync(
           join(root, "plugin", "assets", "commands", "close-session.md"),
@@ -120,9 +120,9 @@ describe("sync-assets", () => {
       writeFixture(root);
       const readme = syncAssets(root, false);
       expect(readme.problems).toContain("README.md");
-      expect(
-        readFileSync(join(root, "plugin", "README.md"), "utf-8"),
-      ).toBe("project readme\n");
+      expect(readFileSync(join(root, "plugin", "README.md"), "utf-8")).toBe(
+        "project readme\n",
+      );
 
       writeFileSync(join(root, "plugin", "README.md"), "stale\n");
       expect(syncAssets(root, true).problems).toContain("README.md");
