@@ -4,6 +4,8 @@ All notable changes to this project are documented in this file. The format foll
 
 ## [Unreleased]
 
+## [1.2.0] — 2026-11-15
+
 - **The npm package now ships the repository README**: `plugin/README.md` is generated from the root `README.md` by `bun run sync-assets` and verified by `--check` and the offline pack test, so the tarball and the npm package page carry the project README; `plugin/package.json` lists it in `files` explicitly.
 - **`comprehension-coach` evidence modes (#137)**: the coach contract now splits BEHAVIORAL from IMPLEMENTATION evidence, tags every knowledge question with a verbatim source (`USER_GOAL` / `USER_OBSERVED_IO` / `READING_PACKAGE`), and grounds IMPLEMENTATION questions in a minimal reading package confirmed by `I have read this material.`; a declined package yields behavioral-only questions or SKIPPED — never an automatic FAIL.
 - **Path-traversal guards for the Python helper scripts (#128-#135)**: `scripts/plan-board.py` (`--root`, `--body`), `scripts/apply-model-preset.py` (`--config`) and `scripts/apply-freellmapi-profile.py` (`--config`) now refuse any argv path containing a `..` segment (both separators) before any filesystem access; clean relative and absolute paths behave exactly as before. plan-board rejections use the existing JSON envelope with the additive code `path-traversal`; the other two scripts keep their exit styles.
