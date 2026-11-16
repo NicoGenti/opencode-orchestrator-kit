@@ -2,9 +2,21 @@
 
 **A cost-aware, multi-agent workflow for [OpenCode](https://opencode.ai): one router agent that never writes code, and specialists that each run on the cheapest model able to do the job.**
 
-[![npm](https://img.shields.io/npm/v/opencode-orchestrator-kit)](https://www.npmjs.com/package/opencode-orchestrator-kit) [![npm downloads](https://img.shields.io/npm/dm/opencode-orchestrator-kit)](https://www.npmjs.com/package/opencode-orchestrator-kit) [![Tests](https://github.com/NicoGenti/opencode-orchestrator-kit/actions/workflows/test.yml/badge.svg)](https://github.com/NicoGenti/opencode-orchestrator-kit/actions/workflows/test.yml) [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE.txt) [![OpenCode](https://img.shields.io/badge/works%20with-OpenCode%20CLI-blue)](https://opencode.ai) [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+[![npm](https://img.shields.io/npm/v/opencode-orchestrator-kit)](https://www.npmjs.com/package/opencode-orchestrator-kit) [![npm downloads](https://img.shields.io/npm/dm/opencode-orchestrator-kit)](https://www.npmjs.com/package/opencode-orchestrator-kit) [![Tests](https://github.com/NicoGenti/opencode-orchestrator-kit/actions/workflows/test.yml/badge.svg)](https://github.com/NicoGenti/opencode-orchestrator-kit/actions/workflows/test.yml) [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE.txt) [![OpenCode](https://img.shields.io/badge/works%20with-OpenCode%20CLI-blue)](https://opencode.ai) [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md) [![Selected for XERJ Corpus Hub](https://img.shields.io/badge/XERJ_Corpus_Hub-Selected-blue)](https://hub.xerj.org/)
 
 <!-- DEMO: add a short terminal GIF of /start-session followed by a small task here -->
+
+## Recognition
+
+A contribution from this repository was selected for the
+[XERJ Corpus Hub](https://hub.xerj.org/), a public reference-memory index
+that helps AI coding agents find and build on real, working implementations.
+
+The selected work is:
+
+- [`feat(issue-13): phase 5 V1->V2 permission translation wired into agent registration`](https://github.com/NicoGenti/opencode-orchestrator-kit/commit/1131841496d45e3d1207a1e65665a6b551a677e9)
+- 7 files and 650 changed lines, including the V1→V2 permission translation, agent registration wiring, and plugin permission tests.
+- Included with attribution to [NicoGenti](https://github.com/NicoGenti) and this repository, under the project’s MIT licence.
 
 ## The problem
 
