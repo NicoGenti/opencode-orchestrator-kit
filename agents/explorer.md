@@ -71,7 +71,7 @@ Read a whole file only when it has 200 lines or fewer (check `wc -l` when practi
 
 ## Optional Code Graph
 
-CRG is optional infrastructure. If a CRG call errors, times out, or returns empty/missing data, silently fall back to `find`/`rg`/`cat`/`read`. Your tool catalog is the source of truth: with no `code-review-graph_*` tool listed, CRG is not configured — do not attempt the call, go straight to the fallback.
+CRG is optional infrastructure. If a CRG call errors, times out, or returns empty/missing data, silently fall back to `find`/`rg`/`cat`/`read`. Treat CRG as configured when either the delegation's Inputs Available carries the `Code Graph: present` note or the runtime exposes `code-review-graph_*` tools (the native tool list or the Code Mode catalog inside `execute`); on doubt, skip the call and go straight to the fallback without concluding CRG is not configured.
 
 When it is listed, it is the FIRST tool call of any exploration that spans more than one file, or that concerns symbol relationships, the call graph, or "what depends on X" — not a fallback after a broad sweep:
 
