@@ -422,6 +422,76 @@ Precedence is two-tier: `.opencode/gates.config.json` — or the budget gate's e
 
 On a `verdict: "fail"` the orchestrator narrows the phase scope or dispatches ONE targeted explorer question instead of proceeding to the next delegation — the same rule the orchestrator prompt carries. The gates only advise: correcting the manifest or the claim is the caller's decision, and neither gate ever edits a file.
 
+## Code Review Graph (CRG) under V2 Code Mode
+
+CRG is optional infrastructure. The six CRG-enabled agent prompts (`explorer`,
+`planner`, `developer-fixer`, `test-engineer`, `code-reviewer`, `security`) use it
+when it is connected and granted, and fall back silently otherwise. Under OpenCode
+V2 Code Mode a connected server is absent from the native tool catalog, so this
+section records how it is declared, how it is called, and how the kit detects it.
+
+### Declaring the server
+
+The consuming project declares the MCP server in its own
+`.opencode/opencode.jsonc` under `mcp.servers`, with the key `code-review-graph`.
+The entry's transport and command fields follow OpenCode's own MCP documentation;
+this kit pins no particular shape for them.
+
+MCP tools are matched as `<server>_<tool>`, so this server's tools appear as
+`code-review-graph_<tool>` — for example
+`code-review-graph_get_impact_radius_tool`. That naming rule, and how such a name
+is matched by agent `permission` rules, lives in
+[`docs/PLUGIN-V2-PERMISSIONS.md`](PLUGIN-V2-PERMISSIONS.md).
+
+### The Code Mode default
+
+Under V2 Code Mode, MCP tools are absent from an agent's native tool catalog. They
+are reachable only inside `execute`, as members of the `tools` object keyed by the
+server name:
+
+```js
+await tools["code-review-graph"].get_impact_radius_tool({ ... });
+```
+
+They are discoverable there through the Code Mode catalog instructions and the
+`search` function. A tool missing from the native list is therefore not evidence
+that CRG is unconfigured.
+
+### How the kit detects CRG
+
+The `## Optional Code Graph` sections of the six CRG-enabled agent prompts treat
+CRG as configured when either signal is present:
+
+1. the delegation's "Inputs Available" carries the `Code Graph: present` note, or
+2. the runtime exposes `code-review-graph_*` tools — in the native tool list, or in
+   the Code Mode catalog inside `execute`.
+
+On doubt an agent skips the call and goes straight to its fallback without
+concluding that CRG is not configured; errors, timeouts, and a `not_ready` /
+`stale_graph` status fall back silently the same way. `code-reviewer` remains the
+sole refresh owner and no other agent refreshes the graph. The prompt text owns the
+exact rule; this section only explains it.
+
+### `codemode: false` for plugin tools
+
+`codemode: false` is a **plugin tool-registration** option, not an MCP setting. A
+tool registered through `ctx.tool.transform` is exposed only inside Code Mode unless
+the registration passes `options: { codemode: false }`, which makes it a
+first-class tool in the agent catalog. The kit's `plan_board` tool registers exactly
+that way (`plugin/src/plan-board-tool.ts:157-170`, including the 2026-11-02 session
+note that recorded the failure without the option). Config-declared `mcp.servers`
+entries are not covered by it.
+
+### `Code Graph: present` and `Code Graph: absent`
+
+The profiler detects CRG with `ls .code-review-graph` and records
+`Code Graph: present` or `Code Graph: absent` in `.opencode/PROJECT-PROFILE.md`
+(`agents/profiler.md:141-143`); it never installs or configures CRG, and absence is
+not an error. The orchestrator then forwards the note as
+`Code Graph: present — CRG MCP tools may be available` in the "Inputs Available"
+section of every delegation (`agents/orchestrator.md:64`, task-spec section
+`:253`) — that note is signal (i) above.
+
 ## FreeLLMAPI profile (local app)
 
 The `freellmapi` preset routes every tier to the FreeLLMAPI app installed on the PC

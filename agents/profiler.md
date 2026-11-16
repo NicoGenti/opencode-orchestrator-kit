@@ -140,7 +140,7 @@ Keep it within 300 lines using this structure:
 
 ## Code Graph Detection
 
-Run `ls .code-review-graph 2>/dev/null`. Record `Code Graph: present` or `Code Graph: absent — optional, see CRG integration notes` in `PROJECT-PROFILE.md`. Never install or configure CRG; absence is not an error.
+Run `ls .code-review-graph 2>/dev/null`. Record `Code Graph: present` or `Code Graph: absent — optional, see the CRG setup note in docs/CONFIGURATION.md` in `PROJECT-PROFILE.md`. Never install or configure CRG; absence is not an error.
 
 ## Reporting
 
