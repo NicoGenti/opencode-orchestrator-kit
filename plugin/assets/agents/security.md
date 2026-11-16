@@ -32,7 +32,7 @@ Read-only security reviewer. Identify exploitable vulnerabilities, assess risk, 
 
 ## Optional Code Graph
 
-Your tool catalog is the source of truth: if no `code-review-graph_*` tool is listed for this agent, CRG is not configured — do not attempt the call, go straight to the fallback.
+Treat CRG as configured when either the delegation's Inputs Available carries the `Code Graph: present` note or the runtime exposes `code-review-graph_*` tools (the native tool list or the Code Mode catalog inside `execute`); on doubt, skip the call and go straight to the fallback without concluding CRG is not configured.
 
 - On large or unfamiliar subsystems, use `get_hub_nodes_tool` and `get_bridge_nodes_tool` to prioritize highly coupled auth, session, and input-boundary modules.
 - Call `get_impact_radius_tool` on resource-access code before rating an authorization/IDOR finding Critical/High; state blast radius from the diff.

@@ -550,7 +550,7 @@ describe("MCP default deny — le allowlist dichiarate sono reali", () => {
     declared("agents/orchestrator.md", "build_or_update_graph_tool", "deny");
     declared("agents/orchestrator.md", "apply_refactor_tool", "deny");
   });
-  test("gli agenti CRG dichiarano il catalogo come fonte di verita'", () => {
+  test("gli agenti CRG dichiarano la regola a due segnali", () => {
     for (const rel of [
       "agents/explorer.md",
       "agents/code-reviewer.md",
@@ -560,13 +560,17 @@ describe("MCP default deny — le allowlist dichiarate sono reali", () => {
       "agents/planner.md",
     ]) {
       expect(readFileSync(join(ROOT, rel), "utf-8")).toContain(
-        "Your tool catalog is the source of truth",
+        "Treat CRG as configured when either",
+      );
+      expect(readFileSync(join(ROOT, rel), "utf-8")).toContain(
+        "without concluding CRG is not configured",
       );
     }
   });
   test("developer-fixer: regole d'uso del grafo dichiarate nel prompt", () => {
     const body = readFileSync(join(ROOT, "agents/developer-fixer.md"), "utf-8");
-    expect(body).toContain("Your tool catalog is the source of truth");
+    expect(body).toContain("Treat CRG as configured when either");
+    expect(body).toContain("without concluding CRG is not configured");
     expect(body).toContain(
       "Do not use the graph for a single-file, self-contained change.",
     );
@@ -575,7 +579,8 @@ describe("MCP default deny — le allowlist dichiarate sono reali", () => {
   });
   test("test-engineer: regole d'uso del grafo dichiarate nel prompt", () => {
     const body = readFileSync(join(ROOT, "agents/test-engineer.md"), "utf-8");
-    expect(body).toContain("Your tool catalog is the source of truth");
+    expect(body).toContain("Treat CRG as configured when either");
+    expect(body).toContain("without concluding CRG is not configured");
     expect(body).toContain(
       "for a single-file, self-contained change do not use the graph",
     );
@@ -621,7 +626,8 @@ describe("tool surface documentata per explorer e planner", () => {
   });
   test("planner: regole d'uso del grafo dichiarate nel prompt", () => {
     const t = body("agents/planner.md");
-    expect(t).toContain("Your tool catalog is the source of truth");
+    expect(t).toContain("Treat CRG as configured when either");
+    expect(t).toContain("without concluding CRG is not configured");
     expect(t).toContain(
       "Graph tools are MAY-level accelerators: every plan must be completable without them.",
     );
