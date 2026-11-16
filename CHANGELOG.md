@@ -4,6 +4,8 @@ All notable changes to this project are documented in this file. The format foll
 
 ## [Unreleased]
 
+- **Code Review Graph no longer silently disabled under V2 Code Mode (#167)**: the six CRG-enabled agent prompts (`explorer`, `planner`, `developer-fixer`, `test-engineer`, `code-reviewer`, `security`) no longer equate an empty native tool catalog with "CRG is not configured" — the false conclusion that left a connected, granted server unused under V2 Code Mode, where MCP tools are absent from the native catalog and reachable only inside `execute` — and instead treat CRG as configured when either the delegation's Inputs Available carries the `Code Graph: present` note or the runtime exposes `code-review-graph_*` tools (the native tool list or the Code Mode catalog inside `execute`), skipping the call on doubt without concluding that CRG is not configured. The old-wording pins in `tests/plugin-permissions.test.ts` and the six `plugin/assets/agents/*.md` mirrors move in the same commit, and `docs/CONFIGURATION.md` gains the canonical "Code Review Graph (CRG) under V2 Code Mode" section (the `mcp.servers` declaration, the Code Mode default, the `tools["code-review-graph"].<tool>` call path, the two-signal detection rule, the `codemode: false` plugin tool-registration option, and the profiler's `Code Graph: present` / `absent` note) that also resolves `agents/profiler.md`'s dangling "CRG integration notes" reference.
+
 ## [1.2.0] — 2026-11-15
 
 - **The npm package now ships the repository README**: `plugin/README.md` is generated from the root `README.md` by `bun run sync-assets` and verified by `--check` and the offline pack test, so the tarball and the npm package page carry the project README; `plugin/package.json` lists it in `files` explicitly.
