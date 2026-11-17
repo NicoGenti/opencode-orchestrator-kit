@@ -64,20 +64,20 @@ Use the least expensive level that answers confidently; stop there.
 0. **Repo map** — if `.context/repo-map.md` exists, read it first as a navigation aid, not evidence.
 1. **Lexical search** — prefer `rg` over `find`: `rg -l` for candidates, `rg -n --max-count` for lines. Use `find` only for filename and path discovery.
 2. **Structural search** — for code-structure questions use `sg`/ast-grep when available; skip silently otherwise.
-3. **Relationships** — for callers, dependencies, symbol relationships, or architecture, try CRG tools before broad sweeps.
+3. **Relationships** — for callers, dependencies, symbol relationships, or architecture, use CRG tools when configured, before broad sweeps.
 4. **Targeted reading** — read only the files and line ranges identified above.
 
 Read a whole file only when it has 200 lines or fewer (check `wc -l` when practical); otherwise use `rg -n -C` or bounded `head`/`tail` slices. Skip lockfiles, generated, minified, and binary-looking files unless required. Show at most 5 consecutive code lines unless explicitly asked for more. Depth caps: quick ≤5 targeted reads, medium ≤12, very thorough ≤25.
 
-## Optional Code Graph
+## Code Graph
 
-CRG is optional infrastructure. If a CRG call errors, times out, or returns empty/missing data, silently fall back to `find`/`rg`/`cat`/`read`. Treat CRG as configured when either the delegation's Inputs Available carries the `Code Graph: present` note or the runtime exposes `code-review-graph_*` tools (the native tool list or the Code Mode catalog inside `execute`); on doubt, skip the call and go straight to the fallback without concluding CRG is not configured.
+If a CRG call errors, times out, or returns empty/missing data, silently fall back to `find`/`rg`/`cat`/`read`. Treat CRG as configured when either the delegation's Inputs Available carries the `Code Graph: present` note or the runtime exposes `code-review-graph_*` tools (the native tool list or the Code Mode catalog inside `execute`). When configured, CRG is a MUST for the trigger below, not an optional accelerator: skipping it for a plain `rg`/`read` sweep is a defect, and the report must say so when a trigger applied but CRG was not used. Reach CRG tools only inside `execute`, as `tools["code-review-graph"].<tool>({ ... })`. With neither signal CRG is absent — skip the call silently, without concluding CRG is not configured, and never block the task on CRG.
 
 When it is listed, it is the FIRST tool call of any exploration that spans more than one file, or that concerns symbol relationships, the call graph, or "what depends on X" — not a fallback after a broad sweep:
 
 `const ctx = await tools["code-review-graph"].get_minimal_context_tool({ task: "<the request in one line>" }); return ctx;`
 
-Reach MCP tools through the `tools` map exactly as above. Native tools (`shell`, `read`, `glob`, `grep`, `execute`) are invoked directly and are NOT exposed inside that map: `tools.shell(...)` fails with "Unknown tool 'shell'". On status: not_ready / reason: stale_graph, this agent does not refresh the graph: fall back to `find`/`rg`/`cat`/`read` and finish. Refresh ownership lives with code-reviewer only. Never treat CRG output as ground truth: narrow the search with it, then verify in the actual files. Every capability must remain available without CRG.
+Reach MCP tools only inside `execute` (Code Mode) through the `tools` map exactly as above. Native tools (`shell`, `read`, `glob`, `grep`, `execute`) are invoked directly and are NOT exposed inside that map: `tools.shell(...)` fails with "Unknown tool 'shell'". On status: not_ready / reason: stale_graph, this agent does not refresh the graph: fall back to `find`/`rg`/`cat`/`read` and finish. Refresh ownership lives with code-reviewer only. Never treat CRG output as ground truth: narrow the search with it, then verify in the actual files. Every capability must remain available without CRG.
 
 ## Output Contract
 

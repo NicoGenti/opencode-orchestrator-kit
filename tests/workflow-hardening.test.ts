@@ -70,7 +70,10 @@ const PROMPT_BUDGETS: Record<string, number> = {
   // and ceil(5128 * 1.05 / 100) * 100 = 5_400. The short form (without the
   // review-context sentence and the call example) still measured 4_918, over
   // the old cap, so the canonical text needed the full section.
-  "agents/developer-fixer.md": 5_400,
+  // Raised from 5_400 in issue #172 phase 1 (MUST-when-available CRG rule in
+  // the short form plus the `execute`-wrapped call example): the file measured
+  // 5_440, and ceil(5440 * 1.05 / 100) * 100 = 5_800.
+  "agents/developer-fixer.md": 5_800,
   "agents/explorer.md": 5_000,
   "agents/librarian.md": 2_500,
   "agents/npm-helper.md": 2_700,
@@ -84,15 +87,24 @@ const PROMPT_BUDGETS: Record<string, number> = {
   // step-4 sentence = 4_823, and ceil(4823 * 1.05 / 100) * 100 = 5_100.
   // The minimal form (frontmatter plus the step-4 sentence, no section)
   // still measured 3_879, over the old cap.
-  "agents/planner.md": 5_100,
+  // Raised from 5_100 in issue #172 phase 1 (MUST-when-available CRG rule in
+  // the short form plus the `execute`-wrapped call example): the file measured
+  // 5_133, and ceil(5133 * 1.05 / 100) * 100 = 5_400.
+  "agents/planner.md": 5_400,
   "agents/profiler.md": 8_100,
-  "agents/security.md": 4_400,
+  // Raised from 4_400 in issue #172 phase 1 (MUST-when-available CRG rule in
+  // the short form): the file measured 4_426 after the reword, and
+  // ceil(4426 * 1.05 / 100) * 100 = 4_700.
+  "agents/security.md": 4_700,
   // Raised from 2_400 in issue #153 phase 2 (read-only CRG allowlist and the
   // `## Optional Code Graph` section): 2_199 + 1_085 for the section = 3_284,
   // and ceil(3284 * 1.05 / 100) * 100 = 3_500. The short form (without the
   // ambiguous-Scope clause and the call example) still measured 3_138, over
   // the old cap, so the canonical text needed the full section.
-  "agents/test-engineer.md": 3_500,
+  // Raised from 3_500 in issue #172 phase 1 (MUST-when-available CRG rule in
+  // the short form plus the `execute`-wrapped call example): the file measured
+  // 3_596, and ceil(3596 * 1.05 / 100) * 100 = 3_800.
+  "agents/test-engineer.md": 3_800,
   "extras/pc-doctor.md": 2_900,
   "extras/writer.md": 5_000,
 };

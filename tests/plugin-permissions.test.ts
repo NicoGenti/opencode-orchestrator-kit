@@ -550,7 +550,7 @@ describe("MCP default deny — le allowlist dichiarate sono reali", () => {
     declared("agents/orchestrator.md", "build_or_update_graph_tool", "deny");
     declared("agents/orchestrator.md", "apply_refactor_tool", "deny");
   });
-  test("gli agenti CRG dichiarano la regola a due segnali", () => {
+  test("gli agenti CRG dichiarano la regola MUST-when-available", () => {
     for (const rel of [
       "agents/explorer.md",
       "agents/code-reviewer.md",
@@ -559,17 +559,33 @@ describe("MCP default deny — le allowlist dichiarate sono reali", () => {
       "agents/test-engineer.md",
       "agents/planner.md",
     ]) {
-      expect(readFileSync(join(ROOT, rel), "utf-8")).toContain(
-        "Treat CRG as configured when either",
-      );
-      expect(readFileSync(join(ROOT, rel), "utf-8")).toContain(
-        "without concluding CRG is not configured",
-      );
+      const body = readFileSync(join(ROOT, rel), "utf-8");
+      expect(body).toContain("Treat CRG as configured when either");
+      expect(body).toContain("CRG is a MUST for the trigger below");
+      expect(body).toContain("without concluding CRG is not configured");
+      expect(body).toContain('tools["code-review-graph"].');
+    }
+  });
+  test("nessun agente CRG conserva la formulazione facoltativa", () => {
+    for (const rel of [
+      "agents/explorer.md",
+      "agents/code-reviewer.md",
+      "agents/security.md",
+      "agents/developer-fixer.md",
+      "agents/test-engineer.md",
+      "agents/planner.md",
+    ]) {
+      const body = readFileSync(join(ROOT, rel), "utf-8");
+      expect(body).not.toContain("CRG is optional infrastructure");
+      expect(body).not.toContain("on doubt, skip");
+      expect(body).not.toContain("MAY-level accelerators");
+      expect(body).not.toContain("accelerator, never a requirement");
     }
   });
   test("developer-fixer: regole d'uso del grafo dichiarate nel prompt", () => {
     const body = readFileSync(join(ROOT, "agents/developer-fixer.md"), "utf-8");
     expect(body).toContain("Treat CRG as configured when either");
+    expect(body).toContain("CRG is a MUST for the trigger below");
     expect(body).toContain("without concluding CRG is not configured");
     expect(body).toContain(
       "Do not use the graph for a single-file, self-contained change.",
@@ -580,6 +596,7 @@ describe("MCP default deny — le allowlist dichiarate sono reali", () => {
   test("test-engineer: regole d'uso del grafo dichiarate nel prompt", () => {
     const body = readFileSync(join(ROOT, "agents/test-engineer.md"), "utf-8");
     expect(body).toContain("Treat CRG as configured when either");
+    expect(body).toContain("CRG is a MUST for the trigger below");
     expect(body).toContain("without concluding CRG is not configured");
     expect(body).toContain(
       "for a single-file, self-contained change do not use the graph",
@@ -627,9 +644,10 @@ describe("tool surface documentata per explorer e planner", () => {
   test("planner: regole d'uso del grafo dichiarate nel prompt", () => {
     const t = body("agents/planner.md");
     expect(t).toContain("Treat CRG as configured when either");
+    expect(t).toContain("CRG is a MUST for the trigger below");
     expect(t).toContain("without concluding CRG is not configured");
     expect(t).toContain(
-      "Graph tools are MAY-level accelerators: every plan must be completable without them.",
+      "CRG is mandatory when configured; every plan must still be completable without it.",
     );
     expect(t).toContain(
       "Never treat CRG output as ground truth: verify with `read` every file or symbol the plan will cite.",

@@ -54,11 +54,11 @@ permission:
 
 Read-only reviewer of a finished change. Find bugs and design risks before release, rank findings by risk and impact, cite exact `file:line` locations, and propose concrete fixes. Not for threat models (security), comprehension checks, or writing code.
 
-## Optional Code Graph
+## Code Graph
 
-Treat CRG as configured when either the delegation's Inputs Available carries the `Code Graph: present` note or the runtime exposes `code-review-graph_*` tools (the native tool list or the Code Mode catalog inside `execute`); on doubt, skip the call and go straight to the fallback without concluding CRG is not configured.
+Treat CRG as configured when either the delegation's Inputs Available carries the `Code Graph: present` note or the runtime exposes `code-review-graph_*` tools (the native tool list or the Code Mode catalog inside `execute`). When configured, CRG is a MUST for the trigger below; reach the tools only inside `execute` as `tools["code-review-graph"].<tool>({ ... })`. With neither signal, skip silently without concluding CRG is not configured.
 
-CRG is an accelerator, never a requirement. Before deep reads, call `detect_changes_tool` and `get_review_context_tool` to prioritize high-impact files/symbols, and `get_impact_radius_tool` to confirm cross-file impact and state blast radius from the diff. If CRG errors or returns empty, proceed with `git diff` and direct reads. On status: not_ready / reason: stale_graph, call build_or_update_graph_tool once, retry the same entry call, then fall back silently if it is still not ready. You are the sole refresh owner: after your review is accepted, call `build_or_update_graph_tool` once to bring the graph to HEAD before the phase is marked complete. Never cite CRG output as a finding; verify every claim in source.
+Before deep reads, call `detect_changes_tool` and `get_review_context_tool` to prioritize high-impact files/symbols, and `get_impact_radius_tool` to confirm cross-file impact and state blast radius from the diff. If CRG errors or returns empty, proceed with `git diff` and direct reads. On status: not_ready / reason: stale_graph, call build_or_update_graph_tool once, retry the same entry call, then fall back silently if it is still not ready. You are the sole refresh owner: after your review is accepted, call `build_or_update_graph_tool` once to bring the graph to HEAD before the phase is marked complete. Never cite CRG output as a finding; verify every claim in source.
 
 ## Review Method
 
