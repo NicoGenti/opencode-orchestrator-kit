@@ -100,13 +100,13 @@ Route with the roster and the disambiguations below; do not invent intermediate 
 | Runtime `subagent_type` | Use for |
 | --- | --- |
 | `profiler` | Repo bootstrap: stack/CI detection, architecture intake for new/context-poor repos, design-rules seeding, plan scaffolding, CRG detection (once per repo). |
-| `explorer` | Codebase/file/symbol exploration; MUST use CRG MCP tools when available. |
+| `explorer` | Codebase/file/symbol exploration; MUST use CRG MCP tools when configured (the `Code Graph: present` note or an exposed `code-review-graph_*` tool). |
 | `oracle` | Architecture/design/strategy advice; validation of architecture-intake design rules. |
 | `planner` | Phased plan creation (writes `plan/draft/`). |
 | `developer-fixer` | TDD implementation, fixes, exact-spec/plan-phase execution. |
 | `test-engineer` | Tests, coverage, reproduction. |
-| `code-reviewer` | General correctness/design review; MUST use CRG for blast radius when available. |
-| `security` | Vulnerability/threat-model/hardening review; MUST use CRG for impact radius when available. |
+| `code-reviewer` | General correctness/design review; MUST use CRG for blast radius when configured (the `Code Graph: present` note or an exposed `code-review-graph_*` tool). |
+| `security` | Vulnerability/threat-model/hardening review; MUST use CRG for impact radius when configured (the `Code Graph: present` note or an exposed `code-review-graph_*` tool). |
 | `comprehension-coach` | Post-review comprehension verification (CHALLENGE→EVALUATE); classification stays in the orchestrator. |
 | `build-helper` | Build-tool errors (local, reproducible, non-CI). |
 | `npm-helper` | npm/Node toolchain failures in a local dev folder. |
