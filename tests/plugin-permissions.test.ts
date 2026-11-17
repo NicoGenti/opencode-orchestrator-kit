@@ -589,9 +589,13 @@ describe("MCP default deny — le allowlist dichiarate sono reali", () => {
     }
   });
   test("gli agenti CRG in forma breve dichiarano l'onere di segnalazione", () => {
-    // Explorer carries the canonical form, whose disclosure duty is phrased
-    // for the defect case; the five short-form files append the same clause
-    // verbatim, so the pin doubles as a form discriminator (M5).
+    // The canonical form phrases the disclosure duty differently ("the report
+    // must say so when a trigger applied but CRG was not used"), so the
+    // standalone sentence below cannot match explorer.md: the negative
+    // assertion pins that, and the loop keeps the clause uniform across the
+    // five short-form files.
+    const clause =
+      "If a trigger applied and CRG was not used, say so in the report.";
     for (const rel of [
       "agents/code-reviewer.md",
       "agents/security.md",
@@ -599,10 +603,11 @@ describe("MCP default deny — le allowlist dichiarate sono reali", () => {
       "agents/test-engineer.md",
       "agents/planner.md",
     ]) {
-      expect(readFileSync(join(ROOT, rel), "utf-8")).toContain(
-        "; if a trigger applied and CRG was not used, say so in the report.",
-      );
+      expect(readFileSync(join(ROOT, rel), "utf-8")).toContain(clause);
     }
+    expect(
+      readFileSync(join(ROOT, "agents/explorer.md"), "utf-8"),
+    ).not.toContain(clause);
   });
   test("developer-fixer: regole d'uso del grafo dichiarate nel prompt", () => {
     const body = readFileSync(join(ROOT, "agents/developer-fixer.md"), "utf-8");

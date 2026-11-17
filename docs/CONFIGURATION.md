@@ -424,7 +424,7 @@ On a `verdict: "fail"` the orchestrator narrows the phase scope or dispatches ON
 
 ## Code Review Graph (CRG) under V2 Code Mode
 
-CRG is mandatory when available. The six CRG-enabled agent prompts (`explorer`,
+CRG is mandatory when configured. The six CRG-enabled agent prompts (`explorer`,
 `planner`, `developer-fixer`, `test-engineer`, `code-reviewer`, `security`) must use
 it whenever a detection signal is present and their own trigger applies — a plain
 `rg`/`read` sweep in that case is a gap the report must disclose — and they fall

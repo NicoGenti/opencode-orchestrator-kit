@@ -92,10 +92,9 @@ registration if an invariant does not hold:
   planner may still spawn `explorer` (an explicit exception after its
   subagent deny).
 
-One declared rule reads as a refinement rather than an exception:
 `agents/security.md`'s `execute: allow` refines its own `"*": deny` so its
-read-only CRG tools are reachable inside Code Mode, while every undeclared tool
-of the family stays denied by the `code-review-graph_*` default.
+read-only CRG tools are reachable inside Code Mode, while every undeclared family
+tool stays denied by the `code-review-graph_*` default.
 
 ## Verification
 
