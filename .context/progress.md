@@ -1,23 +1,28 @@
 # Progress
 
-Snapshot dello stato corrente della sessione; nessun piano attivo.
+Snapshot dello stato corrente della sessione; nessun piano attivo in esecuzione.
 
 ## Stack
 
 - Kit Markdown multi-agent per OpenCode 2 pubblicato come plugin (`plugin/`); sito Vite/React separato (`src/`, `docs-src/`).
 - Bun + TypeScript; gate CI: `bun test`, typecheck, lint, format:check, `sync-assets --check`.
 
-## Stato corrente
+## Current state
 
-- **Issue #168 COMPLETATA**: release **v1.2.1** pubblicata su npm (confermata dall'utente). Tag `v1.2.1` su `a6ca475` (merge rebase della PR di release per #168); release PR aperta a mano dall'utente (`gh` permission-denied in sessione); Release GitHub NON creata (il workflow la crea? no — `release.yml` fa solo npm publish; va creata a mano, vedi issues.md).
-- Contenuto 1.2.1 (4 path, +7): bullet #167 in CHANGELOG (promossa sotto `## [1.2.1] — 2026-11-16`), bump `package.json`/`plugin/package.json` 1.2.0→1.2.1, pin `tests/site-landing.test.ts:189` → 1.2.1. Tag/branch release puliti; worktree rimosso; main locale allineato a origin/main (`a6ca475`).
-- Card 0010 → `plan/complete/` (comprehension `none`); card 0009 (v1.2.0) ancora con Phase 5–6 aperte — igiene board lasciata all'utente.
-- Board: `plan/complete/0010.md` untracked in git; da committare a parte se voluto (fuori dal release diff). Nessuna riga telemetria scritta per #168 (classificazione NONE); la riga 2026-11-16T20:32:31Z (LIGHT PASS) appartiene al gate #167.
-- Residui: `.context/plan-body-*.md` orphan staging bodies (0008, 0009, 0010, 000153, 000167) — cancellazione negata dal permission layer; pulizia manuale utente.
+- Nessuna lavorazione in corso. Ultima sessione chiusa con: piano **172** (CRG mandatory-when-configured, issue #172) completato — merge via PR, card in `plan/complete/172.md` (comprehension `skipped`), telemetria DEEP scritta, nessun lavoro pendente su 172.
+- Baseline ambientale `bun test`: 20 fail noti (3 storici + 16 host-bash + 1 CRLF); `format:check` drift CRLF-only. Mai "fixare" questi.
+- Board ops in questo ambiente: SOLO python CLI + verifica fisica (il tool nativo è inaffidabile).
+- Comprehension: outcome `skipped` per 172 (utente skip prima delle domande); record `ev-20261117-164232-856854e0b358dac63eae84ca5ce5c568`.
+
+## Done (questa sessione)
+
+- Analisi export sessione 37 (CRG non usato) → causa: wording optional + trigger auto-classificato + `execute` implicito + nessun enforcement.
+- Piano 172 creato, eseguito (4 fasi + fix review, APPROVED), mergiato via PR utente, card completata. PR/issue: #172 chiusa.
 
 ## Next steps
 
-- Utente: creare la GitHub Release v1.2.1 a mano (vedi issues.md 2026-11-16) oppure confermare che non serve.
-- Utente: valutare chiusura issue #168 su GitHub; valutare pulizia card 0009 e staging bodies.
-- Prossimo rilascio: ereditare le note ambientali in issues.md (baseline CRLF/host-bash del worktree; mai confrontare format:check cross-environment).
-- Nessun piano attivo.
+- Plan 0009 (Release v1.2.0): in-progress, Phase 5–6 aperte — see `plan/in-progress/0009.md`
+- Plan 0002 (design-first-governance): in-progress, fasi F/H aperte — see `plan/in-progress/0002-design-first-governance.md`
+- Warning board: `plan/qa/0001` missing-comprehension (pre-esistente).
+- Utente: GitHub Release v1.2.1 a mano; pulizia staging bodies orfani in `.context/`; igiene card 0009.
+- Opzionale: refresh CRG (`build_or_update_graph_tool`, owner code-reviewer) post-merge 172.

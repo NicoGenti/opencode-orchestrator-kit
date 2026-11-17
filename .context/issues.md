@@ -1,6 +1,8 @@
 # Issues
 
 - Nessuna issue aperta.
+- 2026-11-17: in questa sessione la shell è stata NEGATA all'orchestrator (`permission.rejected`) mentre i subagenti hanno potuto eseguirla; bookkeeping (telemetria comprehension, record-id) delegato a subagenti. Se la shell resta negata, pianificare i passi che richiedono shell di conseguenza.
+
 - 2026-11-12: `bun run format:check` è rosso su ogni checkout Windows con `core.autocrlf=true` per 9 file LF
   (`index.docs.html`, `package.json`, `plugin/src/comprehension.ts`, `README.md`, `src/styles.css`,
   `tests/assemble-prompt.test.ts`, `tests/no-github-automation.test.ts`, `tests/plugin-tiers.test.ts`,
