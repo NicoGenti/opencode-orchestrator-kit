@@ -93,4 +93,3 @@ export const INSTALL_TABS: readonly InstallTab[] = [
     link: { href: STUDIO_DOCS_URL, label: "Studio setup guide" },
   },
 ];
-

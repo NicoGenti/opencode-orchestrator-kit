@@ -102,6 +102,8 @@ describe("landing roster is derived from agent frontmatter", () => {
     expect(loader).toContain('import.meta.glob("../../extras/*.md"');
     expect(loader).toContain("buildRoster");
     expect(page).toContain("roster.specialistCount");
+    expect(page).toContain("roster.primaryCount");
+    expect(page).toContain("roster.extrasCount");
     expect(page).toContain("roster.coreCount");
     expect(page).not.toContain("14 specialists");
     expect(page).not.toContain("15 specialists");

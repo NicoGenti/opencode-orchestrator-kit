@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 
 import { latestRelease } from "@/site/changelog";
+import { shortenBody } from "@/site/changelog-model";
 import { commands, roster } from "@/site/roster";
 import type { AccessBadge, RosterAgent } from "@/site/roster-model";
 import { HERO_INSTALL, INSTALL_TABS } from "@/site/install";
@@ -317,8 +318,7 @@ function WhatsNew() {
       <div className="mx-auto max-w-7xl">
         <div className="mb-12 text-center">
           <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 text-sm text-muted-foreground">
-            <Sparkles className="h-4 w-4" aria-hidden="true" />v
-            {latestRelease.version}
+            <Sparkles className="h-4 w-4" aria-hidden="true" />v{KIT_VERSION}
           </div>
           <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
             What&apos;s new
@@ -328,19 +328,34 @@ function WhatsNew() {
           </p>
         </div>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {latestRelease.items.map((item) => (
-            <div
-              key={item.title}
-              className="rounded-xl border border-border bg-card p-6 transition-all hover:border-primary/30 hover:bg-card/80"
-            >
+          {latestRelease.items.length === 0 ? (
+            <div className="rounded-xl border border-border bg-card p-6 md:col-span-2 lg:col-span-3">
               <h3 className="text-lg font-semibold text-foreground">
-                {item.title}
+                See the full changelog
               </h3>
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                {item.body}
+                This release has no changelog bullets yet.{" "}
+                <ExternalLink href={CHANGELOG_URL}>
+                  Read CHANGELOG.md
+                </ExternalLink>
+                .
               </p>
             </div>
-          ))}
+          ) : (
+            latestRelease.items.map((item, index) => (
+              <div
+                key={`${item.title}-${index}`}
+                className="rounded-xl border border-border bg-card p-6 transition-all hover:border-primary/30 hover:bg-card/80"
+              >
+                <h3 className="text-lg font-semibold text-foreground">
+                  {item.title}
+                </h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                  {shortenBody(item.body)}
+                </p>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </section>
