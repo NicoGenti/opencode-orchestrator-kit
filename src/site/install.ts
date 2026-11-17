@@ -94,29 +94,3 @@ export const INSTALL_TABS: readonly InstallTab[] = [
   },
 ];
 
-export const WHATS_NEW: readonly { title: string; body: string }[] = [
-  {
-    title: "Install from npm",
-    body: "opencode-orchestrator-kit is the OpenCode 2 plugin. Add the package to the plugins array and the roster, commands, and skills register at runtime.",
-  },
-  {
-    title: "A plan board with an owner",
-    body: "plan-writer is the only agent that creates or moves plan files. On OpenCode 2 it calls the native plan_board tool; the v1 installer falls back to scripts/plan-board.py.",
-  },
-  {
-    title: "Four session commands",
-    body: "Start a session, recall a comprehension review, opt into research recording, and close the session without starting new work.",
-  },
-  {
-    title: "Design rules on an empty repo",
-    body: "The first run looks for a design-rules artifact. On a new repository the profiler asks for the goal and seeds one. Existing artifacts are reported, not overwritten.",
-  },
-  {
-    title: "Companion kits stay optional",
-    body: "This kit runs on its own. It does not fetch or pin another repository. A companion may install its own skills and commands where OpenCode already looks. web-* is a reserved prefix for a web-stack skill pack. A web-kit is one example of that shape. This package runs without a companion repository.",
-  },
-  {
-    title: "Extras are opt-in",
-    body: "pc-doctor and writer are not part of the default roster. Set withExtras to true, or on the legacy installer pass --with-extras.",
-  },
-];

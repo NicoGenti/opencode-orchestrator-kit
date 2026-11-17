@@ -16,9 +16,10 @@ import {
   Sparkles,
 } from "lucide-react";
 
+import { latestRelease } from "@/site/changelog";
 import { commands, roster } from "@/site/roster";
 import type { AccessBadge, RosterAgent } from "@/site/roster-model";
-import { HERO_INSTALL, INSTALL_TABS, WHATS_NEW } from "@/site/install";
+import { HERO_INSTALL, INSTALL_TABS } from "@/site/install";
 import type { InstallTab } from "@/site/install";
 import {
   CHANGELOG_URL,
@@ -83,11 +84,29 @@ const navLinks = [
   { label: "Quickstart", href: "#quickstart" },
 ];
 
+function countOf(count: number, singular: string, plural = `${singular}s`) {
+  return `${count} ${count === 1 ? singular : plural}`;
+}
+
+function joinParts(parts: string[]): string {
+  if (parts.length <= 1) return parts[0] ?? "";
+  return `${parts.slice(0, -1).join(", ")} and ${parts[parts.length - 1]}`;
+}
+
+function rosterLine(): string {
+  if (roster.primaryCount < 1) return `${roster.coreCount} core agents`;
+  const parts = [
+    countOf(roster.primaryCount, "router"),
+    countOf(roster.specialistCount, "specialist"),
+  ];
+  if (roster.extrasCount > 0) {
+    parts.push(countOf(roster.extrasCount, "opt-in extra"));
+  }
+  return joinParts(parts);
+}
+
 export function LandingPage() {
-  const specialistLine =
-    roster.primaryCount === 1
-      ? `one router, ${roster.specialistCount} specialists`
-      : `${roster.coreCount} core agents`;
+  const specialistLine = rosterLine();
 
   return (
     <div id="top" className="min-h-screen bg-background text-foreground">
@@ -298,17 +317,18 @@ function WhatsNew() {
       <div className="mx-auto max-w-7xl">
         <div className="mb-12 text-center">
           <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 text-sm text-muted-foreground">
-            <Sparkles className="h-4 w-4" aria-hidden="true" />v{KIT_VERSION}
+            <Sparkles className="h-4 w-4" aria-hidden="true" />v
+            {latestRelease.version}
           </div>
           <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-            What&apos;s new in 1.0
+            What&apos;s new
           </h2>
           <p className="mt-4 text-lg text-muted-foreground">
-            The kit is now an OpenCode 2 plugin, published on npm.
+            Released {latestRelease.date} — the latest changes shipped on npm.
           </p>
         </div>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {WHATS_NEW.map((item) => (
+          {latestRelease.items.map((item) => (
             <div
               key={item.title}
               className="rounded-xl border border-border bg-card p-6 transition-all hover:border-primary/30 hover:bg-card/80"
