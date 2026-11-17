@@ -4,22 +4,27 @@ Snapshot dello stato corrente della sessione.
 
 ## Stack
 
-- Kit Markdown multi-agent per OpenCode 2 pubblicato come plugin (`plugin/`); sito Vite/React separato (`src/`, `docs-src/`).
-- Bun + TypeScript; gate CI: `bun test`, typecheck, lint, format:check, `sync-assets --check`.
+- Kit Markdown multi-agent per OpenCode 2 (plugin `plugin/`); sito Vite/React (`src/`, `docs-src/`); Bun + TypeScript; CI GitHub Actions.
+- Board: board in questo ambiente solo via python CLI + prova fisica.
 
 ## Current state
 
-- Release **v1.2.2 PUBBLICATA** (2026-11-17): `npm view opencode-orchestrator-kit version` → `1.2.2`; tag annotato `v1.2.2` → `290ca39` (tip di `main`, post-merge rebase-style, nessun merge commit); workflow Release verde (publish OK); workflow Pages su tag verde.
-- Release shippa #172 (CRG MUST-when-configured) + #171 (deploy Pages su tag + What's new da CHANGELOG). Diff vs main pre-release: esattamente 4 path (`CHANGELOG.md`, `package.json`, `plugin/package.json`, `tests/site-landing.test.ts`).
-- Worktree di release: `C:\Users\NicolasGentilucci\AppData\Local\Temp\opencode\release-v1.2.2` (branch `release/v1.2.2` ricreato via rebase su `2553aed` → pushato, poi mergiato rebase-style → commit `26a193a`/`290ca39`). LF-clone di verifica in temp; `pr-body-175.md` aggiornato in temp.
-- Incidente risolto: il primo tag `v1.2.2` (lightweight, su `2553aed`, pre-bump) faceva fallire `release.yml`; eliminato (locale+remoto) e ri-creato annotato sul commit post-merge dopo il merge.
-- Aperto: **GitHub Release manuale v1.2.2 da creare dall'utente** (gh negato in sessione; la Release non è stata creata dal workflow).
-- Board/issue: nessuna card creata per #174 (scelta utente: board separato); chiusura issue #174 e board lifecycle = decisione utente post-release.
-- Baseline ambientali invariate: `bun test` 20 fail CRLF (19 LF), tutti membri baseline; format:check 120+ CRLF path.
-- Anomalia da annotare: merge di PR #175 vs contenuto di `main` non coerenti con gli SHA pre-rebase (la PR è stata infine mergiata rebase-style; nessun danno; verificare il reflog/eventi GitHub se serve archeologia).
+- **v1.2.2 PUBBLICATA su npm (2026-11-17)**: `latest = 1.2.2` (gitHead `290ca39`); tag annotato `v1.2.2` su `main` post-merge (rebase-merge); `release.yml` verde (tag check + publish); `deploy.yml` su tag verde dopo fix utente delle protection rules di `github-pages`.
+- Incidente risolto: primo tag su `2553aed` (pre-bump) → fallimento atteso del tag-check; tag eliminato (approvato) e ricreato sul commit post-merge. Nessun publish parziale; nessun fallout su npm.
+- Scope rilasciato: #172 (CRG MUST-when-configured) + #171 (Pages su tag + What's new da CHANGELOG). Diff release: 4 path (`CHANGELOG.md`, `package.json`, `plugin/package.json`, `tests/site-landing.test.ts`).
+- `.context/decisions.md` archiviato e ripartito pulito (`.context/archive/decisions-2026-11-17.md`). `.context/issues.md` NON archiviato: scrittura in `.context/archive/` negata dal permission layer (vedi issues.md, voce 2026-11-17) — il file live contiene ancora il log completo.
+- Working tree primario: `main` allineato a `origin/main` (`290ca39`); worktree release in `C:\Users\NicolasGentilucci\AppData\Local\Temp\opencode\release-v1.2.2` (branch mergiato).
+
+## Done (questa sessione)
+
+- Release v1.2.2: verifica bullet changelog #172, bump via script, pin sito, sweep completo in worktree isolato, push branch, PR (handoff utente per `gh` negato), merge rebase da utente, recovery tag, verifica publish npm + Pages verde, release notes draft (testo consegnato in chat).
+- `progress.md` riscritto a fine sessione; `decisions.md` archiviato+riavviato; tentativo di archivio `issues.md` negato dal layer.
 
 ## Next steps
 
-- Utente: creare la GitHub Release `v1.2.2` (manuale; note dal tag; publish npm confermato).
-- Utente: chiudere issue #174 e decidere board lifecycle della card di release (separato dal release).
-- Osservazione: `deploy.yml` ora gira sui tag `v*`; le environment protection rules di `github-pages` sono state corrette dall'utente (il run del tag è passato).
+- Utente: creare la GitHub Release `v1.2.2` a mano (workflow non la crea); chiudere issue #174; decidere board lifecycle della card di release (board separato per scelta utente).
+- Plan 0009 (Release v1.2.0): in-progress, Phase 5–6 aperte — vedi `plan/in-progress/0009.md` (igiene board utente).
+- Plan 0002 (design-first-governance): in-progress, fasi F/H aperte — vedi `plan/in-progress/0002-design-first-governance.md`.
+- Warning board pre-esistente: `plan/qa/0001` missing-comprehension.
+- Aperto (#171 m7): guard versione/pattern su `v*` in `deploy.yml` (decisione separata dell'utente).
+- Baseline: `bun test` 20 fail ambientali (worktree CRLF), 19 su checkout LF; `format:check` ~120 path CRLF — non regressioni.
