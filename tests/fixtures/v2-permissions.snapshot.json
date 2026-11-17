@@ -2234,6 +2234,11 @@
       "effect": "ask"
     },
     {
+      "action": "execute",
+      "resource": "*",
+      "effect": "allow"
+    },
+    {
       "action": "code-review-graph_get_impact_radius_tool",
       "resource": "*",
       "effect": "allow"

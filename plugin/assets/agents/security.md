@@ -16,6 +16,7 @@ permission:
   webfetch: allow
   websearch: allow
   question: ask
+  execute: allow
   code-review-graph_get_impact_radius_tool: allow
   code-review-graph_get_hub_nodes_tool: allow
   code-review-graph_get_bridge_nodes_tool: allow
