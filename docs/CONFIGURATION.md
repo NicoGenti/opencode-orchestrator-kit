@@ -424,11 +424,16 @@ On a `verdict: "fail"` the orchestrator narrows the phase scope or dispatches ON
 
 ## Code Review Graph (CRG) under V2 Code Mode
 
-CRG is optional infrastructure. The six CRG-enabled agent prompts (`explorer`,
-`planner`, `developer-fixer`, `test-engineer`, `code-reviewer`, `security`) use it
-when it is connected and granted, and fall back silently otherwise. Under OpenCode
-V2 Code Mode a connected server is absent from the native tool catalog, so this
-section records how it is declared, how it is called, and how the kit detects it.
+CRG is mandatory when available. The six CRG-enabled agent prompts (`explorer`,
+`planner`, `developer-fixer`, `test-engineer`, `code-reviewer`, `security`) must use
+it whenever a detection signal is present and their own trigger applies — a plain
+`rg`/`read` sweep in that case is a gap the report must disclose — and they fall
+back silently, without blocking the task, when CRG is absent, errors, times out,
+returns nothing, or reports `not_ready` / `stale_graph`. `code-reviewer` remains the
+sole refresh owner. Under OpenCode V2 Code Mode a connected server is absent from
+the native tool catalog, so this section records how it is declared, how it is
+called, and how the kit detects it; the `## Code Graph` section of each prompt owns
+the exact per-agent rule.
 
 ### Declaring the server
 
@@ -459,18 +464,23 @@ that CRG is unconfigured.
 
 ### How the kit detects CRG
 
-The `## Optional Code Graph` sections of the six CRG-enabled agent prompts treat
-CRG as configured when either signal is present:
+The `## Code Graph` sections of the six CRG-enabled agent prompts treat CRG as
+configured when either signal is present:
 
 1. the delegation's "Inputs Available" carries the `Code Graph: present` note, or
 2. the runtime exposes `code-review-graph_*` tools — in the native tool list, or in
    the Code Mode catalog inside `execute`.
 
-On doubt an agent skips the call and goes straight to its fallback without
-concluding that CRG is not configured; errors, timeouts, and a `not_ready` /
-`stale_graph` status fall back silently the same way. `code-reviewer` remains the
-sole refresh owner and no other agent refreshes the graph. The prompt text owns the
-exact rule; this section only explains it.
+When a signal is present and the agent's own trigger applies, CRG is a MUST rather
+than an optional accelerator: those tools are reached only inside `execute`, as
+`tools["code-review-graph"].<tool>({ ... })`, and an agent that skipped them for a
+plain `rg`/`read` sweep must say so in its report. The mandate is trigger-scoped — a
+single-file, self-contained task stays CRG-free — and the fallback stays narrow:
+with neither signal CRG is absent, so the call is skipped silently, and errors,
+timeouts, empty results, or a `not_ready` / `stale_graph` status fall back the same
+way, without concluding that CRG is not configured. No agent blocks a task on it.
+`code-reviewer` remains the sole refresh owner and no other agent refreshes the
+graph. The prompt text owns the exact rule; this section only explains it.
 
 ### `codemode: false` for plugin tools
 
@@ -488,9 +498,9 @@ The profiler detects CRG with `ls .code-review-graph` and records
 `Code Graph: present` or `Code Graph: absent` in `.opencode/PROJECT-PROFILE.md`
 (`agents/profiler.md:141-143`); it never installs or configures CRG, and absence is
 not an error. The orchestrator then forwards the note as
-`Code Graph: present — CRG MCP tools may be available` in the "Inputs Available"
-section of every delegation (`agents/orchestrator.md:64`, task-spec section
-`:253`) — that note is signal (i) above.
+`Code Graph: present — CRG MCP tools are available and MUST be used when a trigger applies`
+in the "Inputs Available" section of every delegation (`agents/orchestrator.md:64`,
+task-spec section `:253`) — that note is signal (i) above.
 
 ## FreeLLMAPI profile (local app)
 
