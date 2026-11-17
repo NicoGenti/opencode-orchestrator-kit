@@ -5,6 +5,7 @@ import { join } from "node:path";
 import {
   parseChangelog,
   parseLatestRelease,
+  shortenBody,
 } from "../src/site/changelog-model";
 import { buildRoster } from "../src/site/roster-model";
 import type { AgentSource } from "../src/site/roster-model";
@@ -97,21 +98,65 @@ describe("the landing What's new section comes from CHANGELOG.md", () => {
   });
 });
 
+describe("shortenBody keeps the What's new cards readable", () => {
+  test("strips inline code backticks and keeps the code text", () => {
+    expect(shortenBody("Run `bun test` before shipping")).toBe(
+      "Run bun test before shipping",
+    );
+  });
+
+  test("flattens a Markdown link to its text", () => {
+    expect(shortenBody("See [the guide](https://example.com/guide) now")).toBe(
+      "See the guide now",
+    );
+  });
+
+  test("collapses whitespace and newlines", () => {
+    expect(shortenBody("one\n\n two\t three   four")).toBe(
+      "one two three four",
+    );
+  });
+
+  test("leaves a short body unchanged", () => {
+    expect(shortenBody("A short changelog body.")).toBe(
+      "A short changelog body.",
+    );
+  });
+
+  test("truncates at a word boundary with a single trailing ellipsis", () => {
+    expect(shortenBody("alpha beta gamma delta", 12)).toBe("alpha beta…");
+
+    const long = shortenBody("word ".repeat(100), 40);
+    expect(long.length).toBeLessThanOrEqual(40);
+    expect(long.endsWith("…")).toBe(true);
+    expect(long.endsWith(" …")).toBe(false);
+    expect(long).not.toContain("  ");
+  });
+});
+
 describe("the page is wired to the changelog and the roster", () => {
-  test("changelog.ts reads CHANGELOG.md with KIT_VERSION and the page imports it", () => {
+  test("changelog.ts reads the build-time virtual module and the page imports it", () => {
     const wiring = readFileSync(
       join(REPO_ROOT, "src/site/changelog.ts"),
       "utf8",
     );
-    expect(wiring).toContain('"../../CHANGELOG.md?raw"');
-    expect(wiring).toContain("KIT_VERSION");
-    expect(wiring).toContain("parseLatestRelease");
+    expect(wiring).toContain('"virtual:latest-release"');
+    expect(wiring).not.toContain("CHANGELOG.md?raw");
+
+    const config = readFileSync(join(REPO_ROOT, "vite.docs.config.ts"), "utf8");
+    expect(config).toContain('"virtual:latest-release"');
+    expect(config).toContain("CHANGELOG.md");
+    expect(config).toContain("plugin/package.json");
+    expect(config).toContain("parseLatestRelease");
 
     const page = readFileSync(
       join(REPO_ROOT, "src/components/landing/LandingPage.tsx"),
       "utf8",
     );
     expect(page).toContain("latestRelease");
+    expect(page).toContain("shortenBody");
+    expect(page).toContain("v{KIT_VERSION}");
+    expect(page).not.toContain("latestRelease.version");
     expect(page).not.toContain("WHATS_NEW");
     expect(page).not.toContain("What&apos;s new in 1.0");
     expect(page).toContain("roster.primaryCount");

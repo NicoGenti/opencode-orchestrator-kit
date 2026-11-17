@@ -85,7 +85,25 @@ export function parseLatestRelease(
   const chosen =
     released.find((release) => release.version === wanted) ?? released[0];
   if (!chosen) {
-    throw new Error("CHANGELOG.md contains no released section");
+    throw new Error(`CHANGELOG.md has no released section for ${version}`);
   }
   return chosen;
+}
+
+/**
+ * Presentation-only shortening for the What's new cards: drop inline code
+ * backticks, flatten Markdown links to their text, collapse whitespace, and
+ * cut at a word boundary with one trailing ellipsis. The parser stays intact.
+ */
+export function shortenBody(body: string, max = 280): string {
+  const plain = body
+    .replace(/`([^`]*)`/g, "$1")
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (plain.length <= max) return plain;
+  const cut = plain.slice(0, Math.max(max - 1, 0));
+  const boundary = cut.lastIndexOf(" ");
+  const head = (boundary > 0 ? cut.slice(0, boundary) : cut).trimEnd();
+  return `${head}…`;
 }
