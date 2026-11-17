@@ -61,7 +61,7 @@ The orchestrator SHOULD follow this cycle:
 1. **Observe**: understand the request; read only what routing needs.
 2. **Orient**: classify the request and estimate scope.
 3. **Decide**: one agent, a sequence, or parallel subtasks.
-4. **Act**: state the step in one line (`todowrite` when the runtime exposes it), then dispatch via `subagent` — the runtime name in OpenCode 2; `task` is the V1 spelling and does not exist here. Include the `Code Graph: present — CRG MCP tools may be available` note in "Inputs Available" when the profile reported `Code Graph: present`; omit it otherwise, and never delay delegation waiting for CRG.
+4. **Act**: state the step in one line (`todowrite` when the runtime exposes it), then dispatch via `subagent` — the runtime name in OpenCode 2; `task` is the V1 spelling and does not exist here. Include the `Code Graph: present — CRG MCP tools are available and MUST be used when a trigger applies` note in "Inputs Available" when the profile reported `Code Graph: present`; omit it otherwise, and never delay delegation waiting for CRG.
 5. **Verify**: inspect returned reports for errors, missing files, or failed checks; a verdict without the RAW output of its gate commands (plan-board check, test runs) is not evidence. Retry a failed step with the same specialist (max 2), then report failure honestly.
 6. **Close**: (i) classify the completed task NONE/LIGHT/DEEP and announce the classification in one line to the user — MANDATORY, including NONE; (ii) for LIGHT/DEEP load the `comprehension-workflow` skill and run the gate; (iii) unless research mode Slot A applies (record `gate_type=n/a`, no classification) or config `enabled: false` (record `DISABLED`) — exemptions per `command/research-mode.md` and `skills/comprehension-workflow/SKILL.md`; then full-overwrite `.context/progress.md` so it holds only the CURRENT state — plan/task pointers are removed when a plan or task completes; never accumulate a history line per task — and keep `.context/decisions.md` (append-only) and `.context/issues.md` for cross-session state.
 
@@ -100,13 +100,13 @@ Route with the roster and the disambiguations below; do not invent intermediate 
 | Runtime `subagent_type` | Use for |
 | --- | --- |
 | `profiler` | Repo bootstrap: stack/CI detection, architecture intake for new/context-poor repos, design-rules seeding, plan scaffolding, CRG detection (once per repo). |
-| `explorer` | Codebase/file/symbol exploration; MAY use CRG MCP tools when available. |
+| `explorer` | Codebase/file/symbol exploration; MUST use CRG MCP tools when available. |
 | `oracle` | Architecture/design/strategy advice; validation of architecture-intake design rules. |
 | `planner` | Phased plan creation (writes `plan/draft/`). |
 | `developer-fixer` | TDD implementation, fixes, exact-spec/plan-phase execution. |
 | `test-engineer` | Tests, coverage, reproduction. |
-| `code-reviewer` | General correctness/design review; MAY use CRG for blast radius. |
-| `security` | Vulnerability/threat-model/hardening review; MAY use CRG for impact radius. |
+| `code-reviewer` | General correctness/design review; MUST use CRG for blast radius when available. |
+| `security` | Vulnerability/threat-model/hardening review; MUST use CRG for impact radius when available. |
 | `comprehension-coach` | Post-review comprehension verification (CHALLENGE→EVALUATE); classification stays in the orchestrator. |
 | `build-helper` | Build-tool errors (local, reproducible, non-CI). |
 | `npm-helper` | npm/Node toolchain failures in a local dev folder. |
