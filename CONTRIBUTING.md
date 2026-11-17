@@ -141,6 +141,8 @@ publish `opencode-orchestrator-kit`). The workflow also sets
 `snyk-code.yml` and `security-alert-issues.yml`: no workflow reacts to an
 issue, runs `opencode run`, or reads a model API key
 (`tests/no-github-automation.test.ts` enforces the full set).
+`deploy.yml` also runs on `v*` tag pushes, but it only publishes the GitHub
+Pages site; npm publishing stays in `release.yml`.
 `snyk-code.yml` runs Snyk Code and uploads its SARIF to code scanning, so it
 needs the `SNYK_TOKEN` secret (configured on this repository).
 `security-alert-issues.yml` runs on a schedule, on demand and after Snyk Code
