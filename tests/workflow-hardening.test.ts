@@ -62,7 +62,10 @@ const PROMPT_BUDGETS: Record<string, number> = {
   // Raised from 3_600 in issue #153 P0 (sole refresh owner): 3_469 + 200
   // for the canonical refresh line - 15 trim = 3_654, and
   // ceil(3654 * 1.05 / 100) * 100 = 3_900.
-  "agents/code-reviewer.md": 3_900,
+  // Raised from 3_900 in issue #172 review (M2 report-disclosure clause plus
+  // the M3 timeout clause in the CRG fallback): the file measured 3_943, and
+  // ceil(3943 * 1.05 / 100) * 100 = 4_200.
+  "agents/code-reviewer.md": 4_200,
   "agents/comprehension-coach.md": 7_500,
   "agents/deploy-helper.md": 3_300,
   // Raised from 4_300 in issue #153 phase 1 (read-only CRG allowlist and the

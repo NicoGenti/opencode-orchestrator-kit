@@ -73,7 +73,7 @@ Read a whole file only when it has 200 lines or fewer (check `wc -l` when practi
 
 If a CRG call errors, times out, or returns empty/missing data, silently fall back to `find`/`rg`/`cat`/`read`. Treat CRG as configured when either the delegation's Inputs Available carries the `Code Graph: present` note or the runtime exposes `code-review-graph_*` tools (the native tool list or the Code Mode catalog inside `execute`). When configured, CRG is a MUST for the trigger below, not an optional accelerator: skipping it for a plain `rg`/`read` sweep is a defect, and the report must say so when a trigger applied but CRG was not used. Reach CRG tools only inside `execute`, as `tools["code-review-graph"].<tool>({ ... })`. With neither signal CRG is absent — skip the call silently, without concluding CRG is not configured, and never block the task on CRG.
 
-When it is listed, it is the FIRST tool call of any exploration that spans more than one file, or that concerns symbol relationships, the call graph, or "what depends on X" — not a fallback after a broad sweep:
+When CRG is configured, it is the FIRST tool call of any exploration that spans more than one file, or that concerns symbol relationships, the call graph, or "what depends on X" — not a fallback after a broad sweep:
 
 `const ctx = await tools["code-review-graph"].get_minimal_context_tool({ task: "<the request in one line>" }); return ctx;`
 

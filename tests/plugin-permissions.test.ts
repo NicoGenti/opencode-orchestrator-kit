@@ -588,6 +588,22 @@ describe("MCP default deny — le allowlist dichiarate sono reali", () => {
       expect(body).not.toContain("accelerator, never a requirement");
     }
   });
+  test("gli agenti CRG in forma breve dichiarano l'onere di segnalazione", () => {
+    // Explorer carries the canonical form, whose disclosure duty is phrased
+    // for the defect case; the five short-form files append the same clause
+    // verbatim, so the pin doubles as a form discriminator (M5).
+    for (const rel of [
+      "agents/code-reviewer.md",
+      "agents/security.md",
+      "agents/developer-fixer.md",
+      "agents/test-engineer.md",
+      "agents/planner.md",
+    ]) {
+      expect(readFileSync(join(ROOT, rel), "utf-8")).toContain(
+        "; if a trigger applied and CRG was not used, say so in the report.",
+      );
+    }
+  });
   test("developer-fixer: regole d'uso del grafo dichiarate nel prompt", () => {
     const body = readFileSync(join(ROOT, "agents/developer-fixer.md"), "utf-8");
     expect(body).toContain("Treat CRG as configured when either");
@@ -638,6 +654,7 @@ describe("tool surface documentata per explorer e planner", () => {
   const body = (rel: string) => readFileSync(join(ROOT, rel), "utf-8");
   test("explorer: il grafo e' la PRIMA chiamata e la mappa tools e' documentata", () => {
     const t = body("agents/explorer.md");
+    expect(t).toContain("When CRG is configured, it is the FIRST tool call");
     expect(t).toContain("it is the FIRST tool call of any exploration");
     expect(t).toContain('tools["code-review-graph"].get_minimal_context_tool');
     expect(t).toContain("\"Unknown tool 'shell'\"");
