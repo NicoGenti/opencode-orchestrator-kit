@@ -9,15 +9,15 @@ Snapshot dello stato corrente della sessione; nessun piano attivo.
 
 ## Stato corrente
 
-- Issue #153 completata; scheda 153 in `plan/complete/153.md`, con `comprehension: skipped`.
-- Branch corrente `main`, HEAD `a172a291686cf9a7434cad8b1ac6713138ecc016`; `git pull --ff-only origin main` ha restituito `Already up to date`. Il branch è avanti di 2 commit e indietro di 0 rispetto a `origin/main`; nessun push eseguito.
-- I due commit locali da pubblicare al prossimo rilascio sono `7ddbffc` (`chore(plan-153): session memory + comprehension record`) e `a172a29` (`chore(plan-153): update session progress`).
-- Grafo CRG locale aggiornato e verificato su HEAD `a172a291686cf9a7434cad8b1ac6713138ecc016` (`head_matches_build: true`). Nessuna modifica a source o workflow CI.
-- Push rinviato al prossimo rilascio della nuova versione; nessuna operazione di push eseguita.
-- Verifica finale nota per issue #153: `bun test` 1214 pass / 14 failure ambientali invariate; typecheck, lint, sync-assets e structure guards passano; `format:check` segnala lo stesso baseline di 32 file CRLF-only.
-- Comprehension DEEP dell’issue #153: SKIPPED e registrata; nessun gate di comprensione richiesto per questa operazione Git/CRG (classificazione NONE).
-- Questo aggiornamento di `.context/progress.md` resta locale e non committato; nessun altro file deve essere incluso implicitamente.
+- **Issue #168 COMPLETATA**: release **v1.2.1** pubblicata su npm (confermata dall'utente). Tag `v1.2.1` su `a6ca475` (merge rebase della PR di release per #168); release PR aperta a mano dall'utente (`gh` permission-denied in sessione); Release GitHub NON creata (il workflow la crea? no — `release.yml` fa solo npm publish; va creata a mano, vedi issues.md).
+- Contenuto 1.2.1 (4 path, +7): bullet #167 in CHANGELOG (promossa sotto `## [1.2.1] — 2026-11-16`), bump `package.json`/`plugin/package.json` 1.2.0→1.2.1, pin `tests/site-landing.test.ts:189` → 1.2.1. Tag/branch release puliti; worktree rimosso; main locale allineato a origin/main (`a6ca475`).
+- Card 0010 → `plan/complete/` (comprehension `none`); card 0009 (v1.2.0) ancora con Phase 5–6 aperte — igiene board lasciata all'utente.
+- Board: `plan/complete/0010.md` untracked in git; da committare a parte se voluto (fuori dal release diff). Nessuna riga telemetria scritta per #168 (classificazione NONE); la riga 2026-11-16T20:32:31Z (LIGHT PASS) appartiene al gate #167.
+- Residui: `.context/plan-body-*.md` orphan staging bodies (0008, 0009, 0010, 000153, 000167) — cancellazione negata dal permission layer; pulizia manuale utente.
 
 ## Next steps
 
-- Al prossimo rilascio della nuova versione, pianificare e autorizzare il push dei due commit locali su `main`.
+- Utente: creare la GitHub Release v1.2.1 a mano (vedi issues.md 2026-11-16) oppure confermare che non serve.
+- Utente: valutare chiusura issue #168 su GitHub; valutare pulizia card 0009 e staging bodies.
+- Prossimo rilascio: ereditare le note ambientali in issues.md (baseline CRLF/host-bash del worktree; mai confrontare format:check cross-environment).
+- Nessun piano attivo.
