@@ -52,6 +52,13 @@ import type { PermissionRule } from "../plugin/src/permissions.ts";
  *   and `semantic_search_nodes_tool` (issue #153 phase 3). All three are
  *   MAY-level accelerators; the mutation tools stay denied by the family
  *   default.
+ * - agents/security.md — one added rule,
+ *   `{ action: "execute", resource: "*", effect: "allow" }` (issue #172
+ *   phase 2). Its three declared read-only CRG tools are reached only inside
+ *   `execute` (Code Mode), which the global `"*": deny` fallback otherwise
+ *   blocked: the per-tool allows were unreachable. The global fallback and
+ *   the CRG family default still bound the agent; `execute` is a known V1
+ *   action and not one of the catch-alls the invariant guard polices.
  *
  * Every other agent translates to the same rule list as before.
  */
@@ -167,6 +174,17 @@ describe("V2 permission translation snapshot", () => {
     expect(
       has("agents/orchestrator.md", {
         action: "subagent",
+        resource: "*",
+        effect: "allow",
+      }),
+    ).toBe(true);
+    // Issue #172 phase 2 — security declares `execute: allow` so its read-only
+    // CRG tools are reachable inside Code Mode. The global `"*": deny`
+    // fallback and the CRG family default keep every undeclared action and
+    // tool denied.
+    expect(
+      has("agents/security.md", {
+        action: "execute",
         resource: "*",
         effect: "allow",
       }),

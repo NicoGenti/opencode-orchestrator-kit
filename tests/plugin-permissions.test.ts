@@ -536,7 +536,7 @@ describe("MCP default deny — le allowlist dichiarate sono reali", () => {
     declared("agents/code-reviewer.md", "build_or_update_graph_tool", "allow");
     declared("agents/code-reviewer.md", "apply_refactor_tool", "deny");
   });
-  test("security: allow i tre dichiarati, deny apply_refactor", () => {
+  test("security: allow i tre dichiarati, deny apply_refactor, execute raggiungibile", () => {
     for (const t of [
       "get_impact_radius_tool",
       "get_hub_nodes_tool",
@@ -544,6 +544,12 @@ describe("MCP default deny — le allowlist dichiarate sono reali", () => {
     ])
       declared("agents/security.md", t, "allow");
     declared("agents/security.md", "apply_refactor_tool", "deny");
+    // Issue #172 phase 2 — the declared CRG tools are reached only inside
+    // `execute` (Code Mode); without this allow the global `"*": deny`
+    // fallback made them unreachable.
+    expect(resolveEffect(rulesOf("agents/security.md"), "execute", "*")).toBe(
+      "allow",
+    );
   });
   test("orchestrator: solo get_minimal_context_tool, nessun tool che scrive", () => {
     declared("agents/orchestrator.md", "get_minimal_context_tool", "allow");
