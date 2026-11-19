@@ -111,9 +111,20 @@ stay excluded because `scripts/plan-board.py` parses their frontmatter.
 is also the latest released heading in `CHANGELOG.md` (`## [Unreleased]` does
 not count). `tests/version-sync.test.ts` fails when the three drift.
 
-Do not tag or publish from a feature branch. `opencode-orchestrator-kit` is
-published on npm (1.2.2). `.github/workflows/release.yml` runs only on tags
-matching `v*`, so merging the workflow does not publish. Publishing uses npm
+The flow is branch-first: `main` carries development only, a release is cut on
+`release/v<x.y.z>`, the version bump is committed there, and the tag is created
+on that branch's head. There is no merge to `main` for the tag, and
+`release.yml` refuses a tag that does not sit exactly on top of its branch.
+
+`opencode-orchestrator-kit` is published on npm (1.2.2). `.github/workflows/release.yml`
+runs only on tags matching `v*`, so merging the workflow does not publish. The
+first step after the checkout is the branch gate: for tag `v<x.y.z>` the branch
+`origin/release/v<x.y.z>` must exist and its head must be exactly the commit the
+tag points at — the tag is peeled with `git rev-parse <tag>^{commit}`, because
+`github.sha` on an annotated-tag push is not the commit the tag names. A missing
+branch or a diverging head fails that step, with an explicit message naming both
+SHAs, before any quality gate, tag check, npm upgrade or publish step runs; the
+existing tag↔version check still applies on top of the gate. Publishing uses npm
 Trusted Publishing (OIDC): the publish job runs in the `npm` environment and
 authenticates with the short-lived OIDC token granted by `id-token: write`, so
 no stored npm token is read, and `npm publish --provenance --access public`
@@ -124,18 +135,40 @@ workflow upgrades npm because trusted publishing needs npm >= 11.5.1 on
 Node >= 22.14.0, logs `npm --version` so the run records the resolved version,
 and fails with an explicit error when the resolved version is below 11.5.1.
 
-1. On a branch, run `bun run bump-version <x.y.z>`. The script sets both
+1. Branch `release/v<x.y.z>` from an up-to-date `main`
+   (`git switch -c release/v<x.y.z> origin/main`). Do not tag a feature branch
+   and do not tag `main`: only the release branch is accepted.
+2. On that branch, run `bun run bump-version <x.y.z>`. The script sets both
    package manifests to that version, turns the `[Unreleased]` heading into
    `## [x.y.z] — <UTC date>`, and leaves a fresh empty `[Unreleased]`. It does
    not create a tag and does not publish.
-2. Open a pull request with that change. CI runs `bun test`, `bun run
-   typecheck`, `bun run lint`, and `bun run format:check`.
-3. Merge to `main`.
-4. Tag the merge commit `v<x.y.z>` (the tag, without the leading `v`, must
-   equal `plugin/package.json`'s `version`) and push the tag. The release
-   workflow repeats the quality gates, runs `bun run sync-assets --check`,
-   checks the tag, upgrades npm, and publishes `plugin/` with `npm publish
-   --provenance --access public`.
+3. Refresh the README points below in the same cut, run the local gates and
+   push the branch. Order matters: `origin/release/v<x.y.z>` must exist before
+   the tag is pushed.
+4. On `release/v<x.y.z>` at its head, tag `v<x.y.z>` (the tag, without the
+   leading `v`, must equal `plugin/package.json`'s `version`) and push the tag.
+   The release workflow runs the branch gate, repeats the quality gates, runs
+   `bun run sync-assets --check`, checks the tag, upgrades npm, and publishes
+   `plugin/` with `npm publish --provenance --access public`.
+5. After the publish succeeds the same run creates the GitHub Release
+   automatically: the title is the tag and the notes are the complete
+   `## [x.y.z]` section of `CHANGELOG.md` (heading down to the next `## `
+   heading), so an empty or missing section fails that step. The publish job
+   therefore carries a job-level `contents: write` next to `id-token: write`
+   (job-level permissions replace the top-level block, they do not extend it);
+   the top-level block stays `contents: read`.
+
+### README refresh at each cut
+
+Two README facts are only true for the release they were written for, so
+refresh them on the release branch, in the same commit series as the bump:
+
+- the marker at `README.md:93` — `published on npm (x.y.z)` — must name the
+  version being cut;
+- the runtime counts at `README.md:115` — re-count `agents/`, `command/` and
+  `skills/` from the sources (16 agents, 5 commands, 9 skills when that line
+  was written) instead of copying the previous number; `--with-extras` adds
+  `pc-doctor` and `writer` on top of the agent count.
 
 Human steps around a release (none of them can be automated from this
 repository):
@@ -150,12 +183,22 @@ repository):
   within 2 days of pushing the tag. Until it is registered, the publish step
   fails with an OIDC error.
 - If the publish fails because the publisher is missing or expired, fix the
-  registration and re-run the failed job from the GitHub UI; the tag and the
-  version must not change.
+  registration and re-run the failed job from the GitHub UI; the tag, the
+  release branch and the version must not change, and the branch gate is what
+  makes that re-run safe. The same rule covers any other failed step: fix the
+  cause and re-run the job — never re-tag, never force-push.
 - Approve the `npm` environment when the publish job pauses for review; the
-  job does not publish before that approval.
+  job does not publish before that approval, and the GitHub Release is only
+  created after a successful publish.
 - Revoke the `NPM_TOKEN` repository secret once the release is verified on the
   registry, since the workflow no longer reads it.
+- Keep the release branch and the existing `release/v*` branches on origin as
+  the record of each cut; `deploy.yml` republishes the Pages site on them and
+  on the `v*` tags. Deleting one is a separate, explicit decision.
+
+Rollback: before the tag is pushed, drop the release branch locally and start
+over; after a published release there is no unpublish, so a bad version means a
+patch release, not a re-tag.
 
 ## Continuous integration
 
@@ -167,8 +210,9 @@ repository):
 `snyk-code.yml` and `security-alert-issues.yml`: no workflow reacts to an
 issue, runs `opencode run`, or reads a model API key
 (`tests/no-github-automation.test.ts` enforces the full set).
-`deploy.yml` also runs on `v*` tag pushes, but it only publishes the GitHub
-Pages site; npm publishing stays in `release.yml`.
+`deploy.yml` also runs on `main` pushes, on `release/v*` branch pushes and on
+`v*` tag pushes, but it only publishes the GitHub Pages site; npm publishing
+stays in `release.yml`.
 `snyk-code.yml` runs Snyk Code and uploads its SARIF to code scanning, so it
 needs the `SNYK_TOKEN` secret (configured on this repository).
 `security-alert-issues.yml` runs on a schedule, on demand and after Snyk Code

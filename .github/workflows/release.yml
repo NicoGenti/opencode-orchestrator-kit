@@ -4,6 +4,23 @@
 # without publishing. The tag (without the leading v) must equal
 # plugin/package.json "version".
 #
+# The flow is branch-first: `main` is development only, a release is cut on
+# `release/<tag>` (branched from main, version bump committed there), and the
+# tag is created on that branch's head, never on main. The first step after the
+# checkout fails — before every quality gate, the tag↔version check, the npm
+# upgrade and the publish step — unless `origin/release/<tag>` exists and its
+# head is exactly the commit the tag points at. Annotations are peeled with
+# `git rev-parse <tag>^{commit}`, because `github.sha` on an annotated-tag push
+# is not the commit the tag names. The checkout uses fetch-depth 0 so the tag
+# object is fully available locally for that peel.
+#
+# After the publish succeeds, the run creates the GitHub Release for that tag,
+# using the complete `[x.y.z]` section of CHANGELOG.md as the notes. The job
+# therefore carries a job-level permissions block with `contents: write` (to
+# create the release) and `id-token: write` (for the OIDC exchange): job-level
+# permissions replace the top-level block instead of extending it, so both
+# entries are repeated there. The top-level block stays read-only for contents.
+#
 # Precondition (human step, not automated here, not registered yet): a trusted
 # publisher must be registered on npmjs.com for this repository:
 #   repository:        NicoGenti/opencode-orchestrator-kit
@@ -39,9 +56,42 @@ jobs:
     name: quality gates and npm publish
     runs-on: ubuntu-latest
     environment: npm
+    # Job-level permissions replace the top-level ones: contents: write is
+    # needed to create the GitHub Release after the publish, id-token: write is
+    # needed for the Trusted Publishing OIDC exchange.
+    permissions:
+      contents: write
+      id-token: write
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          # Full history so the annotated tag object is present locally and
+          # `git rev-parse <tag>^{commit}` peels it without a network round trip
+          # (a depth-1 tag fetch is not guaranteed to carry the tag object).
+          fetch-depth: 0
+
+      # Branch-first gate — the first step after the checkout on purpose: no
+      # quality gate, tag check, npm upgrade or publish step runs unless the
+      # release branch exists and sits exactly on the commit the tag names.
+      - name: Verify the release branch matches the tag
+        run: |
+          set -euo pipefail
+          BRANCH="release/${GITHUB_REF_NAME}"
+          REMOTE_HEAD="$(git ls-remote --heads origin "refs/heads/${BRANCH}" | cut -f1)"
+          if [ -z "${REMOTE_HEAD}" ]; then
+            echo "::error::release branch ${BRANCH} does not exist on origin; cut it from main, commit the version bump there and push it before tagging ${GITHUB_REF_NAME}"
+            exit 1
+          fi
+          if ! TAG_COMMIT="$(git rev-parse "${GITHUB_REF_NAME}^{commit}")"; then
+            echo "::error::cannot resolve ${GITHUB_REF_NAME} to a commit; the tag must exist in the checkout"
+            exit 1
+          fi
+          if [ "${REMOTE_HEAD}" != "${TAG_COMMIT}" ]; then
+            echo "::error::release branch ${BRANCH} head is ${REMOTE_HEAD} but tag ${GITHUB_REF_NAME} points at ${TAG_COMMIT}; tag the release branch head, never a different commit"
+            exit 1
+          fi
+          echo "release branch ${BRANCH} head ${REMOTE_HEAD} matches tag ${GITHUB_REF_NAME} commit ${TAG_COMMIT}"
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -131,3 +181,28 @@ jobs:
       - name: Publish plugin/ to npm
         working-directory: plugin
         run: npm publish --provenance --access public
+
+      # Automatic GitHub Release, notes taken from the complete `[x.y.z]`
+      # CHANGELOG.md section (the promoted heading down to the next `## `
+      # heading). The heading itself is dropped because the release title
+      # already carries the tag. Uses the built-in workflow token, so no extra
+      # secret is involved.
+      - name: Create the GitHub Release from the CHANGELOG section
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          VERSION="${GITHUB_REF_NAME#v}"
+          NOTES="${RUNNER_TEMP}/release-notes.md"
+          awk -v heading="## [${VERSION}]" '
+            index($0, heading) == 1 { found = 1; next }
+            found && /^## / { exit }
+            found { print }
+          ' CHANGELOG.md > "${NOTES}"
+          if ! grep -q '[^[:space:]]' "${NOTES}"; then
+            echo "::error::CHANGELOG.md carries no ## [${VERSION}] section to publish as the release notes"
+            exit 1
+          fi
+          gh release create "${GITHUB_REF_NAME}" \
+            --title "${GITHUB_REF_NAME}" \
+            --notes-file "${NOTES}"
