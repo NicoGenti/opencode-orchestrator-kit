@@ -152,7 +152,7 @@ describe("release workflow", () => {
     expect(view).toBeGreaterThan(releaseJob);
     expect(edit).toBeGreaterThan(view);
     expect(create).toBeGreaterThan(releaseJob);
-    expect(RELEASE).toContain("needs: publish");
+    expect(RELEASE_JOB).toContain("needs: publish");
     // Idempotent: an existing release is edited, a new one is created.
     expect(RELEASE).toContain('gh release edit "${GITHUB_REF_NAME}"');
     expect(RELEASE).toContain('gh release create "${GITHUB_REF_NAME}"');

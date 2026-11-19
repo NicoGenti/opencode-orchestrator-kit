@@ -120,7 +120,8 @@ on that branch's head. There is no merge to `main` for the tag, and
 runs only on tags matching `v*`, so merging the workflow does not publish. The
 first step after the checkout is the branch gate: for tag `v<x.y.z>` the branch
 `origin/release/v<x.y.z>` must exist and its head must be exactly the commit the
-tag points at — the tag is peeled with `git rev-parse <tag>^{commit}`, because
+tag points at — the tag is peeled with
+`git rev-parse "refs/tags/<tag>^{commit}"`, because
 `github.sha` on an annotated-tag push is not the commit the tag names. A missing
 branch or a diverging head fails that step, with an explicit message naming both
 SHAs, before any quality gate, tag check, npm upgrade or publish step runs; the
@@ -161,7 +162,8 @@ and fails with an explicit error when the resolved version is below 11.5.1.
    block, they do not extend it), so the job that runs `bun install` keeps
    `contents: read` and the top-level block stays `contents: read`. The
    release step is idempotent: it edits the existing release for the tag
-   instead of failing, so a re-run after a later failure is safe.
+   instead of failing, so *Re-run failed jobs* after a later failure repairs
+   it.
 
 ### README refresh at each cut
 
@@ -188,12 +190,15 @@ repository):
   within 2 days of pushing the tag. Until it is registered, the publish step
   fails with an OIDC error.
 - If the publish fails because the publisher is missing or expired, fix the
-  registration and re-run the failed job from the GitHub UI; the tag, the
-  release branch and the version must not change, and the branch gate is what
-  makes that re-run safe. A re-run after a *successful* publish is safe too:
-  the release step is idempotent, so it updates the existing GitHub Release
-  instead of failing on it. The same rule covers any other failed step: fix the
-  cause and re-run the job — never re-tag, never force-push.
+  registration and use *Re-run failed jobs* on the original run from the GitHub
+  UI — never *Re-run all jobs*: a full re-run executes the publish job again and
+  npm rejects a version that is already on the registry with an E403, so only
+  the failed jobs may be retried. The tag, the release branch and the version
+  must not change, and the branch gate is what makes that retry safe. The
+  `release` job is idempotent, so when it failed on its own, *Re-run failed
+  jobs* edits the existing GitHub Release instead of failing on it. The same
+  rule covers any other failed step: fix the cause and use *Re-run failed
+  jobs* — never re-tag, never force-push.
 - Approve the `npm` environment when the publish job pauses for review; the
   job does not publish before that approval, and the GitHub Release is only
   created after a successful publish.
