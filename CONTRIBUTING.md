@@ -150,13 +150,18 @@ and fails with an explicit error when the resolved version is below 11.5.1.
    The release workflow runs the branch gate, repeats the quality gates, runs
    `bun run sync-assets --check`, checks the tag, upgrades npm, and publishes
    `plugin/` with `npm publish --provenance --access public`.
-5. After the publish succeeds the same run creates the GitHub Release
-   automatically: the title is the tag and the notes are the complete
+5. After the publish succeeds, a separate `release` job creates the GitHub
+   Release automatically: the title is the tag and the notes are the complete
    `## [x.y.z]` section of `CHANGELOG.md` (heading down to the next `## `
-   heading), so an empty or missing section fails that step. The publish job
-   therefore carries a job-level `contents: write` next to `id-token: write`
-   (job-level permissions replace the top-level block, they do not extend it);
-   the top-level block stays `contents: read`.
+   heading). That section is extracted and checked *before* the publish, so an
+   empty or missing section fails the run while npm is still untouched, and
+   the notes reach the `release` job as the `release-notes` artifact; the
+   `release` job `needs` the publish job and is the only one carrying a
+   job-level `contents: write` (job-level permissions replace the top-level
+   block, they do not extend it), so the job that runs `bun install` keeps
+   `contents: read` and the top-level block stays `contents: read`. The
+   release step is idempotent: it edits the existing release for the tag
+   instead of failing, so a re-run after a later failure is safe.
 
 ### README refresh at each cut
 
@@ -185,7 +190,9 @@ repository):
 - If the publish fails because the publisher is missing or expired, fix the
   registration and re-run the failed job from the GitHub UI; the tag, the
   release branch and the version must not change, and the branch gate is what
-  makes that re-run safe. The same rule covers any other failed step: fix the
+  makes that re-run safe. A re-run after a *successful* publish is safe too:
+  the release step is idempotent, so it updates the existing GitHub Release
+  instead of failing on it. The same rule covers any other failed step: fix the
   cause and re-run the job — never re-tag, never force-push.
 - Approve the `npm` environment when the publish job pauses for review; the
   job does not publish before that approval, and the GitHub Release is only
@@ -197,8 +204,11 @@ repository):
   on the `v*` tags. Deleting one is a separate, explicit decision.
 
 Rollback: before the tag is pushed, drop the release branch locally and start
-over; after a published release there is no unpublish, so a bad version means a
-patch release, not a re-tag.
+over; if that branch was already pushed, deleting `origin/release/v<x.y.z>` is
+a separate, explicit decision — the gate accepts that branch and it is the
+record of the cut, so it must exist on origin again before the tag is pushed.
+After a published release there is no unpublish, so a bad version means a patch
+release, not a re-tag.
 
 ## Continuous integration
 
