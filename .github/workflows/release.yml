@@ -212,7 +212,7 @@ jobs:
           fi
 
       - name: Upload the release notes
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: release-notes
           path: ${{ runner.temp }}/release-notes.md
@@ -235,7 +235,7 @@ jobs:
       GH_REPO: ${{ github.repository }}
     steps:
       - name: Download the release notes
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: release-notes
           path: ${{ runner.temp }}
