@@ -5,6 +5,7 @@ All notable changes to this project are documented in this file. The format foll
 ## [Unreleased]
 
 - **Explicit containment for the `apply-freellmapi-profile.py` config lifecycle (#147 #148 #149 #150)**: the read, the dated `.bak-<ts>` backup copy, the terminal write and the `json.dump` payload now all consume a single `--config` path resolved and verified before any filesystem access — an empty value, a `..` segment in either separator form (`/` and `\`, mixed included) or a value that resolves outside the config root it names is refused with `ERROR: --config …, refusing: …` and exit 1, so the four Snyk sinks share one decision point instead of four; clean relative and absolute paths keep working unchanged, `--dry-run` and `--force-config` behave as before, and the documented exit codes are untouched.
+- **Explicit containment for the `apply-model-preset.py` config read (#146)**: `load_config`'s `Path(args.config)` read no longer consumes the raw argv value — the path is resolved once (`abspath` + `normpath`) and contained before any filesystem access, so an empty value, a `..` segment in either separator form (`/` and `\`, mixed included) or a value that resolves outside the config root it names is refused with `error: --config …, refusing: …` and exit 1; clean relative and absolute `--config` values keep working unchanged, and `--list`, `--restore` and `--dry-run` behave exactly as before.
 
 ## [1.2.2] — 2026-11-17
 

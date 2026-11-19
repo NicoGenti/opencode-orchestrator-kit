@@ -39,8 +39,10 @@ function pythonBin(): string {
 }
 
 let tmp: string;
+let empty: string;
 beforeAll(() => {
   tmp = mkdtempSync(join(tmpdir(), "amp-"));
+  empty = mkdtempSync(join(tmpdir(), "amp-empty-"));
   mkdirSync(join(tmp, "agents"), { recursive: true });
   writeFileSync(
     join(tmp, "models.config.json"),
@@ -65,7 +67,10 @@ beforeAll(() => {
     "---\ndescription: x\nmode: subagent\nmodel: {{TIER_FAST}}\n---\n# A\n",
   );
 });
-afterAll(() => rmSync(tmp, { recursive: true, force: true }));
+afterAll(() => {
+  rmSync(tmp, { recursive: true, force: true });
+  rmSync(empty, { recursive: true, force: true });
+});
 
 maybe("apply-model-preset.py — default preset", () => {
   test("resolves tokens using default_preset when --preset is omitted", () => {
@@ -116,5 +121,94 @@ maybe("apply-model-preset.py — path traversal guard", () => {
     const r = runWithConfig(join(tmp, "models.config.json"), ["--list"]);
     expect(r.status).toBe(0);
     expect(r.stdout).toContain("mine:");
+  });
+
+  // AC3 matrix (Phase H2, #146): `load_config` is the single read sink, and
+  // every row below exercises the one `--config` path contained before it
+  // reaches the filesystem.
+  function runInCwd(cfg: string, extra: string[] = []) {
+    return spawnSync(pythonBin(), [SCRIPT, "--config", cfg, ...extra], {
+      encoding: "utf-8",
+      cwd: tmp,
+    });
+  }
+
+  test("assente: default mancante -> errore invariato, nessun accesso", () => {
+    const r = spawnSync(pythonBin(), [SCRIPT, "--list"], {
+      encoding: "utf-8",
+      cwd: empty,
+    });
+    expect(r.status).toBe(1);
+    expect(r.stderr).toContain("config file not found");
+  });
+
+  test("vuoto: --config '' rifiutato prima di ogni accesso fs", () => {
+    const r = runWithConfig("", ["--list"]);
+    expect(r.status).toBe(1);
+    expect(r.stderr).toContain("refusing");
+    expect(r.stderr).toContain("empty");
+  });
+
+  test("relativo legittimo: --list legge il config dalla cwd", () => {
+    const r = runInCwd("models.config.json", ["--list"]);
+    expect(r.status).toBe(0);
+    expect(r.stdout).toContain("mine:");
+    expect(r.stdout).toContain("TIER_FAST -> prov/fast");
+  });
+
+  test("assoluto con '..': rifiutato prima dell'accesso", () => {
+    // Built by concatenation, not `join`: `join` would normalize the `..` away.
+    const r = runWithConfig(`${tmp}/../evil.json`, ["--list"]);
+    expect(r.status).toBe(1);
+    expect(r.stderr).toContain("refusing");
+  });
+
+  test("relativo '..' con separatori misti (\\ e /): rifiutato", () => {
+    const r = runInCwd("a/..\\..\\evil", ["--list"]);
+    expect(r.status).toBe(1);
+    expect(r.stderr).toContain("refusing");
+  });
+
+  test("path che risolve fuori dalla root che dichiara: rifiutato", () => {
+    const r = runInCwd(join(tmp, "sub", "dir") + "/", ["--list"]);
+    expect(r.status).toBe(1);
+    expect(r.stderr).toContain("config root");
+  });
+
+  test("regressione: --preset/--dry-run/--restore su path legittimo invariati", () => {
+    const regDir = join(tmp, "agents-reg");
+    mkdirSync(regDir, { recursive: true });
+    const agent = join(regDir, "r.md");
+    writeFileSync(
+      agent,
+      "---\ndescription: r\nmode: subagent\nmodel: {{TIER_CODE}}\n---\n# R\n",
+    );
+
+    const dry = runInCwd("models.config.json", [
+      "--preset",
+      "mine",
+      "--agents-dir",
+      regDir,
+      "--dry-run",
+    ]);
+    expect(dry.status).toBe(0);
+    expect(readFileSync(agent, "utf-8")).toContain("model: {{TIER_CODE}}");
+
+    const applied = runInCwd("models.config.json", [
+      "--preset",
+      "mine",
+      "--agents-dir",
+      regDir,
+    ]);
+    expect(applied.status).toBe(0);
+    expect(readFileSync(agent, "utf-8")).toContain("model: prov/code");
+
+    const restored = runInCwd("models.config.json", [
+      "--restore",
+      "--agents-dir",
+      regDir,
+    ]);
+    expect(restored.status).toBe(0);
+    expect(readFileSync(agent, "utf-8")).toContain("model: {{TIER_CODE}}");
   });
 });
