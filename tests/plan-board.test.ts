@@ -5,6 +5,7 @@ import {
   mkdtempSync,
   readFileSync,
   rmSync,
+  symlinkSync,
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
@@ -113,6 +114,22 @@ type RunResult = {
 function run(args: string[], root?: string): RunResult {
   const r = spawnSync(PY, [SCRIPT, ...args, "--root", root ?? "", "--json"], {
     encoding: "utf-8",
+  });
+  const stdout = r.stdout ?? "";
+  let json: any;
+  try {
+    json = JSON.parse(stdout);
+  } catch {
+    json = null;
+  }
+  return { status: r.status, json, stdout, stderr: r.stderr ?? "" };
+}
+
+/** Come `run`, ma con una cwd esplicita e senza forzare `--root` (percorsi relativi). */
+function runInCwd(args: string[], cwd: string): RunResult {
+  const r = spawnSync(PY, [SCRIPT, ...args, "--json"], {
+    encoding: "utf-8",
+    cwd,
   });
   const stdout = r.stdout ?? "";
   let json: any;
@@ -571,5 +588,186 @@ maybe("plan-board.py — path traversal guard", () => {
     const r = run(["check"], makeBoard());
     expect(r.status).toBe(0);
     expect(r.json?.ok).toBe(true);
+  });
+
+  // AC3 matrix (Phase H3, #143 #144 #145). Two shapes, one per sink family:
+  //  - move/new write targets (`:268-272`, `:304-308`): resolved under `--root`,
+  //    so an absolute `--root` stays first-class (board operating rule) and the
+  //    rows below cover a legit relative root, a legit absolute root, both
+  //    `..` separators and a resolved escape (symlinked column);
+  //  - `--body` (`_contained_body`): an explicit operator path, never
+  //    board-relative — `AGENTS.md` "Staging body" and `plan/README.md:28` put
+  //    it at `.context/plan-body-<id>.md` while `--root` is the board — so
+  //    absolute and relative values are accepted as before, and only an empty
+  //    value, a `..` segment (both separators) or a path resolving outside the
+  //    parent directory it names is refused. That is the documented divergence
+  //    from the unguarded TS port, which parity scenarios never exercise.
+  test("assente: --body inesistente resta body-missing, nessun file creato", () => {
+    const root = makeBoard();
+    const r = run(
+      [
+        "new",
+        "--id",
+        "9600-assente",
+        "--title",
+        "Assente",
+        "--owner",
+        "plan-writer",
+        "--executor",
+        "developer-fixer",
+        "--body",
+        join(tmpdir(), `pb-body-absent-${process.pid}.md`),
+      ],
+      root,
+    );
+    expect(r.status).toBe(1);
+    expect(r.json?.code).toBe("body-missing");
+    expect(existsSync(join(root, "draft", "9600-assente.md"))).toBe(false);
+  });
+
+  test("relativo legittimo: --body .context/... e --root plan dalla cwd", () => {
+    const work = mkdtempSync(join(tmpdir(), "pb-cwd-body-"));
+    boards.push(work);
+    const board = join(work, "plan");
+    for (const col of COLUMNS) mkdirSync(join(board, col), { recursive: true });
+    mkdirSync(join(work, ".context"), { recursive: true });
+    writeFileSync(join(work, ".context", "plan-body-9601.md"), BODY_OK, "utf-8");
+
+    const r = runInCwd(
+      [
+        "new",
+        "--id",
+        "9601-rel",
+        "--title",
+        "Rel",
+        "--owner",
+        "plan-writer",
+        "--executor",
+        "developer-fixer",
+        "--body",
+        ".context/plan-body-9601.md",
+        "--root",
+        "plan",
+      ],
+      work,
+    );
+    expect(r.status).toBe(0);
+    expect(r.json?.verified).toBe(true);
+    expect(existsSync(join(board, "draft", "9601-rel.md"))).toBe(true);
+  });
+
+  test("assoluto legittimo: --body esplicito fuori dalla board accettato", () => {
+    const root = makeBoard();
+    const r = run(
+      [
+        "new",
+        "--id",
+        "9602-abs",
+        "--title",
+        "Abs",
+        "--owner",
+        "plan-writer",
+        "--executor",
+        "developer-fixer",
+        "--body",
+        writeBody(BODY_OK),
+      ],
+      root,
+    );
+    expect(r.status).toBe(0);
+    expect(r.json?.verified).toBe(true);
+    expect(existsSync(join(root, "draft", "9602-abs.md"))).toBe(true);
+  });
+
+  test("rifiuta --body con '..' backslash e misto (nessun file creato)", () => {
+    const root = makeBoard();
+    for (const raw of ["..\\evil-body.md", "a/..\\..\\evil-body.md"]) {
+      const r = run(
+        [
+          "new",
+          "--id",
+          "9603-trav",
+          "--title",
+          "Trav",
+          "--owner",
+          "plan-writer",
+          "--executor",
+          "developer-fixer",
+          "--body",
+          raw,
+        ],
+        root,
+      );
+      expect(r.status).toBe(1);
+      expect(r.json?.ok).toBe(false);
+      expect(r.json?.code).toBe("path-traversal");
+    }
+    expect(existsSync(join(root, "draft", "9603-trav.md"))).toBe(false);
+  });
+
+  test("rifiuta --body che nomina una directory (separatore finale)", () => {
+    const root = makeBoard();
+    const dir = mkdtempSync(join(tmpdir(), "pb-body-dir-"));
+    boards.push(dir);
+    const r = run(
+      [
+        "new",
+        "--id",
+        "9604-dir",
+        "--title",
+        "Dir",
+        "--owner",
+        "plan-writer",
+        "--executor",
+        "developer-fixer",
+        "--body",
+        join(dir, "sub") + "/",
+      ],
+      root,
+    );
+    expect(r.status).toBe(1);
+    expect(r.json?.code).toBe("path-traversal");
+    expect(r.json?.message).toContain("body root");
+    expect(existsSync(join(root, "draft", "9604-dir.md"))).toBe(false);
+  });
+
+  test("colonna symlink fuori dalla root: path-traversal (skip se EPERM)", () => {
+    const root = makeBoard();
+    seedPlan(root, "draft", "9610-escape");
+    const outside = mkdtempSync(join(tmpdir(), "pb-outside-"));
+    boards.push(outside);
+    rmSync(join(root, "qa"), { recursive: true, force: true });
+    try {
+      // `junction` è l'unico link a una directory creabile su Windows senza
+      // privilegi; su POSIX node ignora il type e crea un symlink normale.
+      try {
+        symlinkSync(outside, join(root, "qa"), "junction");
+      } catch {
+        symlinkSync(outside, join(root, "qa"), "dir");
+      }
+    } catch {
+      // Windows senza developer mode / policy: il symlink non è creabile,
+      // quindi il caso di escape non è esercitabile su questa macchina.
+      return;
+    }
+    const r = run(["move", "--id", "9610-escape", "--to", "qa"], root);
+    expect(r.status).toBe(1);
+    expect(r.json?.ok).toBe(false);
+    expect(r.json?.code).toBe("path-traversal");
+    expect(existsSync(join(outside, "9610-escape.md"))).toBe(false);
+    expect(existsSync(join(root, "draft", "9610-escape.md"))).toBe(true);
+  });
+
+  test("regressione: move legittimo, path del payload invariato (nessun resolve)", () => {
+    const root = makeBoard();
+    seedPlan(root, "draft", "9620-regressione");
+    const r = run(
+      ["move", "--id", "9620-regressione", "--to", "qa", "--comprehension", "skipped"],
+      root,
+    );
+    expect(r.status).toBe(0);
+    expect(r.json?.verified).toBe(true);
+    expect(r.json?.path).toBe(join(root, "qa", "9620-regressione.md"));
+    expect(existsSync(join(root, "qa", "9620-regressione.md"))).toBe(true);
   });
 });
