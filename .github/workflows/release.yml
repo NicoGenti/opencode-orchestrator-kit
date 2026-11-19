@@ -4,16 +4,24 @@
 # without publishing. The tag (without the leading v) must equal
 # plugin/package.json "version".
 #
-# Trusted publisher registered on npmjs.com for this repository:
-#   repository:  NicoGenti/opencode-orchestrator-kit
-#   workflow:    .github/workflows/release.yml
-#   environment: npm
-#   command:     npm publish
+# Precondition (human step, not automated here, not registered yet): a trusted
+# publisher must be registered on npmjs.com for this repository:
+#   repository:        NicoGenti/opencode-orchestrator-kit
+#   workflow filename: release.yml
+#   environment:       npm
+#   Allowed actions:   npm publish
+# Publisher configurations created after 2026-09-03 are stage-only and must be
+# enabled for the `npm publish` action. A publisher configuration that is not
+# validated expires 2 days after it was created, so register (or re-create) the
+# publisher within 2 days of pushing the tag. If the publish fails because the
+# publisher is missing or expired, fix the registration and re-run the failed
+# job from the GitHub UI; the tag and the version must not change.
 # The publish job runs in that environment, so a required reviewer approves it
 # before it starts, and it authenticates with the short-lived OIDC token
 # granted by the id-token: write permission. No stored npm token is read.
 # Trusted publishing needs npm >= 11.5.1 on Node >= 22.14.0, so the job upgrades
-# npm and logs its version before publishing.
+# npm right before publishing, logs the resolved version and fails when that
+# version is below the 11.5.1 floor.
 
 name: Release
 
@@ -59,19 +67,14 @@ jobs:
           python3 --version
           python --version
 
+      # No custom registry is configured on purpose: pointing setup-node at a
+      # private registry writes an `_authToken` placeholder into the runner's
+      # npm config, and that placeholder breaks the OIDC token exchange used
+      # by trusted publishing. npm keeps its default registry.
       - name: Set up Node
         uses: actions/setup-node@v7
         with:
           node-version: "22"
-          registry-url: "https://registry.npmjs.org"
-
-      # Trusted publishing requires npm >= 11.5.1 (and Node >= 22.14.0); the
-      # runner image ships an older npm, so upgrade it and log the version.
-      - name: Upgrade npm for trusted publishing
-        run: |
-          set -euo pipefail
-          npm install -g npm@latest
-          npm --version
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
@@ -101,6 +104,29 @@ jobs:
             exit 1
           fi
           echo "tag ${GITHUB_REF_NAME} matches plugin version ${PKG}"
+
+      # Trusted publishing requires npm >= 11.5.1 (and Node >= 22.14.0); the
+      # runner image ships an older npm, so upgrade it right before publishing,
+      # log the resolved version and fail loudly when it is below the floor.
+      - name: Upgrade npm for trusted publishing
+        run: |
+          set -euo pipefail
+          npm install -g npm@latest
+          NPM_VERSION="$(npm --version)"
+          echo "npm version: ${NPM_VERSION}"
+          node -e '
+            const [major = 0, minor = 0, patch = 0] = process.argv[1]
+              .split(".")
+              .map((p) => Number.parseInt(p, 10));
+            const current = major * 1e6 + minor * 1e3 + patch;
+            const floor = 11 * 1e6 + 5 * 1e3 + 1;
+            if (current < floor) {
+              console.error(
+                "::error::npm " + process.argv[1] + " is below the 11.5.1 floor required by trusted publishing",
+              );
+              process.exit(1);
+            }
+          ' "${NPM_VERSION}"
 
       - name: Publish plugin/ to npm
         working-directory: plugin

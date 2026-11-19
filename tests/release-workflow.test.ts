@@ -25,6 +25,21 @@ describe("release workflow", () => {
     expect(RELEASE).toMatch(/npm install -g npm@latest/);
     expect(RELEASE).toMatch(/npm --version/);
     expect(RELEASE).not.toMatch(/NODE_AUTH_TOKEN|NPM_TOKEN/);
+    expect(RELEASE).not.toMatch(/registry-url/);
     expect(RELEASE).toMatch(/safe to merge/);
+  });
+
+  test("pins the exact top-level permissions", () => {
+    expect(RELEASE).toMatch(
+      /^permissions:\n {2}contents: read\n {2}id-token: write$/m,
+    );
+  });
+
+  test("keeps the tag check and npm upgrade before the publish step", () => {
+    const publish = RELEASE.indexOf("npm publish --provenance");
+    const tag = RELEASE.indexOf("does not match plugin/package.json version");
+    const upgrade = RELEASE.indexOf("npm install -g npm@latest");
+    expect(tag).toBeLessThan(publish);
+    expect(upgrade).toBeLessThan(publish);
   });
 });
