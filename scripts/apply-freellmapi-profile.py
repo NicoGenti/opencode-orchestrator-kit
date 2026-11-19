@@ -6,7 +6,10 @@
      the agent.<id>.model map for EVERY agent found and (when asked) the root
      model/small_model for the builtins;
   3. with --strip-frontmatter removes the `model:` line from the agent files (the config
-     map becomes the single source).
+     map becomes the single source);
+  4. refuses a `--config` value that is empty, carries a `..` segment (both
+     separators) or resolves outside the config root it names, before any
+     filesystem access.
 
 Exit code: 0 ok · 1 missing input/unresolved token · 2 existing config is not JSON
 (comments or invalid JSON) -> rerun with --force-config (dated automatic backup).
@@ -30,6 +33,35 @@ def _is_traversal(raw: str) -> bool:
     is a single filename, and CI runs this suite on Linux.
     """
     return ".." in raw.replace("\\", "/").split("/")
+
+
+def _contained_config(raw: str) -> str:
+    """DR-9: `--config` is argv input - resolve and contain it once, up front.
+
+    Every sink of the config lifecycle (the read in `load_config`, the dated
+    backup copy, the terminal write and the `json.dump` payload) consumes the
+    path returned here, so one containment decision guards all four:
+
+      1. an empty value is refused;
+      2. any '..' segment is refused, splitting BOTH separators explicitly
+         (on POSIX a literal '..\\' is a single filename; CI runs on Linux);
+      3. the path is resolved lexically (`abspath` + `normpath`: the config
+         file may not exist yet, so `realpath`/`stat` are not available);
+      4. the resolved path must stay under the config root it names - the
+         resolved parent directory that holds both the write and its backup.
+
+    Legitimate relative and absolute values resolve to themselves and pass.
+    Raises ValueError naming the reason; the caller prints it and exits 1.
+    """
+    if not raw or not raw.strip():
+        raise ValueError("is empty")
+    if _is_traversal(raw):
+        raise ValueError("contains '..' segment(s)")
+    resolved = os.path.abspath(os.path.normpath(raw))
+    root = os.path.abspath(os.path.dirname(raw) or os.curdir)
+    if os.path.dirname(resolved) != root or not os.path.basename(resolved):
+        raise ValueError("resolves outside its config root")
+    return resolved
 
 
 def strip_jsonc(text: str) -> str:
@@ -142,9 +174,10 @@ def main(argv=None) -> int:
     ap.add_argument("--dry-run", action="store_true")
     a = ap.parse_args(argv)
 
-    if _is_traversal(a.config):
-        print("ERROR: --config contains '..' segment(s), refusing: %s" % a.config,
-              file=sys.stderr)
+    try:
+        config_path = _contained_config(a.config)
+    except ValueError as exc:
+        print("ERROR: --config %s, refusing: %s" % (exc, a.config), file=sys.stderr)
         return 1
 
     agent_models = read_agent_models(a.agents_dir)
@@ -154,7 +187,7 @@ def main(argv=None) -> int:
     if bad:
         print("ERROR: token {{TIER_*}} non risolti: %s (eseguire prima install.sh)" % bad, file=sys.stderr); return 1
 
-    cfg, raw = load_config(a.config)
+    cfg, raw = load_config(config_path)
     if cfg is None and not a.force_config:
         print("ERROR: %s esiste ma non e' JSON puro (commenti/JSON invalido)." % a.config, file=sys.stderr)
         print("       Ripetere con --force-config (verra' salvato un .bak-<timestamp>).", file=sys.stderr); return 2
@@ -170,12 +203,12 @@ def main(argv=None) -> int:
         print("  > dry-run: nessun file scritto"); return 0
 
     if raw is not None:
-        backup = "%s.bak-%s" % (a.config, time.strftime("%Y%m%d-%H%M%S"))
-        shutil.copy2(a.config, backup); print("  + backup %s" % backup)
-    os.makedirs(os.path.dirname(os.path.abspath(a.config)), exist_ok=True)
-    with open(a.config, "w", encoding="utf-8", newline="\n") as fh:
+        backup = "%s.bak-%s" % (config_path, time.strftime("%Y%m%d-%H%M%S"))
+        shutil.copy2(config_path, backup); print("  + backup %s" % backup)
+    os.makedirs(os.path.dirname(config_path), exist_ok=True)
+    with open(config_path, "w", encoding="utf-8", newline="\n") as fh:
         json.dump(merged, fh, indent=2); fh.write("\n")
-    print("  + scritto %s" % a.config)
+    print("  + scritto %s" % config_path)
 
     if a.strip_frontmatter:
         changed = strip_model_lines(a.agents_dir, apply=True)

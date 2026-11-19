@@ -4,6 +4,7 @@ import {
   mkdirSync,
   writeFileSync,
   readFileSync,
+  readdirSync,
   existsSync,
   rmSync,
 } from "node:fs";
@@ -55,6 +56,39 @@ function runWithConfig(cfg: string, extra: string[] = []) {
       "--key",
       "k-test",
       ...extra,
+    ],
+    { encoding: "utf-8" },
+  );
+}
+
+// Relative `--config` values are exercised from inside the temp root so the
+// "expected root" of the containment check is the profile dir, as in a real install.
+function runIn(cfg: string, extra: string[] = []) {
+  return spawnSync(
+    "python",
+    [
+      SCRIPT,
+      "--config",
+      cfg,
+      "--agents-dir",
+      join(dir, ".opencode", "agents"),
+      "--key",
+      "k-test",
+      ...extra,
+    ],
+    { encoding: "utf-8", cwd: dir },
+  );
+}
+
+function runWithoutConfig() {
+  return spawnSync(
+    "python",
+    [
+      SCRIPT,
+      "--agents-dir",
+      join(dir, ".opencode", "agents"),
+      "--key",
+      "k-test",
     ],
     { encoding: "utf-8" },
   );
@@ -173,5 +207,90 @@ describe("apply-freellmapi-profile.py - path traversal guard", () => {
     writeAgent("orchestrator", "freellmapi/auto:smart");
     const r = runWithConfig(join(dir, "clean-absolute.jsonc"), ["--dry-run"]);
     expect(r.status).toBe(0);
+  });
+
+  // AC3 matrix (Phase H1, #147-#150): every row below exercises the whole
+  // config lifecycle, whose four sinks - read :93, backup copy :174, write :176
+  // and json.dump :177 - consume the one path contained before any fs access.
+  test("assente: --config mancante e' rifiutato senza scrivere", () => {
+    writeAgent("orchestrator", "freellmapi/auto:smart");
+    const r = runWithoutConfig();
+    expect(r.status).not.toBe(0);
+    expect(r.stderr).toContain("--config");
+    expect(existsSync(join(dir, ".opencode", "opencode.jsonc"))).toBe(false);
+  });
+
+  test("vuoto: --config '' e' rifiutato prima di ogni accesso fs", () => {
+    writeAgent("orchestrator", "freellmapi/auto:smart");
+    const r = runWithConfig("");
+    expect(r.status).toBe(1);
+    expect(r.stderr).toContain("refusing");
+  });
+
+  test("relativo legittimo sotto la root attesa: scrive e non crea backup", () => {
+    writeAgent("orchestrator", "freellmapi/auto:smart");
+    const r = runIn(join(".opencode", "opencode.jsonc"));
+    expect(r.status).toBe(0);
+    const p = join(dir, ".opencode", "opencode.jsonc");
+    expect(existsSync(p)).toBe(true);
+    const cfg = JSON.parse(readFileSync(p, "utf-8"));
+    expect(cfg.provider.freellmapi.options.apiKey).toBe("k-test");
+    expect(
+      readdirSync(join(dir, ".opencode")).some((n) => n.includes(".bak-")),
+    ).toBe(false);
+  });
+
+  test("relativo annidato: crea i parent mancanti (regressione)", () => {
+    writeAgent("orchestrator", "freellmapi/auto:smart");
+    const p = join(dir, "deep", "nested", "opencode.jsonc");
+    expect(runIn(join("deep", "nested", "opencode.jsonc")).status).toBe(0);
+    expect(existsSync(p)).toBe(true);
+  });
+
+  test("assoluto legittimo: scrittura sul path risolto (regressione)", () => {
+    writeAgent("orchestrator", "freellmapi/auto:smart");
+    const p = join(dir, "abs-ok.jsonc");
+    expect(runWithConfig(p).status).toBe(0);
+    expect(JSON.parse(readFileSync(p, "utf-8")).default_agent).toBe(
+      "orchestrator",
+    );
+  });
+
+  test("--force-config: il backup nasce nella root del config e la riscrittura passa", () => {
+    writeAgent("orchestrator", "freellmapi/auto:smart");
+    const p = join(dir, ".opencode", "opencode.jsonc");
+    writeFileSync(p, '{ // commento umano\n  "plugin": []\n}\n');
+    const r = run(["--force-config"]);
+    expect(r.status).toBe(0);
+    expect(
+      readdirSync(join(dir, ".opencode")).some((n) =>
+        n.startsWith("opencode.jsonc.bak-"),
+      ),
+    ).toBe(true);
+    const cfg = JSON.parse(readFileSync(p, "utf-8"));
+    expect(cfg.provider.freellmapi.options.apiKey).toBe("k-test");
+  });
+
+  test("rifiuta '..' con separatori misti (\\ e /)", () => {
+    writeAgent("orchestrator", "freellmapi/auto:smart");
+    const r = runWithConfig("a/..\\..\\evil");
+    expect(r.status).toBe(1);
+    expect(r.stderr).toContain("refusing");
+  });
+
+  test("rifiuta un path assoluto che contiene '..'", () => {
+    writeAgent("orchestrator", "freellmapi/auto:smart");
+    // Built by concatenation, not `join`: `join` would normalize the `..` away.
+    const r = runWithConfig(`${dir}/../evil.jsonc`);
+    expect(r.status).toBe(1);
+    expect(r.stderr).toContain("refusing");
+  });
+
+  test("rifiuta un path che risolve fuori dalla root che dichiara", () => {
+    writeAgent("orchestrator", "freellmapi/auto:smart");
+    const r = runWithConfig(join(dir, "sub", "dir") + "/");
+    expect(r.status).toBe(1);
+    expect(r.stderr).toContain("config root");
+    expect(existsSync(join(dir, "sub"))).toBe(false);
   });
 });
