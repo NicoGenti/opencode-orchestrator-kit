@@ -4,6 +4,10 @@ on:
   push:
     branches:
       - main
+      # Release branches are branch-first: each release is cut on
+      # release/v<x.y.z>, so a push there republishes the Pages site with the
+      # new version before the tag exists.
+      - "release/v*"
     tags:
       - "v*"
   workflow_dispatch:
