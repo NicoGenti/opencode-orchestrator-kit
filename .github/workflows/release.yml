@@ -29,8 +29,9 @@
 # repeats both entries, and `release` carries `contents: write` alone.
 #
 # The release step is idempotent: it edits the existing release for the tag
-# instead of failing, so a re-run after a later failure (or after a successful
-# publish) is safe.
+# instead of failing, so *Re-run failed jobs* after a later failure repairs it.
+# A full *Re-run all jobs* is not equivalent: it would execute the publish job
+# again, and npm rejects a version that is already on the registry with an E403.
 #
 # Precondition (human step, not automated here, not registered yet): a trusted
 # publisher must be registered on npmjs.com for this repository:
@@ -239,20 +240,40 @@ jobs:
           name: release-notes
           path: ${{ runner.temp }}
 
-      # Idempotent on purpose: a re-run after a failed release step — or after
-      # a successful publish — updates the existing release instead of failing
-      # on an already-created one.
+      # Idempotent on purpose: a retry of this failed job updates the existing
+      # release instead of failing on an already-created one. The probe below
+      # separates "no release yet" (404) from a transient or permission error,
+      # which fails the step instead of being retried as a create.
       - name: Create or update the GitHub Release
         run: |
           set -euo pipefail
           NOTES="${RUNNER_TEMP}/release-notes.md"
-          if gh release view "${GITHUB_REF_NAME}" >/dev/null 2>&1; then
-            gh release edit "${GITHUB_REF_NAME}" \
-              --title "${GITHUB_REF_NAME}" \
-              --notes-file "${NOTES}"
-          else
-            gh release create "${GITHUB_REF_NAME}" \
-              --title "${GITHUB_REF_NAME}" \
-              --notes-file "${NOTES}" \
-              --verify-tag
+          PROBE_OUT="${RUNNER_TEMP}/release-probe.out"
+          PROBE_ERR="${RUNNER_TEMP}/release-probe.err"
+          # `-i` keeps the HTTP status: 200 means the release exists, 404 means
+          # it does not, and every other outcome is a real error.
+          gh api -i "repos/${GITHUB_REPOSITORY}/releases/tags/${GITHUB_REF_NAME}" \
+            >"${PROBE_OUT}" 2>"${PROBE_ERR}" || true
+          STATUS="$(awk '/^HTTP\// { print $2; exit }' "${PROBE_OUT}")"
+          if [ -z "${STATUS}" ] && grep -q "HTTP 404" "${PROBE_ERR}"; then
+            STATUS="404"
           fi
+          case "${STATUS}" in
+            200)
+              gh release view "${GITHUB_REF_NAME}" >/dev/null
+              gh release edit "${GITHUB_REF_NAME}" \
+                --title "${GITHUB_REF_NAME}" \
+                --notes-file "${NOTES}"
+              ;;
+            404)
+              gh release create "${GITHUB_REF_NAME}" \
+                --title "${GITHUB_REF_NAME}" \
+                --notes-file "${NOTES}" \
+                --verify-tag
+              ;;
+            *)
+              echo "::error::cannot tell whether release ${GITHUB_REF_NAME} exists (HTTP status: ${STATUS:-unknown}); gh reported:"
+              cat "${PROBE_ERR}" >&2 || true
+              exit 1
+              ;;
+          esac
