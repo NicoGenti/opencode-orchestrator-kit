@@ -631,7 +631,11 @@ maybe("plan-board.py — path traversal guard", () => {
     const board = join(work, "plan");
     for (const col of COLUMNS) mkdirSync(join(board, col), { recursive: true });
     mkdirSync(join(work, ".context"), { recursive: true });
-    writeFileSync(join(work, ".context", "plan-body-9601.md"), BODY_OK, "utf-8");
+    writeFileSync(
+      join(work, ".context", "plan-body-9601.md"),
+      BODY_OK,
+      "utf-8",
+    );
 
     const r = runInCwd(
       [
@@ -762,7 +766,15 @@ maybe("plan-board.py — path traversal guard", () => {
     const root = makeBoard();
     seedPlan(root, "draft", "9620-regressione");
     const r = run(
-      ["move", "--id", "9620-regressione", "--to", "qa", "--comprehension", "skipped"],
+      [
+        "move",
+        "--id",
+        "9620-regressione",
+        "--to",
+        "qa",
+        "--comprehension",
+        "skipped",
+      ],
       root,
     );
     expect(r.status).toBe(0);
