@@ -9,10 +9,11 @@
  * `path:line` citations outside fenced code blocks. Every cited file and line
  * is resolved under `--root` (default `.`) and every marker is matched
  * literally: the gate never judges semantics, never rewrites a file, and never
- * calls an LLM. An absolute or traversing citation is refused before any
- * filesystem access, so evidence can never read outside `--root`. One JSON
- * report goes to stdout; exit code 0 on `verdict: "pass"`, 1 on
- * `verdict: "fail"` and on any usage/IO error.
+ * calls an LLM. Citations are repository-relative by contract, so an absolute
+ * path and a `..` segment are refused before any filesystem access — for
+ * `--claims` and `--doc` as well as for every citation path — and evidence can
+ * never read outside `--root`. One JSON report goes to stdout; exit code 0 on
+ * `verdict: "pass"`, 1 on `verdict: "fail"` and on any usage/IO error.
  *
  * The pure cores (`checkEvidenceClaims`, `extractCitations`) receive file text
  * through an injected reader and touch no filesystem, clock, or environment;
@@ -20,7 +21,7 @@
  */
 
 import { readFileSync } from "node:fs";
-import { isAbsolute, join } from "node:path";
+import { isAbsolute, relative, resolve, sep } from "node:path";
 
 import {
   CLAIMS_MANIFEST_FIELDS,
@@ -500,32 +501,78 @@ function parseArguments(argv: string[]): CliArguments | null {
   return args;
 }
 
-function resolvePath(file: string, root: string): string {
-  return isAbsolute(file) ? file : join(root, file);
+type RefusalReason = "empty" | "traversal" | "absolute" | "escape";
+
+type Containment =
+  | { contained: true; target: string }
+  | { contained: false; reason: RefusalReason };
+
+const REFUSAL_MESSAGES: Record<RefusalReason, string> = {
+  empty: "Empty path refused",
+  traversal: "Path traversal detected",
+  absolute: "Absolute path refused",
+  escape: "Path escapes its root, refusing",
+};
+
+/**
+ * Resolve `raw` against `anchor`, or name why it must be refused.
+ *
+ * The single containment decision for both CLI inputs (`--claims`, `--doc`) and
+ * for every citation path the reader resolves, taken before any filesystem
+ * access (#156). An empty value or a `..` segment is refused lexically
+ * (`hasTraversalSegment` splits `/` and `\`), an absolute path is refused rather
+ * than re-anchored because citations are repository-relative by contract, and
+ * what remains is resolved and must stay under the resolved `anchor`. `join` on
+ * its own does not neutralize a drive-absolute second segment on Windows, so the
+ * resolved-under-anchor comparison is what closes the hole. The absolute
+ * `target` returned here is the only form handed to `readFileSync`.
+ */
+function containPath(raw: string, anchor: string): Containment {
+  if (raw.trim() === "") return { contained: false, reason: "empty" };
+  if (hasTraversalSegment(raw))
+    return { contained: false, reason: "traversal" };
+  if (isAbsolutePath(raw)) return { contained: false, reason: "absolute" };
+
+  const base = resolve(anchor);
+  const target = resolve(base, raw);
+  const inside = relative(base, target);
+  if (
+    inside === "" ||
+    inside === ".." ||
+    inside.startsWith(`..${sep}`) ||
+    isAbsolute(inside)
+  ) {
+    return { contained: false, reason: "escape" };
+  }
+  return { contained: true, target };
 }
 
 function readSourceOrFail(file: string, root: string): string {
-  const resolved = resolvePath(file, root);
+  const contained = containPath(file, root);
+  if (!contained.contained) {
+    return fail(`${REFUSAL_MESSAGES[contained.reason]}: ${file}`);
+  }
   try {
-    return readFileSync(resolved, "utf-8");
+    return readFileSync(contained.target, "utf-8");
   } catch {
     return fail(`Cannot read ${file}`);
   }
 }
 
 /**
- * Filesystem-backed reader for the CLI. Evidence paths resolve under `root`;
- * a traversing or absolute path is refused here as well, so the guard does not
- * depend on the caller (the pure core refuses it first).
+ * Filesystem-backed reader for the CLI. Evidence paths resolve under `root`, and
+ * the same containment runs first, so a traversing or absolute path — or one
+ * that resolves outside the root — is reported absent here too, and the guard
+ * does not depend on the caller (the pure core refuses it first).
  */
 function makeContentReader(root: string): ContentReader {
   return (relPath: string): FileContent => {
-    if (hasTraversalSegment(relPath) || isAbsolutePath(relPath)) {
+    const contained = containPath(relPath, root);
+    if (!contained.contained) {
       return { exists: false, text: null };
     }
-    const resolved = resolvePath(relPath, root);
     try {
-      return { exists: true, text: readFileSync(resolved, "utf-8") };
+      return { exists: true, text: readFileSync(contained.target, "utf-8") };
     } catch {
       return { exists: false, text: null };
     }
@@ -553,10 +600,12 @@ function main(): void {
   );
   if (args === null) usage();
 
-  for (const raw of [args.root, args.claims, args.doc]) {
-    if (raw !== undefined && hasTraversalSegment(raw)) {
-      fail(`Path traversal detected: ${raw}`);
-    }
+  // `--root` is the anchor the other inputs are resolved against, so it keeps
+  // only the lexical refusal (`..` in either separator form): an absolute repo
+  // root is first-class and is never re-anchored under something else. `--claims`
+  // and `--doc` go through the containment in the adapter below, before their read.
+  if (hasTraversalSegment(args.root)) {
+    fail(`Path traversal detected: ${args.root}`);
   }
 
   const contentOf = makeContentReader(args.root);
