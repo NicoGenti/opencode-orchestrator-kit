@@ -17,7 +17,7 @@ const WORKFLOW_FILES = [
 ];
 
 describe("GitHub Pages deploys on release tags", () => {
-  test("deploy.yml triggers on main, v* tags, and manual dispatch", () => {
+  test("deploy.yml triggers on main, release/v*, tags and dispatch", () => {
     const deploy = readFileSync(join(WORKFLOWS, "deploy.yml"), "utf8");
     const trigger = deploy.split(/^jobs:/m)[0];
 
@@ -25,6 +25,7 @@ describe("GitHub Pages deploys on release tags", () => {
     expect(trigger).toMatch(/^ {2}push:\s*$/m);
     expect(trigger).toMatch(/^ {4}branches:\s*$/m);
     expect(trigger).toContain("- main");
+    expect(trigger).toContain('- "release/v*"');
     expect(trigger).toMatch(/^ {4}tags:\s*$/m);
     expect(trigger).toContain('- "v*"');
     expect(trigger).toMatch(/^ {2}workflow_dispatch:\s*$/m);
