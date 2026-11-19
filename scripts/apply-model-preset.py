@@ -37,6 +37,7 @@ Notes:
 """
 import argparse
 import json
+import os
 import re
 import sys
 from pathlib import Path
@@ -70,6 +71,34 @@ def _is_traversal(raw: str) -> bool:
     is a single filename, and CI runs this suite on Linux.
     """
     return ".." in raw.replace("\\", "/").split("/")
+
+
+def _contained_config(raw: str) -> str:
+    """DR-9: `--config` is argv input - resolve and contain it once, up front.
+
+    `load_config` is the single read sink of this script, so one containment
+    decision guards it:
+
+      1. an empty value is refused;
+      2. any '..' segment is refused, splitting BOTH separators explicitly
+         (on POSIX a literal '..\\' is a single filename; CI runs on Linux);
+      3. the path is resolved lexically (`abspath` + `normpath`: the config
+         file may not exist yet, so `realpath`/`stat` are not available);
+      4. the resolved path must stay under the config root it names - the
+         resolved parent directory of the file that will be read.
+
+    Legitimate relative and absolute values resolve to themselves and pass.
+    Raises ValueError naming the reason; the caller prints it and exits 1.
+    """
+    if not raw or not raw.strip():
+        raise ValueError("is empty")
+    if _is_traversal(raw):
+        raise ValueError("contains '..' segment(s)")
+    resolved = os.path.abspath(os.path.normpath(raw))
+    root = os.path.abspath(os.path.dirname(raw) or os.curdir)
+    if os.path.dirname(resolved) != root or not os.path.basename(resolved):
+        raise ValueError("resolves outside its config root")
+    return resolved
 
 
 def load_config(config_path: Path) -> dict:
@@ -217,7 +246,12 @@ def main():
     if _is_traversal(args.config):
         sys.exit(f"error: --config contains '..' segment(s), refusing: {args.config}")
 
-    config = load_config(Path(args.config))
+    try:
+        config_path = _contained_config(args.config)
+    except ValueError as exc:
+        sys.exit(f"error: --config {exc}, refusing: {args.config}")
+
+    config = load_config(Path(config_path))
     presets = config.get("presets", {})
 
     if args.list:
