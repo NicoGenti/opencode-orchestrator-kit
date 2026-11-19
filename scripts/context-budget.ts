@@ -10,6 +10,13 @@
  * `verdict: "fail"` and on any usage/IO error. `--manifest` and `--config` are
  * resolved under `--root` (default `.`); `-` reads the manifest from stdin.
  *
+ * Every argv path is contained before any filesystem access: a `..` segment in
+ * either separator form is refused, and the resolved path must stay under the
+ * root it is resolved against — an absolute `--manifest` only when it is inside
+ * `--root`, an absolute `--config` under its own parent directory (the explicit
+ * operator path is used as-is by `loadGateConfig`). Only the validated path
+ * reaches `readFileSync`.
+ *
  * Offline and read-only by contract: the pure core `checkContextBudget` never
  * touches the clock, the environment, or the filesystem, and the CLI adapter
  * only reads the manifest and the config. Nothing is modified and no LLM is
@@ -17,7 +24,7 @@
  */
 
 import { readFileSync } from "node:fs";
-import { isAbsolute, join } from "node:path";
+import { dirname, isAbsolute, relative, resolve, sep } from "node:path";
 
 import {
   BUDGET_MANIFEST_FIELDS,
@@ -331,13 +338,42 @@ function parseArguments(argv: string[]): CliArguments | null {
   return args;
 }
 
-function readManifestOrFail(file: string, root: string): string {
+/**
+ * Resolve `raw` against `anchor` and refuse anything that escapes it.
+ *
+ * The single containment decision for both CLI inputs (#158 `--manifest`,
+ * #157 `--config`), run before any filesystem access: an empty value or a `..`
+ * segment is refused lexically (`hasTraversalSegment` splits both `/` and `\`),
+ * then the path is resolved and must stay under the resolved `anchor`. `join` on
+ * its own does not neutralize a drive-absolute second segment on Windows, so the
+ * resolved-under-root comparison is what closes the hole. The absolute path
+ * returned here is the only form handed to a reader.
+ */
+function containPath(raw: string, anchor: string): string {
+  if (raw.trim() === "") fail(`Empty path, refusing: ${raw}`);
+  if (hasTraversalSegment(raw)) fail(`Path traversal detected: ${raw}`);
+
+  const base = resolve(anchor);
+  const target = resolve(base, raw);
+  const inside = relative(base, target);
+  if (
+    inside === "" ||
+    inside === ".." ||
+    inside.startsWith(`..${sep}`) ||
+    isAbsolute(inside)
+  ) {
+    fail(`Path escapes its root, refusing: ${raw}`);
+  }
+  return target;
+}
+
+function readManifestOrFail(source: string, raw: string): string {
   try {
-    return file === "-"
+    return source === "-"
       ? readFileSync(0, "utf-8")
-      : readFileSync(join(root, file), "utf-8");
+      : readFileSync(source, "utf-8");
   } catch {
-    return fail(`Cannot read manifest: ${file}`);
+    return fail(`Cannot read manifest: ${raw}`);
   }
 }
 
@@ -355,18 +391,27 @@ function main(): void {
   );
   if (args === null) usage();
 
-  const rawPaths = [
-    args.root,
-    args.manifest === "-" ? undefined : args.manifest,
-    args.config,
-  ];
-  for (const raw of rawPaths) {
-    if (raw !== undefined && hasTraversalSegment(raw)) {
-      fail(`Path traversal detected: ${raw}`);
-    }
+  // `--root` is the anchor the other inputs are resolved against, so it keeps
+  // only the lexical refusal (`..` in either separator form): an absolute
+  // board/repo root is first-class and is never re-anchored under something else.
+  if (hasTraversalSegment(args.root)) {
+    fail(`Path traversal detected: ${args.root}`);
   }
 
-  const source = readManifestOrFail(args.manifest, args.root);
+  // Containment runs for both inputs before the first filesystem access: the
+  // manifest is resolved under `--root`, a relative `--config` under `--root`
+  // and an absolute `--config` under the parent directory it names (the
+  // explicit operator path `loadGateConfig` uses as-is).
+  const manifestSource =
+    args.manifest === "-" ? "-" : containPath(args.manifest, args.root);
+  const configSource =
+    args.config === undefined
+      ? undefined
+      : isAbsolute(args.config)
+        ? containPath(args.config, dirname(args.config))
+        : containPath(args.config, args.root);
+
+  const source = readManifestOrFail(manifestSource, args.manifest);
   let parsed: unknown;
   try {
     parsed = JSON.parse(source);
@@ -379,13 +424,7 @@ function main(): void {
     return fail(`Invalid manifest: ${result.errors.join("; ")}`);
   }
 
-  const configPath =
-    args.config === undefined
-      ? undefined
-      : isAbsolute(args.config)
-        ? args.config
-        : join(args.root, args.config);
-  const loaded = loadConfigOrFail(args.root, configPath);
+  const loaded = loadConfigOrFail(args.root, configSource);
   const limits = resolveRoleLimits(loaded.config, result.manifest.role);
   const report = checkContextBudget(result.manifest, limits);
   const payload: BudgetReport =

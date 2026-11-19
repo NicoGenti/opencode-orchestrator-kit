@@ -461,6 +461,264 @@ describe("CLI envelope", () => {
 });
 
 /**
+ * AC3 matrix (#158 `--manifest`, #157 `--config`): the CLI adapter resolves and
+ * contains every path before the first filesystem access, so only the validated
+ * path reaches `readFileSync`. Every refusal exits 1, prints nothing on stdout
+ * and names the reason on stderr.
+ */
+describe("path containment — CLI adapter (AC3)", () => {
+  function fixture(): { root: string; outside: string } {
+    const root = tempWorkspace();
+    const outside = tempWorkspace();
+    const manifest = makeManifest({
+      files: [makeFile("src/a.ts", 10), makeFile("src/b.ts", 10)],
+    });
+    writeManifest(root, manifest);
+    writeManifest(outside, manifest);
+    writeFileSync(
+      join(outside, "custom.json"),
+      JSON.stringify({ gates: { roles: { explorer: { maxFiles: 1 } } } }),
+    );
+    return { root, outside };
+  }
+
+  function cleanup(...dirs: string[]): void {
+    for (const dir of dirs) rmSync(dir, { recursive: true, force: true });
+  }
+
+  function expectRefused(result: CliResult, reason: RegExp): void {
+    expect(result.status).toBe(1);
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toMatch(reason);
+  }
+
+  test("assente/default: --manifest - with no --root and no --config is unchanged", () => {
+    const result = runCli(
+      ["--manifest", "-"],
+      JSON.stringify(makeManifest({ files: [] })),
+    );
+    expect(result.status).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(JSON.parse(result.stdout).verdict).toBe("pass");
+  });
+
+  test("relativo legittimo: a manifest under --root is read as before", () => {
+    const { root, outside } = fixture();
+    try {
+      const result = runCli(["--root", root, "--manifest", "manifest.json"]);
+      expect(result.status).toBe(0);
+      expect(result.stderr).toBe("");
+      const report = JSON.parse(result.stdout);
+      expect(report.verdict).toBe("pass");
+      expect(validateBudgetReport(report).valid).toBe(true);
+    } finally {
+      cleanup(root, outside);
+    }
+  });
+
+  test("assoluto legittimo: a manifest inside --root is accepted", () => {
+    const { root, outside } = fixture();
+    try {
+      const result = runCli([
+        "--root",
+        root,
+        "--manifest",
+        join(root, "manifest.json"),
+      ]);
+      expect(result.status).toBe(0);
+      expect(result.stderr).toBe("");
+      expect(JSON.parse(result.stdout).verdict).toBe("pass");
+    } finally {
+      cleanup(root, outside);
+    }
+  });
+
+  test("assoluto fuori root: a manifest resolving outside --root is refused", () => {
+    const { root, outside } = fixture();
+    try {
+      const result = runCli([
+        "--root",
+        root,
+        "--manifest",
+        join(outside, "manifest.json"),
+      ]);
+      expectRefused(result, /escapes its root/i);
+    } finally {
+      cleanup(root, outside);
+    }
+  });
+
+  test("assoluto con '..': traversal is refused before the resolve", () => {
+    const { root, outside } = fixture();
+    try {
+      // Raw argv form: a `join` here would normalize the `..` away, which is
+      // exactly why the guard inspects the value the operator typed.
+      const result = runCli([
+        "--root",
+        root,
+        "--manifest",
+        `${root}/../outside/manifest.json`,
+      ]);
+      expectRefused(result, /traversal/i);
+    } finally {
+      cleanup(root, outside);
+    }
+  });
+
+  test("relativo '..' con '/': a manifest escaping --root is refused", () => {
+    const { root, outside } = fixture();
+    try {
+      const result = runCli([
+        "--root",
+        root,
+        "--manifest",
+        "../outside/manifest.json",
+      ]);
+      expectRefused(result, /traversal/i);
+    } finally {
+      cleanup(root, outside);
+    }
+  });
+
+  test("relativo '..' con '\\': a mid-path and trailing backslash form is refused", () => {
+    const { root, outside } = fixture();
+    try {
+      const result = runCli([
+        "--root",
+        root,
+        "--manifest",
+        "sub\\..\\..\\evil.json",
+      ]);
+      expectRefused(result, /traversal/i);
+    } finally {
+      cleanup(root, outside);
+    }
+  });
+
+  test("vuoto: --manifest '' is refused before any filesystem access", () => {
+    const result = runCli(["--manifest", ""]);
+    expectRefused(result, /empty path/i);
+  });
+
+  test("config relativa legittima: the override under --root still applies", () => {
+    const { root, outside } = fixture();
+    try {
+      writeFileSync(
+        join(root, "custom.json"),
+        JSON.stringify({ gates: { roles: { explorer: { maxFiles: 1 } } } }),
+      );
+      const result = runCli([
+        "--root",
+        root,
+        "--manifest",
+        "manifest.json",
+        "--config",
+        "custom.json",
+      ]);
+      expect(result.status).toBe(1);
+      expect(result.stderr).toBe("");
+      const report = JSON.parse(result.stdout);
+      expect(report.verdict).toBe("fail");
+      expect(report.blocking_issues[0]).toContain("too_many_files");
+    } finally {
+      cleanup(root, outside);
+    }
+  });
+
+  test("config relativa che esce da --root is refused", () => {
+    const { root, outside } = fixture();
+    try {
+      const result = runCli([
+        "--root",
+        root,
+        "--manifest",
+        "manifest.json",
+        "--config",
+        "../outside/custom.json",
+      ]);
+      expectRefused(result, /traversal/i);
+    } finally {
+      cleanup(root, outside);
+    }
+  });
+
+  test("config assoluta legittima: an explicit operator path is contained under its own parent", () => {
+    const { root, outside } = fixture();
+    try {
+      // `loadGateConfig` uses an absolute explicit path as-is (it ignores the
+      // root), so the adapter anchors it at the directory it names: the file
+      // itself and its parent are what the containment vouches for.
+      const result = runCli([
+        "--root",
+        root,
+        "--manifest",
+        "manifest.json",
+        "--config",
+        join(outside, "custom.json"),
+      ]);
+      expect(result.status).toBe(1);
+      expect(result.stderr).toBe("");
+      expect(JSON.parse(result.stdout).blocking_issues[0]).toContain(
+        "too_many_files",
+      );
+    } finally {
+      cleanup(root, outside);
+    }
+  });
+
+  test("config assoluta con '..' is refused before any filesystem access", () => {
+    const { root, outside } = fixture();
+    try {
+      const result = runCli([
+        "--root",
+        root,
+        "--manifest",
+        "manifest.json",
+        "--config",
+        `${outside}/../outside/custom.json`,
+      ]);
+      expectRefused(result, /traversal/i);
+    } finally {
+      cleanup(root, outside);
+    }
+  });
+
+  test("regressione legittima: --root assoluto + relativo resta identico al baseline", () => {
+    const { root, outside } = fixture();
+    try {
+      const relative = runCli(["--root", root, "--manifest", "manifest.json"]);
+      const absolute = runCli([
+        "--root",
+        root,
+        "--manifest",
+        join(root, "manifest.json"),
+      ]);
+      expect(relative.stdout).toBe(absolute.stdout);
+      expect(relative.status).toBe(0);
+      expect(absolute.status).toBe(0);
+    } finally {
+      cleanup(root, outside);
+    }
+  });
+
+  test("Windows: a drive-absolute second segment is refused (join would not neutralize it)", () => {
+    if (process.platform !== "win32") return;
+    const { root, outside } = fixture();
+    try {
+      const result = runCli([
+        "--root",
+        root,
+        "--manifest",
+        "Z:\\does-not-exist\\manifest.json",
+      ]);
+      expectRefused(result, /escapes its root/i);
+    } finally {
+      cleanup(root, outside);
+    }
+  });
+});
+
+/**
  * SC4: the gate scripts are offline and LLM-free. Comments are stripped first
  * because the shared lib's doc comment names the forbidden modules in prose;
  * the assertion is about imports and calls, not about documentation. The third
