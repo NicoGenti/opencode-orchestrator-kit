@@ -112,11 +112,17 @@ is also the latest released heading in `CHANGELOG.md` (`## [Unreleased]` does
 not count). `tests/version-sync.test.ts` fails when the three drift.
 
 Do not tag or publish from a feature branch. `opencode-orchestrator-kit` is
-published on npm (1.1.1). `.github/workflows/release.yml` runs only on tags
-matching `v*`, so merging the workflow does not publish. Pushing a tag
-requires the `NPM_TOKEN` secret (an npm automation token with permission to
-publish `opencode-orchestrator-kit`). The workflow also sets
-`id-token: write` so `npm publish --provenance` can use GitHub's OIDC token.
+published on npm (1.2.2). `.github/workflows/release.yml` runs only on tags
+matching `v*`, so merging the workflow does not publish. Publishing uses npm
+Trusted Publishing (OIDC): the publish job runs in the `npm` environment and
+authenticates with the short-lived OIDC token granted by `id-token: write`, so
+no stored npm token is read, and `npm publish --provenance --access public`
+attaches a provenance attestation. The `Set up Node` step leaves npm on its
+default registry, so the runner writes no `_authToken` placeholder into the
+npm config and the OIDC exchange is not broken. Right before publishing, the
+workflow upgrades npm because trusted publishing needs npm >= 11.5.1 on
+Node >= 22.14.0, logs `npm --version` so the run records the resolved version,
+and fails with an explicit error when the resolved version is below 11.5.1.
 
 1. On a branch, run `bun run bump-version <x.y.z>`. The script sets both
    package manifests to that version, turns the `[Unreleased]` heading into
@@ -128,8 +134,28 @@ publish `opencode-orchestrator-kit`). The workflow also sets
 4. Tag the merge commit `v<x.y.z>` (the tag, without the leading `v`, must
    equal `plugin/package.json`'s `version`) and push the tag. The release
    workflow repeats the quality gates, runs `bun run sync-assets --check`,
-   checks the tag, and publishes `plugin/` with `npm publish --provenance
-   --access public`.
+   checks the tag, upgrades npm, and publishes `plugin/` with `npm publish
+   --provenance --access public`.
+
+Human steps around a release (none of them can be automated from this
+repository):
+
+- Register the trusted publisher on npmjs.com — a human precondition, still
+  to do, that this repository cannot automate: repository
+  `NicoGenti/opencode-orchestrator-kit`, workflow filename `release.yml`,
+  environment `npm`, allowed actions `npm publish`. Publisher configurations
+  created after 2026-09-03 are stage-only and must be enabled for the
+  `npm publish` action. A publisher configuration that is not validated
+  expires 2 days after it was created, so register (or re-create) the publisher
+  within 2 days of pushing the tag. Until it is registered, the publish step
+  fails with an OIDC error.
+- If the publish fails because the publisher is missing or expired, fix the
+  registration and re-run the failed job from the GitHub UI; the tag and the
+  version must not change.
+- Approve the `npm` environment when the publish job pauses for review; the
+  job does not publish before that approval.
+- Revoke the `NPM_TOKEN` repository secret once the release is verified on the
+  registry, since the workflow no longer reads it.
 
 ## Continuous integration
 
