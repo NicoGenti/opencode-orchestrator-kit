@@ -9,12 +9,18 @@ Subcommands:
 
 Exit 0 = ok (warnings alone do not fail), 1 = blocking error.
 Standard library only (no external dependencies).
+
+Path arguments are contained before any filesystem access: a `move`/`new`
+write target must resolve under the board root, and `--body` refuses an empty
+value, a '..' segment (both separators) or a path resolving outside the parent
+directory it names. Refusals reuse the `path-traversal` JSON envelope.
 """
 from __future__ import annotations
 
 import argparse
 import datetime as dt
 import json
+import os
 import re
 import sys
 from pathlib import Path
@@ -44,6 +50,54 @@ def _is_traversal(raw: str) -> bool:
     is a single filename, and CI runs this suite on Linux.
     """
     return ".." in raw.replace("\\", "/").split("/")
+
+
+def _resolves_within(child: Path, base: Path) -> bool:
+    """DR-9: true only when `child` resolves (symlinks included) under `base`."""
+    try:
+        child.resolve().relative_to(base.resolve())
+        return True
+    except (OSError, ValueError):
+        return False
+
+
+def _outside(root: Path, *paths: Path):
+    """DR-9: first path of `paths` whose resolved form escapes `root`, else None."""
+    for p in paths:
+        if not _resolves_within(p, root):
+            return p
+    return None
+
+
+def _contained_body(raw: str) -> str:
+    """DR-9: `--body` is argv input - resolve and contain it once, up front.
+
+    `cmd_new`'s read is the sink: the value returned here is the only form that
+    reaches it, so one decision guards the read and the content it hands on.
+
+      1. an empty value is refused;
+      2. any '..' segment is refused, splitting BOTH separators explicitly
+         (on POSIX a literal '..\\' is a single filename; CI runs on Linux);
+      3. the path is resolved lexically (`abspath` + `normpath`: the body may
+         not exist yet, so `realpath`/`stat` are not available);
+      4. the resolved path must stay under the body root it names - the
+         resolved parent directory that holds the file. `--body` is an
+         explicit operator path (the `.context/plan-body-<id>.md` staging
+         contract), never board-relative, so legitimate relative and absolute
+         values resolve to themselves and pass.
+
+    Raises ValueError naming the reason; `main` turns it into the existing
+    `path-traversal` JSON envelope.
+    """
+    if not raw or not raw.strip():
+        raise ValueError("is empty")
+    if _is_traversal(raw):
+        raise ValueError("contains '..' segment(s)")
+    resolved = os.path.abspath(os.path.normpath(raw))
+    root = os.path.abspath(os.path.dirname(raw) or os.curdir)
+    if os.path.dirname(resolved) != root or not os.path.basename(resolved):
+        raise ValueError("resolves outside its body root")
+    return resolved
 
 
 def today() -> str:
@@ -214,6 +268,10 @@ def cmd_move(root: Path, ident: str, to: str, dry_run: bool, as_json: bool,
         return fail("id-filename-mismatch",
                     f"id '{fm.get('id')}' is not the leading segment of file name '{path.name}': move rejected", as_json)
     dst = root / to / path.name
+    escaped = _outside(root, path, dst)
+    if escaped is not None:
+        return fail("path-traversal",
+                    f"--root write target escapes the board root, refusing: {escaped}", as_json)
     if dst.exists():
         return fail("target-exists", f"{dst} already exists", as_json)
     if to == "complete" and comprehension is None:
@@ -246,6 +304,10 @@ def cmd_new(root: Path, ident: str, title: str, owner: str, executor: str,
     if missing:
         return fail("body-incomplete", "missing sections in body: " + ", ".join(missing), as_json)
     dst = root / column / f"{ident}.md"
+    escaped = _outside(root, dst)
+    if escaped is not None:
+        return fail("path-traversal",
+                    f"--root write target escapes the board root, refusing: {escaped}", as_json)
     if dst.exists(): 
         return fail("target-exists", f"{dst} already exists", as_json)
     dup = find_plan(root, ident)
@@ -335,6 +397,11 @@ def main(argv=None) -> int:
         if raw is not None and _is_traversal(raw):
             return fail("path-traversal",
                         f"--{opt} contains '..' segment(s), refusing: {raw}", a.json)
+    if getattr(a, "body", None) is not None:
+        try:
+            a.body = _contained_body(a.body)
+        except ValueError as exc:
+            return fail("path-traversal", f"--body {exc}, refusing: {a.body}", a.json)
     root = Path(a.root)
     if a.cmd == "check":
         return cmd_check(root, a.json)
