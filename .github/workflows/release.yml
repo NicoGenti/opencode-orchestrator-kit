@@ -1,8 +1,19 @@
-# Publishes plugin/ to npm when a v* tag is pushed.
+# Publishes plugin/ to npm when a v* tag is pushed, through npm Trusted
+# Publishing (OIDC) instead of a long-lived token.
 # Does not run on pull requests or on pushes to main, so it is safe to merge
-# without publishing. opencode-orchestrator-kit 1.0.0 is already on npm; a
-# later tag still needs the NPM_TOKEN secret. The tag (without the leading v)
-# must equal plugin/package.json "version".
+# without publishing. The tag (without the leading v) must equal
+# plugin/package.json "version".
+#
+# Trusted publisher registered on npmjs.com for this repository:
+#   repository:  NicoGenti/opencode-orchestrator-kit
+#   workflow:    .github/workflows/release.yml
+#   environment: npm
+#   command:     npm publish
+# The publish job runs in that environment, so a required reviewer approves it
+# before it starts, and it authenticates with the short-lived OIDC token
+# granted by the id-token: write permission. No stored npm token is read.
+# Trusted publishing needs npm >= 11.5.1 on Node >= 22.14.0, so the job upgrades
+# npm and logs its version before publishing.
 
 name: Release
 
@@ -19,6 +30,7 @@ jobs:
   publish:
     name: quality gates and npm publish
     runs-on: ubuntu-latest
+    environment: npm
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -53,6 +65,14 @@ jobs:
           node-version: "22"
           registry-url: "https://registry.npmjs.org"
 
+      # Trusted publishing requires npm >= 11.5.1 (and Node >= 22.14.0); the
+      # runner image ships an older npm, so upgrade it and log the version.
+      - name: Upgrade npm for trusted publishing
+        run: |
+          set -euo pipefail
+          npm install -g npm@latest
+          npm --version
+
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
@@ -84,6 +104,4 @@ jobs:
 
       - name: Publish plugin/ to npm
         working-directory: plugin
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: npm publish --provenance --access public

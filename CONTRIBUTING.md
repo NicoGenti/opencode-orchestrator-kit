@@ -113,10 +113,13 @@ not count). `tests/version-sync.test.ts` fails when the three drift.
 
 Do not tag or publish from a feature branch. `opencode-orchestrator-kit` is
 published on npm (1.1.1). `.github/workflows/release.yml` runs only on tags
-matching `v*`, so merging the workflow does not publish. Pushing a tag
-requires the `NPM_TOKEN` secret (an npm automation token with permission to
-publish `opencode-orchestrator-kit`). The workflow also sets
-`id-token: write` so `npm publish --provenance` can use GitHub's OIDC token.
+matching `v*`, so merging the workflow does not publish. Publishing uses npm
+Trusted Publishing (OIDC): the publish job runs in the `npm` environment and
+authenticates with the short-lived OIDC token granted by `id-token: write`, so
+no stored npm token is read, and `npm publish --provenance --access public`
+attaches a provenance attestation. The workflow upgrades npm before
+publishing because trusted publishing needs npm >= 11.5.1 on Node >= 22.14.0,
+and logs `npm --version` so the run records the resolved version.
 
 1. On a branch, run `bun run bump-version <x.y.z>`. The script sets both
    package manifests to that version, turns the `[Unreleased]` heading into
@@ -128,8 +131,20 @@ publish `opencode-orchestrator-kit`). The workflow also sets
 4. Tag the merge commit `v<x.y.z>` (the tag, without the leading `v`, must
    equal `plugin/package.json`'s `version`) and push the tag. The release
    workflow repeats the quality gates, runs `bun run sync-assets --check`,
-   checks the tag, and publishes `plugin/` with `npm publish --provenance
-   --access public`.
+   checks the tag, upgrades npm, and publishes `plugin/` with `npm publish
+   --provenance --access public`.
+
+Human steps around a release (none of them can be automated from this
+repository):
+
+- Register the trusted publisher on npmjs.com once: repository
+  `NicoGenti/opencode-orchestrator-kit`, workflow file
+  `.github/workflows/release.yml`, environment `npm`, command `npm publish`.
+  Until it is registered, the publish step fails with an OIDC error.
+- Approve the `npm` environment when the publish job pauses for review; the
+  job does not publish before that approval.
+- Revoke the `NPM_TOKEN` repository secret once the release is verified on the
+  registry, since the workflow no longer reads it.
 
 ## Continuous integration
 
