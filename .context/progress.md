@@ -5,26 +5,28 @@ Snapshot dello stato corrente della sessione.
 ## Stack
 
 - Kit Markdown multi-agent per OpenCode 2 (plugin `plugin/`); sito Vite/React (`src/`, `docs-src/`); Bun + TypeScript; CI GitHub Actions.
-- Board: board in questo ambiente solo via python CLI + prova fisica.
+- Board: solo via python CLI + prova fisica in questo ambiente.
 
-## Current state
+## Stato: v1.2.3 PUBBLICATA (2026-11-19)
 
-- **v1.2.2 PUBBLICATA su npm (2026-11-17)**: `latest = 1.2.2` (gitHead `290ca39`); tag annotato `v1.2.2` su `main` post-merge (rebase-merge); `release.yml` verde (tag check + publish); `deploy.yml` su tag verde dopo fix utente delle protection rules di `github-pages`.
-- Incidente risolto: primo tag su `2553aed` (pre-bump) → fallimento atteso del tag-check; tag eliminato (approvato) e ricreato sul commit post-merge. Nessun publish parziale; nessun fallout su npm.
-- Scope rilasciato: #172 (CRG MUST-when-configured) + #171 (Pages su tag + What's new da CHANGELOG). Diff release: 4 path (`CHANGELOG.md`, `package.json`, `plugin/package.json`, `tests/site-landing.test.ts`).
-- `.context/decisions.md` archiviato e ripartito pulito (`.context/archive/decisions-2026-11-17.md`). `.context/issues.md` NON archiviato: scrittura in `.context/archive/` negata dal permission layer (vedi issues.md, voce 2026-11-17) — il file live contiene ancora il log completo.
-- Working tree primario: `main` allineato a `origin/main` (`290ca39`); worktree release in `C:\Users\NicolasGentilucci\AppData\Local\Temp\opencode\release-v1.2.2` (branch mergiato).
+- `opencode-orchestrator-kit@1.2.3` su npm (OIDC + provenance, environment `npm` approvato dall'utente). Run #10: gate branch-first → quality gates → tag↔version → npm≥11.5.1 → publish → GitHub Release automatica da sezione `[1.2.3]` CHANGELOG.
+- Tag `v1.2.3` annotato su `release/v1.2.3` @ `3e54f1f` (push approvato; deploy.yml Pages trigger `release/v*` OK).
+- PR mergiate: #193 (OIDC/#178), #194 (branch-first + Release automatica). R1 su entrambe (code-reviewer REQUEST CHANGES → fix → APPROVE; oracle/security APPROVE con F1 implementato, F2 = branch protection wildcard a carico utente).
+- 12 issue Snyk path-traversal (#143–#150, #155–#158) chiuse con evidenza post-decisione utente; 12 alert dismissi false positive (run #65; Snyk non modella il guard custom). 8 ulteriori Security* below-high (#181,182,183,185,188,189,191,192) chiuse il 2026-11-19 su autorizzazione esplicita utente.
+- Plan `179` (release cycle): tutte le fasi eseguite (H1–H5, S1, P1, R1, P2, C1, C2). Card ancora in `plan/in-progress/179.md` — da muovere a qa/complete a chiusura formale (utente).
 
-## Done (questa sessione)
+## Next steps (utente)
 
-- Release v1.2.2: verifica bullet changelog #172, bump via script, pin sito, sweep completo in worktree isolato, push branch, PR (handoff utente per `gh` negato), merge rebase da utente, recovery tag, verifica publish npm + Pages verde, release notes draft (testo consegnato in chat).
-- `progress.md` riscritto a fine sessione; `decisions.md` archiviato+riavviato; tentativo di archivio `issues.md` negato dal layer.
+- Decidere chiusura #178 (publish OIDC verificato; manca solo revoca `NPM_TOKEN`, passo umano) e chiusura epic #179.
+- Revocare `NPM_TOKEN` (secret GitHub) dopo verifica registry.
+- Branch protection wildcard `release/v*` (oracle F2).
+- PR severity-filter ancora NON aperta: branch `chore/179-security-alert-severity-filter` (7b732c6, pushato), body in temp
+- Board: card 179 → qa/complete dopo comprehension gate / decisione utente; merge-back `release/v1.2.3`→main deliberatamente fuori ciclo.
+- Comprehension gate (DEEP) non eseguito in sessione; oracle/code-reviewer usati come review tecniche, non come comprehension.
+- `release/v1.2.2` mantenuto per decisione utente; worktree `release-v1.2.3-baseline` rimosso; worktree release in `%TEMP%\opencode\release-v1.2.3`.
 
-## Next steps
+## Baseline / note
 
-- Utente: creare la GitHub Release `v1.2.2` a mano (workflow non la crea); chiudere issue #174; decidere board lifecycle della card di release (board separato per scelta utente).
-- Plan 0009 (Release v1.2.0): in-progress, Phase 5–6 aperte — vedi `plan/in-progress/0009.md` (igiene board utente).
-- Plan 0002 (design-first-governance): in-progress, fasi F/H aperte — vedi `plan/in-progress/0002-design-first-governance.md`.
-- Warning board pre-esistente: `plan/qa/0001` missing-comprehension.
-- Aperto (#171 m7): guard versione/pattern su `v*` in `deploy.yml` (decisione separata dell'utente).
-- Baseline: `bun test` 20 fail ambientali (worktree CRLF), 19 su checkout LF; `format:check` ~120 path CRLF — non regressioni.
+- Fail-set `bun test` invariato (20 fail, ambiente Windows); `version-sync` CRLF rientrato con la normalizzazione CHANGELOG a LF.
+- `gh` negato in sessione: PR/issue aperte via browser (#193, #194, chiusure issue); gh refusal del push in subagent senza approvazione in-band esplicita.
+- Archive: dettagli storici in `.context/archive/issues-2026-11-19.md`.
