@@ -151,8 +151,22 @@ describe("unverified claims", () => {
       { claim: "a traversing claim", evidence: "../outside.ts:1" },
     ],
     [
+      "path-traversal",
+      {
+        claim: "a backslash-traversing claim",
+        evidence: "src\\..\\..\\outside.ts:1",
+      },
+    ],
+    [
       "absolute-path",
       { claim: "a POSIX absolute claim", evidence: "/usr/local/lib/a.ts:1" },
+    ],
+    [
+      "absolute-path",
+      {
+        claim: "a drive-relative absolute claim",
+        evidence: "C:outside.ts:1",
+      },
     ],
     [
       "absolute-path",
@@ -212,6 +226,29 @@ describe("absolute evidence paths", () => {
     expect(report.claims[0].note).toBe("absolute-path");
     expect(report.blocking_issues[0]).toContain("absolute-path");
     expect(validateEvidenceReport(report).valid).toBe(true);
+  });
+});
+
+describe("traversing evidence paths", () => {
+  test("a `..` segment in either separator never reaches the reader", () => {
+    for (const evidence of ["../outside.ts:2", "src\\..\\..\\outside.ts:2"]) {
+      const seen: string[] = [];
+      const reader: ContentReader = (relPath: string) => {
+        seen.push(relPath);
+        return { exists: true, text: TOKEN_SOURCE };
+      };
+
+      const report = checkEvidenceClaims(
+        [{ claim: "escapes the root", evidence, marker: "issueToken" }],
+        reader,
+      );
+
+      expect(seen).toEqual([]);
+      expect(report.verdict).toBe("fail");
+      expect(report.claims[0].status).toBe("unverified");
+      expect(report.claims[0].note).toBe("path-traversal");
+      expect(validateEvidenceReport(report).valid).toBe(true);
+    }
   });
 });
 
@@ -649,6 +686,198 @@ describe("CLI envelope", () => {
       expect(result.stderr).toContain("Cannot read");
     } finally {
       rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
+
+/**
+ * AC3 matrix (#156 `readSourceOrFail`, #155 `makeContentReader`): the CLI adapter
+ * resolves and contains every path before the first filesystem access, so only
+ * the validated path reaches `readFileSync`. Citations are repository-relative by
+ * contract, so an absolute `--claims`/`--doc` is refused rather than re-anchored
+ * (the `context-budget.ts` `--config` precedent anchors an explicit operator
+ * path; an evidence path has no such form). Every refusal exits 1, prints
+ * nothing on stdout and names the reason on stderr.
+ */
+describe("path containment — CLI adapter (AC3)", () => {
+  const PASSING_MANIFEST = JSON.stringify({
+    claims: [
+      {
+        claim: "issueToken exists",
+        evidence: `${TOKEN_PATH}:2`,
+        marker: "issueToken",
+      },
+    ],
+  });
+
+  function fixture(): { root: string; outside: string } {
+    const root = tempWorkspace();
+    const outside = tempWorkspace();
+    // Both trees carry a manifest and a document that would PASS if read: a
+    // refusal is therefore proof that the value never reached the filesystem.
+    writeFileSync(join(root, "claims.json"), PASSING_MANIFEST);
+    writeFileSync(
+      join(root, "plan.md"),
+      "# Plan\n\nSee `src/auth/token.ts:2`.\n",
+    );
+    writeFileSync(join(outside, "claims.json"), PASSING_MANIFEST);
+    writeFileSync(
+      join(outside, "plan.md"),
+      "# Plan\n\nSee `src/auth/token.ts:2`.\n",
+    );
+    return { root, outside };
+  }
+
+  function cleanup(...dirs: string[]): void {
+    for (const dir of dirs) rmSync(dir, { recursive: true, force: true });
+  }
+
+  function expectRefused(result: CliResult, reason: RegExp): void {
+    expect(result.status).toBe(1);
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toMatch(reason);
+  }
+
+  test("assente/default: neither mode still prints Usage and exits 1", () => {
+    const { root, outside } = fixture();
+    try {
+      const result = runCli(["--root", root]);
+      expect(result.status).toBe(1);
+      expect(result.stdout).toBe("");
+      expect(result.stderr).toContain("Usage:");
+    } finally {
+      cleanup(root, outside);
+    }
+  });
+
+  test("relativo legittimo: --claims and --doc under --root are read as before", () => {
+    const { root, outside } = fixture();
+    try {
+      const claims = runCli(["--root", root, "--claims", "claims.json"]);
+      expect(claims.status).toBe(0);
+      expect(claims.stderr).toBe("");
+      expect(JSON.parse(claims.stdout).verdict).toBe("pass");
+
+      const doc = runCli(["--root", root, "--doc", "plan.md"]);
+      expect(doc.status).toBe(0);
+      expect(doc.stderr).toBe("");
+      const report = JSON.parse(doc.stdout);
+      expect(report.verdict).toBe("pass");
+      expect(report.claims[0].note).toBe("location-only");
+    } finally {
+      cleanup(root, outside);
+    }
+  });
+
+  test("assoluto: --claims is refused before any read (the manifest would pass)", () => {
+    const { root, outside } = fixture();
+    try {
+      const result = runCli([
+        "--root",
+        root,
+        "--claims",
+        join(outside, "claims.json"),
+      ]);
+      expectRefused(result, /absolute path/i);
+    } finally {
+      cleanup(root, outside);
+    }
+  });
+
+  test("assoluto: --doc is refused before any read (the document would pass)", () => {
+    const { root, outside } = fixture();
+    try {
+      const result = runCli([
+        "--root",
+        root,
+        "--doc",
+        join(outside, "plan.md"),
+      ]);
+      expectRefused(result, /absolute path/i);
+    } finally {
+      cleanup(root, outside);
+    }
+  });
+
+  test("relativo '..' con '/': --claims and --doc escaping --root are refused", () => {
+    const { root, outside } = fixture();
+    try {
+      expectRefused(
+        runCli(["--root", root, "--claims", "../outside/claims.json"]),
+        /traversal/i,
+      );
+      expectRefused(
+        runCli(["--root", root, "--doc", "../outside/plan.md"]),
+        /traversal/i,
+      );
+    } finally {
+      cleanup(root, outside);
+    }
+  });
+
+  test("relativo '..' con '\\': a mid-path and trailing backslash form is refused", () => {
+    const { root, outside } = fixture();
+    try {
+      expectRefused(
+        runCli(["--root", root, "--claims", "specs\\..\\..\\claims.json"]),
+        /traversal/i,
+      );
+      expectRefused(
+        runCli(["--root", root, "--doc", "..\\plan.md"]),
+        /traversal/i,
+      );
+    } finally {
+      cleanup(root, outside);
+    }
+  });
+
+  test("vuoto: an empty --claims or --doc is refused before any filesystem access", () => {
+    const { root, outside } = fixture();
+    try {
+      expectRefused(runCli(["--root", root, "--claims", ""]), /empty path/i);
+      expectRefused(runCli(["--root", root, "--doc", ""]), /empty path/i);
+    } finally {
+      cleanup(root, outside);
+    }
+  });
+
+  test("regressione legittima: a nested relative manifest and a './'-prefixed citation still resolve", () => {
+    const { root, outside } = fixture();
+    try {
+      mkdirSync(join(root, "specs"), { recursive: true });
+      writeFileSync(join(root, "specs", "claims.json"), PASSING_MANIFEST);
+      const nested = runCli(["--root", root, "--claims", "specs/claims.json"]);
+      expect(nested.status).toBe(0);
+      expect(JSON.parse(nested.stdout).verdict).toBe("pass");
+
+      writeFileSync(
+        join(root, "dotted.md"),
+        "# Plan\n\nSee `./src/auth/token.ts:2`.\n",
+      );
+      const dotted = runCli(["--root", root, "--doc", "dotted.md"]);
+      expect(dotted.status).toBe(0);
+      const report = JSON.parse(dotted.stdout);
+      expect(report.claims[0].evidence).toBe("./src/auth/token.ts:2");
+      expect(report.claims[0].note).toBe("location-only");
+    } finally {
+      cleanup(root, outside);
+    }
+  });
+
+  test("Windows: a drive-absolute --claims is refused (join would not neutralize it)", () => {
+    if (process.platform !== "win32") return;
+    const { root, outside } = fixture();
+    try {
+      expectRefused(
+        runCli(["--root", root, "--claims", "Z:\\does-not-exist\\claims.json"]),
+        /absolute path/i,
+      );
+      expectRefused(
+        runCli(["--root", root, "--claims", "Z:claims.json"]),
+        /absolute path/i,
+      );
+    } finally {
+      cleanup(root, outside);
     }
   });
 });
