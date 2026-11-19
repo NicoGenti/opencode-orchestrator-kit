@@ -188,7 +188,7 @@ describe("site head tokens and npm metadata", () => {
       homepage: string;
       keywords: string[];
     };
-    expect(pkg.version).toBe("1.2.2");
+    expect(pkg.version).toBe("1.2.3");
     expect(pkg.homepage).toBe(
       "https://nicogenti.github.io/opencode-orchestrator-kit/",
     );

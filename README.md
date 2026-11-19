@@ -90,7 +90,7 @@ Full contracts, permissions and model fallbacks are in each `agents/*.md` file (
 
 With the plugin, tier resolution happens at runtime from `plugin/src/tiers.ts` presets — there is no `{{TIER_*}}` substitution at install time.
 
-`opencode-orchestrator-kit` is published on npm (`1.1.1`; later releases follow the steps in [`CONTRIBUTING.md`](CONTRIBUTING.md)). OpenCode 2 loads plugins from the `plugins` array in `opencode.json` or `opencode.jsonc` as a package name, a local directory, or the object form `{ "package", "options" }` ([Plugins](https://opencode.ai/v2/docs/plugins)).
+`opencode-orchestrator-kit` is published on npm (`1.2.3`; later releases follow the steps in [`CONTRIBUTING.md`](CONTRIBUTING.md)). OpenCode 2 loads plugins from the `plugins` array in `opencode.json` or `opencode.jsonc` as a package name, a local directory, or the object form `{ "package", "options" }` ([Plugins](https://opencode.ai/v2/docs/plugins)).
 
 Primary install, the npm package:
 
