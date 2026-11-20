@@ -14,6 +14,7 @@ Snapshot dello stato corrente della sessione.
 - PR mergiate: #193 (OIDC/#178), #194 (branch-first + Release automatica). R1 su entrambe (code-reviewer REQUEST CHANGES → fix → APPROVE; oracle/security APPROVE con F1 implementato, F2 = branch protection wildcard a carico utente).
 - 12 issue Snyk path-traversal (#143–#150, #155–#158) chiuse con evidenza post-decisione utente; 12 alert dismissi false positive (run #65; Snyk non modella il guard custom). 8 ulteriori Security* below-high (#181,182,183,185,188,189,191,192) chiuse il 2026-11-19 su autorizzazione esplicita utente.
 - Plan `179` (release cycle): tutte le fasi eseguite (H1–H5, S1, P1, R1, P2, C1, C2). Card ancora in `plan/in-progress/179.md` — da muovere a qa/complete a chiusura formale (utente).
+- Rinforzo contrattuale 2026-11-20: TECHNICALLY_DONE richiede report di review tecnica (code-reviewer/security) green; svista di orchestrazione registrata in `.context/issues.md`; `agents/orchestrator.md` + mirror rigenerati (W1 23,942/24,000; test 70 pass/0 fail); comprehension gate saltato dall'utente (outcome `SKIPPED`, telemetria aggiunta).
 
 ## Next steps (utente)
 
@@ -22,7 +23,6 @@ Snapshot dello stato corrente della sessione.
 - Branch protection wildcard `release/v*` (oracle F2).
 - PR severity-filter ancora NON aperta: branch `chore/179-security-alert-severity-filter` (7b732c6, pushato), body in temp
 - Board: card 179 → qa/complete dopo comprehension gate / decisione utente; merge-back `release/v1.2.3`→main deliberatamente fuori ciclo.
-- Comprehension gate (DEEP) non eseguito in sessione; oracle/code-reviewer usati come review tecniche, non come comprehension.
 - `release/v1.2.2` mantenuto per decisione utente; worktree `release-v1.2.3-baseline` rimosso; worktree release in `%TEMP%\opencode\release-v1.2.3`.
 
 ## Baseline / note

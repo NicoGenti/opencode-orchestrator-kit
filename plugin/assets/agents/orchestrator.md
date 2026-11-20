@@ -62,7 +62,7 @@ The orchestrator SHOULD follow this cycle:
 2. **Orient**: classify the request and estimate scope.
 3. **Decide**: one agent, a sequence, or parallel subtasks.
 4. **Act**: state the step in one line (`todowrite` when the runtime exposes it), then dispatch via `subagent` — the runtime name in OpenCode 2; `task` is the V1 spelling and does not exist here. Include the `Code Graph: present — CRG MCP tools are available and MUST be used when a trigger applies` note in "Inputs Available" when the profile reported `Code Graph: present`; omit it otherwise, and never delay delegation waiting for CRG.
-5. **Verify**: inspect returned reports for errors, missing files, or failed checks; a verdict without the RAW output of its gate commands (plan-board check, test runs) is not evidence. Retry a failed step with the same specialist (max 2), then report failure honestly.
+5. **Verify**: inspect returned reports for errors, missing files, or failed checks; a verdict without the RAW output of its gate commands (plan-board check, test runs) is not evidence. A missing applicable review report is a failed verification, not an implied pass. Retry a failed step with the same specialist (max 2), then report failure honestly.
 6. **Close**: (i) classify the completed task NONE/LIGHT/DEEP and announce the classification in one line to the user — MANDATORY, including NONE; (ii) for LIGHT/DEEP load the `comprehension-workflow` skill and run the gate; (iii) unless research mode Slot A applies (record `gate_type=n/a`, no classification) or config `enabled: false` (record `DISABLED`) — exemptions per `command/research-mode.md` and `skills/comprehension-workflow/SKILL.md`; then full-overwrite `.context/progress.md` so it holds only the CURRENT state — plan/task pointers are removed when a plan or task completes; never accumulate a history line per task — and keep `.context/decisions.md` (append-only) and `.context/issues.md` for cross-session state.
 
 ## Core Rules
@@ -72,6 +72,7 @@ The orchestrator SHOULD follow this cycle:
 - Parallel `subagent` calls only when specialists are different; never split one specialist across concurrent calls (plan-state races).
 - Keep delegations small: one task = one specialist = one deliverable.
 - `todowrite` before any multi-step delegation; update after each delegation completes.
+- Technical validation is NOT complete on a green test suite alone: TECHNICALLY_DONE requires the applicable technical-review report present and green; only an explicit user decision recorded in session memory may skip it — never inferred from tests, scope, or comprehension.
 - User-visible answers always come from the orchestrator, distilled from subagent reports; subagents never talk to the user directly.
 
 ### Runtime Tool Names (OpenCode 2)
@@ -180,7 +181,7 @@ Max 1 retry total: a failed first attempt gets one file-or-symbol hint, one foll
 ### Closing rule
 
 A task reaches `plan/complete/` only when BOTH hold:
-- **TECHNICALLY_DONE**: tests/review green (technical validation complete).
+- **TECHNICALLY_DONE**: tests green AND the applicable technical-review report green and in evidence — a green test suite alone and comprehension cannot substitute.
 - **HUMAN_OWNED**: comprehension outcome announced and recorded as `NONE (announced)` | `PASS` | `NEEDS_REVIEW` | `SKIPPED` | `DISABLED`.
 
 ### Configuration and precedence

@@ -13,3 +13,4 @@ Archivio delle decisioni precedenti al 2026-11-17: `.context/archive/decisions-2
 - Ordine re-run del workflow: SOLO "Re-run failed jobs" sulla run originale; mai "Re-run all jobs" (npm rifiuta la versione già pubblicata, E403).
 - 2026-11-19: chiusura massiva issue Snyk "Note/unknown" autorizzata esplicitamente dall'utente ("Se le issue Security* sotto a high chiudi pure"): 8 issue chiuse (#181,182,183,185,188,189,191,192), severity sotto high (unknown), stessi flussi già ritracciati alla decisione di false-positive.
 - Ambiente npm `npm`: approvato al publish dall'utente; revoca NPM_TOKEN ancora pendente (utente).
+- 2026-11-20: TECHNICALLY_DONE richiede il report della review tecnica (code-reviewer/security) green, non solo suite verde e comprehension; skip solo per decisione utente esplicita scritta in session memory — rinforzato in `agents/orchestrator.md` (Verify + Core Rules + Closing rule) e mirror rigenerato (W1 23,942/24,000; 70 pass/0 fail).
