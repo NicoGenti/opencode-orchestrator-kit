@@ -107,6 +107,12 @@ const PROMPT_BUDGETS: Record<string, number> = {
   // Raised from 3_500 in issue #172 phase 1 (MUST-when-available CRG rule in
   // the short form plus the `execute`-wrapped call example): the file measured
   // 3_596, and ceil(3596 * 1.05 / 100) * 100 = 3_800.
+  // Rewound from 4_100 to 3_800 in the #203 review. The 4_100 raise was
+  // justified with a 3_863 figure measured on a Windows CRLF checkout, but the
+  // guarded measurement normalises line endings (readPrompt strips CR): the
+  // prompt measured 3_791 before this change. The six git denies (`git *`, the
+  // four read-only `--output*` denies, and the general `git *--output*` deny)
+  // were paid for by trimming prose; the file measures 3_784, inside 3_800.
   "agents/test-engineer.md": 3_800,
   "extras/pc-doctor.md": 2_900,
   "extras/writer.md": 5_000,

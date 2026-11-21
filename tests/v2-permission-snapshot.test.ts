@@ -47,6 +47,13 @@ import type { PermissionRule } from "../plugin/src/permissions.ts";
  *   top of that family deny: `get_impact_radius_tool` and
  *   `get_review_context_tool` (issue #153 phase 2). Both are read-only; the
  *   mutation tools stay denied by the family default.
+ * - agents/test-engineer.md — one added rule, shell `git *` deny, followed by
+ *   five read-only git allows: `git status *`, `git diff *`, `git log *`,
+ *   `git show *`, `git ls-tree *` (issue #203 phase A). Every mutating git
+ *   command resolves to deny instead of the previous `*` ask. Issue #203
+ *   review closes the `--output` write hole: each read-only allow is followed
+ *   by its own `*--output*` deny, plus one general `git *--output*` deny — six
+ *   git denies in total.
  * - agents/planner.md — three read-only per-tool CRG allows on top of that
  *   family deny: `get_architecture_overview_tool`, `get_impact_radius_tool`
  *   and `semantic_search_nodes_tool` (issue #153 phase 3). All three are
@@ -265,6 +272,41 @@ describe("V2 permission translation snapshot", () => {
           effect: "allow",
         }),
       ).toBe(false);
+    }
+    // Issue #203 phase A — test-engineer denies every mutating git command
+    // through `git *` deny and re-allows only the five read-only forms.
+    for (const resource of [
+      "git status *",
+      "git diff *",
+      "git log *",
+      "git show *",
+      "git ls-tree *",
+    ]) {
+      expect(
+        has("agents/test-engineer.md", {
+          action: "shell",
+          resource,
+          effect: "allow",
+        }),
+      ).toBe(true);
+    }
+    // Issue #203 review — the `--output` write hole: the four read-only forms
+    // that accept `--output` each carry their own deny, plus a general deny.
+    for (const resource of [
+      "git *",
+      "git status *--output*",
+      "git diff *--output*",
+      "git log *--output*",
+      "git show *--output*",
+      "git *--output*",
+    ]) {
+      expect(
+        has("agents/test-engineer.md", {
+          action: "shell",
+          resource,
+          effect: "deny",
+        }),
+      ).toBe(true);
     }
     // Issue #153 phase 3 — planner MAY-level CRG allowlist. Same shape as
     // phases 1-2: the family default denies every undeclared tool of the

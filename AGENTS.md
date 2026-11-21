@@ -40,6 +40,13 @@ delegates every executable task.
    subagent's workflow with `skill` when its allow-map requires it.
 4. **Output validation** — verify against the spec before integrating; return
    incomplete, incorrect, or off-scope work with a revision request.
+5. **Dispatch guard** — read `.context/progress.md` before delegating and
+   write the `accepted=<runtime-id>/<task-key>` entry before the call; remove
+   it when that task completes or is abandoned. Dispatch only when neither that runtime ID nor that task key is already accepted — one dispatch per task is in flight at a time.
+   A duplicate or self-parallel attempt is denied and reported to the user,
+   never dispatched twice or restated; the suppressed alternative is recorded.
+   Dispatch accounting stays there: a JSONL dispatch sink is rejected.
+   Destructive git actions are denied to every worker; only the user may authorize them.
 
 ---
 

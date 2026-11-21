@@ -62,6 +62,39 @@ const DEAD_GIT_ALLOWS = [
   "git rm *",
 ] as const;
 
+/** Mutating git commands the test-engineer must never run: the agent only
+ *  edits test files and must not rewrite history, branches or the worktree. */
+const TEST_ENGINEER_MUTATING_GIT = [
+  "git reset --hard",
+  "git reset --hard HEAD~1",
+  "git clean -fd",
+  "git clean -fdx",
+  "git commit -m x",
+  "git push",
+  "git push --force",
+  "git merge main",
+  "git rebase main",
+  "git checkout main",
+  "git switch main",
+  "git branch feature",
+  "git add .",
+  "git rm file",
+  "git stash",
+  "git restore file",
+  "git tag v1",
+  "git cherry-pick abc123",
+] as const;
+
+/** `--output` writes hidden behind an otherwise read-only git command: each
+ *  read-only allow is followed by its own deny, plus one catch-all. */
+const TEST_ENGINEER_GIT_OUTPUT_DENIES = [
+  "git status *--output*",
+  "git diff *--output*",
+  "git log *--output*",
+  "git show *--output*",
+  "git *--output*",
+] as const;
+
 const WEB_KIT_COMMANDS = [
   "bash skills/web-scaffold-landing/scripts/new.sh",
   "bash skills/web-scaffold-landing/scripts/new.sh --yes",
@@ -154,6 +187,77 @@ describe("permission matrix", () => {
     ]) {
       expect(resolveEffect(rules, "shell", command)).toBe("allow");
     }
+  });
+
+  test("test-engineer denies destructive git and keeps read-only git", () => {
+    const rules = byId("test-engineer").permissions;
+    const shell = shellRules(rules);
+    const denyAt = shell.findIndex(
+      (rule) => rule.resource === "git *" && rule.effect === "deny",
+    );
+    const statusAt = shell.findIndex(
+      (rule) => rule.resource === "git status *" && rule.effect === "allow",
+    );
+    expect(denyAt).toBeGreaterThanOrEqual(0);
+    expect(statusAt).toBeGreaterThan(denyAt);
+    for (const command of TEST_ENGINEER_MUTATING_GIT) {
+      expect(resolveEffect(rules, "shell", command)).toBe("deny");
+    }
+    for (const command of [
+      "git status --short",
+      "git diff --stat",
+      "git log -1",
+      "git show HEAD",
+      "git ls-tree HEAD",
+    ]) {
+      expect(resolveEffect(rules, "shell", command)).toBe("allow");
+    }
+    // `--output` turns a read-only command into a file writer: each allow is
+    // followed by its own deny, and the catch-all covers any other git form.
+    for (const [allow, deny] of [
+      ["git status *", "git status *--output*"],
+      ["git diff *", "git diff *--output*"],
+      ["git log *", "git log *--output*"],
+      ["git show *", "git show *--output*"],
+    ] as const) {
+      const allowAt = shell.findIndex(
+        (rule) => rule.resource === allow && rule.effect === "allow",
+      );
+      const denyAt = shell.findIndex(
+        (rule) => rule.resource === deny && rule.effect === "deny",
+      );
+      expect(allowAt).toBeGreaterThanOrEqual(0);
+      expect(denyAt).toBeGreaterThan(allowAt);
+    }
+    for (const command of [
+      "git status --output=/tmp/status.txt",
+      "git diff --output=/tmp/patch.diff",
+      "git log --output=/tmp/log.txt",
+      "git show --output=/tmp/show.txt",
+      "git diff --stat --output=/tmp/stat.txt",
+    ]) {
+      expect(resolveEffect(rules, "shell", command)).toBe("deny");
+    }
+    const gitAllows = shell
+      .filter(
+        (rule) => rule.effect === "allow" && rule.resource.startsWith("git "),
+      )
+      .map((rule) => rule.resource);
+    expect(gitAllows).toEqual([
+      "git status *",
+      "git diff *",
+      "git log *",
+      "git show *",
+      "git ls-tree *",
+    ]);
+    // Six git denies: the catch-all, the four per-command output denies, and
+    // the general output catch-all.
+    const gitDenies = shell
+      .filter(
+        (rule) => rule.effect === "deny" && rule.resource.startsWith("git "),
+      )
+      .map((rule) => rule.resource);
+    expect(gitDenies).toEqual(["git *", ...TEST_ENGINEER_GIT_OUTPUT_DENIES]);
   });
 
   test("plan-writer allows python and python3 plan-board invocations only", () => {

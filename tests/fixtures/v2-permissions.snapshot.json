@@ -2361,6 +2361,61 @@
       "effect": "allow"
     },
     {
+      "action": "shell",
+      "resource": "git *",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "git status *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "git status *--output*",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "git diff *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "git diff *--output*",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "git log *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "git log *--output*",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "git show *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "git show *--output*",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "git ls-tree *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "git *--output*",
+      "effect": "deny"
+    },
+    {
       "action": "skill",
       "resource": "*",
       "effect": "deny"
