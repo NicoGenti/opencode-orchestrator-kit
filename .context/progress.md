@@ -7,26 +7,21 @@ Snapshot dello stato corrente della sessione.
 - Kit Markdown multi-agent per OpenCode 2 (plugin `plugin/`); sito Vite/React (`src/`, `docs-src/`); Bun + TypeScript; CI GitHub Actions.
 - Board: solo via python CLI + prova fisica in questo ambiente.
 
-## Stato: v1.2.3 PUBBLICATA (2026-11-19)
+## Stato: issue #203 completato
 
-- `opencode-orchestrator-kit@1.2.3` su npm (OIDC + provenance, environment `npm` approvato dall'utente). Run #10: gate branch-first → quality gates → tag↔version → npm≥11.5.1 → publish → GitHub Release automatica da sezione `[1.2.3]` CHANGELOG.
-- Tag `v1.2.3` annotato su `release/v1.2.3` @ `3e54f1f` (push approvato; deploy.yml Pages trigger `release/v*` OK).
-- PR mergiate: #193 (OIDC/#178), #194 (branch-first + Release automatica). R1 su entrambe (code-reviewer REQUEST CHANGES → fix → APPROVE; oracle/security APPROVE con F1 implementato, F2 = branch protection wildcard a carico utente).
-- 12 issue Snyk path-traversal (#143–#150, #155–#158) chiuse con evidenza post-decisione utente; 12 alert dismissi false positive (run #65; Snyk non modella il guard custom). 8 ulteriori Security* below-high (#181,182,183,185,188,189,191,192) chiuse il 2026-11-19 su autorizzazione esplicita utente.
-- Plan `179` (release cycle): tutte le fasi eseguite (H1–H5, S1, P1, R1, P2, C1, C2). Card ancora in `plan/in-progress/179.md` — da muovere a qa/complete a chiusura formale (utente).
-- Rinforzo contrattuale 2026-11-20: TECHNICALLY_DONE richiede report di review tecnica (code-reviewer/security) green; svista di orchestrazione registrata in `.context/issues.md`; `agents/orchestrator.md` + mirror rigenerati (W1 23,942/24,000; test 70 pass/0 fail); comprehension gate saltato dall'utente (outcome `SKIPPED`, telemetria aggiunta).
+- `plan/complete/203.md` (comprehension `none`); TECHNICALLY_DONE e HUMAN_OWNED registrati.
+- Validazione: code-reviewer APPROVE (0 bloccanti); test 1303 pass / 19 ambient (0 nuovi); `sync-assets --check` clean; typecheck e lint 0.
+- File principali: `agents/orchestrator.md`, `agents/orchestrator-quick.md`, `agents/test-engineer.md`, `AGENTS.md`, `tests/dispatch-guard.test.ts`, `tests/permission-matrix.test.ts`, `tests/v2-permission-snapshot.*`, `CHANGELOG.md`.
+- Nota plan-board: root assoluto obbligatorio (`E:/.../plan`); root relativo phantom.
+- Residue opzionali (follow-up; fuori gate #203): accounting ledger survival su overwrite (R1), writer ledger nel router quick (R2), hole `--output` in developer-fixer/code-reviewer (R4), pulizia card `0001`/`179`.
 
 ## Next steps (utente)
 
-- Decidere chiusura #178 (publish OIDC verificato; manca solo revoca `NPM_TOKEN`, passo umano) e chiusura epic #179.
-- Revocare `NPM_TOKEN` (secret GitHub) dopo verifica registry.
-- Branch protection wildcard `release/v*` (oracle F2).
-- PR severity-filter ancora NON aperta: branch `chore/179-security-alert-severity-filter` (7b732c6, pushato), body in temp
-- Board: card 179 → qa/complete dopo comprehension gate / decisione utente; merge-back `release/v1.2.3`→main deliberatamente fuori ciclo.
-- `release/v1.2.2` mantenuto per decisione utente; worktree `release-v1.2.3-baseline` rimosso; worktree release in `%TEMP%\opencode\release-v1.2.3`.
+- `git stash pop` per riprendere #198 (`workflow-intake`).
+- Decidere se aprire follow-up per R1/R2/R4 e per il merge/deploy.
+- Revoca `NPM_TOKEN` resta pendente se applicabile.
 
 ## Baseline / note
 
-- Fail-set `bun test` invariato (20 fail, ambiente Windows); `version-sync` CRLF rientrato con la normalizzazione CHANGELOG a LF.
-- `gh` negato in sessione: PR/issue aperte via browser (#193, #194, chiusure issue); gh refusal del push in subagent senza approvazione in-band esplicita.
-- Archive: dettagli storici in `.context/archive/issues-2026-11-19.md`.
+- Ambient fail-set Windows unchanged (19 fail).
+- `.context/decisions.md` e `.context/issues.md` aggiornati al 22/11/2026.
