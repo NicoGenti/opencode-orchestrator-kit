@@ -173,7 +173,7 @@ refresh them on the release branch, in the same commit series as the bump:
 - the marker at `README.md:93` — `published on npm (x.y.z)` — must name the
   version being cut;
 - the runtime counts at `README.md:115` — re-count `agents/`, `command/` and
-  `skills/` from the sources (16 agents, 5 commands, 9 skills when that line
+  `skills/` from the sources (16 agents, 5 commands, 10 skills when that line
   was written) instead of copying the previous number; `--with-extras` adds
   `pc-doctor` and `writer` on top of the agent count.
 
@@ -253,6 +253,17 @@ prefix: `web-*` (web-stack skill packs — theme, brand, scaffold, deploy) and
 `project-*` (consuming-project skills). `orchestrator`, `developer-fixer`, and
 `code-reviewer` already allow `project-*`. A glob that matches at least one
 shipped skill (for example `build-*`) needs no reservation.
+
+`scripts/sync-assets.ts` mirrors every file under a skill directory, not only
+`SKILL.md`, so a vendored skill ships its companion files too.
+
+The kit vendors `skills/security-audit/` from
+[`cloudflare/security-audit-skill`](https://github.com/cloudflare/security-audit-skill)
+at commit `c1c8a8c` (MIT, © 2025-2026 Cloudflare; license text in
+`skills/security-audit/LICENSE`). `agents/security.md` allows it and loads it in
+guidance mode; full audit mode (writes on disk) stays out of scope for that
+read-only agent. Do not edit the vendored files here — refresh them from
+upstream and re-run `bun run sync-assets`.
 
 ## Tests
 

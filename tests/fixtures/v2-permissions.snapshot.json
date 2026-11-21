@@ -2272,6 +2272,11 @@
       "action": "skill",
       "resource": "python-conventions",
       "effect": "allow"
+    },
+    {
+      "action": "skill",
+      "resource": "security-audit",
+      "effect": "allow"
     }
   ],
   "agents/test-engineer.md": [

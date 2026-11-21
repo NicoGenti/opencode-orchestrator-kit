@@ -140,6 +140,7 @@ describe("shipped skill names", () => {
       "structural-search",
       "comprehension-workflow",
       "github-actions-cicd",
+      "security-audit",
     ]) {
       expect(shipped.has(name)).toBe(true);
     }
@@ -237,6 +238,7 @@ describe("agent skill allowlists name only shipped skills", () => {
         "angular-patterns",
         "dotnet-conventions",
         "python-conventions",
+        "security-audit",
       ],
     },
     {

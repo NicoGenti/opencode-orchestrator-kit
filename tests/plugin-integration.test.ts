@@ -252,7 +252,7 @@ describe("plugin integration — empty repo", () => {
     }
   });
 
-  test("(1c) 4 comandi, 9 skill, esattamente un tool plan_board eseguibile", async () => {
+  test("(1c) 4 comandi, 10 skill, esattamente un tool plan_board eseguibile", async () => {
     const repo = makeTmpRepo({});
     const board = join(repo, "plan");
     for (const col of ["draft", "in-progress", "qa", "complete"]) {
@@ -267,7 +267,7 @@ describe("plugin integration — empty repo", () => {
       "research-mode",
       "start-session",
     ]);
-    expect(skills).toHaveLength(9);
+    expect(skills).toHaveLength(10);
 
     expect(tools).toHaveLength(1);
     expect(tools[0].name).toBe("plan_board");
@@ -341,11 +341,11 @@ describe("plugin integration — publish sanity", () => {
     expect(existsSync(join(assetsDir, "commands", "start-session.md"))).toBe(
       true,
     );
-    // i 9 SKILL.md pacchettizzati + agents/extras/commands in assets
+    // i 10 SKILL.md pacchettizzati + agents/extras/commands in assets
     const skillFiles = walkFiles(join(PLUGIN_DIR, "assets", "skills")).filter(
       (f) => f.endsWith("SKILL.md"),
     );
-    expect(skillFiles).toHaveLength(9);
+    expect(skillFiles).toHaveLength(10);
     expect(collectPackagedAgents(false).length).toBe(16);
     expect(collectPackagedAgents(true).length).toBe(18);
     expect(

@@ -66,7 +66,7 @@ describe("ctx.model.list(): forma 2.1 (array) e 2.2 ({location,data})", () => {
     );
     expect(agents.get("plan-writer")?.mode).toBe("subagent");
     expect(commands).toHaveLength(5);
-    expect(skills).toHaveLength(9);
+    expect(skills).toHaveLength(10);
     expect(tools).toHaveLength(1);
   });
 

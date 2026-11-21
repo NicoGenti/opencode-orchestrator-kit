@@ -112,7 +112,7 @@ A local checkout of this repository uses the same object form with an absolute d
 opencode plugin add 'github:NicoGenti/opencode-orchestrator-kit#main::path:plugin'
 ```
 
-What the plugin registers at runtime (nothing is copied into `.opencode/`): 16 agents (+ `pc-doctor` and `writer` with `"withExtras": true`), 5 commands (`/start-session`, `/quick`, `/recall`, `/research-mode`, `/close-session`), 9 skills, and the native `plan_board` tool — the TypeScript port of `scripts/plan-board.py`, where standing authorization covers `check` and `move` of conforming plan files and every other board operation needs per-request approval. Setup options are `preset` (one of the five bundled presets, in the same format as `templates/models.config.json`; all-`placeholder/*` presets fail fast with a `TierConfigError`) and `withExtras` (default `false`).
+What the plugin registers at runtime (nothing is copied into `.opencode/`): 16 agents (+ `pc-doctor` and `writer` with `"withExtras": true`), 5 commands (`/start-session`, `/quick`, `/recall`, `/research-mode`, `/close-session`), 10 skills, and the native `plan_board` tool — the TypeScript port of `scripts/plan-board.py`, where standing authorization covers `check` and `move` of conforming plan files and every other board operation needs per-request approval. Setup options are `preset` (one of the five bundled presets, in the same format as `templates/models.config.json`; all-`placeholder/*` presets fail fast with a `TierConfigError`) and `withExtras` (default `false`).
 
 Your own configuration always wins: the plugin upserts an agent's `transform` only when the editor returns nothing for it, so user config in `~/.config/opencode/` or the project config is never overwritten.
 
@@ -313,6 +313,8 @@ Companion repositories are optional. This kit runs on its own. A third-party kit
 ### Adding a skill
 
 Every shipped agent starts `permission.skill` with `"*": deny`, so a skill on disk is loaded only when a later rule allows its name. The repository procedure (allowlist edit, `bun run sync-assets`, `tests/skill-allowlist.test.ts`) and the consuming-project `project-*` path are in [`CONTRIBUTING.md`](CONTRIBUTING.md#adding-a-skill). Name a skill for a project `project-<something>`; leave `web-*` for a web-stack pack.
+
+The kit bundles `skills/security-audit/` (MIT, © 2025-2026 Cloudflare), vendored from github.com/cloudflare/security-audit-skill at commit c1c8a8c; see `skills/security-audit/LICENSE`. It runs in guidance mode under the read-only `security` agent.
 
 ## Development
 

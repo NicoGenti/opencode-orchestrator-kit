@@ -26,11 +26,11 @@
  * it instead of assuming it.
  *
  * Scenarios:
- *  1. packaged artifact — the tarball is exactly the expected 46 files, the
+ *  1. packaged artifact — the tarball is exactly the expected 67 files, the
  *     package declares zero runtime dependencies, `files`/`exports` cover
  *     everything registration needs, and the packed assets are the repo-root
  *     sources;
- *  2. empty fixture repo — 5 commands, 9 skills, 16 agents (18 with
+ *  2. empty fixture repo — 5 commands, 10 skills, 16 agents (18 with
  *     `withExtras: true`), 1 `plan_board` tool, orchestrator the only
  *     `primary`, per-agent models resolved from the bundled preset tiers,
  *     V2 permissions on every agent (orchestrator 26 rules, plan-writer 10);
@@ -91,7 +91,7 @@ const AGENT_IDS = [
 /** The opt-in extras shipped in plugin/assets/extras/ (2). */
 const EXTRA_IDS = ["pc-doctor", "writer"] as const;
 
-/** The 9 kit skills, as ids derived from plugin/assets/skills/<id>/SKILL.md. */
+/** The 10 kit skills, as ids derived from plugin/assets/skills/<id>/SKILL.md. */
 const SKILL_IDS = [
   "build-debug",
   "comprehension-workflow",
@@ -101,7 +101,36 @@ const SKILL_IDS = [
   "examples/python-conventions",
   "github-actions-cicd",
   "npm-debug",
+  "security-audit",
   "structural-search",
+] as const;
+
+/**
+ * The companion files vendored with `skills/security-audit/` (20 files; its
+ * SKILL.md is covered by SKILL_IDS). MIT, © 2025-2026 Cloudflare — see
+ * `skills/security-audit/LICENSE`.
+ */
+const SECURITY_AUDIT_COMPANIONS = [
+  "AI-AND-LLM.md",
+  "ATTACK-CLASSES.md",
+  "CLIENT-SIDE.md",
+  "CLOUD-AND-DEPLOYMENT.md",
+  "DATA-ISOLATION-AND-LIFECYCLE.md",
+  "DESKTOP-MOBILE-AND-LOCAL-IPC.md",
+  "HUNTING.md",
+  "LICENSE",
+  "MEMORY-SAFETY-AND-BINARY.md",
+  "PROTOCOLS-RPC-AND-MESSAGING.md",
+  "RECONNAISSANCE.md",
+  "RESOURCE-EXHAUSTION-AND-AVAILABILITY.md",
+  "SUPPLY-CHAIN-AND-RELEASE.md",
+  "VALIDATION-AND-REPORTING.md",
+  "WEB-PROTOCOL-AND-AUTH.md",
+  "report-schema.json",
+  "validate-coverage-ledger.cjs",
+  "validate-coverage-ledger.test.cjs",
+  "validate-findings.cjs",
+  "validate-findings.test.cjs",
 ] as const;
 
 /** The 5 kit commands. */
@@ -114,7 +143,7 @@ const COMMAND_NAMES = [
 ] as const;
 
 /**
- * The exact file surface of the published package (46 entries, relative to
+ * The exact file surface of the published package (67 entries, relative to
  * the package root). Any drift is a packaging change that must be reviewed
  * explicitly — the plugin is self-contained and ships nothing else.
  */
@@ -137,6 +166,9 @@ const EXPECTED_PACKAGE_FILES = [
   ...EXTRA_IDS.map((id) => `assets/extras/${id}.md`),
   ...COMMAND_NAMES.map((name) => `assets/commands/${name}.md`),
   ...SKILL_IDS.map((id) => `assets/skills/${id}/SKILL.md`),
+  ...SECURITY_AUDIT_COMPANIONS.map(
+    (name) => `assets/skills/security-audit/${name}`,
+  ),
 ] as const;
 
 /** The runtime model registry used by the mock ctx (covers every default tier). */
@@ -737,7 +769,7 @@ describe("packaged artifact — offline pack and self-containment", () => {
       expect(pack.log).toContain("opencode-orchestrator-kit-");
     }
     expect(packageFiles()).toEqual([...EXPECTED_PACKAGE_FILES].sort());
-    expect(packageFiles()).toHaveLength(46);
+    expect(packageFiles()).toHaveLength(67);
     if (extractedFiles !== null) {
       expect(extractedFiles).toEqual([...EXPECTED_PACKAGE_FILES].sort());
     }
@@ -818,6 +850,10 @@ describe("packaged artifact — offline pack and self-containment", () => {
         `skills/${id}/SKILL.md`,
         `assets/skills/${id}/SKILL.md`,
       ]),
+      ...SECURITY_AUDIT_COMPANIONS.map((name): [string, string] => [
+        `skills/security-audit/${name}`,
+        `assets/skills/security-audit/${name}`,
+      ]),
     ];
     for (const [source, asset] of bindings) {
       const shipped = readFileSync(
@@ -846,7 +882,7 @@ describe("packaged artifact — offline pack and self-containment", () => {
 /* -------------------------------------------------------------------------- */
 
 describe("plugin activation — empty fixture repo", () => {
-  test("the packed plugin registers 5 commands, 9 skills and 1 plan_board tool", async () => {
+  test("the packed plugin registers 5 commands, 10 skills and 1 plan_board tool", async () => {
     const repo = makeEmptyFixture({ withExtras: false });
     const options = readKitOptions(repo);
     const harness = await setupPackedPlugin(options);
@@ -893,7 +929,7 @@ describe("plugin activation — empty fixture repo", () => {
     }
 
     // Skills — every path points inside the UNPACKED tree, not the repo.
-    expect(harness.skills).toHaveLength(9);
+    expect(harness.skills).toHaveLength(10);
     expect(harness.skills.map((s) => String(s.id)).sort()).toEqual(
       [...SKILL_IDS].sort(),
     );

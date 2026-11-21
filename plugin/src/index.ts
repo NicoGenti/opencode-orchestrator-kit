@@ -26,7 +26,7 @@ const WARNING_PREFIX = "[opencode-orchestrator-kit]";
  * signals unavailable tier models against `ctx.model.list()` (non-fatal), and
  * registers: five commands (`/start-session`, `/quick`, `/recall`,
  * `/research-mode`, `/close-session`),
- * the 9 kit skills and the 15 packaged agents (+2 extras when `withExtras:
+ * the 10 kit skills and the 15 packaged agents (+2 extras when `withExtras:
  * true`) via `ctx.agent.transform`.
  *
  * Phase 3 additionally registers the native `plan_board` tool (the pure

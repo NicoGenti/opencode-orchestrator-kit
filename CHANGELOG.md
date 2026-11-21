@@ -4,6 +4,8 @@ All notable changes to this project are documented in this file. The format foll
 
 ## [Unreleased]
 
+- **Vendored the MIT-licensed `security-audit` skill (#197)**: `skills/security-audit/` now carries the Cloudflare security-audit skill (github.com/cloudflare/security-audit-skill, © 2025-2026 Cloudflare, pinned at commit `c1c8a8c`; 20 files plus `LICENSE`), `agents/security.md` gains `security-audit: allow` in its `permission.skill` map so security reviews can load the audit methodology in guidance mode, while full audit mode (writes on disk) stays out of scope for that read-only agent; `scripts/sync-assets.ts` and `tests/plugin-assets-parity.test.ts` now mirror every file under a skill directory instead of only `SKILL.md`, so the plugin ships the complete tree (67 packaged files), and the skill counts, allowlist pins and packaging expectations move in the same commit.
+
 ## [1.2.3] — 2026-11-19
 
 - **Explicit containment for the `apply-freellmapi-profile.py` config lifecycle (#147 #148 #149 #150)**: the read, the dated `.bak-<ts>` backup copy, the terminal write and the `json.dump` payload now all consume a single `--config` path resolved and verified before any filesystem access — an empty value, a `..` segment in either separator form (`/` and `\`, mixed included) or a value that resolves outside the config root it names is refused with `ERROR: --config …, refusing: …` and exit 1, so the four Snyk sinks share one decision point instead of four; clean relative and absolute paths keep working unchanged, `--dry-run` and `--force-config` behave as before, and the documented exit codes are untouched.
