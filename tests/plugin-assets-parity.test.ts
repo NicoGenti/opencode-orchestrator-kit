@@ -34,7 +34,7 @@ function collectSkillSources(dir: string, out: string[] = []): string[] {
     const fullPath = join(dir, entry.name);
     if (entry.isDirectory()) {
       collectSkillSources(fullPath, out);
-    } else if (entry.name === "SKILL.md") {
+    } else {
       out.push(fullPath);
     }
   }

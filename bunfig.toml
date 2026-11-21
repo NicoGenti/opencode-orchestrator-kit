@@ -14,3 +14,11 @@ registry = "https://registry.npmjs.org/"
 # resolution fully deterministic across machines and CI runners.
 disable = false
 disableManifest = true
+
+[test]
+# Vendored skill trees ship their own upstream tests (for example
+# skills/security-audit/validate-*.test.cjs, Linux-only validators that rely
+# on O_NOFOLLOW and non-blocking stdin). plugin/assets/ is their generated
+# mirror. Neither is part of this repository's suite: keep `bun test` scoped
+# to tests/ so vendored files are never discovered twice.
+pathIgnorePatterns = ["skills/**", "plugin/assets/**"]

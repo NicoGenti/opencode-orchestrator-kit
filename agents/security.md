@@ -25,6 +25,7 @@ permission:
     angular-patterns: allow
     dotnet-conventions: allow
     python-conventions: allow
+    security-audit: allow
 ---
 
 # Security Auditor
@@ -41,7 +42,7 @@ Treat CRG as configured when either the delegation's Inputs Available carries th
 
 ## Skills
 
-Load the matching stack skill with `skill({ name })` before judging that stack: `angular-patterns`, `dotnet-conventions`, or `python-conventions`.
+Load the matching stack skill with `skill({ name })` before judging that stack: `angular-patterns`, `dotnet-conventions`, or `python-conventions`. For methodology loading, use `skill({ name: "security-audit" })` (guidance mode by default; full audit mode only on explicit request).
 
 ## Review Scope
 

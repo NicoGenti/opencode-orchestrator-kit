@@ -6,7 +6,8 @@
  *
  *   command/start-session.md, recall.md, research-mode.md, close-session.md
  *                                                         -> assets/commands/
- *   skills/<id>/SKILL.md                                  -> assets/skills/
+ *   skills/<id>/** (whole skill directory, SKILL.md and companions)
+ *                                                         -> assets/skills/
  *   agents/*.md                                           -> assets/agents/
  *   extras/*.md                                           -> assets/extras/
  *   README.md                                             -> plugin/README.md
@@ -55,7 +56,7 @@ function collectSkillSources(dir: string, out: string[] = []): string[] {
     const fullPath = join(dir, entry.name);
     if (entry.isDirectory()) {
       collectSkillSources(fullPath, out);
-    } else if (entry.name === "SKILL.md") {
+    } else {
       out.push(fullPath);
     }
   }
