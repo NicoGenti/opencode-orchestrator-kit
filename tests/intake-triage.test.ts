@@ -33,6 +33,7 @@ const readNormalized = (relPath: string): string =>
 const ORCH = readNormalized("agents/orchestrator.md");
 const QUICK = readNormalized("agents/orchestrator-quick.md");
 const AGENTS = readNormalized("AGENTS.md");
+const README = readNormalized("README.md");
 const SKILL = readNormalized("skills/workflow-intake/SKILL.md");
 const DOCS = readNormalized("docs/CONFIGURATION.md");
 const START = readNormalized("command/start-session.md");
@@ -112,7 +113,6 @@ describe("intake-triage — orchestrator pointer (issue #198)", () => {
       /Load the `workflow-intake` skill ONLY for an ambiguous request or a `workflow\.mode` decision/,
     );
     expect(ORCH_INTAKE).toMatch(/never for a clear request under `auto`/);
-    expect(ORCH_INTAKE).not.toMatch(/Before routing, load/);
     expect(SKILL_DESCRIPTION).toMatch(
       /Load only when a request is ambiguous or a routing-mode decision is needed/,
     );
@@ -125,6 +125,28 @@ describe("intake-triage — orchestrator pointer (issue #198)", () => {
     expect(DOCS_WORKFLOW).toMatch(
       /with no skill load and no announce line/,
     );
+    // NEW-4: the mirror homes carry the same conditional-load semantic.
+    expect(AGENTS).toMatch(
+      /the `workflow-intake` skill is loaded only when a request\s+is ambiguous or a `workflow\.mode` decision is needed/,
+    );
+    expect(README).toMatch(
+      /the `workflow-intake` skill is loaded only for an ambiguous request or a `workflow\.mode` decision/,
+    );
+  });
+
+  test("no home claims the skill loads before routing or always (NEW-4 negative)", () => {
+    for (const [name, doc] of [
+      ["orchestrator", ORCH],
+      ["workflow-intake skill", SKILL],
+      ["AGENTS.md", AGENTS],
+      ["README.md", README],
+      ["docs/CONFIGURATION.md", DOCS],
+    ] as const) {
+      expect(
+        doc,
+        `${name} must not claim an unconditional or pre-routing skill load`,
+      ).not.toMatch(/always load|load the .*skill before routing/i);
+    }
   });
 });
 
@@ -168,20 +190,49 @@ describe("intake-triage — categorical triage, no numeric score", () => {
     );
   });
 
-  test("LIGHT is the bounded no-plan band and DEEP is plan/security/cross-module (B1)", () => {
-    const lightRow =
+  test("the three classes are disjoint, non-empty and jointly exhaustive (NEW-1)", () => {
+    const row = (cls: string): string =>
       SKILL_TRIAGE.split("\n").find((line) =>
-        /\|\s*\*\*LIGHT\*\*\s*\|/.test(line),
+        new RegExp(`\\|\\s*\\*\\*${cls}\\*\\*\\s*\\|`).test(line),
       ) ?? "";
-    const deepRow =
-      SKILL_TRIAGE.split("\n").find((line) =>
-        /\|\s*\*\*DEEP\*\*\s*\|/.test(line),
-      ) ?? "";
+    const noneRow = row("NONE");
+    const lightRow = row("LIGHT");
+    const deepRow = row("DEEP");
+
+    // none of the three rows is absent (no class is an empty set)
+    for (const [cls, text] of [
+      ["NONE", noneRow],
+      ["LIGHT", lightRow],
+      ["DEEP", deepRow],
+    ] as const) {
+      expect(text, `${cls} row must be defined`).not.toBe("");
+    }
+
+    // LIGHT is explicitly the complement band, not a plan-card-less NONE
     expect(lightRow).toMatch(/not NONE and not DEEP/);
-    expect(lightRow).toMatch(/no plan card/);
-    expect(deepRow).toMatch(
-      /not NONE, and any of `plan needed`, `security sensitivity`, `cross-module impact`/,
-    );
+    expect(lightRow).toMatch(/single-module plan-requiring work/);
+    expect(lightRow).toMatch(/without a plan card/i);
+    expect(lightRow).not.toMatch(/no plan card unless asked/);
+
+    // DEEP is the plan-card band; "plan needed" is implied by not-NONE and
+    // must not reappear as a DEEP condition (that is what emptied LIGHT).
+    expect(deepRow).toMatch(/not NONE, and any of/);
+    expect(deepRow).toMatch(/security sensitivity/);
+    expect(deepRow).toMatch(/cross-module impact/);
+    expect(deepRow).toMatch(/multi-phase/);
+    expect(deepRow).not.toMatch(/plan needed/);
+    expect(deepRow).toMatch(/WITH a plan card/i);
+  });
+
+  test("the docs table mirrors the disjoint class mapping (NEW-1)", () => {
+    const row = (cls: string): string =>
+      DOCS_WORKFLOW.split("\n").find((line) =>
+        new RegExp(`\\|\\s*\\*\\*${cls}\\*\\*\\s*\\|`).test(line),
+      ) ?? "";
+    expect(row("LIGHT")).toMatch(/not NONE and not DEEP/);
+    expect(row("LIGHT")).toMatch(/WITHOUT a plan card/);
+    expect(row("DEEP")).toMatch(/multi-phase\/multi-session scope/);
+    expect(row("DEEP")).not.toMatch(/plan needed/);
   });
 
   test("missing means not stated and not inferable from context (M2)", () => {
@@ -191,6 +242,13 @@ describe("intake-triage — categorical triage, no numeric score", () => {
     expect(SKILL).toMatch(/inferred value counts as supplied/);
     expect(SKILL).toMatch(/material ambiguity that would change routing/);
     expect(SKILL_DESCRIPTION).toBeTruthy();
+    // NEW-4: the same inference rule is mirrored in AGENTS.md and the docs.
+    expect(AGENTS).toMatch(
+      /neither stated nor inferable from the request, session memory,\s+the project profile, or the repository/,
+    );
+    expect(DOCS_WORKFLOW).toMatch(
+      /neither stated nor\s+inferable from the request, session memory, project profile, or repository/,
+    );
   });
 
   test("absent config is a silent default and invalid config warns once (M3)", () => {

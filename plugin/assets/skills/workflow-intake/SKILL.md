@@ -38,10 +38,10 @@ Triage maps four categorical signals — at most one file (`≤1 file`), no plan
 | Class | Condition (categorical) | Path |
 | --- | --- | --- |
 | **NONE** | the request touches at most one file **or** needs no plan | Quick path: tell the user to switch to `orchestrator-quick` (`/quick`) — its own hand-back rules return security or plan work to `orchestrator`; under `workflow.mode: lite` the orchestrator MAY run the slim single-delegation cycle instead, announced. |
-| **DEEP** | not NONE, and any of `plan needed`, `security sensitivity`, `cross-module impact` | Full flow: plan card through `plan-writer`, review, comprehension gate. |
-| **LIGHT** | not NONE and not DEEP — bounded band: multi-file or single-concern work in one module, no plan card needed | Standard flow: one specialist per step; no plan card unless the user asks. |
+| **DEEP** | not NONE, and any of `security sensitivity`, `cross-module impact`, `multi-phase/multi-session scope` (a plan card is warranted) | Standard flow WITH a plan card: `planner` authors the body, `plan-writer` owns the board, then review and comprehension gate. |
+| **LIGHT** | not NONE and not DEEP — bounded multi-file, single-concern, single-module plan-requiring work with no security sensitivity and no cross-module impact | Standard flow with direct delegation(s) under a 9-section spec, WITHOUT a plan card. |
 
-The NONE test runs first: it is today's shortcut, preserved verbatim, so a one-file security request still goes to `orchestrator-quick` and comes back to `orchestrator` — no special case. After NONE, DEEP takes precedence over LIGHT. At close, the existing comprehension classification still decides the gate — this triage selects the path and never replaces that classification.
+The NONE test runs first: it is today's shortcut, preserved verbatim, so a one-file security request still goes to `orchestrator-quick` and comes back to `orchestrator` — no special case. After NONE, DEEP takes precedence over LIGHT, and every request lands in exactly one class: NONE is the shortcut, DEEP is the plan-card band, LIGHT is the bounded band between them. At close, the existing comprehension classification still decides the gate — this triage selects the path and never replaces that classification.
 
 ## workflow.mode
 

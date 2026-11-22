@@ -20,7 +20,7 @@ telemetry, maintain a per-evaluation record, or execute `/recall`. Classificatio
 
 The comprehension gate reads its limits from a user-local config file: `.opencode/comprehension.config.json` (seeded by `install.sh` from `templates/comprehension.config.json`, leave-if-exists; copy manually only when running the kit without the installer).
 
-**Precedence**: file value > built-in defaults. If the file is absent, empty, or not valid JSON → all limits fall back to the built-in defaults listed below, and the user receives ONE warning line in the progress notes (never a hard failure).
+**Precedence**: file value > built-in defaults. An absent file is the documented default: silent, zero warnings. A present-but-empty or invalid file falls back to the built-in defaults listed below with exactly one warning line in the progress notes (never a hard failure).
 
 **Invalid values** (e.g. negative `questions`, missing required keys) are detected by the orchestrator's validator and treated as invalid → the offending entry falls back to its default, with a one-line warning logged.
 
