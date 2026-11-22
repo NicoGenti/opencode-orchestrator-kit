@@ -6,6 +6,10 @@
 User request
      │
      ▼
+Intake (ambiguous → restate + explicit confirmation before routing;
+        clear → unchanged path, no skill load)
+     │
+     ▼
 Orchestrator  ──(step 0: no PROJECT-PROFILE.md yet?)──▶  profiler
      │                                                       │
      │◀──────── stack, CI, plan/, .context/, repo map ───────┘

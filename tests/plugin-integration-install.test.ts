@@ -30,10 +30,10 @@
  *     package declares zero runtime dependencies, `files`/`exports` cover
  *     everything registration needs, and the packed assets are the repo-root
  *     sources;
- *  2. empty fixture repo — 5 commands, 10 skills, 16 agents (18 with
+ *  2. empty fixture repo — 5 commands, 11 skills, 16 agents (18 with
  *     `withExtras: true`), 1 `plan_board` tool, orchestrator the only
  *     `primary`, per-agent models resolved from the bundled preset tiers,
- *     V2 permissions on every agent (orchestrator 26 rules, plan-writer 10);
+ *     V2 permissions on every agent (orchestrator 30 rules, plan-writer 13);
  *  3. existing fixture repo — a user-defined agent colliding with a kit id
  *     wins and is not overwritten, the other kit agents still register, and
  *     NOT A SINGLE FILE is written into the repo (the `.opencode/agents/`
@@ -91,7 +91,7 @@ const AGENT_IDS = [
 /** The opt-in extras shipped in plugin/assets/extras/ (2). */
 const EXTRA_IDS = ["pc-doctor", "writer"] as const;
 
-/** The 10 kit skills, as ids derived from plugin/assets/skills/<id>/SKILL.md. */
+/** The 11 kit skills, as ids derived from plugin/assets/skills/<id>/SKILL.md. */
 const SKILL_IDS = [
   "build-debug",
   "comprehension-workflow",

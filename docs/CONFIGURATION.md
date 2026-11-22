@@ -317,7 +317,7 @@ Both slicing behaviour and escalation routing are configured through the same co
 
 Every gated evaluation appends exactly one line to `.context/comprehension-log.md` (append-only; created on first write with a single header comment). The log is telemetry, not session memory: `/start-session` never loads it, and the write happens only after the verdict is final.
 
-The file is untracked by design: `.gitignore` excludes the two telemetry sinks (`.context/comprehension-log.md` and `.context/research-dataset.jsonl`), while the three memory files and the plan board are versioned — a fresh clone carries them; never add an exception for the comprehension log. Lines carry metrics only (timestamp, mode, DCI, distinct `user_confidence` and `evaluator_confidence` since v0.6.1 — the old overloaded single `conf` field is retired — the calibration `user_conf` on the immediate DCI₀ reading since v0.6.2, and outcome `PASS|FAIL|NEEDS_REVIEW|RETRY|SKIPPED`, where legacy `FAIL` remains a valid deprecated value — append-only history is never rewritten); user answers, questions, diffs, and paths are never logged. Since v0.6.2 both metric sinks (this log and `.context/research-dataset.jsonl`) sit behind a hard boundary: append-only rows, reads lifecycle-scoped (log: `/recall` only; dataset: active research only), never at bootstrap. Since v0.6.1 the full operational protocol (configuration precedence, Slicer pipeline, row formats, retention records, /recall flow) lives in the `comprehension-workflow` skill, loaded on demand.
+The file is untracked by design: `.gitignore` excludes the three telemetry sinks (`.context/comprehension-log.md`, `.context/research-dataset.jsonl` and `.context/triage-dataset.jsonl`), while the three memory files and the plan board are versioned — a fresh clone carries them; never add an exception for the comprehension log. Lines carry metrics only (timestamp, mode, DCI, distinct `user_confidence` and `evaluator_confidence` since v0.6.1 — the old overloaded single `conf` field is retired — the calibration `user_conf` on the immediate DCI₀ reading since v0.6.2, and outcome `PASS|FAIL|NEEDS_REVIEW|RETRY|SKIPPED`, where legacy `FAIL` remains a valid deprecated value — append-only history is never rewritten); user answers, questions, diffs, and paths are never logged. Since v0.6.2 both metric sinks (this log and `.context/research-dataset.jsonl`) sit behind a hard boundary: append-only rows, reads lifecycle-scoped (log: `/recall` only; dataset: active research only), never at bootstrap. Since v0.6.1 the full operational protocol (configuration precedence, Slicer pipeline, row formats, retention records, /recall flow) lives in the `comprehension-workflow` skill, loaded on demand.
 
 Since v0.5.0, `/recall` appends delayed-evaluation rows of type `dci1` to the same log, using the same append-only and metrics-only rules; the asked knowledge questions live in the per-evaluation records at `.context/comprehension/<evaluation-id>.md` (the record name carries the evaluation's `evaluation_id`, format `ev-YYYYMMDD-HHMMSS-<32hex>`; each record archives the task's `research_id`, format `res-YYYYMMDD-HHMMSS-<32hex>`, as the correlation id; append-safe per evaluation since v0.6.6 — re-evaluations never overwrite earlier records), never in the log itself.
 
@@ -332,7 +332,11 @@ copied from `templates/workflow.config.json` (see _Manual copy_ below). Unlike
 `.opencode/comprehension.config.json` there is no installer seeding step and — by
 design — no runtime loader: the orchestrator reads this file at prompt level while
 applying the intake protocol, and the fallback lives in the prompt and the
-`workflow-intake` skill, not in TypeScript code.
+`workflow-intake` skill, not in TypeScript code. The skill is loaded only for an
+ambiguous request (goal, scope, affected files, or constraints neither stated nor
+inferable from the request, session memory, project profile, or repository) or a
+`workflow.mode` decision; a clear request under `auto` routes exactly as today,
+with no skill load and no announce line.
 
 ### Schema
 
@@ -353,21 +357,21 @@ applying the intake protocol, and the fallback lives in the prompt and the
 
 | Value | Behavior |
 | --- | --- |
-| `auto` (default) | The categorical triage decides the path. A clear request routes exactly as it always has, with zero added round-trips. |
+| `auto` (default) | The categorical triage decides the path, and for a clear request it resolves to today's routing — the same small-task shortcut and standard flow, with zero added round-trips and no skill load. |
 | `full` | Always the standard flow — plan board, review, comprehension gate. Triage is still computed and announced, but never lowers the path. |
 | `lite` | The slim single-delegation path is permitted by an explicit, announced decision — never silently. Security-sensitive or plan-requiring work still escalates to the full flow. |
 
 ### Categorical triage
 
-Triage uses four categorical signals — at most one file (`≤1 file`), no plan needed, no security sensitivity, no cross-module impact — and maps them onto the existing NONE/LIGHT/DEEP vocabulary:
+Triage uses four categorical signals — at most one file (`≤1 file`), no plan needed, no security sensitivity, no cross-module impact — and maps them onto the existing NONE/LIGHT/DEEP vocabulary. `NONE` is anchored to the small-task shortcut the routers already applied, so a clear request keeps today's path:
 
 | Class | Condition | Path |
 | --- | --- | --- |
-| **NONE** | all four signals hold | quick path (`orchestrator-quick`, or the `lite` slim cycle) |
-| **LIGHT** | more than one file inside one module, no plan needed, no security sensitivity, no cross-module impact | standard flow, no plan card unless asked |
-| **DEEP** | any of: plan needed, security sensitivity, cross-module impact | full flow: plan card, review, comprehension gate |
+| **NONE** | the request touches at most one file **or** needs no plan | quick path (`orchestrator-quick`, whose own hand-back rules return security or plan work to `orchestrator`; under `lite` the slim cycle instead) |
+| **DEEP** | not NONE, and any of: plan needed, security sensitivity, cross-module impact | full flow: plan card, review, comprehension gate |
+| **LIGHT** | not NONE and not DEEP — multi-file or single-concern work in one module | standard flow, no plan card unless asked |
 
-DEEP takes precedence over LIGHT and NONE; LIGHT is the remainder. There is **no numeric complexity score** anywhere in the gate — signals and output are categorical only. At close, the comprehension classification still governs the gate: triage selects the path and never replaces it.
+The NONE test runs first: it is today's shortcut, preserved verbatim, so a one-file security request still lands on `orchestrator-quick` and comes back to `orchestrator`. After NONE, DEEP takes precedence over LIGHT. There is **no numeric complexity score** anywhere in the gate — signals and output are categorical only. At close, the comprehension classification still governs the gate: triage selects the path and never replaces it.
 
 ### Triage telemetry
 
@@ -375,11 +379,11 @@ Triage telemetry is opt-in and off by default (`triageTelemetry.enabled` is `fal
 
 ### Precedence
 
-File value > built-in default. If the file is absent, empty, or not valid JSON → `mode` falls back to `auto` and telemetry stays off, with ONE warning line in the progress notes and never a hard failure; an invalid individual value falls back to its default the same way. This mirrors the comprehension config's absent → defaults semantics, with one difference: no runtime loader interprets the file — the prompt-level protocol does.
+File value > built-in default. An **absent** file is not an error: it means the documented default (`mode: auto`, telemetry off), applied silently with no warning. A **present but empty or invalid** file falls back to `auto` with telemetry off and exactly ONE warning line in the progress notes, never a hard failure; an invalid individual value falls back to its default the same way. The comprehension config splits the same way — absent → zero warnings, present-invalid → one warning — and adds a runtime loader, which this file deliberately does not have: the prompt-level protocol interprets it.
 
 ### Manual copy (without the installer)
 
-There is no installer seeding step for this file; copy the template yourself:
+There is no installer seeding step for this file; copy the template yourself. Plugin users create `.opencode/workflow.config.json` from the schema block above, because `templates/` is not packaged with the plugin:
 
 ```bash
 cp templates/workflow.config.json .opencode/workflow.config.json

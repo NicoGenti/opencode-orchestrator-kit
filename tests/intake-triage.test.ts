@@ -56,6 +56,14 @@ const between = (source: string, from: string, to: string): string => {
 
 const INTAKE_HEADING = "## Workflow intake and adaptive complexity gate";
 const ORCH_INTAKE = sectionOf(ORCH, INTAKE_HEADING);
+const ORCH_SMALL = sectionOf(
+  ORCH,
+  "### Small-task triage (before any delegation)",
+);
+const SKILL_DESCRIPTION = SKILL.slice(0, SKILL.indexOf("\n---", 4)).replace(
+  /\s+/g,
+  " ",
+);
 const QUICK_HANDBACK = sectionOf(QUICK, "## Hand back instead of improvising");
 const SKILL_TRIAGE = sectionOf(SKILL, "## Categorical complexity triage");
 const DOCS_WORKFLOW = between(
@@ -63,6 +71,12 @@ const DOCS_WORKFLOW = between(
   "## Workflow intake configuration",
   "## Deterministic gates",
 );
+
+/** The NONE row of the skill's triage table. */
+const SKILL_NONE_ROW =
+  SKILL_TRIAGE.split("\n").find((line) =>
+    /\|\s*\*\*NONE\*\*\s*\|/.test(line),
+  ) ?? "";
 
 describe("intake-triage — orchestrator pointer (issue #198)", () => {
   test("the intake section exists and sits before routing", () => {
@@ -89,7 +103,27 @@ describe("intake-triage — orchestrator pointer (issue #198)", () => {
 
   test("the restatement trigger anchors the delegation rules to the skill", () => {
     expect(ORCH).toMatch(
-      /critical information is missing \(goal, scope, files, constraints\), restate and confirm the spec before delegating — `workflow-intake`/,
+      /critical information is missing \(goal, scope, affected files, or constraints\), restate and confirm the spec before delegating — `workflow-intake`/,
+    );
+  });
+
+  test("the skill is loaded on demand, never for a clear request under auto (M1)", () => {
+    expect(ORCH_INTAKE).toMatch(
+      /Load the `workflow-intake` skill ONLY for an ambiguous request or a `workflow\.mode` decision/,
+    );
+    expect(ORCH_INTAKE).toMatch(/never for a clear request under `auto`/);
+    expect(ORCH_INTAKE).not.toMatch(/Before routing, load/);
+    expect(SKILL_DESCRIPTION).toMatch(
+      /Load only when a request is ambiguous or a routing-mode decision is needed/,
+    );
+    expect(SKILL_DESCRIPTION).toMatch(
+      /a clear request under auto routes exactly as today, with no skill load/,
+    );
+    expect(DOCS_WORKFLOW).toMatch(
+      /The skill is loaded only for an\s+ambiguous request/,
+    );
+    expect(DOCS_WORKFLOW).toMatch(
+      /with no skill load and no announce line/,
     );
   });
 });
@@ -114,7 +148,63 @@ describe("intake-triage — categorical triage, no numeric score", () => {
         new RegExp(`\\|\\s*\\*\\*${cls}\\*\\*\\s*\\|`),
       );
     }
-    expect(SKILL_TRIAGE).toMatch(/DEEP takes precedence over LIGHT and NONE/);
+    expect(SKILL_TRIAGE).toMatch(/After NONE, DEEP takes precedence over LIGHT/);
+  });
+
+  test("the skill NONE row is the small-task OR condition, not an all-signals test (B1)", () => {
+    expect(SKILL_NONE_ROW).toMatch(
+      /the request touches at most one file \*\*or\*\* needs no plan/,
+    );
+    expect(SKILL_NONE_ROW).not.toMatch(/all four signals/);
+    expect(SKILL_NONE_ROW).not.toMatch(/no security sensitivity/);
+  });
+
+  test("the small-task triage section and the skill NONE row share one condition (B1)", () => {
+    expect(ORCH_SMALL).toMatch(/touches at most one file or needs no plan/);
+    expect(ORCH_SMALL).toMatch(/`NONE` branch of the intake triage/);
+    expect(SKILL_TRIAGE).toMatch(/`≤1 file` \*\*or\*\* `no plan needed`/);
+    expect(SKILL_NONE_ROW).toMatch(
+      /touches at most one file \*\*or\*\* needs no plan/,
+    );
+  });
+
+  test("LIGHT is the bounded no-plan band and DEEP is plan/security/cross-module (B1)", () => {
+    const lightRow =
+      SKILL_TRIAGE.split("\n").find((line) =>
+        /\|\s*\*\*LIGHT\*\*\s*\|/.test(line),
+      ) ?? "";
+    const deepRow =
+      SKILL_TRIAGE.split("\n").find((line) =>
+        /\|\s*\*\*DEEP\*\*\s*\|/.test(line),
+      ) ?? "";
+    expect(lightRow).toMatch(/not NONE and not DEEP/);
+    expect(lightRow).toMatch(/no plan card/);
+    expect(deepRow).toMatch(
+      /not NONE, and any of `plan needed`, `security sensitivity`, `cross-module impact`/,
+    );
+  });
+
+  test("missing means not stated and not inferable from context (M2)", () => {
+    expect(SKILL).toMatch(
+      /\*\*"Missing" means not stated AND not inferable\*\*/,
+    );
+    expect(SKILL).toMatch(/inferred value counts as supplied/);
+    expect(SKILL).toMatch(/material ambiguity that would change routing/);
+    expect(SKILL_DESCRIPTION).toBeTruthy();
+  });
+
+  test("absent config is a silent default and invalid config warns once (M3)", () => {
+    expect(SKILL).toMatch(
+      /An absent file means the documented default \(`auto`, telemetry off\) and NO warning/,
+    );
+    expect(SKILL).toMatch(
+      /present-but-empty or invalid file falls back to that same default with exactly ONE warning/,
+    );
+    expect(DOCS_WORKFLOW).toMatch(/An \*\*absent\*\* file is not an error/);
+    expect(DOCS_WORKFLOW).toMatch(/applied silently with no warning/);
+    expect(DOCS_WORKFLOW).toMatch(
+      /A \*\*present but empty or invalid\*\* file falls back to `auto` with telemetry off and exactly ONE warning/,
+    );
   });
 
   test("the docs workflow section states the same four signals and mapping", () => {
@@ -202,14 +292,16 @@ describe("intake-triage — workflow.mode across the three homes", () => {
   test("the docs state the prompt-level read and the absent → defaults fallback", () => {
     expect(DOCS_WORKFLOW).toMatch(/no runtime loader/i);
     expect(DOCS_WORKFLOW).toMatch(/falls back to `auto`/);
-    expect(DOCS_WORKFLOW).toMatch(/telemetry stays off|telemetry to off/i);
+    expect(DOCS_WORKFLOW).toMatch(/telemetry (?:stays )?off|telemetry to off/i);
   });
 });
 
 describe("intake-triage — quick router hand-back", () => {
-  test("the ambiguous-request bullet lives under the hand-back heading", () => {
-    expect(QUICK_HANDBACK).toMatch(/ambiguous or underspecified/);
-    expect(QUICK_HANDBACK).toMatch(/restate/);
+  test("the ambiguous-request bullet hands back and never restates (N1)", () => {
+    expect(QUICK_HANDBACK).toMatch(
+      /ambiguous or underspecified: hand back, never restate or delegate/,
+    );
+    expect(QUICK_HANDBACK).not.toMatch(/restate and confirm/);
     expect(QUICK_HANDBACK).toMatch(/hand back/);
   });
 
@@ -244,12 +336,16 @@ describe("intake-triage — skill protocol and telemetry contract", () => {
     expect(SKILL).toMatch(/"signals":\{"files":"one\|many"/);
   });
 
-  test("the sink is append-only, never read at bootstrap, write-only by permission", () => {
+  test("the sink is append-only, never read at bootstrap, write-allow-listed with no edit rule (N2)", () => {
     expect(SKILL).toContain(".context/triage-dataset.jsonl");
     expect(SKILL).toMatch(/Append only: never overwrite, edit, delete/);
     expect(SKILL).toMatch(/Never read at bootstrap/);
     expect(SKILL).toMatch(
-      /allowed under `permission\.write` and denied under `permission\.edit`/,
+      /write surface allow-lists the sink and defines no edit rule/,
+    );
+    expect(SKILL).toMatch(/`write` folds into the `edit` action/);
+    expect(SKILL).toMatch(
+      /append-only is enforced by the hard-boundary rule/,
     );
   });
 
