@@ -311,7 +311,7 @@ strings or tokens a test requires in the secondary file.
 | `CONTRIBUTING.md` | Engineering discipline, repository checks, release and CI, the prompt-assembly contract, and the prompt-length budget. |
 | `README.md` | Product summary, install pointers, configuration pointers, and the companion-kit extension contract. |
 | `QUICKSTART.md` | Minimal setup and first run. |
-| [`docs/CONFIGURATION.md`](docs/CONFIGURATION.md) | Tier configuration, fallback chains, profile and preset resolution, and comprehension configuration. |
+| [`docs/CONFIGURATION.md`](docs/CONFIGURATION.md) | Tier configuration, fallback chains, profile and preset resolution, and comprehension and workflow-intake configuration. |
 | [`docs/MIGRATION-V1-V2.md`](docs/MIGRATION-V1-V2.md) | Moving from the copy-based installer to the plugin. |
 | [`docs/SETUP-NATIVE.md`](docs/SETUP-NATIVE.md), [`docs/SETUP-OPENCODE-STUDIO.md`](docs/SETUP-OPENCODE-STUDIO.md) | Platform-specific and manual install detail. |
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Routing flow, confirmation gate, comprehension gate flow, and repo bootstrap. |
