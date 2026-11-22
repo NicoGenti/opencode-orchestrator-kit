@@ -53,6 +53,7 @@ coverage/
 # Only the telemetry sinks stay untracked, and nothing may add an exception for them.
 .context/comprehension-log.md
 .context/research-dataset.jsonl
+.context/triage-dataset.jsonl
 
 # Local install output of `./install.sh project` — the opencode2 development tree
 # (agent/command/skill copies, context, local model profile, node_modules).

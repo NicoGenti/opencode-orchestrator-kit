@@ -19,6 +19,8 @@ The comprehension telemetry write (`.context/comprehension-log.md`) is NOT part 
 
 The research dataset (`.context/research-dataset.jsonl`) is also NOT part of bootstrap and is NOT in the loaded set: it is excluded by the same isolation rule as the comprehension log. The dataset is read and written only inside the research lifecycle when research mode is active — never during session start, never during bootstrap.
 
+The triage dataset (`.context/triage-dataset.jsonl`) follows the same isolation rule: it is NOT part of bootstrap and NOT in the loaded set — written append-only, and only when triage telemetry is opted in, never read during session start or bootstrap.
+
 ## Runtime tool names (OpenCode 2)
 
 Tool names changed between V1 and V2. Calling a name the runtime does not have costs a full turn
