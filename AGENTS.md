@@ -36,8 +36,9 @@ the project profile, or the repository; it is then restated as an explicit spec
 and confirmed by the user before any delegation. A clear request routes unchanged
 with zero added round-trips. The categorical triage never scores: `NONE` is
 exactly the existing small-task condition (touches at most one file **or** needs
-no plan), `LIGHT` is the bounded no-plan band, `DEEP` is plan-needed,
-security-sensitive, or cross-module work. `workflow.mode` (`auto|full|lite`,
+no plan), `LIGHT` is the bounded band between NONE and DEEP (direct delegations,
+no plan card), `DEEP` is security-sensitive, cross-module, or multi-phase work
+(plan card through `planner` and `plan-writer`). `workflow.mode` (`auto|full|lite`,
 default `auto`) preserves today's routing unless the user opts into `full` or
 `lite` by an announced decision. Triage telemetry is opt-in, append-only, and off
 by default (`triageTelemetry.enabled: false`). Protocol, criteria, config and the
