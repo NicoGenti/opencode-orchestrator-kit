@@ -50,6 +50,8 @@ On **OpenCode 2** the kit is the `opencode-orchestrator-kit` plugin, published o
 
 Every delegation uses a 9-section task spec (Goal, Success Criteria, Scope, Safety, Inputs, Outputs, Test Plan, Verification, Edge Cases), never a free-form prompt. The orchestrator itself never edits `auth.ts`.
 
+Before routing, the orchestrator runs an intake step. An ambiguous request — missing goal, scope, affected files, or constraints — is restated as an explicit spec and confirmed with you before anything is dispatched, while a clear request routes unchanged with no extra round-trip. Complexity is then triaged categorically onto NONE / LIGHT / DEEP from four signals (≤1 file, no plan needed, no security sensitivity, no cross-module impact), never a numeric score, and `workflow.mode` in `.opencode/workflow.config.json` decides how binding that triage is: `auto` (default) lets it choose the path, `full` always runs the standard flow, `lite` permits the slim quick path by explicit decision. Configuration: [`docs/CONFIGURATION.md`](docs/CONFIGURATION.md#workflow-intake-configuration); protocol and criteria: [`skills/workflow-intake/SKILL.md`](skills/workflow-intake/SKILL.md).
+
 ## Design decisions
 
 - **Routing is separated from execution.** `agents/orchestrator.md` is the default `mode: primary` agent and can only classify and delegate, so orchestration mistakes cannot silently change the codebase. `agents/orchestrator-quick.md` is the opt-in alternate for small tasks, with the same write surface and a shorter cycle.

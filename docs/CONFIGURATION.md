@@ -325,6 +325,67 @@ Since v0.5.0, `/recall` appends delayed-evaluation rows of type `dci1` to the sa
 
 Setting `enabled: false` short-circuits the entire comprehension gate. The orchestrator proceeds straight to close and records `comprehension=DISABLED` in the progress notes — effectively restoring the v0.2.2 behaviour without downgrading.
 
+## Workflow intake configuration
+
+The intake gate is configured in a user-local file, `.opencode/workflow.config.json`,
+copied from `templates/workflow.config.json` (see _Manual copy_ below). Unlike
+`.opencode/comprehension.config.json` there is no installer seeding step and — by
+design — no runtime loader: the orchestrator reads this file at prompt level while
+applying the intake protocol, and the fallback lives in the prompt and the
+`workflow-intake` skill, not in TypeScript code.
+
+### Schema
+
+```json
+{
+  "workflow": {
+    "mode": "auto"
+  },
+  "triageTelemetry": {
+    "enabled": false
+  }
+}
+```
+
+### Mode
+
+`workflow.mode` selects how binding the triage is:
+
+| Value | Behavior |
+| --- | --- |
+| `auto` (default) | The categorical triage decides the path. A clear request routes exactly as it always has, with zero added round-trips. |
+| `full` | Always the standard flow — plan board, review, comprehension gate. Triage is still computed and announced, but never lowers the path. |
+| `lite` | The slim single-delegation path is permitted by an explicit, announced decision — never silently. Security-sensitive or plan-requiring work still escalates to the full flow. |
+
+### Categorical triage
+
+Triage uses four categorical signals — at most one file (`≤1 file`), no plan needed, no security sensitivity, no cross-module impact — and maps them onto the existing NONE/LIGHT/DEEP vocabulary:
+
+| Class | Condition | Path |
+| --- | --- | --- |
+| **NONE** | all four signals hold | quick path (`orchestrator-quick`, or the `lite` slim cycle) |
+| **LIGHT** | more than one file inside one module, no plan needed, no security sensitivity, no cross-module impact | standard flow, no plan card unless asked |
+| **DEEP** | any of: plan needed, security sensitivity, cross-module impact | full flow: plan card, review, comprehension gate |
+
+DEEP takes precedence over LIGHT and NONE; LIGHT is the remainder. There is **no numeric complexity score** anywhere in the gate — signals and output are categorical only. At close, the comprehension classification still governs the gate: triage selects the path and never replaces it.
+
+### Triage telemetry
+
+Triage telemetry is opt-in and off by default (`triageTelemetry.enabled` is `false` in the template). When enabled, each completed triage appends exactly one JSON object as one line to `.context/triage-dataset.jsonl`: append-only (no edits, deletes, backfills or reordering) and write-only (never read at bootstrap or session start). Rows carry the categorical class, mode and signals — no request text, no user answers, no source code. The file is untracked by design, like the other telemetry sinks. The `TriageEventV1` field contract is canonical in [`skills/workflow-intake/SKILL.md`](../skills/workflow-intake/SKILL.md).
+
+### Precedence
+
+File value > built-in default. If the file is absent, empty, or not valid JSON → `mode` falls back to `auto` and telemetry stays off, with ONE warning line in the progress notes and never a hard failure; an invalid individual value falls back to its default the same way. This mirrors the comprehension config's absent → defaults semantics, with one difference: no runtime loader interprets the file — the prompt-level protocol does.
+
+### Manual copy (without the installer)
+
+There is no installer seeding step for this file; copy the template yourself:
+
+```bash
+cp templates/workflow.config.json .opencode/workflow.config.json
+# then edit .opencode/workflow.config.json to taste
+```
+
 ## Deterministic gates (context-budget, evidence-check)
 
 Two deterministic, offline gates ship with the kit. Both are report-only: they read files, classify what they find and print one JSON object — they never modify a repository file, never call an LLM and never touch the network. Run them from the repository root, or point them at another tree with `--root`.

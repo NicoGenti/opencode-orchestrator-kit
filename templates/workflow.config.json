@@ -1,0 +1,8 @@
+{
+  "workflow": {
+    "mode": "auto"
+  },
+  "triageTelemetry": {
+    "enabled": false
+  }
+}
