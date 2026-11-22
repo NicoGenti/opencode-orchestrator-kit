@@ -267,7 +267,7 @@ describe("plugin integration — empty repo", () => {
       "research-mode",
       "start-session",
     ]);
-    expect(skills).toHaveLength(10);
+    expect(skills).toHaveLength(11);
 
     expect(tools).toHaveLength(1);
     expect(tools[0].name).toBe("plan_board");
@@ -341,11 +341,11 @@ describe("plugin integration — publish sanity", () => {
     expect(existsSync(join(assetsDir, "commands", "start-session.md"))).toBe(
       true,
     );
-    // i 10 SKILL.md pacchettizzati + agents/extras/commands in assets
+    // gli 11 SKILL.md pacchettizzati + agents/extras/commands in assets
     const skillFiles = walkFiles(join(PLUGIN_DIR, "assets", "skills")).filter(
       (f) => f.endsWith("SKILL.md"),
     );
-    expect(skillFiles).toHaveLength(10);
+    expect(skillFiles).toHaveLength(11);
     expect(collectPackagedAgents(false).length).toBe(16);
     expect(collectPackagedAgents(true).length).toBe(18);
     expect(

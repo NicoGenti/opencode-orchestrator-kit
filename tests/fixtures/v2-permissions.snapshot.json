@@ -1797,6 +1797,11 @@
     },
     {
       "action": "edit",
+      "resource": ".context/triage-dataset.jsonl",
+      "effect": "allow"
+    },
+    {
+      "action": "edit",
       "resource": "plan/*.md",
       "effect": "deny"
     },
@@ -1853,6 +1858,11 @@
     {
       "action": "skill",
       "resource": "comprehension-workflow",
+      "effect": "allow"
+    },
+    {
+      "action": "skill",
+      "resource": "workflow-intake",
       "effect": "allow"
     },
     {

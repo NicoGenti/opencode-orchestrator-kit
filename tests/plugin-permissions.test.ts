@@ -124,6 +124,11 @@ describe("V1 -> V2 translation", () => {
         resource: ".context/research-dataset.jsonl",
         effect: "allow",
       },
+      {
+        action: "edit",
+        resource: ".context/triage-dataset.jsonl",
+        effect: "allow",
+      },
       { action: "edit", resource: "plan/*.md", effect: "deny" },
       { action: "edit", resource: ".context/decisions.md", effect: "allow" },
       { action: "edit", resource: ".context/issues.md", effect: "allow" },
@@ -136,6 +141,7 @@ describe("V1 -> V2 translation", () => {
       { action: "shell", resource: "cat *", effect: "allow" },
       { action: "skill", resource: "*", effect: "deny" },
       { action: "skill", resource: "comprehension-workflow", effect: "allow" },
+      { action: "skill", resource: "workflow-intake", effect: "allow" },
       { action: "skill", resource: "web-*", effect: "allow" },
       { action: "skill", resource: "project-*", effect: "allow" },
     ]);
@@ -386,7 +392,7 @@ describe("packaged agent manifest permissions", () => {
     );
     expect(orchestrator).toBeDefined();
     const rules = orchestrator!.permissions;
-    expect(rules).toHaveLength(28);
+    expect(rules).toHaveLength(30);
     expect(rules[rules.length - 1]).toEqual({
       action: "edit",
       resource: "plan/*.md",

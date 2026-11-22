@@ -28,6 +28,16 @@ delegates every executable task.
 - Account for every delegation in `.context/*.md` and `plan/*` through the
   owning agent, not by writing those files directly.
 
+**Workflow intake** — before routing, an ambiguous request (missing goal, scope,
+affected files, or constraints) is restated as an explicit spec and confirmed by
+the user; a clear request routes unchanged with zero added round-trips.
+Complexity is triaged categorically onto NONE/LIGHT/DEEP (never a numeric score)
+under `workflow.mode` (`auto|full|lite`, default `auto`), which preserves today's
+routing unless the user opts into `full` or `lite` by an announced decision.
+Triage telemetry is opt-in, append-only, and off by default
+(`triageTelemetry.enabled: false`). Protocol, criteria, config and the
+`TriageEventV1` sink are canonical in `skills/workflow-intake/SKILL.md`.
+
 ### Delegation Policies
 
 1. **Mandatory delegation** — no code, test, or documentation work performed

@@ -103,6 +103,7 @@ const SKILL_IDS = [
   "npm-debug",
   "security-audit",
   "structural-search",
+  "workflow-intake",
 ] as const;
 
 /**
@@ -769,7 +770,7 @@ describe("packaged artifact — offline pack and self-containment", () => {
       expect(pack.log).toContain("opencode-orchestrator-kit-");
     }
     expect(packageFiles()).toEqual([...EXPECTED_PACKAGE_FILES].sort());
-    expect(packageFiles()).toHaveLength(67);
+    expect(packageFiles()).toHaveLength(68);
     if (extractedFiles !== null) {
       expect(extractedFiles).toEqual([...EXPECTED_PACKAGE_FILES].sort());
     }
@@ -882,7 +883,7 @@ describe("packaged artifact — offline pack and self-containment", () => {
 /* -------------------------------------------------------------------------- */
 
 describe("plugin activation — empty fixture repo", () => {
-  test("the packed plugin registers 5 commands, 10 skills and 1 plan_board tool", async () => {
+  test("the packed plugin registers 5 commands, 11 skills and 1 plan_board tool", async () => {
     const repo = makeEmptyFixture({ withExtras: false });
     const options = readKitOptions(repo);
     const harness = await setupPackedPlugin(options);
@@ -929,7 +930,7 @@ describe("plugin activation — empty fixture repo", () => {
     }
 
     // Skills — every path points inside the UNPACKED tree, not the repo.
-    expect(harness.skills).toHaveLength(10);
+    expect(harness.skills).toHaveLength(11);
     expect(harness.skills.map((s) => String(s.id)).sort()).toEqual(
       [...SKILL_IDS].sort(),
     );
@@ -1041,7 +1042,7 @@ describe("plugin activation — empty fixture repo", () => {
     });
   });
 
-  test("every agent carries V2 permissions (orchestrator 28 rules, plan-writer 13)", async () => {
+  test("every agent carries V2 permissions (orchestrator 30 rules, plan-writer 13)", async () => {
     const repo = makeEmptyFixture({ withExtras: true });
     const harness = await setupPackedPlugin(readKitOptions(repo));
 
@@ -1055,7 +1056,7 @@ describe("plugin activation — empty fixture repo", () => {
     }
 
     const orchestrator = harness.agents.get("orchestrator")!.permissions!;
-    expect(orchestrator).toHaveLength(28);
+    expect(orchestrator).toHaveLength(30);
     expect(orchestrator[orchestrator.length - 1]).toEqual({
       action: "edit",
       resource: "plan/*.md",
