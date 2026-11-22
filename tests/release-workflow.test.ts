@@ -9,11 +9,26 @@ const RELEASE = readFileSync(
   "utf-8",
 );
 
+/** A top-level job key inside `jobs:` (two-space indentation). */
+const JOB_KEY = /^ {2}[a-z][a-z0-9-]*:\r?$/m;
+
+/** One job block, from its key line to the next job key or EOF. */
+function jobBlock(text: string, job: string): string {
+  const key = new RegExp(`^ {2}${job}:\\r?$`, "m").exec(text);
+  if (!key) {
+    return "";
+  }
+  const rest = text.slice(key.index);
+  const body = rest.slice(key[0].length);
+  const next = body.search(JOB_KEY);
+  return next === -1 ? rest : rest.slice(0, key[0].length + next);
+}
+
 const PUBLISH_JOB = RELEASE.slice(
   RELEASE.indexOf("\n  publish:\n"),
   RELEASE.indexOf("\n  release:\n"),
 );
-const RELEASE_JOB = RELEASE.slice(RELEASE.indexOf("\n  release:\n"));
+const RELEASE_JOB = jobBlock(RELEASE, "release");
 
 function awkNotesProgram(): string {
   const match = RELEASE.match(

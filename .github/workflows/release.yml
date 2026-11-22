@@ -15,14 +15,16 @@
 # annotated-tag push is not the commit the tag names. The checkout uses
 # fetch-depth 0 so the tag object is fully available locally for that peel.
 #
-# The run has two jobs. `publish` carries the branch gate, the quality gates,
-# the tag↔version check, the release-notes extraction and the publish itself,
-# and grants only `contents: read` plus `id-token: write` (the OIDC exchange),
-# so the token that runs `bun install` can never create a GitHub Release. Its
-# last pre-publish step extracts the complete `[x.y.z]` section of
-# CHANGELOG.md and fails there — before npm is touched — when that section is
-# missing or empty, then uploads it as the `release-notes` artifact. The
-# separate `release` job (`needs: publish`) downloads that artifact and
+# The run has three jobs. `skillspector` re-runs the SkillSpector baseline
+# gate against the tagged commit and `publish` needs it, so an unaccepted
+# finding stops the release before npm runs. `publish` carries the branch gate,
+# the quality gates, the tag↔version check, the release-notes extraction and
+# the publish itself, and grants only `contents: read` plus `id-token: write`
+# (the OIDC exchange), so the token that runs `bun install` can never create a
+# GitHub Release. Its last pre-publish step extracts the complete `[x.y.z]`
+# section of CHANGELOG.md and fails there — before npm is touched — when that
+# section is missing or empty, then uploads it as the `release-notes` artifact.
+# The separate `release` job (`needs: publish`) downloads that artifact and
 # creates or updates the GitHub Release with `contents: write`. Job-level
 # permissions replace the top-level block instead of extending it, so the
 # top-level block stays `contents: read` plus `id-token: write`, `publish`
@@ -66,6 +68,9 @@ permissions:
 jobs:
   publish:
     name: quality gates and npm publish
+    # The supply-chain gate runs first: a red scan stops the release before any
+    # quality gate, tag check or publish step of this job starts.
+    needs: skillspector
     runs-on: ubuntu-latest
     environment: npm
     # Job-level permissions replace the top-level ones: id-token: write is
@@ -277,3 +282,137 @@ jobs:
               exit 1
               ;;
           esac
+
+  # SkillSpector supply-chain gate (#201): the same scan the PR and main CI
+  # runs, re-executed against the exact commit the tag names as defence in
+  # depth. `publish` needs this job, so a finding no reviewer has accepted
+  # stops the release before npm is touched. The pass/fail signal is the exit
+  # code of the four scans: findings recorded in .skillspector-baseline.yaml are
+  # suppressed before scoring, so a red job means an unaccepted finding. SARIF
+  # and JSON are diagnostics, never the gate. SARIF is uploaded as an artifact
+  # instead of to code scanning because it still lists suppressed results (as
+  # external suppressions), which code scanning would display as dismissed
+  # rather than absent.
+  #
+  # The baseline must ride the release branch head: this job checks out the
+  # tagged commit, which the `publish` branch gate proves equal to
+  # `origin/release/<tag>`, so a release branch carrying an older baseline
+  # fails closed here instead of publishing. Merging or rebasing main (and
+  # with it the current baseline) into the release branch is what refreshes it.
+  #
+  # Four scans, one per directory, because `scan` accepts exactly one path.
+  # No dependency manifest exists in these directories, so the OSV/SC4 lookup
+  # has nothing to query; if one ever appears, an unreachable api.osv.dev
+  # degrades to the bundled static list rather than failing the job on network
+  # alone. The scanner is pinned to commit `e2674da…` (tag `v2.13.6`);
+  # scanner upgrades require re-triage of the baseline (version-bound
+  # fingerprints). The `astral-sh/setup-uv` ref is a major tag, bumped by
+  # Dependabot's actions group; that cannot change the scanner version.
+  skillspector:
+    name: skillspector baseline gate
+    runs-on: ubuntu-latest
+    # The job only reads the checkout; the scanner runs outside the repository.
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      # The same block the quality-gate job carries, so both jobs expose the
+      # `python` and `python3` names that CONTRIBUTING.md documents. The scan
+      # itself runs under the Python 3.13 that uv resolves.
+      - name: Alias python to python3 when python is missing
+        run: |
+          set -euo pipefail
+          if ! command -v python >/dev/null 2>&1; then
+            mkdir -p "$HOME/.local/bin"
+            ln -sf "$(command -v python3)" "$HOME/.local/bin/python"
+            echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+            export PATH="$HOME/.local/bin:$PATH"
+          fi
+          python3 --version
+          python --version
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Install SkillSpector v2.13.6
+        run: |
+          set -euo pipefail
+          uv tool install --python 3.13 git+https://github.com/NVIDIA/skillspector.git@e2674da339b0bddc6e565d059c0577c6d9cd25da
+          # uv installs console scripts outside the default PATH.
+          BIN_DIR="$(uv tool dir --bin)"
+          echo "$BIN_DIR" >> "$GITHUB_PATH"
+          export PATH="$BIN_DIR:$PATH"
+          skillspector --version
+
+      # The gated SARIF pass owns the exit code; the JSON pass runs afterwards
+      # without --fail-on-findings so a red gate still leaves a readable report.
+      - name: Scan skills/ against the baseline
+        run: |
+          set -euo pipefail
+          mkdir -p .skillspector-artifacts
+          status=0
+          skillspector scan skills/ --no-llm --baseline .skillspector-baseline.yaml \
+            --fail-on-findings -f sarif -o .skillspector-artifacts/skills.sarif \
+            || status=$?
+          skillspector scan skills/ --no-llm --baseline .skillspector-baseline.yaml \
+            -f json -o .skillspector-artifacts/skills.json \
+            || echo "json report exited $?; the file is the diagnostic"
+          exit "$status"
+
+      - name: Scan agents/ against the baseline
+        run: |
+          set -euo pipefail
+          mkdir -p .skillspector-artifacts
+          status=0
+          skillspector scan agents/ --no-llm --baseline .skillspector-baseline.yaml \
+            --fail-on-findings -f sarif -o .skillspector-artifacts/agents.sarif \
+            || status=$?
+          skillspector scan agents/ --no-llm --baseline .skillspector-baseline.yaml \
+            -f json -o .skillspector-artifacts/agents.json \
+            || echo "json report exited $?; the file is the diagnostic"
+          exit "$status"
+
+      - name: Scan extras/ against the baseline
+        run: |
+          set -euo pipefail
+          mkdir -p .skillspector-artifacts
+          status=0
+          skillspector scan extras/ --no-llm --baseline .skillspector-baseline.yaml \
+            --fail-on-findings -f sarif -o .skillspector-artifacts/extras.sarif \
+            || status=$?
+          skillspector scan extras/ --no-llm --baseline .skillspector-baseline.yaml \
+            -f json -o .skillspector-artifacts/extras.json \
+            || echo "json report exited $?; the file is the diagnostic"
+          exit "$status"
+
+      - name: Scan command/ against the baseline
+        run: |
+          set -euo pipefail
+          mkdir -p .skillspector-artifacts
+          status=0
+          skillspector scan command/ --no-llm --baseline .skillspector-baseline.yaml \
+            --fail-on-findings -f sarif -o .skillspector-artifacts/command.sarif \
+            || status=$?
+          skillspector scan command/ --no-llm --baseline .skillspector-baseline.yaml \
+            -f json -o .skillspector-artifacts/command.json \
+            || echo "json report exited $?; the file is the diagnostic"
+          exit "$status"
+
+      # Artifacts are the diagnostic trail for a red gate, so they upload even
+      # when a scan step failed. Nothing downstream consumes them: this job
+      # publishes no artifact into the release path.
+      - name: Upload the SkillSpector reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: skillspector-reports
+          path: .skillspector-artifacts/
+          if-no-files-found: warn
+          retention-days: 7

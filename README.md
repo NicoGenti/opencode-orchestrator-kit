@@ -306,12 +306,28 @@ Companion repositories are optional. This kit runs on its own. A third-party kit
 
 ### Extension contract
 
-- **Skills path.** Put each skill at `.opencode/skills/<name>/SKILL.md` with frontmatter `name` equal to `<name>` ([Skills](https://opencode.ai/v2/docs/skills)). This plugin does not register those skills. The `skill` tool loads whatever OpenCode discovers on that path.
+- **Skills path.** Put each skill at `.opencode/skills/<name>/SKILL.md` with frontmatter `name` equal to `<name>` ([Skills](https://opencode.ai/v2/docs/skills)). This plugin does not register those skills. The `skill` tool loads whatever OpenCode discovers on that path. Vet a skill before enabling it — see [Verify your skills](#verify-your-skills).
 - **`web-*` is reserved** for web-stack skill packs (theme, brand, scaffold, deploy, and similar). Agents that allow the glob: `orchestrator`, `oracle`, `developer-fixer`, `code-reviewer`, and `deploy-helper`. A skill named `web-…` is enabled for those agents, so project skills and unrelated packs use another prefix. One example of the shape is `web-theme` or `web-deploy`.
 - **`project-*` is reserved** for the consuming project's own skills. `orchestrator`, `developer-fixer`, and `code-reviewer` already allow it. Other agents need an allowlist edit before they can load a `project-*` skill.
 - **Shell asks.** `developer-fixer` asks before `npx`, `dotnet`, `ng`, `docker build`, and `bash` or `sh` scripts under a skill `scripts/` directory. A companion can ship those commands under that ask, with the shell catch-all still deny.
 - **Commands.** A companion registers its own commands in OpenCode (a site scaffolder is one example). This plugin registers `/start-session`, `/quick`, `/recall`, `/research-mode`, and `/close-session`.
 - **Design-rules template.** `templates/design-rules.md` is a starting point, including an optional UI section. Copy it and customize or delete sections. This repository does not fetch or pin an upstream copy.
+
+### Verify your skills
+
+A `web-*` pack or a `project-*` skill is prompt content that runs with your agent's permissions, so vet it before it is enabled. NVIDIA's [SkillSpector](https://github.com/NVIDIA/SkillSpector) runs 71 patterns across 17 categories over a skill directory and scores it 0–100. This kit pins v2.13.6 and gates itself on a committed baseline, so a scan reports only findings newer than the review.
+
+```bash
+# the pin this kit gates on
+uv tool install --python 3.13 git+https://github.com/NVIDIA/skillspector.git@v2.13.6
+# one directory per run, static analysis only
+skillspector scan .opencode/skills/<name>/ --no-llm
+# after baselining that directory: fail on new findings only
+skillspector scan .opencode/skills/<name>/ --no-llm \
+  --baseline .skillspector-baseline.yaml --fail-on-findings
+```
+
+If the scan cannot run at all, treat the skill as unvetted and do not enable it until it can. Verdict bands, baseline triage, and the scanner's residual limits are in [`docs/SKILL-VETTING.md`](docs/SKILL-VETTING.md).
 
 ### Adding a skill
 

@@ -1,0 +1,201 @@
+{
+  "version": 2,
+  "scanner_version": "2.13.6",
+  "rules": [],
+  "fingerprints": [
+    {
+      "hash": "sha256:3aaa725a0a0f8fc4dd3e986c35eb8584bbedc83bb3c9eebb12feaef43bfa3574",
+      "rule_id": "AR2",
+      "file": "workflow-intake/SKILL.md",
+      "reason": "workflow-intake: the triage contract states the confirmation gate as 'no confirmation, no delegation'; the anti-refusal pattern matches that gate wording, which narrows agent discretion rather than suppressing reviewer warnings."
+    },
+    {
+      "hash": "sha256:1989142668f03c516b7914ac55989d00c91928793fb36a532398cc4ff5e28387",
+      "rule_id": "EA2",
+      "file": "dev-cleanup/SKILL.md",
+      "reason": "dev-cleanup: the excessive-agency pattern matches its delegation clause - the checklist forbids any cleanup run without explicit, in-the-moment user confirmation, even when delegated to `build-helper`; the matched text mandates the human-in-the-loop step."
+    },
+    {
+      "hash": "sha256:c0cef381a067fa49e8d3ca0913345d6340c3a42c3fa548601068008ba1df2112",
+      "rule_id": "EA2",
+      "file": "security-audit/DESKTOP-MOBILE-AND-LOCAL-IPC.md",
+      "reason": "security-audit: the vendored `DESKTOP-MOBILE-AND-LOCAL-IPC.md` IPC attack-class prose (`Unix sockets, named pipes, XPC, Binder, D-Bus…`) matches the excessive-agency pattern; it is a defensive checklist that tells the reviewer to require peer credentials, not an instruction to act."
+    },
+    {
+      "hash": "sha256:432e5df24be69dd1b4eb5f4a70698dd6a8b74a654210998d46edb4aee6e15f05",
+      "rule_id": "EA2",
+      "file": "security-audit/SKILL.md",
+      "reason": "security-audit: the vendored `SKILL.md` guidance-mode paragraph matches the excessive-agency pattern because it forbids running all six phases automatically or writing audit artifacts; the matched sentence is the restraint, and this kit loads the skill read-only."
+    },
+    {
+      "hash": "sha256:1b4756774157d9d48476c06bfc825b6afcb58ed926559e6ce3de548526b4a767",
+      "rule_id": "EA2",
+      "file": "workflow-intake/SKILL.md",
+      "reason": "workflow-intake: the matched line requires a corrected request to be restated and re-confirmed before routing ('never rewrite silently'), so the skill forbids autonomous action."
+    },
+    {
+      "hash": "sha256:e171f9cecc412030949250e71c8af4dc2c970caf423b205d62898c2874ae14ca",
+      "rule_id": "MP3",
+      "file": "dev-cleanup/SKILL.md",
+      "reason": "dev-cleanup: the memory-manipulation pattern matches state wording in its no-op guidance - a config fix or dependency upgrade is preferable to deleting state; no agent memory or stored context is written."
+    },
+    {
+      "hash": "sha256:8afb931d535a9277feace0b8010b9e5e8cf27d7ffe36ae084f5a6a46470430c6",
+      "rule_id": "MP3",
+      "file": "security-audit/AI-AND-LLM.md",
+      "reason": "security-audit: the vendored `AI-AND-LLM.md` 'Persistent memory poisoning' attack-class prose describes what an auditor should look for; the page is documentation scanned as prompt text and writes no memory or stored context."
+    },
+    {
+      "hash": "sha256:c11a987ad91c769ecc2ed8d4ddf31b679ae08c8eb7e4dc0c038ff5ab1ac0e85c",
+      "rule_id": "PE3",
+      "file": "dev-cleanup/SKILL.md",
+      "reason": "dev-cleanup: both PE3 sites come from its deny-list of credential-bearing files (`.env*`, `*.pem`, `*.key`, `credentials.json`, `.npmrc`, lockfiles) that the skill forbids touching or requires confirmation before deleting."
+    },
+    {
+      "hash": "sha256:2115d4de8d63ef34c7a7f503f637ef0d6868ea3a3e62a299964d0607dd797c8e",
+      "rule_id": "PE3",
+      "file": "dev-cleanup/SKILL.md",
+      "reason": "dev-cleanup: both PE3 sites come from its deny-list of credential-bearing files (`.env*`, `*.pem`, `*.key`, `credentials.json`, `.npmrc`, lockfiles) that the skill forbids touching or requires confirmation before deleting."
+    },
+    {
+      "hash": "sha256:03d03c8d893798bdf8f49fa2d1585e1092d57d5f54d7acdbac55f0ee114100a3",
+      "rule_id": "PE2",
+      "file": "npm-debug/SKILL.md",
+      "reason": "npm-debug: the sudo pattern matches a triage note that names a past `sudo npm install -g` as the cause of root-owned files; the skill diagnoses elevated installs and never invokes sudo."
+    },
+    {
+      "hash": "sha256:e445d5c1ee9ea0ae0df019e91175f4708c37733aafe704b7b15fb31cab37802e",
+      "rule_id": "PE3",
+      "file": "npm-debug/SKILL.md",
+      "reason": "npm-debug: the credential pattern matches registry/proxy guidance that inspects `.npmrc` and `HTTPS_PROXY` while debugging a resolution failure, with registry changes gated on user approval."
+    },
+    {
+      "hash": "sha256:80e919aed0a2e95c18b4747f08bb6fa759be5d3583e9757173538f7b90da7639",
+      "rule_id": "PE1",
+      "file": "security-audit/ATTACK-CLASSES.md",
+      "reason": "security-audit: the vendored `ATTACK-CLASSES.md` 'obvious things' checklist asks the auditor to grep for hardcoded passwords, API keys and tokens; the credential vocabulary is the target of the search, not a credential."
+    },
+    {
+      "hash": "sha256:61d65e4e28e4e99d4f458504d7aff1175af21bcf5d04f6bfd8bf30b320d73022",
+      "rule_id": "PE3",
+      "file": "security-audit/ATTACK-CLASSES.md",
+      "reason": "security-audit: the same vendored checklist asks whether `.env`, `credentials.json`, `*.pem` or `*.key` files are committed; the file-name list is what the auditor searches for, and the page itself ships none of those files."
+    },
+    {
+      "hash": "sha256:dbfb39cbc843f2f62952df66a33f51a6b53ca83c65667fa5f7f0d18c77c88d42",
+      "rule_id": "PE3",
+      "file": "security-audit/DESKTOP-MOBILE-AND-LOCAL-IPC.md",
+      "reason": "security-audit: the vendored core-discipline line names keychain ACLs, OS permissions and signing as real controls; the credential vocabulary is defensive guidance that asks the reviewer to verify the control, not to read a secret."
+    },
+    {
+      "hash": "sha256:969a0052c2a2e468da296cc1983e8758c47e5289bb6e65ef08efc96cc8110061",
+      "rule_id": "PE3",
+      "file": "security-audit/validate-coverage-ledger.test.cjs",
+      "reason": "security-audit: fixture content in the vendored `validate-coverage-ledger.test.cjs` — the path-rejection test feeds `/etc/passwd` as an unsafe sample, so the credential-adjacent pattern matches a negative test case, not runtime behaviour."
+    },
+    {
+      "hash": "sha256:482f9abfbf1f4ecf45cee7cf27e359d48158f768a22731bc38785da9b6b7dcd6",
+      "rule_id": "PE3",
+      "file": "security-audit/validate-findings.test.cjs",
+      "reason": "security-audit: fixture content in the vendored `validate-findings.test.cjs` — the unsafe-source-path test lists `/etc/passwd` among the values the validator must reject; a negative fixture string, never opened or read."
+    },
+    {
+      "hash": "sha256:ef0fbf9009df8a222db1b28e6e429b74b20803b3a139c55499581096a7663dae",
+      "rule_id": "PE3",
+      "file": "security-audit/validate-findings.test.cjs",
+      "reason": "security-audit: second fixture site in the same vendored `validate-findings.test.cjs` — the Windows-path table repeats `/etc/passwd` to prove the rejection list; test-only strings, not a filesystem access."
+    },
+    {
+      "hash": "sha256:ce89719915c900103c6950284a757781430b5f59f298b62dcdcb5026671254ec",
+      "rule_id": "TM1",
+      "file": "build-debug/SKILL.md",
+      "reason": "build-debug: the tool-parameter pattern matches its command list that the orchestrator MUST pause and confirm before running (`rm -rf node_modules/.cache`, `rm .tsbuildinfo`); the destructive command is named so it can be blocked, never auto-run."
+    },
+    {
+      "hash": "sha256:68e91318433c847eac1454cd0a206c1d867a3eb7387e0125c71ed79a72072cc8",
+      "rule_id": "TM3",
+      "file": "security-audit/DESKTOP-MOBILE-AND-LOCAL-IPC.md",
+      "reason": "security-audit: the vendored 'IPC lifecycle and correlation confusion' prose names predictable request IDs, reused handles and world-writable socket paths; the shared-resource vocabulary is the attack class under review, not a tool call."
+    },
+    {
+      "hash": "sha256:cf83907edc90074775b5b0c6f6117355b7857cd3e3a7b1c54e4d88d711ff1c0d",
+      "rule_id": "RP1",
+      "file": "build-helper.md",
+      "reason": "agent prompt contract: the `npx tsc *: allow` clause of `agents/build-helper.md` permits the repository's own devDependency compiler, resolved from the lockfile; the file is a prompt, never executed, and the entry is not a remote unpinned fetch."
+    },
+    {
+      "hash": "sha256:e96f5245b3b13c27822838d37d396722359d1feca5ae4fff98d88c99b422f9b9",
+      "rule_id": "RP1",
+      "file": "build-helper.md",
+      "reason": "agent prompt contract: the `npx vite *: allow` clause of `agents/build-helper.md` permits the repository's own devDependency bundler, resolved from the lockfile; the file is a prompt, never executed, and the entry is not a remote unpinned fetch."
+    },
+    {
+      "hash": "sha256:ecfe2c475a81cc5ff73f80ef28b164f51cef4af96f8d7a8ecc34ca809446f743",
+      "rule_id": "RP1",
+      "file": "build-helper.md",
+      "reason": "agent prompt contract: the `npx webpack *: allow` clause of `agents/build-helper.md` permits the repository's own devDependency bundler, resolved from the lockfile; the file is a prompt, never executed, and the entry is not a remote unpinned fetch."
+    },
+    {
+      "hash": "sha256:10a56df708b6dc2f6ab869ff005bd75c343be980fb8dd4605ca37fe1516c4d53",
+      "rule_id": "RP1",
+      "file": "build-helper.md",
+      "reason": "agent prompt contract: the `npx eslint *: allow` clause of `agents/build-helper.md` permits the repository's own devDependency linter, resolved from the lockfile; the file is a prompt, never executed, and the entry is not a remote unpinned fetch."
+    },
+    {
+      "hash": "sha256:ad8bc61f5a0d59f5d7640bb366121e11d90199e8b482dd722d8e97e477aca307",
+      "rule_id": "RP1",
+      "file": "build-helper.md",
+      "reason": "agent prompt contract: the `npx prettier *: allow` clause of `agents/build-helper.md` permits the repository's own devDependency formatter, resolved from the lockfile; the file is a prompt, never executed, and the entry is not a remote unpinned fetch."
+    },
+    {
+      "hash": "sha256:d98d30905f706ea68bb9ad552af1ef6c3b20723cad7903185ef05fcdc1f90121",
+      "rule_id": "RP1",
+      "file": "profiler.md",
+      "reason": "agent prompt contract: agents/profiler.md documents intended tool-use/instruction behavior for the orchestrator runtime, not an executable skill; the two hits are the `npx repomix *` allowlist entry and the documented repo-map command - instruction text in a prompt, not a shipped MCP server or a runtime dependency of the package."
+    },
+    {
+      "hash": "sha256:106ef12dcdb58e92d20f1e332b0339ad02213506d44947022a30a715f256d8b6",
+      "rule_id": "RP1",
+      "file": "profiler.md",
+      "reason": "agent prompt contract: agents/profiler.md documents intended tool-use/instruction behavior for the orchestrator runtime, not an executable skill; the two hits are the `npx repomix *` allowlist entry and the documented repo-map command - instruction text in a prompt, not a shipped MCP server or a runtime dependency of the package."
+    },
+    {
+      "hash": "sha256:a33fe6bc5e3552a6b0d9526364a9f77e8f55e57f5f3cd03d4520a7f579d0160b",
+      "rule_id": "EA2",
+      "file": "npm-helper.md",
+      "reason": "agent prompt contract: agents/npm-helper.md documents intended tool-use/instruction behavior for the orchestrator runtime, not an executable skill; the matched line constrains the agent: no application-source edits and no Node or PATH changes without confirmation."
+    },
+    {
+      "hash": "sha256:ad55e87e542e4c7a6b5c3e4f64a5dc44a325f52858736d418e13a75f43e0f8ef",
+      "rule_id": "PE3",
+      "file": "npm-helper.md",
+      "reason": "agent prompt contract: agents/npm-helper.md documents intended tool-use/instruction behavior for the orchestrator runtime, not an executable skill; the match is the `.npmrc: ask` entry of its permission map, which forces a confirmation prompt before npm config is read or written."
+    },
+    {
+      "hash": "sha256:72c225329b70c03c846d0a9b4d93fece044e24b7c63b57473dd4ed419564ede9",
+      "rule_id": "PE1",
+      "file": "security.md",
+      "reason": "agent prompt contract: agents/security.md documents intended tool-use/instruction behavior for the orchestrator runtime, not an executable skill; the match is the `permission:` block itself, whose first entry is `\"*\": deny` and whose allow-list is narrower than that default."
+    },
+    {
+      "hash": "sha256:2bc13f36d2a0c6c00c05286bf0d1961c307c5df7d148378b1cc9842d87aae2ef",
+      "rule_id": "P6",
+      "file": "comprehension-coach.md",
+      "reason": "agent prompt contract: agents/comprehension-coach.md documents intended tool-use/instruction behavior for the orchestrator runtime, not an executable skill; the match is its no-reveal rule, which forbids the coach from describing the change or its contents before the gate - a confidentiality constraint, not prompt exposure."
+    },
+    {
+      "hash": "sha256:f3190925cc37468a4be1a305005bafd6914b60ce1bc3ff256fb5c00c736ddf5b",
+      "rule_id": "TM1",
+      "file": "plan-writer.md",
+      "reason": "agent prompt contract: agents/plan-writer.md documents intended tool-use/instruction behavior for the orchestrator runtime, not an executable skill; both hits are the allowlisted `rm .context/plan-body-<id>.md` staging-body cleanup - one known path under `.context/`, never a glob over repository content."
+    },
+    {
+      "hash": "sha256:51be2321084ae94e1b0d4f5d530b0d09f911cdae0cc1e91ec7dff5856d3b94fb",
+      "rule_id": "TM1",
+      "file": "plan-writer.md",
+      "reason": "agent prompt contract: agents/plan-writer.md documents intended tool-use/instruction behavior for the orchestrator runtime, not an executable skill; both hits are the allowlisted `rm .context/plan-body-<id>.md` staging-body cleanup - one known path under `.context/`, never a glob over repository content."
+    }
+  ],
+  "tool_commit": "e2674da339b0bddc6e565d059c0577c6d9cd25da",
+  "baseline_generated": "2026-11-22"
+}
