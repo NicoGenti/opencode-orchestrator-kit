@@ -2,23 +2,26 @@
 
 Snapshot dello stato corrente della sessione.
 
-## Stato: issue #198 — PR `feat/198-workflow-intake` su CI: format:check fixato, verifica run in corso
+## Stack
 
-- PR creata (run #272 event=pull_request, head aa98b99): fallito `format:check` (exit 1) PRIMA di `Run tests` (skipped). Non era bun test.
-- Causa: 3 file del range non formattati per LF-blob (README.md, tests/intake-triage.test.ts, tests/skill-allowlist.test.ts). Base 863777a = 130/130 verdi (main era green).
-- Fix: prettier --write sui 3 (formatting-only, pin intatti) + rigenerato `plugin/README.md` → commit `856ada2` + `6f5c2b1`, pushati. Blob check post-fix: 132/132, 0 fail (= metodo esatto CI; base green).
-- Gate: 112 pass / 0 fail (hardening+intake+parity+sync+telemetry); sync-assets --check verde. Local format:check resta CRLF-noise (51 file, non scope).
-- `main` locale = `863777a` (reset umano); origin branch = `6f5c2b1`. PR body su disco (`?? .context/pr-body-198.md`, mai committato).
+- Kit Markdown multi-agent per OpenCode 2 (plugin `plugin/`); sito Vite/React (`src/`, `docs-src/`); Bun + TypeScript; CI GitHub Actions (test.yml: typecheck/lint/format/sync/build/test).
+- Code Graph: presente. Plan-board root: sempre assoluto (`E:/.../plan`). Prettier: default (proseWrap preserve, endOfLine lf); `.context/`, `plan/`, `agents/`, `skills/`, `docs/` esclusi da format.
 
-## Dispatch in flight
+## Current state
 
-- accepted=librarian/issue-198-ci-recheck
+- Nessun piano attivo; nessun dispatch in flight. Main = origin/main (`2f11bed`), tree pulito.
+- PR #206 MERGIATA (squash: SHA nuovi, contenuti #198 equivalenti); branch origin+locale eliminati; `release/v1.2.3` worktree eliminato (utente).
 
-## Follow-up rimasti (nessun pointer attivo)
+## Done
 
-- Dopo CI verde: merge PR (FF) → main riceve i 10 commit #198; sync locale main via pull/FF.
-- Decisioni utente: stash drop vecchi stash, rm orfano plan-body-198-option-c.md (fuori main ora: sta nel branch), revoca NPM_TOKEN; v1.3.0 (#199).
+- **Issue #198 (workflow intake + adaptive complexity gate) COMPLETATA**: card `plan/complete/198.md` (comprehension: skipped); review round-3 APPROVE; CI PR verde (run #274, incl. `Run tests`).
+- Consegnato: restatement+conferma su richieste ambigue (`workflow-intake` skill on-demand), triage categorico NONE/LIGHT/DEEP disgiunto-esaustivo, `workflow.mode auto|full|lite` (templates/workflow.config.json, prompt-level read), telemetria opt-in `TriageEventV1` → `.context/triage-dataset.jsonl`, mirror AGENTS/docs/README/CHANGELOG.
+- CI root-cause fix: 3 file non formattati per LF-blob (README + 2 test) — fix prettier + mirror; lezione: verifica formattazione con `--check` su blob LF, mai `--stdin-filepath` senza check.
+- Gate comprehension DEEP: SKIPPED a richiesta utente (telemetria row + record `ev-20261122-191123-…` emessi).
+- Baseline ambient corretta: 25 fail locali Windows (19 + 6 timeout bash), non CI-relevant.
 
-## Baseline / note
+## Next steps (utente)
 
-- Suite: 1334 pass / 25 ambient locali (Windows). Suite CI: da verificare al run nuovo (Run tests eseguirà solo se format:check passa).
+- v1.3.0 release (#199) su main aggiornato — CHANGELOG [Unreleased] ha il bullet #198.
+- Follow-up opzionali: residui #203 (R1/R2/R4); card legacy `plan/in-progress/0002…`/`0009`/`179` + qa `0001`/`13` (0001 warning missing-comprehension noto).
+- Decisioni pending: drop vecchi stash (`stash@{0..1}`), `rm .context/plan-body-198-option-c.md` (orfano), revoca `NPM_TOKEN` se applicabile.
