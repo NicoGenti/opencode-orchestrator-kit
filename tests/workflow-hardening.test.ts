@@ -322,7 +322,7 @@ describe("workflow-hardening — W7 privacy & isolation (regression)", () => {
 });
 /**
  * v0.6.2 — Safety & Measurement Corrections:
- *   W8  P0: frontend permissions cover both metric sinks
+ *   W8  P0: frontend permissions cover every metric sink
  *   W9  hard boundary: append-only sinks, single tuple, research-scoped reads
  *   W10 coach atomic block carries DCI (SKIPPED stays numeric-free)
  *   W11 /recall whitelist: plan + record + bounded inspection only
@@ -344,11 +344,12 @@ describe("workflow-hardening — W8 P0 frontend permissions (v0.6.2)", () => {
     return permission;
   }
 
-  test("orchestrator write permission includes both metric sinks", () => {
+  test("orchestrator write permission includes every metric sink", () => {
     const write = orchestratorPermission().write;
     expect(write).toMatchObject({
       ".context/comprehension-log.md": "allow",
       ".context/research-dataset.jsonl": "allow",
+      ".context/triage-dataset.jsonl": "allow",
     });
   });
 
@@ -358,16 +359,17 @@ describe("workflow-hardening — W8 P0 frontend permissions (v0.6.2)", () => {
       ".context/comprehension-log.md": "allow",
     });
     expect(edit).not.toHaveProperty(".context/research-dataset.jsonl");
+    expect(edit).not.toHaveProperty(".context/triage-dataset.jsonl");
   });
 });
 
 describe("workflow-hardening — W9 hard boundary (v0.6.2)", () => {
-  test("both sinks are append-only; reads are lifecycle-scoped", () => {
+  test("every sink is append-only; reads are lifecycle-scoped", () => {
     expect(ORCH).toMatch(
-      /\*\*Hard boundary\*\*: both sinks \(this log, `\.context\/research-dataset\.jsonl`\) are append-only/,
+      /\*\*Hard boundary\*\*: all sinks \(this log, `\.context\/research-dataset\.jsonl`, `\.context\/triage-dataset\.jsonl`\) are append-only/,
     );
     expect(ORCH).toMatch(
-      /Sanctioned writes: session memory; comprehension records; comprehension telemetry; research telemetry/,
+      /Sanctioned writes: session memory; comprehension records; comprehension telemetry; research and triage telemetry/,
     );
     expect(ORCH).toMatch(
       /Direct writes are limited to sanctioned categories only/,

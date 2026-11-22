@@ -177,13 +177,17 @@ describe("routing consistency — orchestrator.md prose (v0.6.6)", () => {
     ].map((t) => [t, "tool"] as const),
     // skill names referenced from prose (must exist as skills/<name>/SKILL.md)
     ["comprehension-workflow", "skill"] as const,
+    ["workflow-intake", "skill"] as const,
     // prose vocabulary / workflow-state words (not identifiers)
     ...[
       "allow",
       "ask",
+      "auto",
       "complete",
       "draft",
+      "full",
       "in-progress",
+      "lite",
       "outcome",
       "plan",
       "qa",

@@ -139,6 +139,7 @@ describe("shipped skill names", () => {
       "dev-cleanup",
       "structural-search",
       "comprehension-workflow",
+      "workflow-intake",
       "github-actions-cicd",
       "security-audit",
     ]) {
@@ -205,7 +206,7 @@ describe("agent skill allowlists name only shipped skills", () => {
     {
       file: "orchestrator.md",
       dirs: ["agents", "plugin/assets/agents"],
-      keys: ["*", "comprehension-workflow", "web-*", "project-*"],
+      keys: ["*", "comprehension-workflow", "workflow-intake", "web-*", "project-*"],
     },
     {
       file: "code-reviewer.md",

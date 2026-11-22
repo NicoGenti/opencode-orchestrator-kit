@@ -242,9 +242,9 @@ describe("opencode-orchestrator-kit plugin skeleton", () => {
     }
   });
 
-  test("registers all 10 kit skills with ids from the repo skill directories", () => {
-    expect(repoSkillIds).toHaveLength(10);
-    expect(skills).toHaveLength(10);
+  test("registers all 11 kit skills with ids from the repo skill directories", () => {
+    expect(repoSkillIds).toHaveLength(11);
+    expect(skills).toHaveLength(11);
     expect(skills.map((skill) => skill.id).sort()).toEqual(repoSkillIds);
   });
 
