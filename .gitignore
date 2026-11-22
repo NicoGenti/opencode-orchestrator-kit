@@ -16,6 +16,7 @@ out/
 .temp/
 .cache/
 .eslintcache
+.skillspector-artifacts/
 
 # Bun
 bun.lockb

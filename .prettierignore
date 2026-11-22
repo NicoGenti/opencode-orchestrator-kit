@@ -4,6 +4,7 @@ dist/
 build/
 out/
 .vite/
+.skillspector-artifacts/
 
 # Local scaffolding and session memory
 .context/
@@ -36,3 +37,7 @@ plugin/assets/skills/
 
 # Generated from the canonical root README; never format this copy directly.
 plugin/README.md
+
+# The SkillSpector baseline is tool-generated JSON with a .yaml name; Prettier
+# would reprint it as YAML flow style and change the bytes the scanner parses.
+.skillspector-baseline.yaml

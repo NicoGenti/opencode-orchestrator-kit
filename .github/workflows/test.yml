@@ -4,6 +4,9 @@ on:
   push:
     branches: [main]
   pull_request:
+  # Manual runs exist for baseline regeneration and for re-checking a branch
+  # without a push. They do not weaken the push/PR gate.
+  workflow_dispatch:
 
 jobs:
   test:
@@ -57,3 +60,127 @@ jobs:
 
       - name: Run tests
         run: bun test
+
+  # SkillSpector supply-chain gate (#201). The pass/fail signal is the exit
+  # code of the four scans: findings recorded in .skillspector-baseline.yaml
+  # are suppressed before scoring, so a red job means a finding that no
+  # reviewer has accepted yet. SARIF and JSON are diagnostics, never the gate.
+  # SARIF is uploaded as an artifact instead of to code scanning because it
+  # still lists suppressed results (as external suppressions), which code
+  # scanning would display as dismissed rather than absent.
+  #
+  # Four scans, one per directory, because `scan` accepts exactly one path.
+  # No dependency manifest exists in these directories, so the OSV/SC4 lookup
+  # has nothing to query; if one ever appears, an unreachable api.osv.dev
+  # degrades to the bundled static list rather than failing the job on network
+  # alone. The scanner is pinned to commit `e2674da…` (tag `v2.13.6`);
+  # scanner upgrades require re-triage of the baseline (version-bound
+  # fingerprints). The `astral-sh/setup-uv` ref is a major tag, bumped by
+  # Dependabot's actions group; that cannot change the scanner version.
+  skillspector:
+    name: skillspector baseline gate
+    runs-on: ubuntu-latest
+    # The job only reads the checkout; the scanner runs outside the repository.
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      # The same block the quality-gate job carries, so both jobs expose the
+      # `python` and `python3` names that CONTRIBUTING.md documents. The scan
+      # itself runs under the Python 3.13 that uv resolves.
+      - name: Alias python to python3 when python is missing
+        run: |
+          set -euo pipefail
+          if ! command -v python >/dev/null 2>&1; then
+            mkdir -p "$HOME/.local/bin"
+            ln -sf "$(command -v python3)" "$HOME/.local/bin/python"
+            echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+            export PATH="$HOME/.local/bin:$PATH"
+          fi
+          python3 --version
+          python --version
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Install SkillSpector v2.13.6
+        run: |
+          set -euo pipefail
+          uv tool install --python 3.13 git+https://github.com/NVIDIA/skillspector.git@e2674da339b0bddc6e565d059c0577c6d9cd25da
+          # uv installs console scripts outside the default PATH.
+          BIN_DIR="$(uv tool dir --bin)"
+          echo "$BIN_DIR" >> "$GITHUB_PATH"
+          export PATH="$BIN_DIR:$PATH"
+          skillspector --version
+
+      # The gated SARIF pass owns the exit code; the JSON pass runs afterwards
+      # without --fail-on-findings so a red gate still leaves a readable report.
+      - name: Scan skills/ against the baseline
+        run: |
+          set -euo pipefail
+          mkdir -p .skillspector-artifacts
+          status=0
+          skillspector scan skills/ --no-llm --baseline .skillspector-baseline.yaml \
+            --fail-on-findings -f sarif -o .skillspector-artifacts/skills.sarif \
+            || status=$?
+          skillspector scan skills/ --no-llm --baseline .skillspector-baseline.yaml \
+            -f json -o .skillspector-artifacts/skills.json \
+            || echo "json report exited $?; the file is the diagnostic"
+          exit "$status"
+
+      - name: Scan agents/ against the baseline
+        run: |
+          set -euo pipefail
+          mkdir -p .skillspector-artifacts
+          status=0
+          skillspector scan agents/ --no-llm --baseline .skillspector-baseline.yaml \
+            --fail-on-findings -f sarif -o .skillspector-artifacts/agents.sarif \
+            || status=$?
+          skillspector scan agents/ --no-llm --baseline .skillspector-baseline.yaml \
+            -f json -o .skillspector-artifacts/agents.json \
+            || echo "json report exited $?; the file is the diagnostic"
+          exit "$status"
+
+      - name: Scan extras/ against the baseline
+        run: |
+          set -euo pipefail
+          mkdir -p .skillspector-artifacts
+          status=0
+          skillspector scan extras/ --no-llm --baseline .skillspector-baseline.yaml \
+            --fail-on-findings -f sarif -o .skillspector-artifacts/extras.sarif \
+            || status=$?
+          skillspector scan extras/ --no-llm --baseline .skillspector-baseline.yaml \
+            -f json -o .skillspector-artifacts/extras.json \
+            || echo "json report exited $?; the file is the diagnostic"
+          exit "$status"
+
+      - name: Scan command/ against the baseline
+        run: |
+          set -euo pipefail
+          mkdir -p .skillspector-artifacts
+          status=0
+          skillspector scan command/ --no-llm --baseline .skillspector-baseline.yaml \
+            --fail-on-findings -f sarif -o .skillspector-artifacts/command.sarif \
+            || status=$?
+          skillspector scan command/ --no-llm --baseline .skillspector-baseline.yaml \
+            -f json -o .skillspector-artifacts/command.json \
+            || echo "json report exited $?; the file is the diagnostic"
+          exit "$status"
+
+      # Artifacts are the diagnostic trail for a red gate, so they upload even
+      # when a scan step failed.
+      - name: Upload the SkillSpector reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: skillspector-reports
+          path: .skillspector-artifacts/
+          if-no-files-found: warn
+          retention-days: 7
