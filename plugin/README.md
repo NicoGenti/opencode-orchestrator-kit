@@ -38,16 +38,16 @@ On **OpenCode 2** the kit is the `opencode-orchestrator-kit` plugin, published o
 
 > "Add refresh-token rotation to the auth service."
 
-| Step | Agent                 | What happens                                                                                 |
-| ---- | --------------------- | -------------------------------------------------------------------------------------------- |
+| Step | Agent                 | What happens                                                                                                                                                                                                     |
+| ---- | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 0    | `orchestrator`        | Intake: an ambiguous request is restated for explicit confirmation before any delegation; a clear one proceeds as-is (see [workflow intake configuration](docs/CONFIGURATION.md#workflow-intake-configuration)). |
-| 1    | `explorer`            | Reads the current auth flow (read-only).                                                     |
-| 2    | `planner`             | Turns findings into a phased plan in `plan/draft/`.                                          |
-| 3    | `plan-writer`         | Owns the plan board: `plan/draft/` -> `plan/in-progress/` -> `plan/qa/` -> `plan/complete/`. |
-| 4    | `developer-fixer`     | Implements one phase at a time, with fresh context each time.                                |
-| 5    | `test-engineer`       | Writes and runs tests for the new logic.                                                     |
-| 6    | `security`            | Reviews the auth-sensitive change before it reaches `plan/complete/`.                        |
-| 7    | `comprehension-coach` | Developer-support comprehension check, scaled to the change (NONE / LIGHT / DEEP).           |
+| 1    | `explorer`            | Reads the current auth flow (read-only).                                                                                                                                                                         |
+| 2    | `planner`             | Turns findings into a phased plan in `plan/draft/`.                                                                                                                                                              |
+| 3    | `plan-writer`         | Owns the plan board: `plan/draft/` -> `plan/in-progress/` -> `plan/qa/` -> `plan/complete/`.                                                                                                                     |
+| 4    | `developer-fixer`     | Implements one phase at a time, with fresh context each time.                                                                                                                                                    |
+| 5    | `test-engineer`       | Writes and runs tests for the new logic.                                                                                                                                                                         |
+| 6    | `security`            | Reviews the auth-sensitive change before it reaches `plan/complete/`.                                                                                                                                            |
+| 7    | `comprehension-coach` | Developer-support comprehension check, scaled to the change (NONE / LIGHT / DEEP).                                                                                                                               |
 
 Every delegation uses a 9-section task spec (Goal, Success Criteria, Scope, Safety, Inputs, Outputs, Test Plan, Verification, Edge Cases), never a free-form prompt. The orchestrator itself never edits `auth.ts`.
 
