@@ -311,6 +311,10 @@ describe("workflow-hardening — W7 privacy & isolation (regression)", () => {
     expect(START).toContain("NOT part of bootstrap");
     expect(START).toMatch(/may read the log/);
     expect(START).toMatch(/only under explicit user invocation/);
+    // Phase B added the third sink to the same isolation paragraph (issue #198).
+    expect(START).toContain("triage-dataset.jsonl");
+    expect(START).toMatch(/triage dataset[^\n]*NOT part of bootstrap/);
+    expect(START).toMatch(/never read during session start or bootstrap/);
   });
 
   test("research dataset privacy invariant verbatim", () => {
