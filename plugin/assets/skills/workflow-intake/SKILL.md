@@ -33,13 +33,13 @@ Restate the request as an explicit spec ONLY when at least one of these is missi
 
 ## Categorical complexity triage
 
-Triage maps four categorical signals — at most one file (`≤1 file`), no plan needed, no security sensitivity, no cross-module impact — onto the existing NONE/LIGHT/DEEP vocabulary. It is categorical — never a numeric score, never a weighted sum. `NONE` is exactly the small-task condition the routers already applied (`≤1 file` **or** `no plan needed`), stated verbatim in `agents/orchestrator.md` so the two homes cannot drift:
+Triage maps four categorical signals — at most one file (`≤1 file`), no plan needed, no security sensitivity, no cross-module impact — onto the existing NONE/LIGHT/DEEP vocabulary, with the DEEP band additionally reading the multi-phase/multi-session form of the plan signal. It is categorical — never a numeric score, never a weighted sum. `NONE` is exactly the small-task condition the routers already applied (`≤1 file` **or** `no plan needed`), stated verbatim in `agents/orchestrator.md` so the two homes cannot drift:
 
 | Class | Condition (categorical) | Path |
 | --- | --- | --- |
 | **NONE** | the request touches at most one file **or** needs no plan | Quick path: tell the user to switch to `orchestrator-quick` (`/quick`) — its own hand-back rules return security or plan work to `orchestrator`; under `workflow.mode: lite` the orchestrator MAY run the slim single-delegation cycle instead, announced. |
 | **DEEP** | not NONE, and any of `security sensitivity`, `cross-module impact`, `multi-phase/multi-session scope` (a plan card is warranted) | Standard flow WITH a plan card: `planner` authors the body, `plan-writer` owns the board, then review and comprehension gate. |
-| **LIGHT** | not NONE and not DEEP — bounded multi-file, single-concern, single-module plan-requiring work with no security sensitivity and no cross-module impact | Standard flow with direct delegation(s) under a 9-section spec, WITHOUT a plan card. |
+| **LIGHT** | not NONE and not DEEP — bounded multi-file, single-concern, single-module work beyond the shortcut, with no security sensitivity and no cross-module impact | Standard flow with direct delegation(s) under a 9-section spec, WITHOUT a plan card. |
 
 The NONE test runs first: it is today's shortcut, preserved verbatim, so a one-file security request still goes to `orchestrator-quick` and comes back to `orchestrator` — no special case. After NONE, DEEP takes precedence over LIGHT, and every request lands in exactly one class: NONE is the shortcut, DEEP is the plan-card band, LIGHT is the bounded band between them. At close, the existing comprehension classification still decides the gate — this triage selects the path and never replaces that classification.
 
@@ -49,7 +49,7 @@ Config: `.opencode/workflow.config.json`, copied from `templates/workflow.config
 
 | Mode | Behavior |
 | --- | --- |
-| `auto` (default) | The triage above decides. Clear requests route exactly as today, with zero added round-trips. |
+| `auto` (default) | The triage above decides for ambiguous requests and mode decisions. For a clear request under `auto` this table is never consulted: routing is exactly today's, with no skill load (see header). |
 | `full` | Always the standard flow (plan board, review, comprehension gate); triage is still computed and announced but never lowers the path. |
 | `lite` | The slim path is permitted by an explicit decision, announced in one line — never silently. Security-sensitive or plan-requiring work still escalates to the full flow. |
 

@@ -363,13 +363,13 @@ with no skill load and no announce line.
 
 ### Categorical triage
 
-Triage uses four categorical signals — at most one file (`≤1 file`), no plan needed, no security sensitivity, no cross-module impact — and maps them onto the existing NONE/LIGHT/DEEP vocabulary. `NONE` is anchored to the small-task shortcut the routers already applied, so a clear request keeps today's path:
+Triage uses four categorical signals — at most one file (`≤1 file`), no plan needed, no security sensitivity, no cross-module impact — and maps them onto the existing NONE/LIGHT/DEEP vocabulary, with the DEEP band additionally reading the multi-phase/multi-session form of the plan signal. `NONE` is anchored to the small-task shortcut the routers already applied, so a clear request keeps today's path:
 
 | Class | Condition | Path |
 | --- | --- | --- |
 | **NONE** | the request touches at most one file **or** needs no plan | quick path (`orchestrator-quick`, whose own hand-back rules return security or plan work to `orchestrator`; under `lite` the slim cycle instead) |
 | **DEEP** | not NONE, and any of: security sensitivity, cross-module impact, multi-phase/multi-session scope (a plan card is warranted) | standard flow WITH a plan card: `planner` authors the body, `plan-writer` owns the board, then review and comprehension gate |
-| **LIGHT** | not NONE and not DEEP — bounded multi-file, single-concern, single-module plan-requiring work with no security sensitivity and no cross-module impact | standard flow with direct delegation(s) under a 9-section spec, WITHOUT a plan card |
+| **LIGHT** | not NONE and not DEEP — bounded multi-file, single-concern, single-module work beyond the shortcut, with no security sensitivity and no cross-module impact | standard flow with direct delegation(s) under a 9-section spec, WITHOUT a plan card |
 
 The NONE test runs first: it is today's shortcut, preserved verbatim, so a one-file security request still lands on `orchestrator-quick` and comes back to `orchestrator`. After NONE, DEEP takes precedence over LIGHT, and every request lands in exactly one class: NONE is the shortcut, DEEP is the plan-card band, LIGHT is the bounded band between them. There is **no numeric complexity score** anywhere in the gate — signals and output are categorical only. At close, the comprehension classification still governs the gate: triage selects the path and never replaces it.
 
