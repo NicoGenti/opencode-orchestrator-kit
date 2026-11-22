@@ -122,9 +122,7 @@ describe("intake-triage — orchestrator pointer (issue #198)", () => {
     expect(DOCS_WORKFLOW).toMatch(
       /The skill is loaded only for an\s+ambiguous request/,
     );
-    expect(DOCS_WORKFLOW).toMatch(
-      /with no skill load and no announce line/,
-    );
+    expect(DOCS_WORKFLOW).toMatch(/with no skill load and no announce line/);
     // NEW-4: the mirror homes carry the same conditional-load semantic.
     expect(AGENTS).toMatch(
       /the `workflow-intake` skill is loaded only when a request\s+is ambiguous or a `workflow\.mode` decision is needed/,
@@ -170,7 +168,9 @@ describe("intake-triage — categorical triage, no numeric score", () => {
         new RegExp(`\\|\\s*\\*\\*${cls}\\*\\*\\s*\\|`),
       );
     }
-    expect(SKILL_TRIAGE).toMatch(/After NONE, DEEP takes precedence over LIGHT/);
+    expect(SKILL_TRIAGE).toMatch(
+      /After NONE, DEEP takes precedence over LIGHT/,
+    );
   });
 
   test("the skill NONE row is the small-task OR condition, not an all-signals test (B1)", () => {
@@ -333,10 +333,9 @@ describe("intake-triage — workflow.mode across the three homes", () => {
           `\`${mode}\``,
         );
       }
-      expect(
-        text,
-        `${name} must state auto as the default`,
-      ).toMatch(/`auto`[^.\n]*default|default[^.\n]*`auto`/i);
+      expect(text, `${name} must state auto as the default`).toMatch(
+        /`auto`[^.\n]*default|default[^.\n]*`auto`/i,
+      );
     }
   });
 
@@ -402,9 +401,7 @@ describe("intake-triage — skill protocol and telemetry contract", () => {
       /write surface allow-lists the sink and defines no edit rule/,
     );
     expect(SKILL).toMatch(/`write` folds into the `edit` action/);
-    expect(SKILL).toMatch(
-      /append-only is enforced by the hard-boundary rule/,
-    );
+    expect(SKILL).toMatch(/append-only is enforced by the hard-boundary rule/);
   });
 
   test("the privacy invariant matches the research-mode wording", () => {
@@ -425,9 +422,10 @@ describe("intake-triage — skill protocol and telemetry contract", () => {
       ["AGENTS.md", AGENTS],
       ["workflow-intake skill", SKILL],
     ] as const) {
-      expect(doc, `${name} must not introduce a dispatch JSONL sink`).not.toMatch(
-        /[\w.-]*dispatch[\w.-]*\.jsonl/i,
-      );
+      expect(
+        doc,
+        `${name} must not introduce a dispatch JSONL sink`,
+      ).not.toMatch(/[\w.-]*dispatch[\w.-]*\.jsonl/i);
     }
   });
 });

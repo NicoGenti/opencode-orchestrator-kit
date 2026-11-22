@@ -206,7 +206,13 @@ describe("agent skill allowlists name only shipped skills", () => {
     {
       file: "orchestrator.md",
       dirs: ["agents", "plugin/assets/agents"],
-      keys: ["*", "comprehension-workflow", "workflow-intake", "web-*", "project-*"],
+      keys: [
+        "*",
+        "comprehension-workflow",
+        "workflow-intake",
+        "web-*",
+        "project-*",
+      ],
     },
     {
       file: "code-reviewer.md",
