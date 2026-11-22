@@ -1,16 +1,17 @@
 ---
 name: workflow-intake
 description: >-
-  Intake playbook loaded before routing: when to restate an ambiguous request
-  and get explicit confirmation, the categorical NONE/LIGHT/DEEP complexity
-  triage, workflow.mode (auto|full|lite) behavior, and the opt-in append-only
-  TriageEventV1 telemetry sink. Load only when a request is ambiguous or a
-  routing-mode decision is needed — clear requests route unchanged.
+  Intake playbook for ambiguous requests and workflow.mode decisions:
+  restatement and explicit confirmation, the categorical NONE/LIGHT/DEEP
+  triage (NONE = the existing small-task condition), workflow.mode
+  (auto|full|lite) behavior, and the opt-in append-only TriageEventV1 sink.
+  Load only when a request is ambiguous or a routing-mode decision is needed —
+  a clear request under auto routes exactly as today, with no skill load.
 ---
 
 # Workflow Intake
 
-Intake runs BEFORE `## Agent Routing` in `agents/orchestrator.md`. The prompt keeps a one-line pointer; this skill owns the restatement protocol, the triage criteria, the mode config and the telemetry tuple. `orchestrator-quick` never loads this skill: an ambiguous request is handed back to `orchestrator`.
+The orchestrator loads this skill ONLY when a request is ambiguous or a `workflow.mode` decision is needed — never for a clear request under `auto`, which routes exactly as today with no skill load and no announce line. `agents/orchestrator.md` keeps a one-line pointer; this skill owns the restatement protocol, the triage criteria, the mode config and the telemetry tuple. `orchestrator-quick` never loads it: an ambiguous request is handed back to `orchestrator`.
 
 ## Restatement trigger
 
@@ -21,7 +22,7 @@ Restate the request as an explicit spec ONLY when at least one of these is missi
 - **affected files** — the paths or modules the change touches;
 - **constraints** — safety, compatibility, or acceptance conditions.
 
-A request that supplies all four is clear: route it unchanged, with zero added round-trips and no restatement chatter.
+**"Missing" means not stated AND not inferable** from the request, `.context/` session memory, `.opencode/PROJECT-PROFILE.md`, or the repository — an inferred value counts as supplied. Restate only for a material ambiguity that would change routing; anything else routes unchanged.
 
 ## Restatement protocol
 
@@ -32,19 +33,19 @@ A request that supplies all four is clear: route it unchanged, with zero added r
 
 ## Categorical complexity triage
 
-Triage maps the four signals below onto the existing NONE/LIGHT/DEEP vocabulary. It is categorical — never a numeric score, never a weighted sum.
+Triage maps four categorical signals — at most one file (`≤1 file`), no plan needed, no security sensitivity, no cross-module impact — onto the existing NONE/LIGHT/DEEP vocabulary. It is categorical — never a numeric score, never a weighted sum. `NONE` is exactly the small-task condition the routers already applied (`≤1 file` **or** `no plan needed`), stated verbatim in `agents/orchestrator.md` so the two homes cannot drift:
 
 | Class | Condition (categorical) | Path |
 | --- | --- | --- |
-| **NONE** | `≤1 file` AND `no plan needed` AND `no security sensitivity` AND `no cross-module impact` | Quick path: tell the user to switch to `orchestrator-quick` (`/quick`); under `workflow.mode: lite` the orchestrator MAY run the slim single-delegation cycle instead, announced. |
-| **LIGHT** | more than one file inside ONE module, `no plan needed`, `no security sensitivity`, `no cross-module impact` | Standard flow: one specialist per step; no plan card unless the user asks. |
-| **DEEP** | any of `plan needed`, `security sensitivity`, `cross-module impact` | Full flow: plan card through `plan-writer`, review, comprehension gate. |
+| **NONE** | the request touches at most one file **or** needs no plan | Quick path: tell the user to switch to `orchestrator-quick` (`/quick`) — its own hand-back rules return security or plan work to `orchestrator`; under `workflow.mode: lite` the orchestrator MAY run the slim single-delegation cycle instead, announced. |
+| **DEEP** | not NONE, and any of `plan needed`, `security sensitivity`, `cross-module impact` | Full flow: plan card through `plan-writer`, review, comprehension gate. |
+| **LIGHT** | not NONE and not DEEP — bounded band: multi-file or single-concern work in one module, no plan card needed | Standard flow: one specialist per step; no plan card unless the user asks. |
 
-DEEP takes precedence over LIGHT and NONE; LIGHT is the remainder. At close, the existing comprehension classification still decides the gate — this triage selects the path and never replaces that classification.
+The NONE test runs first: it is today's shortcut, preserved verbatim, so a one-file security request still goes to `orchestrator-quick` and comes back to `orchestrator` — no special case. After NONE, DEEP takes precedence over LIGHT. At close, the existing comprehension classification still decides the gate — this triage selects the path and never replaces that classification.
 
 ## workflow.mode
 
-Config: `.opencode/workflow.config.json` (seeded from `templates/workflow.config.json`), key `workflow.mode`. Precedence: file value > built-in default; an absent, empty or invalid file falls back to `auto` with one warning line.
+Config: `.opencode/workflow.config.json`, copied from `templates/workflow.config.json` (no installer seeding step), key `workflow.mode`. Precedence: file value > built-in default. An absent file means the documented default (`auto`, telemetry off) and NO warning; a present-but-empty or invalid file falls back to that same default with exactly ONE warning line and never a hard failure.
 
 | Mode | Behavior |
 | --- | --- |
@@ -80,5 +81,5 @@ Field contract:
 
 - Append only: never overwrite, edit, delete, backfill or reorder rows; the first write creates the file.
 - Never read at bootstrap: not by `/start-session`, not by any session-memory load, not by the orchestrator while triaging.
-- The sink is allowed under `permission.write` and denied under `permission.edit` — append-only by permission, not merely by convention.
+- The write surface allow-lists the sink and defines no edit rule for it. In the V1 frontmatter that is one `permission.write` entry, mirroring `.context/research-dataset.jsonl` exactly; under the V2 plugin `write` folds into the `edit` action (`plugin/src/permissions.ts`), so append-only is enforced by the hard-boundary rule above, not by the permission layer.
 - Opt-in and reversible: setting `triageTelemetry.enabled` to `false` stops the writes immediately and changes nothing else about the gate.

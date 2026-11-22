@@ -40,6 +40,7 @@ On **OpenCode 2** the kit is the `opencode-orchestrator-kit` plugin, published o
 
 | Step | Agent                 | What happens                                                                                 |
 | ---- | --------------------- | -------------------------------------------------------------------------------------------- |
+| 0    | `orchestrator`        | Intake: an ambiguous request is restated for explicit confirmation before any delegation; a clear one proceeds as-is (see [workflow intake configuration](docs/CONFIGURATION.md#workflow-intake-configuration)). |
 | 1    | `explorer`            | Reads the current auth flow (read-only).                                                     |
 | 2    | `planner`             | Turns findings into a phased plan in `plan/draft/`.                                          |
 | 3    | `plan-writer`         | Owns the plan board: `plan/draft/` -> `plan/in-progress/` -> `plan/qa/` -> `plan/complete/`. |
@@ -50,7 +51,7 @@ On **OpenCode 2** the kit is the `opencode-orchestrator-kit` plugin, published o
 
 Every delegation uses a 9-section task spec (Goal, Success Criteria, Scope, Safety, Inputs, Outputs, Test Plan, Verification, Edge Cases), never a free-form prompt. The orchestrator itself never edits `auth.ts`.
 
-Before routing, the orchestrator runs an intake step. An ambiguous request — missing goal, scope, affected files, or constraints — is restated as an explicit spec and confirmed with you before anything is dispatched, while a clear request routes unchanged with no extra round-trip. Complexity is then triaged categorically onto NONE / LIGHT / DEEP from four signals (≤1 file, no plan needed, no security sensitivity, no cross-module impact), never a numeric score, and `workflow.mode` in `.opencode/workflow.config.json` decides how binding that triage is: `auto` (default) lets it choose the path, `full` always runs the standard flow, `lite` permits the slim quick path by explicit decision. Configuration: [`docs/CONFIGURATION.md`](docs/CONFIGURATION.md#workflow-intake-configuration); protocol and criteria: [`skills/workflow-intake/SKILL.md`](skills/workflow-intake/SKILL.md).
+Before routing, the orchestrator checks whether the request is ambiguous — goal, scope, affected files, or constraints neither stated nor inferable from the request, session memory, project profile, or repo. If it is, the request is restated as an explicit spec and confirmed with you before anything is dispatched; a clear request routes exactly as before, with no extra round-trip and no skill load. The restated spec's complexity is triaged categorically onto NONE / LIGHT / DEEP — `NONE` is the existing small-task shortcut (at most one file or no plan needed), `LIGHT` the bounded no-plan band, `DEEP` plan-needed, security-sensitive or cross-module work — never a numeric score, and `workflow.mode` in `.opencode/workflow.config.json` decides how binding that triage is: `auto` (default) keeps today's routing, `full` always runs the standard flow, `lite` permits the slim quick path by explicit decision. Configuration: [`docs/CONFIGURATION.md`](docs/CONFIGURATION.md#workflow-intake-configuration); protocol and criteria: [`skills/workflow-intake/SKILL.md`](skills/workflow-intake/SKILL.md).
 
 ## Design decisions
 
@@ -114,7 +115,7 @@ A local checkout of this repository uses the same object form with an absolute d
 opencode plugin add 'github:NicoGenti/opencode-orchestrator-kit#main::path:plugin'
 ```
 
-What the plugin registers at runtime (nothing is copied into `.opencode/`): 16 agents (+ `pc-doctor` and `writer` with `"withExtras": true`), 5 commands (`/start-session`, `/quick`, `/recall`, `/research-mode`, `/close-session`), 10 skills, and the native `plan_board` tool — the TypeScript port of `scripts/plan-board.py`, where standing authorization covers `check` and `move` of conforming plan files and every other board operation needs per-request approval. Setup options are `preset` (one of the five bundled presets, in the same format as `templates/models.config.json`; all-`placeholder/*` presets fail fast with a `TierConfigError`) and `withExtras` (default `false`).
+What the plugin registers at runtime (nothing is copied into `.opencode/`): 16 agents (+ `pc-doctor` and `writer` with `"withExtras": true`), 5 commands (`/start-session`, `/quick`, `/recall`, `/research-mode`, `/close-session`), 11 skills, and the native `plan_board` tool — the TypeScript port of `scripts/plan-board.py`, where standing authorization covers `check` and `move` of conforming plan files and every other board operation needs per-request approval. Setup options are `preset` (one of the five bundled presets, in the same format as `templates/models.config.json`; all-`placeholder/*` presets fail fast with a `TierConfigError`) and `withExtras` (default `false`).
 
 Your own configuration always wins: the plugin upserts an agent's `transform` only when the editor returns nothing for it, so user config in `~/.config/opencode/` or the project config is never overwritten.
 

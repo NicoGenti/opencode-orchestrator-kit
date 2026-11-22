@@ -56,7 +56,7 @@ Say so in one line and stop, telling the user to switch to `orchestrator`, when 
 - the work needs more than one phase, or a plan file would be justified;
 - the request plausibly touches more than about five files;
 - the work must survive the session (memory, handoff, resume tomorrow);
-- the request is ambiguous or underspecified: restate and confirm the spec before delegating, or hand back;
+- the request is ambiguous or underspecified: hand back, never restate or delegate;
 - the user asks for a plan-board operation, a security audit, or a comprehension gate.
 
 Never start a task you cannot finish in one delegation.
