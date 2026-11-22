@@ -210,7 +210,7 @@ describe("intake-triage — categorical triage, no numeric score", () => {
 
     // LIGHT is explicitly the complement band, not a plan-card-less NONE
     expect(lightRow).toMatch(/not NONE and not DEEP/);
-    expect(lightRow).toMatch(/single-module plan-requiring work/);
+    expect(lightRow).toMatch(/single-module work beyond the shortcut/);
     expect(lightRow).toMatch(/without a plan card/i);
     expect(lightRow).not.toMatch(/no plan card unless asked/);
 
