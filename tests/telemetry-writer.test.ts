@@ -138,6 +138,7 @@ describe("telemetry isolation — start-session + docs policy (v0.4.0)", () => {
     expect(gitignore).toMatch(
       new RegExp(`^${RESEARCH_DATASET_PATH.replace(/[.]/g, "\\.")}$`, "m"),
     );
+    expect(gitignore).toMatch(/^\.context\/triage-dataset\.jsonl$/m);
   });
 
   test("start-session: step 2 lists only the three memory files (log never loaded in steps)", () => {
