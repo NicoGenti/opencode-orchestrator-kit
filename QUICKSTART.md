@@ -47,6 +47,11 @@ opencode
 
 Select `@orchestrator` and run **`/start-session`**. Coming from the copy-based installer? See [`docs/MIGRATION-V1-V2.md`](docs/MIGRATION-V1-V2.md).
 
+**MCP servers and Code Mode.** Code Mode is the default on OpenCode 2: a
+connected MCP server (the kit's Code Review Graph included) is reached inside
+`execute`, not from the native tool list. Per-server `codemode`/`disabled`
+options and the opt-out shape are in [`docs/CODE-MODE.md`](docs/CODE-MODE.md).
+
 ### Legacy installer (deprecated — use V2 plugin)
 
 The `install.sh` copy-based installer is the v1 path, kept for OpenCode 1.x and offline use, but it is deprecated in favor of the V2 plugin (it prints a deprecation notice on stderr). Full migration guide: [`docs/MIGRATION-V1-V2.md`](docs/MIGRATION-V1-V2.md).
