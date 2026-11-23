@@ -184,16 +184,16 @@
       "reason": "agent prompt contract: agents/comprehension-coach.md documents intended tool-use/instruction behavior for the orchestrator runtime, not an executable skill; the match is its no-reveal rule, which forbids the coach from describing the change or its contents before the gate - a confidentiality constraint, not prompt exposure."
     },
     {
-      "hash": "sha256:a82bd489cca5f3f5d2beadf25b1dc6b85835457e200ec9217dccb935bba40891",
+      "hash": "sha256:d0e47e198a7456b9eae25d7c6ce9a46b2c8de7893bd517aa2bfd6157c34a4c92",
       "rule_id": "TM1",
       "file": "plan-writer.md",
-      "reason": "agent prompt contract: agents/plan-writer.md documents intended tool-use/instruction behavior for the orchestrator runtime, not an executable skill; both hits are the allowlisted `rm .context/plan-body-<id>.md` staging-body cleanup - one known path under `.context/`, never a glob over repository content."
+      "reason": "agent prompt contract: agents/plan-writer.md documents intended tool-use/instruction behavior for the orchestrator runtime, not an executable skill; both TM1 sites are the staging-body cleanup - the `rm .context/plan-body-*.md` permission-map entry and the documented `rm .context/plan-body-<id>.md` step after `new` - a name family confined to `.context/` staging bodies, never a glob over repository content."
     },
     {
-      "hash": "sha256:4c44bc3a8e0e28fc947c9d349370eb7fdeb9951546cc8214982d049012754358",
+      "hash": "sha256:516983fa6433e22e344dc2430c45b3d5d8b22595da449e6cf1f68e3ec96061f7",
       "rule_id": "TM1",
       "file": "plan-writer.md",
-      "reason": "agent prompt contract: agents/plan-writer.md documents intended tool-use/instruction behavior for the orchestrator runtime, not an executable skill; both hits are the allowlisted `rm .context/plan-body-<id>.md` staging-body cleanup - one known path under `.context/`, never a glob over repository content."
+      "reason": "agent prompt contract: agents/plan-writer.md documents intended tool-use/instruction behavior for the orchestrator runtime, not an executable skill; both TM1 sites are the staging-body cleanup - the `rm .context/plan-body-*.md` permission-map entry and the documented `rm .context/plan-body-<id>.md` step after `new` - a name family confined to `.context/` staging bodies, never a glob over repository content."
     }
   ],
   "tool_commit": "e2674da339b0bddc6e565d059c0577c6d9cd25da",

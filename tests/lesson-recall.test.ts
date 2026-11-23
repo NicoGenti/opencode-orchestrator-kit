@@ -132,7 +132,9 @@ describe("lesson-recall — orchestrator prompt surface (#205 P1)", () => {
   });
 
   test("the planner receives the slice under Inputs Available and never re-runs it", () => {
-    expect(LESSON_RECALL).toContain("`planner` receives the slice under Inputs Available");
+    expect(LESSON_RECALL).toContain(
+      "`planner` receives the slice under Inputs Available",
+    );
     expect(LESSON_RECALL).toContain("never re-runs it");
   });
 });
@@ -187,14 +189,19 @@ describe("lesson-recall — isolation invariants (#205 AC3)", () => {
       .map((s) => s.trim())
       .filter((s) => s.length > 0 && s.includes("/recall"));
 
-    const autoTrigger = /(?:may|can|will|auto)?\s*trigger(?:s|ed)?\b[^.\n]*automatically|automatically\s+(?:trigger|invoke|run|activat)\w*/i;
+    const autoTrigger =
+      /(?:may|can|will|auto)?\s*trigger(?:s|ed)?\b[^.\n]*automatically|automatically\s+(?:trigger|invoke|run|activat)\w*/i;
     const assertions = sentences.filter(
-      (s) => autoTrigger.test(s) && !/may not|never|nothing in this profile/i.test(s),
+      (s) =>
+        autoTrigger.test(s) &&
+        !/may not|never|nothing in this profile/i.test(s),
     );
 
     expect({
       // every remaining assertion must be the pinned sentence itself
-      unexpected: assertions.filter((s) => !s.includes(RECALL_TRIGGER_SENTENCE)),
+      unexpected: assertions.filter(
+        (s) => !s.includes(RECALL_TRIGGER_SENTENCE),
+      ),
     }).toEqual({ unexpected: [] });
 
     // The pinned sentence is really present, verbatim, in the prompt.
@@ -267,7 +274,9 @@ describe("lesson-recall — board contract surface (#205 AC4)", () => {
       agentsDoc.indexOf("**Conforming file**"),
       agentsDoc.indexOf("**Standing authorization"),
     );
-    expect(conforming).toContain("`id/title/status/created/updated/owner/executor`");
+    expect(conforming).toContain(
+      "`id/title/status/created/updated/owner/executor`",
+    );
     expect(conforming).toContain("`tags`");
     expect(conforming).toContain("`outcome`");
     expect(conforming).toContain("flat scalars");
@@ -289,7 +298,9 @@ describe("lesson-recall — board contract surface (#205 AC4)", () => {
       boardReadme.indexOf("## Plan body"),
     );
     expect(frontmatter).toContain("outcome:");
-    expect(frontmatter).toMatch(/promoted to `complete`|written at promotion to complete/);
+    expect(frontmatter).toMatch(
+      /promoted to `complete`|written at promotion to complete/,
+    );
   });
 
   test("plan/README.md Minimal template carries both keys", () => {
