@@ -670,7 +670,13 @@ maybe("plan-board parity python <-> typescript", () => {
       const py = runPy(argv, pyRoot);
       const ts = runTs(argv, tsRoot);
       expectParity(py, ts, pyRoot, tsRoot, "outcome con newline");
-      expectPayloadKeyOrderParity(py, ts, pyRoot, tsRoot, "outcome con newline");
+      expectPayloadKeyOrderParity(
+        py,
+        ts,
+        pyRoot,
+        tsRoot,
+        "outcome con newline",
+      );
       expect(py.status).toBe(1);
       expect(py.json).toEqual({
         ok: false,

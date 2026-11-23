@@ -415,7 +415,9 @@ describe("comportamento del tool — contratto move", () => {
       .filter((l) => l.trim() !== "" && l !== "---");
     const iExecutor = lines.findIndex((l) => l.startsWith("executor:"));
     const iOutcome = lines.findIndex((l) => l.startsWith("outcome:"));
-    const iComprehension = lines.findIndex((l) => l.startsWith("comprehension:"));
+    const iComprehension = lines.findIndex((l) =>
+      l.startsWith("comprehension:"),
+    );
     expect(iExecutor).toBeGreaterThan(-1);
     expect(iOutcome).toBeGreaterThan(iExecutor);
     expect(iComprehension).toBeGreaterThan(iOutcome);

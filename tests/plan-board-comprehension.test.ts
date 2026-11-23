@@ -279,9 +279,7 @@ maybe("plan-board.py — chiave outcome sulla move verso complete", () => {
     const dst = join(root, "complete", "9100-outcome.md");
     expect(existsSync(dst)).toBe(true);
     const text = readFileSync(dst, "utf-8");
-    expect(text).toContain(
-      "outcome: lesson: pin the file before the refactor",
-    );
+    expect(text).toContain("outcome: lesson: pin the file before the refactor");
   });
 
   test("la chiave `outcome` occupa la posizione FM_KEYS: dopo executor, prima delle chiavi sconosciute", () => {
@@ -303,7 +301,9 @@ maybe("plan-board.py — chiave outcome sulla move verso complete", () => {
     );
     expect(r.status).toBe(0);
     const text = readFileSync(join(root, "complete", "9101-order.md"), "utf-8");
-    const lines = text.split("\n").filter((l) => l.trim() !== "" && l !== "---");
+    const lines = text
+      .split("\n")
+      .filter((l) => l.trim() !== "" && l !== "---");
     const iExecutor = lines.findIndex((l) => l.startsWith("executor:"));
     const iOutcome = lines.findIndex((l) => l.startsWith("outcome:"));
     const iComprehension = lines.findIndex((l) =>
