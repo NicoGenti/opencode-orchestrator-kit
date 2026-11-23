@@ -547,15 +547,56 @@ way, without concluding that CRG is not configured. No agent blocks a task on it
 `code-reviewer` remains the sole refresh owner and no other agent refreshes the
 graph. The prompt text owns the exact rule; this section only explains it.
 
-### `codemode: false` for plugin tools
+### MCP via Code Mode
 
-`codemode: false` is a **plugin tool-registration** option, not an MCP setting. A
-tool registered through `ctx.tool.transform` is exposed only inside Code Mode unless
-the registration passes `options: { codemode: false }`, which makes it a
-first-class tool in the agent catalog. The kit's `plan_board` tool registers exactly
-that way (`plugin/src/plan-board-tool.ts:157-170`, including the 2026-11-02 session
-note that recorded the failure without the option). Config-declared `mcp.servers`
-entries are not covered by it.
+[`docs/CODE-MODE.md`](CODE-MODE.md) is the canonical home for declaring and calling
+MCP servers under Code Mode; this subsection records only the kit's policy on top
+of it.
+
+- **Keep servers under Code Mode (the default).** The Code Review Graph and every
+  other MCP server a project declares stay at `codemode: true` under `mcp.servers`
+  in V2, so `execute` composes the calls and the tool definitions stay out of the
+  provider's native catalog.
+- **Per-server opt-out only for a specific need.** Set `codemode: false` on the one
+  `mcp.servers` entry whose tools must stay on the native list, or whose client has
+  no `execute`; it is not a kit-wide switch and the kit does not set it for the
+  graph server.
+- **Native fallback unchanged.** The two-signal detection above (#167) works the
+  same under either setting: Code Mode changes where a tool is callable, not
+  whether the kit looks for CRG.
+- **Permissions.** Denying `execute` at resource `"*"` removes Code Mode
+  altogether, so every server without `codemode: false` falls back to direct
+  tools; MCP actions are named `<server>_<tool>` (see
+  [`docs/PLUGIN-V2-PERMISSIONS.md`](PLUGIN-V2-PERMISSIONS.md)).
+
+`workflow.mode` has **no interaction** with any of the above: it governs intake and
+triage (#198), CRG stays task-driven by its own trigger, and `workflow.mode: lite`
+does **not** skip CRG.
+
+### The `codemode` option
+
+Upstream, `codemode` is a boolean that defaults to `true` on two independent
+surfaces:
+
+- **Per MCP server** — `mcp.servers.<name>.codemode` is a field of the config
+  schema (<https://opencode.ai/config.json>: a boolean on both `Mcp.LocalConfig`
+  and `Mcp.RemoteConfig`), so one server can keep its tools on the provider's
+  native list while the rest stay in Code Mode. The opt-out shape is owned by
+  [`docs/CODE-MODE.md`](CODE-MODE.md#declaring-a-server).
+- **Plugin tool registration** — a tool registered through `ctx.tool.transform`
+  is exposed only inside Code Mode unless its registration passes
+  `options: { codemode: false }`, which makes it a first-class tool in the agent
+  catalog. The kit's `plan_board` tool registers exactly that way
+  (`plugin/src/plan-board-tool.ts:157-170`, including the 2026-11-02 session note
+  that recorded the failure without the option).
+
+The two settings share a name but have different scopes: the config field covers
+one declared `mcp.servers` entry, and the registration option covers one
+plugin-registered tool. Neither implies the other.
+
+Sources, read 2026-11-23 (issue #200 gap 3): [MCP
+servers](https://opencode.ai/docs/mcp-servers/), [Tools](https://opencode.ai/docs/tools/),
+and the config schema <https://opencode.ai/config.json>.
 
 ### `Code Graph: present` and `Code Graph: absent`
 
