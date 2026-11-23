@@ -194,6 +194,7 @@ Caveats, in the spirit of [`docs/BENCHMARK-TOKEN-USAGE.md`](docs/BENCHMARK-TOKEN
 - **Opt into extras** with `./install.sh --with-extras` to install `pc-doctor` and `writer` into `agents/`. Re-run with `--upgrade` (or `--force`) to refresh kit files that are already installed.
 - **Add a skill** by following [Companion kits](#companion-kits) below. A file at `skills/<name>/SKILL.md` is not loaded while an agent's `permission.skill` map starts with `"*": deny`.
 - **Optional structural search:** if `ast-grep` (`sg`) is installed, the `explorer` can use it for structural queries; see `skills/structural-search/SKILL.md`.
+- **MCP servers and Code Mode:** OpenCode 2 reaches MCP tools inside `execute` (Code Mode) by default, so a tool missing from the native list is not a missing server. The per-server `codemode`/`disabled` options, the opt-out shape and the kit's CRG pointer are in [`docs/CODE-MODE.md`](docs/CODE-MODE.md).
 - **Measure token impact:** follow the A/B protocol in [`docs/BENCHMARK-TOKEN-USAGE.md`](docs/BENCHMARK-TOKEN-USAGE.md) to compare exploration with and without the repo map.
 - **Design-first governance:** keep architecture decisions in `.context/DESIGN-RULES.md`; [`docs/DESIGN-RULES.md`](docs/DESIGN-RULES.md) describes the template, the lifecycle, and the checks run by `planner` and `code-reviewer`.
 - **Engineering baseline** (secrets hygiene, git hygiene, definition of done) lives in `CONTRIBUTING.md`.
