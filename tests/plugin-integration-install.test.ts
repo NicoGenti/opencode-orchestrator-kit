@@ -26,10 +26,10 @@
  * it instead of assuming it.
  *
  * Scenarios:
- *  1. packaged artifact — the tarball is exactly the expected 67 files, the
- *     package declares zero runtime dependencies, `files`/`exports` cover
- *     everything registration needs, and the packed assets are the repo-root
- *     sources;
+ *  1. packaged artifact — the tarball is exactly the expected 69 files, the
+ *     package declares `@toon-format/toon` as its only runtime dependency,
+ *     `files`/`exports` cover everything registration needs, and the packed
+ *     assets are the repo-root sources;
  *  2. empty fixture repo — 5 commands, 11 skills, 16 agents (18 with
  *     `withExtras: true`), 1 `plan_board` tool, orchestrator the only
  *     `primary`, per-agent models resolved from the bundled preset tiers,
@@ -144,9 +144,11 @@ const COMMAND_NAMES = [
 ] as const;
 
 /**
- * The exact file surface of the published package (67 entries, relative to
+ * The exact file surface of the published package (69 entries, relative to
  * the package root). Any drift is a packaging change that must be reviewed
- * explicitly — the plugin is self-contained and ships nothing else.
+ * explicitly — the plugin ships its sources, the packaged assets and exactly
+ * one declared runtime dependency (`@toon-format/toon`, mirrored as a root
+ * devDependency for this repository's own typecheck and tests).
  */
 const EXPECTED_PACKAGE_FILES = [
   "package.json",
@@ -162,6 +164,7 @@ const EXPECTED_PACKAGE_FILES = [
   "src/plan-board.ts",
   "src/runtime/opencode-plugin.ts",
   "src/tiers.ts",
+  "src/toon-config.ts",
   "types/opencode-plugin-shim.d.ts",
   ...AGENT_IDS.map((id) => `assets/agents/${id}.md`),
   ...EXTRA_IDS.map((id) => `assets/extras/${id}.md`),
@@ -770,7 +773,7 @@ describe("packaged artifact — offline pack and self-containment", () => {
       expect(pack.log).toContain("opencode-orchestrator-kit-");
     }
     expect(packageFiles()).toEqual([...EXPECTED_PACKAGE_FILES].sort());
-    expect(packageFiles()).toHaveLength(68);
+    expect(packageFiles()).toHaveLength(69);
     if (extractedFiles !== null) {
       expect(extractedFiles).toEqual([...EXPECTED_PACKAGE_FILES].sort());
     }
@@ -786,8 +789,10 @@ describe("packaged artifact — offline pack and self-containment", () => {
     expect(resolve(packageRoot)).not.toBe(resolve(PLUGIN_DIR));
   });
 
-  test("the packed package declares zero runtime dependencies", () => {
-    expect(packedPackageJson.dependencies).toBeUndefined();
+  test("the packed package declares its single runtime dependency", () => {
+    expect(packedPackageJson.dependencies).toEqual({
+      "@toon-format/toon": "4.4.0",
+    });
     expect(packedPackageJson.devDependencies).toBeUndefined();
     expect(packedPackageJson.peerDependencies).toEqual({
       "@opencode/plugin": "^2.1.0",
@@ -820,6 +825,7 @@ describe("packaged artifact — offline pack and self-containment", () => {
       "src/plan-board-tool.ts",
       "src/plan-board.ts",
       "src/tiers.ts",
+      "src/toon-config.ts",
       "src/runtime/opencode-plugin.ts",
     ]) {
       expect(existsSync(join(packageRoot, ...module.split("/")))).toBe(true);

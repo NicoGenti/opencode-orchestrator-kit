@@ -30,6 +30,9 @@
     "assets",
     "README.md"
   ],
+  "dependencies": {
+    "@toon-format/toon": "4.4.0"
+  },
   "peerDependencies": {
     "@opencode/plugin": "^2.1.0"
   },

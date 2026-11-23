@@ -10,7 +10,14 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
+import { decode } from "@toon-format/toon";
+
 import plugin from "../plugin/src/index.ts";
+import { runPlanBoard } from "../plugin/src/plan-board.ts";
+import {
+  DEFAULT_TOON_CONFIG,
+  loadToonConfig,
+} from "../plugin/src/toon-config.ts";
 
 /**
  * Tool nativo `plan_board` (registrato via ctx.tool.transform).
@@ -26,6 +33,9 @@ import plugin from "../plugin/src/index.ts";
  */
 
 const COLUMNS = ["draft", "in-progress", "qa", "complete"] as const;
+
+/** Radice del repo kit (per i pin sui due manifest). */
+const REPO_ROOT = join(import.meta.dir, "..");
 
 /** Data di calendario LOCALE (non `toISOString()` che e' UTC). */
 const TODAY = (() => {
@@ -147,6 +157,16 @@ async function runTool(input: ToolInput): Promise<any> {
   return JSON.parse(result.content.map((part) => part.text).join(""));
 }
 
+/** Testo grezzo del risultato (nessuna assunzione JSON: il branch TOON non lo e'). */
+async function runToolText(input: ToolInput): Promise<string> {
+  const execute = tools[0].execute as (
+    input: ToolInput,
+  ) => Promise<{ content: Array<{ type: string; text: string }> }>;
+  const result = await execute(input);
+  expect(Array.isArray(result.content)).toBe(true);
+  return result.content.map((part) => part.text).join("");
+}
+
 const boards: string[] = [];
 let bodyCount = 0;
 
@@ -176,6 +196,27 @@ function writeBody(text: string): string {
   const p = join(tmpdir(), `pb-tool-body-${process.pid}-${bodyCount}.md`);
   writeFileSync(p, text, "utf-8");
   return p;
+}
+
+/**
+ * Scrive `.opencode/toon.config.json` sotto la board temporanea. Il file muore
+ * con la board in `afterAll`, quindi nessun test tocca la config reale.
+ */
+function writeToonConfig(root: string, value: unknown): void {
+  const dir = join(root, ".opencode");
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(join(dir, "toon.config.json"), JSON.stringify(value), "utf-8");
+}
+
+/** Esegue `fn` con la cwd sul progetto indicato, poi la ripristina. */
+async function inProject<T>(dir: string, fn: () => Promise<T>): Promise<T> {
+  const previous = process.cwd();
+  process.chdir(dir);
+  try {
+    return await fn();
+  } finally {
+    process.chdir(previous);
+  }
 }
 
 const BODY_OK = [
@@ -306,7 +347,8 @@ describe("registrazione del tool nativo plan_board", () => {
     const execute = tools[0].execute as (
       input: ToolInput,
     ) => Promise<{ content: Array<{ type: string; text: string }> }>;
-    const result = await execute({});
+    // root esplicito: il formato non dipende dalla config utente del repo.
+    const result = await execute({ root: makeBoard() });
     expect(result.content[0].type).toBe("text");
     expect(JSON.parse(result.content[0].text).ok).toBe(false);
   });
@@ -568,5 +610,222 @@ describe("degrado silenzioso della registrazione", () => {
       console.warn = capturedWarn;
     }
     expect(warnings).toHaveLength(0);
+  });
+});
+
+describe("#208 loadToonConfig — default e fallback", () => {
+  test("file assente: defaults, zero warning", () => {
+    const root = makeBoard();
+    const result = loadToonConfig(root);
+    expect(result.config).toEqual(DEFAULT_TOON_CONFIG);
+    expect(result.warnings).toEqual([]);
+  });
+
+  test("JSON invalido: defaults + UNA warning che nomina il file", () => {
+    const root = makeBoard();
+    mkdirSync(join(root, ".opencode"), { recursive: true });
+    writeFileSync(
+      join(root, ".opencode", "toon.config.json"),
+      "{ nope",
+      "utf-8",
+    );
+    const result = loadToonConfig(root);
+    expect(result.config).toEqual(DEFAULT_TOON_CONFIG);
+    expect(result.warnings).toHaveLength(1);
+    expect(result.warnings[0]).toContain("toon.config.json");
+  });
+
+  test("shape invalida (surfaces non-stringa): defaults + UNA warning", () => {
+    const root = makeBoard();
+    writeToonConfig(root, { toon: { enabled: true, surfaces: [42] } });
+    const result = loadToonConfig(root);
+    expect(result.config).toEqual(DEFAULT_TOON_CONFIG);
+    expect(result.warnings).toHaveLength(1);
+  });
+
+  test("config valida: enabled e surfaces sovrascrivono i default senza warning", () => {
+    const root = makeBoard();
+    writeToonConfig(root, {
+      toon: { enabled: true, surfaces: ["plan_board"] },
+    });
+    const result = loadToonConfig(root);
+    expect(result.config).toEqual({
+      toon: { enabled: true, surfaces: ["plan_board"] },
+    });
+    expect(result.warnings).toEqual([]);
+  });
+});
+
+describe("#208 branch TOON del tool plan_board", () => {
+  test("senza file di config: output byte-identico al JSON.stringify(payload, null, 2) di oggi", async () => {
+    const root = makeBoard();
+    seedPlan(root, "draft", "9301-json");
+    // cwd vuota: la fallback di progetto non puo' trovare una config utente.
+    const emptyProject = mkdtempSync(join(tmpdir(), "pb-tool-empty-"));
+    boards.push(emptyProject);
+    const text = await inProject(emptyProject, () =>
+      runToolText({ command: "check", root }),
+    );
+    const { payload } = runPlanBoard(["check", "--root", root, "--json"]);
+    expect(text).toBe(JSON.stringify(payload, null, 2));
+    expect("configWarning" in JSON.parse(text)).toBe(false);
+  });
+
+  test("enabled + surface plan_board: output TOON che decodifica al payload JSON", async () => {
+    const root = makeBoard();
+    seedPlan(root, "draft", "9302-toon");
+    const jsonText = await runToolText({ command: "check", root });
+    const expected = JSON.parse(jsonText);
+
+    writeToonConfig(root, {
+      toon: { enabled: true, surfaces: ["plan_board"] },
+    });
+    const toonText = await runToolText({ command: "check", root });
+
+    expect(toonText).not.toBe(jsonText);
+    const decoded = decode(toonText);
+    expect(decoded).toEqual(expected);
+    expect(decoded).not.toBeNull();
+    expect("configWarning" in (decoded as Record<string, unknown>)).toBe(false);
+  });
+
+  test("enabled ma surface assente: resta il JSON di default", async () => {
+    const root = makeBoard();
+    seedPlan(root, "draft", "9303-surface");
+    writeToonConfig(root, { toon: { enabled: true, surfaces: ["other"] } });
+    const text = await runToolText({ command: "check", root });
+    const json = JSON.parse(text);
+    expect(json.ok).toBe(true);
+    expect("configWarning" in json).toBe(false);
+  });
+
+  test("config invalido: JSON di default + configWarning descrittivo (nome file, nessun path)", async () => {
+    const root = makeBoard();
+    writeToonConfig(root, { toon: { enabled: "yes" } });
+    const text = await runToolText({ command: "check", root });
+    const json = JSON.parse(text);
+    expect(json.ok).toBe(true);
+    expect(typeof json.configWarning).toBe("string");
+    expect(json.configWarning).toContain("toon.config.json");
+    expect(json.configWarning).not.toContain(root);
+  });
+
+  test("root 'plan': la config del project root (cwd) e' letta; il board override vince", async () => {
+    const project = mkdtempSync(join(tmpdir(), "pb-tool-project-"));
+    boards.push(project);
+    for (const col of COLUMNS) {
+      mkdirSync(join(project, "plan", col), { recursive: true });
+    }
+    seedPlan(join(project, "plan"), "draft", "9304-project");
+    mkdirSync(join(project, ".opencode"), { recursive: true });
+    writeFileSync(
+      join(project, ".opencode", "toon.config.json"),
+      JSON.stringify({ toon: { enabled: true, surfaces: ["plan_board"] } }),
+      "utf-8",
+    );
+
+    const { payload } = await inProject(project, async () =>
+      runPlanBoard(["check", "--root", "plan", "--json"]),
+    );
+    const text = await inProject(project, () =>
+      runToolText({ command: "check", root: "plan" }),
+    );
+    expect(() => JSON.parse(text)).toThrow();
+    expect(decode(text) as Record<string, unknown>).toEqual(payload);
+
+    // override opzionale ancorato alla board: la sua config vince.
+    writeToonConfig(join(project, "plan"), { toon: { enabled: false } });
+    const overridden = await inProject(project, () =>
+      runToolText({ command: "check", root: "plan" }),
+    );
+    expect(JSON.parse(overridden).ok).toBe(true);
+  });
+
+  test("round-trip TOON per payload move e adopt (chiavi fuori dal bench)", async () => {
+    const root = makeBoard();
+    seedPlan(root, "qa", "9305-move");
+    const moveArgs = {
+      command: "move",
+      id: "9305-move",
+      to: "complete",
+      comprehension: "pass",
+      outcome: "lesson: round-trip",
+      root,
+    };
+    const { payload: dryMove } = runPlanBoard([
+      "move",
+      "--id",
+      "9305-move",
+      "--to",
+      "complete",
+      "--comprehension",
+      "pass",
+      "--outcome",
+      "lesson: round-trip",
+      "--dry-run",
+      "--root",
+      root,
+      "--json",
+    ]);
+    writeToonConfig(root, {
+      toon: { enabled: true, surfaces: ["plan_board"] },
+    });
+    const moveToon = await runToolText(moveArgs);
+    const decodedMove = decode(moveToon) as Record<string, unknown>;
+    expect(decodedMove).toEqual({
+      ...dryMove,
+      dry_run: false,
+      verified: true,
+    });
+
+    // adopt: `warnings` e' un array di oggetti, assente dal bench.
+    const adoptRoot = makeBoard();
+    writeFileSync(
+      join(adoptRoot, "draft", "9306-adopt.md"),
+      "# Legacy\n\nCorpo legacy.\n",
+      "utf-8",
+    );
+    writeToonConfig(adoptRoot, {
+      toon: { enabled: true, surfaces: ["plan_board"] },
+    });
+    const { payload: expectedAdopt } = runPlanBoard([
+      "adopt",
+      "--file",
+      "9306-adopt",
+      "--owner",
+      "plan-writer",
+      "--executor",
+      "developer-fixer",
+      "--dry-run",
+      "--root",
+      adoptRoot,
+      "--json",
+    ]);
+    const adoptToon = await runToolText({
+      command: "adopt",
+      file: "9306-adopt",
+      owner: "plan-writer",
+      executor: "developer-fixer",
+      dryRun: true,
+      root: adoptRoot,
+    });
+    const decodedAdopt = decode(adoptToon) as Record<string, unknown>;
+    expect(decodedAdopt).toEqual(expectedAdopt);
+    expect(Array.isArray(decodedAdopt["warnings"])).toBe(true);
+  });
+});
+
+describe("#208 pin anti-drift della dipendenza TOON", () => {
+  test("root devDependency e plugin dependency dichiarano la stessa versione", () => {
+    const rootPkg = JSON.parse(
+      readFileSync(join(REPO_ROOT, "package.json"), "utf-8"),
+    );
+    const pluginPkg = JSON.parse(
+      readFileSync(join(REPO_ROOT, "plugin", "package.json"), "utf-8"),
+    );
+    expect(rootPkg.devDependencies["@toon-format/toon"]).toBeDefined();
+    expect(pluginPkg.dependencies["@toon-format/toon"]).toBe(
+      rootPkg.devDependencies["@toon-format/toon"],
+    );
   });
 });
