@@ -400,6 +400,68 @@ cp templates/workflow.config.json .opencode/workflow.config.json
 # then edit .opencode/workflow.config.json to taste
 ```
 
+## Toon encoding (opt-in)
+
+The native `plan_board` tool emits a pretty-printed JSON payload. An optional,
+user-local flag switches that single output surface to TOON encoding; JSON stays
+the default, and neither `runPlanBoard` nor the V1 `scripts/plan-board.py` CLI
+changes. The flag is read per call by `plugin/src/toon-config.ts`.
+
+### Schema
+
+```json
+{
+  "toon": {
+    "enabled": false,
+    "surfaces": ["plan_board"]
+  }
+}
+```
+
+`toon.enabled` turns the encoder on. `toon.surfaces` lists the payload surfaces
+the flag covers; `plan_board` is the only value the kit implements today, so a
+list without it keeps the output in JSON even when `enabled` is `true`.
+
+### Defaults
+
+| Key | Default |
+| --- | --- |
+| `toon.enabled` | `false` |
+| `toon.surfaces` | `["plan_board"]` |
+
+An absent file, or a file with no `toon` section, is the documented default
+`{"toon":{"enabled":false,"surfaces":["plan_board"]}}`: the tool emits JSON
+byte-for-byte identical to its pre-flag output.
+
+### Precedence
+
+File value > built-in default, the same split as the comprehension config
+([above](#comprehension-configuration)): an absent `.opencode/toon.config.json`
+applies the default silently with zero warnings, and a present-but-invalid file
+— malformed JSON, a non-object document, a non-boolean `enabled`, or a
+`surfaces` entry that is not a string — falls back to the defaults above with
+exactly ONE warning and never a hard failure. The invalid case is surfaced in
+the tool payload as `configWarning`, carrying the loader's descriptive message
+(it names the file, never an absolute path); that key is absent for every valid
+or absent config, so the default payload shape is unchanged. If the encoder
+itself is unavailable at runtime, the tool falls back to JSON and signals it
+with `configWarning: "encoder-unavailable"` instead of failing.
+
+### Root anchoring
+
+The tool reads the first **existing** file among two candidates, in this order:
+`<root>/.opencode/toon.config.json` when a non-empty `root` argument was given,
+then `./.opencode/toon.config.json` (the project root). This keeps the canonical
+call — `root: "plan"`, whose board never contains a project config — working,
+while an optional board-anchored file still overrides the project one. The first
+existing file wins even when invalid; when no candidate exists the defaults
+apply silently. The file is read on every call, so an edit applies to the next
+invocation without a restart.
+
+There is no template and no installer seeding step for this file: create
+`.opencode/toon.config.json` by hand, unlike the comprehension and workflow
+configs.
+
 ## Deterministic gates (context-budget, evidence-check)
 
 Two deterministic, offline gates ship with the kit. Both are report-only: they read files, classify what they find and print one JSON object — they never modify a repository file, never call an LLM and never touch the network. Run them from the repository root, or point them at another tree with `--root`.

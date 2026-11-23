@@ -1,7 +1,9 @@
 # Dependabot keeps up to date the two things that break this repo silently:
 # the dev toolchain that builds and lints the docs site, and the GitHub Actions
-# that run the tests. The kit itself ships Markdown plus a peer-dependency-only
-# plugin, so `plugin/package.json` is not monitored.
+# that run the tests. The kit plugin declares one runtime dependency
+# (`@toon-format/toon`), mirrored as a root devDependency so the repo's own
+# typecheck and tests can resolve it; `plugin/package.json` is not a workspace,
+# so Dependabot still monitors the dependency through the root manifest only.
 #
 # The `bun` ecosystem reads the committed text lockfile (`bun.lock`,
 # lockfileVersion 1); it replaces the retired issue automation as the only

@@ -77,3 +77,59 @@ For each run, capture:
 - Report all runs; do not cherry-pick.
 - Repeat each task in each configuration at least twice before drawing conclusions.
 - Record configuration A/B runs in the existing recording template above.
+
+## Encoding benchmark (payload size)
+
+This protocol measures the serialized size of one tool payload. It is not a
+session benchmark: the unit under test is a single result string, not a
+conversation.
+
+### Method
+
+1. Freeze the payloads as fixtures. Nothing in the measurement reads the clock,
+   the network or the environment, so two consecutive runs must be byte-identical.
+2. For each payload and each encoding, record `chars` (the serialized string) and
+   the documented `ceil(chars / 4)` token heuristic — the same estimate the
+   context-budget gate uses ([docs/CONFIGURATION.md](CONFIGURATION.md#context-budget)).
+3. Cross-check the heuristic against a real BPE tokenizer (`gpt-tokenizer`,
+   `o200k_base`) before quoting a reduction figure, and assert
+   `decode(encode(payload))` deep-equals the payload so the encoding is lossless.
+4. Always name the baseline. Compact `JSON.stringify(payload)` is the smallest
+   JSON the same payload can produce, so a saving quoted against it is the
+   conservative number; the tool's actual output is pretty JSON (indent 2), so a
+   saving quoted against the current output also counts a formatting choice the
+   tool could drop without any dependency.
+
+### Reference numbers (2026-11-23)
+
+| Shape | JSON tokens (`o200k_base`) | TOON tokens (`o200k_base`) | Reduction | Round-trip |
+| --- | --- | --- | --- | --- |
+| real `check` payload, 21 cards | 578 | 426 | 26.3 % | yes |
+| synthetic payload, 200 cards | 5272 | 3397 | 35.6 % | yes |
+
+Against compact JSON the `ceil(chars / 4)` heuristic reports 38.1 % and 50.8 %
+for the same two shapes, and 61.3 % / 70.4 % against the pretty JSON the tool
+emits today. The heuristic overstates the saving because TOON's tabular text
+tokenizes denser than JSON — fewer characters per token — so a divisor applied to
+both sides credits TOON with tokens it does not save. **26.3 % is the number to
+quote**: the real-BPE figure against the conservative baseline.
+
+### What these numbers do not say
+
+- **Payload only.** One serialized tool result was measured. Turns, tool-call
+  counts, prompt caching and total session tokens were not, and no session-level
+  saving is claimed.
+- **Shape-dependent.** The ratio moves with payload shape and card count, so
+  neither figure extrapolates to "the tool always saves X %".
+- **Not the routed models' tokenizer.** `o200k_base` is a real BPE, but it is not
+  the tokenizer of the models the kit routes to (the eval profile runs an ollama
+  cloud model). It validates the heuristic, not any specific model's count.
+- **No comprehension or cost claim.** Whether a model reads TOON as accurately as
+  JSON was not tested, and encode/decode cost, dependency weight and human
+  readability were not measured.
+
+### Reference
+
+- Evals report: [JSON vs TOON encoding benchmark for `plan_board` payloads](https://github.com/NicoGenti/opencode-orchestrator-kit-evals/blob/main/reports/2026-11-23-toon-encoding-benchmark.md)
+  (evals commit [`c6069f5`](https://github.com/NicoGenti/opencode-orchestrator-kit-evals/commit/c6069f5)).
+- Implementation contract: [Toon encoding (opt-in)](CONFIGURATION.md#toon-encoding-opt-in).

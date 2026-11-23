@@ -1,5 +1,6 @@
 import { runPlanBoard } from "./plan-board";
 import type { PluginContext } from "./runtime/opencode-plugin";
+import { loadToonConfig, type ToonConfig } from "./toon-config";
 
 /** Name under which the native plan-board tool is registered. */
 export const PLAN_BOARD_TOOL_NAME = "plan_board";
@@ -10,7 +11,7 @@ export const PLAN_BOARD_TOOL_NAME = "plan_board";
  * from the plan-board lifecycle rules.
  */
 export const PLAN_BOARD_TOOL_DESCRIPTION = [
-  "Deterministic port of the plan-board CLI for the kit's plan/ column board: `check` audits board structure, `move` promotes a plan between columns, `new` creates a plan from a nine-section markdown body and `adopt` normalises a legacy file; the outcome is returned as a JSON payload.",
+  "Deterministic port of the plan-board CLI for the kit's plan/ column board: `check` audits board structure, `move` promotes a plan between columns, `new` creates a plan from a nine-section markdown body and `adopt` normalises a legacy file; the outcome is returned as a JSON payload by default (opt into a TOON-encoded payload with `toon.enabled` in `.opencode/toon.config.json`).",
   "Exit contract: `0` means ok (warnings allowed), `1` means a blocking error.",
   "Standing authorization: `check` and `move` of already-conforming files are covered by the standing approval `## Approved Mutation Summary — plan-board-standing-v1` and need no fresh approval, while `new`, `adopt`, body edits, deletion and rename require a per-dispatch approved Mutation Summary.",
   "Mutations must stay under the board root.",
@@ -136,6 +137,57 @@ function planBoardArgv(input: unknown): string[] {
 }
 
 /**
+ * Directories whose `.opencode/toon.config.json` may configure the encoder,
+ * in lookup order.
+ *
+ * `--root` is the board root; the canonical call is `root: "plan"`, so a board
+ * never contains the project-level config. The candidates are therefore the
+ * explicit board root (an optional board-anchored override, used by the
+ * tests), then `.` (the project root). `loadToonConfig` reads the first
+ * existing file; none existing means the silent JSON default.
+ */
+function planBoardConfigRoots(input: unknown): string[] {
+  const record =
+    typeof input === "object" && input !== null
+      ? (input as Record<string, unknown>)
+      : {};
+  const root = record["root"];
+  if (typeof root !== "string" || root.length === 0) return ["."];
+  return [root, "."];
+}
+
+/**
+ * Serialize the payload for the host result.
+ *
+ * Default: the existing pretty JSON, byte-for-byte. When the user-local config
+ * enables TOON and lists the `plan_board` surface, the payload is encoded as
+ * TOON instead. The dependency is imported lazily so the default path — and
+ * the packed artifact, which ships no `node_modules` — never needs it.
+ *
+ * A missing encoder is a degradation, not a failure: the payload falls back to
+ * JSON and carries `configWarning: "encoder-unavailable"` so the caller can
+ * observe it. A valid, resolvable encoder adds no `configWarning`.
+ */
+async function formatPlanBoardPayload(
+  payload: Record<string, unknown>,
+  config: ToonConfig,
+): Promise<string> {
+  if (
+    !config.toon.enabled ||
+    !config.toon.surfaces.includes(PLAN_BOARD_TOOL_NAME)
+  ) {
+    return JSON.stringify(payload, null, 2);
+  }
+  try {
+    const { encode } = await import("@toon-format/toon");
+    return encode(payload);
+  } catch {
+    payload["configWarning"] = "encoder-unavailable";
+    return JSON.stringify(payload, null, 2);
+  }
+}
+
+/**
  * Tool implementation: runs the pure port (which never throws) and resolves to
  * the host's tool-result shape.
  *
@@ -150,8 +202,17 @@ export async function executePlanBoardTool(
   input: unknown,
 ): Promise<{ content: Array<{ type: "text"; text: string }> }> {
   const { payload } = runPlanBoard(planBoardArgv(input));
+  const toon = loadToonConfig(planBoardConfigRoots(input));
+  if (toon.warnings.length > 0) {
+    payload["configWarning"] = toon.warnings[0];
+  }
   return {
-    content: [{ type: "text", text: JSON.stringify(payload, null, 2) }],
+    content: [
+      {
+        type: "text",
+        text: await formatPlanBoardPayload(payload, toon.config),
+      },
+    ],
   };
 }
 

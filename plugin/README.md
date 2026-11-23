@@ -165,10 +165,11 @@ Both runs below are on purpose outside the kit's design envelope. They exist to 
 
 Read them as the cost of using the wrong tool for the job: all three configurations delivered, and the single built-in agent was the cheapest by a factor of two to three. That is the expected result for a task that fits in one context, and the reason the guidance above says to use `Build` or `Plan` for it.
 
-Two details worth keeping in mind if you do reach for the kit on a small task:
+Three details worth keeping in mind if you do reach for the kit on a small task:
 
 - **The graph pays for a map, not for a build.** On the research task a single `get_minimal_context_tool` call let the orchestrator skip delegation and answer from 21 targeted lookups. On the implementation task the graph was called once and changed nothing: the work was in files that had to be edited anyway.
 - **Board and memory upkeep dominates.** The costliest arm spent 174 `plan_board` calls and rewrote `.context/progress.md` for a feature of about fifty lines. On a long session that upkeep is what keeps the work resumable; on a short one it is pure overhead.
+- **Payload encoding is measurable on its own.** Encoding a captured 21-card `plan_board` `check` snapshot as TOON instead of JSON removed **26.3 %** of its `o200k_base` tokens (578 → 426) and 35.6 % on a synthetic 200-card payload, losslessly. The `ceil(chars / 4)` heuristic overstates the first figure as 38.1 %, and 61.3 % is that same character heuristic measured against the tool's pretty-printed JSON; those numbers describe the captured snapshot, not the board's current size. JSON stays the default and TOON is opt-in. Method and caveats: [encoding benchmark](https://github.com/NicoGenti/opencode-orchestrator-kit-evals/blob/main/reports/2026-11-23-toon-encoding-benchmark.md) (evals commit `c6069f5`).
 
 ### What we have not measured
 
@@ -196,6 +197,7 @@ Caveats, in the spirit of [`docs/BENCHMARK-TOKEN-USAGE.md`](docs/BENCHMARK-TOKEN
 - **Optional structural search:** if `ast-grep` (`sg`) is installed, the `explorer` can use it for structural queries; see `skills/structural-search/SKILL.md`.
 - **MCP servers and Code Mode:** OpenCode 2 reaches MCP tools inside `execute` (Code Mode) by default, so a tool missing from the native list is not a missing server. The per-server `codemode`/`disabled` options, the opt-out shape and the kit's CRG pointer are in [`docs/CODE-MODE.md`](docs/CODE-MODE.md).
 - **Measure token impact:** follow the A/B protocol in [`docs/BENCHMARK-TOKEN-USAGE.md`](docs/BENCHMARK-TOKEN-USAGE.md) to compare exploration with and without the repo map.
+- **Opt into TOON for `plan_board` output:** set `toon.enabled` to `true` in `.opencode/toon.config.json`; JSON stays the default. Shape, precedence, surfaces and the invalid-config warning are in [`docs/CONFIGURATION.md`](docs/CONFIGURATION.md#toon-encoding-opt-in).
 - **Design-first governance:** keep architecture decisions in `.context/DESIGN-RULES.md`; [`docs/DESIGN-RULES.md`](docs/DESIGN-RULES.md) describes the template, the lifecycle, and the checks run by `planner` and `code-reviewer`.
 - **Engineering baseline** (secrets hygiene, git hygiene, definition of done) lives in `CONTRIBUTING.md`.
 - **Run the deterministic gates:** validate delegation context and plan claims with `scripts/context-budget.ts` and `scripts/evidence-check.ts`. See [docs/CONFIGURATION.md](docs/CONFIGURATION.md#deterministic-gates-context-budget-evidence-check).
