@@ -138,7 +138,8 @@ file; `plan-writer` owns the lifecycle.
   exit `0` = ok (warnings do not fail), exit `1` = blocking error. Hand-crafted
   `mv`/`cp`/direct writes under the board root are a contract violation.
 - **Conforming file** — `<id>-<slug>.md` (or `<id>.md`) with frontmatter
-  `id/title/status/created/updated/owner/executor`, the `id` equal to the leading
+  `id/title/status/created/updated/owner/executor`, plus board keys `tags` and
+  optional `outcome` (flat scalars), the `id` equal to the leading
   segment of the filename stem, `status` equal to the containing column, and the
   nine sections of `plan/README.md` in the body.
 - **Standing authorization (board root only)** — `check` runs, and `move` of an

@@ -52,6 +52,8 @@ const SECTIONS = [
   "## Notes / Edge Cases",
 ] as const;
 
+/** `tags`/`outcome` are optional flat scalars: tolerated when absent (no finding),
+ * rendered in this position, ahead of any unknown key (e.g. `comprehension`). */
 const FM_KEYS = [
   "id",
   "title",
@@ -60,6 +62,8 @@ const FM_KEYS = [
   "updated",
   "owner",
   "executor",
+  "tags",
+  "outcome",
 ] as const;
 
 const COMPREHENSION_VALUES = [
@@ -101,7 +105,7 @@ const USAGE = [
   "usage: bun plugin/src/plan-board.ts <check|move|new|adopt> [flag]",
   "",
   "  check [--root DIR] [--json]",
-  "  move  --id ID --to COL [--comprehension V] [--dry-run] [--root DIR] [--json]",
+  "  move  --id ID --to COL [--comprehension V] [--outcome TEXT] [--dry-run] [--root DIR] [--json]",
   "  new   --id ID --title T --owner O --executor E --body FILE [--column COL] [--dry-run] [--root DIR] [--json]",
   "  adopt --file NAME [--owner O] [--executor E] [--dry-run] [--root DIR] [--json]",
 ].join("\n");
@@ -191,7 +195,7 @@ function splitFrontmatter(text: string): {
   return { fm, body: text.slice(m[0].length) };
 }
 
-/** First `id,title,status,created,updated,owner,executor`, then the remaining ones in ascending order. */
+/** First `id,title,status,created,updated,owner,executor,tags,outcome`, then the remaining ones in ascending order. */
 function renderFrontmatter(fm: Map<string, string>, newline = "\n"): string {
   const keys: string[] = [];
   for (const k of FM_KEYS) if (fm.has(k)) keys.push(k);
@@ -421,6 +425,7 @@ function updateStatus(
   fm: Map<string, string>,
   status: string,
   comprehension: string | null,
+  outcome: string | null,
 ): string {
   const text = readFileSync(path, "utf-8");
   const newline = text.includes("\r\n") ? "\r\n" : "\n";
@@ -429,6 +434,10 @@ function updateStatus(
   updated.set("status", status);
   updated.set("updated", today());
   if (comprehension !== null) updated.set("comprehension", comprehension);
+  // the lesson outcome is a `move` -> complete record only: a value supplied
+  // on any other transition is dropped, never written to the frontmatter.
+  if (outcome !== null && status === "complete")
+    updated.set("outcome", outcome);
   return renderFrontmatter(updated, newline) + body;
 }
 
@@ -438,6 +447,7 @@ function cmdMove(
   to: string,
   dryRun: boolean,
   comprehension: string | null,
+  outcome: string | null,
 ): Payload {
   if (!isColumn(to)) {
     return failPayload(
@@ -494,6 +504,14 @@ function cmdMove(
         "record the announced comprehension outcome",
     );
   }
+  if (outcome !== null) {
+    if (outcome.includes("\r") || outcome.includes("\n")) {
+      return failPayload("bad-argument", "--outcome must be a single line");
+    }
+    // frontmatter values are flat scalars: same '# comment' truncation the
+    // reader applies, so what the payload reports is what lands on disk.
+    outcome = outcome.split("#")[0].trim();
+  }
   if (!dryRun && !isDirAt(join(root, to))) {
     // deviation from the python (which would traceback): we create the column
     // instead of failing — an unversioned empty column can vanish on a
@@ -509,10 +527,15 @@ function cmdMove(
     path: dstPath,
     dry_run: dryRun,
   };
+  if (to === "complete") {
+    // `outcome` reports what the frontmatter record carries (or, on a dry run,
+    // would carry): the caller's value, or null when none was given.
+    payload["outcome"] = outcome;
+  }
   if (!dryRun) {
     writeFileSync(
       srcPath,
-      updateStatus(srcPath, fm, to, comprehension),
+      updateStatus(srcPath, fm, to, comprehension, outcome),
       "utf-8",
     );
     renameSync(srcPath, dstPath);
@@ -678,7 +701,7 @@ function cmdAdopt(
 /** Flags that consume the next token, by subcommand. */
 const VALUE_FLAGS: Record<Command, readonly string[]> = {
   check: ["root"],
-  move: ["id", "to", "comprehension", "root"],
+  move: ["id", "to", "comprehension", "outcome", "root"],
   new: ["id", "title", "owner", "executor", "body", "column", "root"],
   adopt: ["file", "owner", "executor", "root"],
 };
@@ -842,6 +865,7 @@ function runPlanBoardInner(argv: string[]): PlanBoardResult {
       values.get("to") ?? "",
       dryRun,
       comprehension ?? null,
+      values.get("outcome") ?? null,
     );
   } else if (command === "new") {
     payload = cmdNew(

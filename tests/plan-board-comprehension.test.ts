@@ -246,3 +246,164 @@ maybe("plan-board.py — gate comprensione su qa -> complete", () => {
     expect(existsSync(join(root, "complete", "9001-gate.md"))).toBe(false);
   });
 });
+
+/**
+ * #205 P2 — la chiave `outcome` (lesson outcome) sulla move verso `complete`.
+ *
+ * `outcome` e' uno scalare piatto opzionale: viene scritto nel frontmatter
+ * SOLO quando la move atterra su `complete` e il valore non e' nullo. Il
+ * rifiuto `comprehension-unrecorded` avviene prima di qualsiasi scrittura, quindi
+ * un `--outcome` senza `--comprehension` non lascia tracce sul filesystem.
+ */
+maybe("plan-board.py — chiave outcome sulla move verso complete", () => {
+  test("move --to complete con --comprehension e --outcome: scrive `outcome` nel frontmatter", () => {
+    const root = makeBoard();
+    seedPlan(root, "qa", "9100-outcome");
+    const r = run(
+      [
+        "move",
+        "--id",
+        "9100-outcome",
+        "--to",
+        "complete",
+        "--comprehension",
+        "pass",
+        "--outcome",
+        "lesson: pin the file before the refactor",
+      ],
+      root,
+    );
+    expect(r.status).toBe(0);
+    expect(r.json?.verified).toBe(true);
+    expect(r.json?.outcome).toBe("lesson: pin the file before the refactor");
+    const dst = join(root, "complete", "9100-outcome.md");
+    expect(existsSync(dst)).toBe(true);
+    const text = readFileSync(dst, "utf-8");
+    expect(text).toContain(
+      "outcome: lesson: pin the file before the refactor",
+    );
+  });
+
+  test("la chiave `outcome` occupa la posizione FM_KEYS: dopo executor, prima delle chiavi sconosciute", () => {
+    const root = makeBoard();
+    seedPlan(root, "qa", "9101-order");
+    const r = run(
+      [
+        "move",
+        "--id",
+        "9101-order",
+        "--to",
+        "complete",
+        "--comprehension",
+        "pass",
+        "--outcome",
+        "lesson: ordered",
+      ],
+      root,
+    );
+    expect(r.status).toBe(0);
+    const text = readFileSync(join(root, "complete", "9101-order.md"), "utf-8");
+    const lines = text.split("\n").filter((l) => l.trim() !== "" && l !== "---");
+    const iExecutor = lines.findIndex((l) => l.startsWith("executor:"));
+    const iOutcome = lines.findIndex((l) => l.startsWith("outcome:"));
+    const iComprehension = lines.findIndex((l) =>
+      l.startsWith("comprehension:"),
+    );
+    expect({ iExecutor, iOutcome, iComprehension }).toEqual({
+      iExecutor,
+      iOutcome,
+      iComprehension,
+    });
+    expect(iExecutor).toBeGreaterThan(-1);
+    expect(iOutcome).toBeGreaterThan(iExecutor);
+    // `comprehension` non e' una chiave FM_KEYS: viene reso DOPO, in ordine
+    // alfabetico fra le chiavi sconosciute.
+    expect(iComprehension).toBeGreaterThan(iOutcome);
+  });
+
+  test("move --to complete con --outcome ma SENZA --comprehension: rifiutata, nessuna scrittura", () => {
+    const root = makeBoard();
+    seedPlan(root, "qa", "9102-refused");
+    const before = readFileSync(join(root, "qa", "9102-refused.md"), "utf-8");
+    const r = run(
+      [
+        "move",
+        "--id",
+        "9102-refused",
+        "--to",
+        "complete",
+        "--outcome",
+        "lesson: never written",
+      ],
+      root,
+    );
+    expect(r.status).toBe(1);
+    expect(r.json?.code).toBe("comprehension-unrecorded");
+    // nessun movimento
+    expect(existsSync(join(root, "qa", "9102-refused.md"))).toBe(true);
+    expect(existsSync(join(root, "complete", "9102-refused.md"))).toBe(false);
+    // frontmatter intatto: nessuna chiave outcome, nessun status/status change
+    const after = readFileSync(join(root, "qa", "9102-refused.md"), "utf-8");
+    expect(after).toBe(before);
+    expect(after).not.toContain("outcome:");
+  });
+
+  test("--outcome su una move che NON atterra su complete: accettata ma non scritta", () => {
+    const root = makeBoard();
+    seedPlan(root, "in-progress", "9103-drop");
+    const r = run(
+      [
+        "move",
+        "--id",
+        "9103-drop",
+        "--to",
+        "qa",
+        "--outcome",
+        "lesson: dropped",
+      ],
+      root,
+    );
+    expect(r.status).toBe(0);
+    expect(r.json?.verified).toBe(true);
+    // il payload non porta `outcome` su una destinazione non-complete
+    expect("outcome" in (r.json ?? {})).toBe(false);
+    const dst = join(root, "qa", "9103-drop.md");
+    expect(existsSync(dst)).toBe(true);
+    const text = readFileSync(dst, "utf-8");
+    expect(text).not.toContain("outcome:");
+    expect(text).toContain("status: qa");
+  });
+
+  test("check: nessun NUOVO warning per tags/outcome (draft con e senza)", () => {
+    const root = makeBoard();
+    seedPlan(root, "draft", "9104-plain");
+    seedPlan(
+      root,
+      "draft",
+      "9105-tagged",
+      "tags: alpha,beta\noutcome: lesson recorded\n",
+    );
+    const r = run(["check"], root);
+    expect(r.status).toBe(0);
+    expect(r.json?.ok).toBe(true);
+    const warnings = r.json?.warnings ?? [];
+    // nessun warning menziona le nuove chiavi
+    const mentionsTags = warnings.filter((w: any) =>
+      /tags|outcome/i.test(String(w?.code ?? "") + String(w?.message ?? "")),
+    );
+    expect(mentionsTags).toEqual([]);
+    // i due draft producono lo STESSO insieme di warning (nessun warning
+    // aggiuntivo introdotto dalle chiavi opzionali)
+    const byFile = new Map<string, string[]>();
+    for (const w of warnings) {
+      const file = String(w?.file ?? "");
+      const key = file.split(/[\\/]/).pop() ?? "";
+      const list = byFile.get(key) ?? [];
+      list.push(String(w?.code ?? ""));
+      byFile.set(key, list);
+    }
+    const codesFor = (stem: string) =>
+      (byFile.get(`${stem}.md`) ?? []).slice().sort();
+    expect(codesFor("9104-plain")).toEqual(codesFor("9105-tagged"));
+  });
+});

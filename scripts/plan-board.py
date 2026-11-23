@@ -3,7 +3,7 @@
 
 Subcommands:
   check  [--root DIR] [--json]
-  move   --id <id> --to <column> [--comprehension V] [--root DIR] [--dry-run] [--json]
+  move   --id <id> --to <column> [--comprehension V] [--outcome TEXT] [--root DIR] [--dry-run] [--json]
   new    --id <id> --title T --owner O --executor E --body FILE [--column draft] [--root DIR] [--dry-run] [--json]
   adopt  --file NAME --owner O --executor E [--root DIR] [--dry-run] [--json]
 
@@ -37,7 +37,10 @@ SECTIONS = (
     "## Verification",
     "## Notes / Edge Cases",
 )
-FM_KEYS = ("id", "title", "status", "created", "updated", "owner", "executor")
+# `tags` and `outcome` are optional flat scalars: tolerated when absent (no
+# finding) and rendered in this position, ahead of any unknown key.
+FM_KEYS = ("id", "title", "status", "created", "updated", "owner", "executor",
+           "tags", "outcome")
 COMPREHENSION_VALUES = ("none", "pass", "skipped", "needs_review", "fail", "disabled", "n/a")
 ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 FM_RE = re.compile(r"^---\r?\n(.*?)\r?\n---\r?\n?", re.DOTALL)
@@ -234,7 +237,8 @@ def find_plan(root: Path, ident: str):
             if p.stem == ident or p.stem.startswith(ident + "-")]
 
 
-def update_status(path: Path, fm: dict, status: str, comprehension: str | None = None) -> str:
+def update_status(path: Path, fm: dict, status: str, comprehension: str | None = None,
+                  outcome: str | None = None) -> str:
     text = path.read_text(encoding="utf-8")
     nl = "\r\n" if "\r\n" in text else "\n"
     _, body = split_frontmatter(text)
@@ -243,11 +247,15 @@ def update_status(path: Path, fm: dict, status: str, comprehension: str | None =
     fm["updated"] = today()
     if comprehension is not None:
         fm["comprehension"] = comprehension
+    # the lesson outcome is a `move` -> complete record only: a value supplied
+    # on any other transition is dropped, never written to the frontmatter.
+    if outcome is not None and status == "complete":
+        fm["outcome"] = outcome
     return render_frontmatter(fm, nl) + body
 
 
 def cmd_move(root: Path, ident: str, to: str, dry_run: bool, as_json: bool,
-             comprehension: str | None = None) -> int:
+             comprehension: str | None = None, outcome: str | None = None) -> int:
     if to not in COLUMNS:
         return fail("bad-column", f"invalid column '{to}' (use: {', '.join(COLUMNS)})", as_json)
     hits = find_plan(root, ident)
@@ -278,13 +286,24 @@ def cmd_move(root: Path, ident: str, to: str, dry_run: bool, as_json: bool,
         return fail("comprehension-unrecorded",
                     "move to complete requires --comprehension <none|pass|skipped|needs_review|fail|disabled|n/a>: "
                     "record the announced comprehension outcome", as_json)
+    if outcome is not None:
+        if "\r" in outcome or "\n" in outcome:
+            return fail("bad-argument", "--outcome must be a single line", as_json)
+        # frontmatter values are flat scalars: same '# comment' truncation the
+        # reader applies, so what the payload reports is what lands on disk.
+        outcome = outcome.split("#")[0].strip()
     payload = {"ok": True, "action": "move", "id": path.stem, "from": col, "to": to,
                "path": str(dst), "dry_run": dry_run}
+    if to == "complete":
+        # `outcome` reports what the frontmatter record carries (or, on a dry
+        # run, would carry): the caller's value, or null when none was given.
+        payload["outcome"] = outcome
     if not dry_run:
         # an unversioned empty column can vanish on a checkout: we create it
         # instead of raising on the write.
         (root / to).mkdir(parents=True, exist_ok=True)
-        path.write_text(update_status(path, fm, to, comprehension), encoding="utf-8", newline="")
+        path.write_text(update_status(path, fm, to, comprehension, outcome),
+                        encoding="utf-8", newline="")
         path.replace(dst)
         payload["verified"] = dst.is_file() and not path.exists()
     emit(payload, as_json)
@@ -371,6 +390,7 @@ def main(argv=None) -> int:
     p.add_argument("--id", required=True)
     p.add_argument("--to", required=True)
     p.add_argument("--comprehension", choices=COMPREHENSION_VALUES, default=None)
+    p.add_argument("--outcome", default=None)
     p.add_argument("--dry-run", action="store_true")
     add_common(p)
 
@@ -406,7 +426,7 @@ def main(argv=None) -> int:
     if a.cmd == "check":
         return cmd_check(root, a.json)
     if a.cmd == "move":
-        return cmd_move(root, a.id, a.to, a.dry_run, a.json, a.comprehension)
+        return cmd_move(root, a.id, a.to, a.dry_run, a.json, a.comprehension, a.outcome)
     if a.cmd == "new":
         return cmd_new(root, a.id, a.title, a.owner, a.executor, Path(a.body), a.column, a.dry_run, a.json)
     if a.cmd == "adopt":

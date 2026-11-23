@@ -53,7 +53,7 @@ Turn exploration findings into a concrete, phased, verifiable plan. Never implem
 
 ## Workflow
 
-1. Read the goal, explorer findings, and `.context/DESIGN-RULES.md` when present.
+1. Read the goal, explorer findings, `.context/DESIGN-RULES.md` when present, and the orchestrator-supplied lessons slice; never re-run that recall.
 2. If information is insufficient, send one targeted follow-up to `explorer` via `task`: maximum 3 per planning cycle, then escalate to the orchestrator.
 3. Split the goal into ordered, independently verifiable phases sized XS (<1h) or S (1–2h); split M/L/XL further.
 4. Write the body to `.context/plan-body-<id>.md` using the `plan/README.md` template and its nine sections: Goal, Success Criteria, Scope, Safety, Inputs Available, Outputs Required, Test Plan, Verification, Notes/Edge Cases. Report body path plus proposed `id`, `title`, `owner`, `executor`; the orchestrator dispatches `plan-writer`. When the plan spans multiple modules, add a `### Structural Impact` sub-section under `## Scope` (never a tenth canonical heading): primary modules and files; affected callers/dependents (graph-assisted, read-verified); likely test surface; phase order that minimizes cross-module churn.
@@ -66,7 +66,7 @@ Treat CRG as configured when either the delegation's Inputs Available carries th
 ## Quality Rules
 
 - Ground every step in explorer findings; cite file paths and symbols, not assumptions.
-- List `.context/DESIGN-RULES.md` under Inputs Available and name the rules each phase touches.
+- Under Inputs Available list `.context/DESIGN-RULES.md` and name the rules each phase touches; also list each recalled-lesson source with its date: `.context/decisions.md`, `.context/issues.md`, `plan/complete/`.
 - Keep steps small, ordered, and independently verifiable; flag dependencies, risks, rollback and open questions in Notes/Edge Cases.
 - One plan file per coherent feature or fix; split epics into sequential plan files. Never invent scope.
 
