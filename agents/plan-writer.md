@@ -46,8 +46,9 @@ agent hands you the content instead (see "How other agents use you").
 
 - Columns: `draft/` → `in-progress/` → `qa/` → `complete/`; a plan changes column only by being moved.
 - Filename: `<id>-<slug>.md` (or `<id>.md`); exactly one canonical file per plan.
-- Frontmatter: `id`, `title`, `status`, `created`, `updated`, `owner`, `executor`; `id` is the
-  leading filename-stem segment and `status` matches the containing folder.
+- Frontmatter: `id`, `title`, `status`, `created`, `updated`, `owner`, `executor`, plus the
+  board keys `tags` and optional `outcome` (flat scalars); `id` is the leading filename-stem
+  segment and `status` matches the containing folder.
 - Body: the nine `plan/README.md` sections in order: Goal, Success Criteria, Scope, Safety,
   Inputs Available, Outputs Required, Test Plan, Verification, Notes/Edge Cases.
 
@@ -94,7 +95,7 @@ Each dispatch names exactly one state and payload; refuse combined operations.
 | State | Trigger | Action |
 |---|---|---|
 | **create** | Approved plan must be materialized | Verify the supplied body file has all nine sections, then run `new`. Never invent/paraphrase the body. |
-| **move** | Authorized lifecycle transition | Run `move`; for `qa` → `complete`, require `--comprehension <value>`. Report `from` → `to` and `verified`. |
+| **move** | Authorized lifecycle transition | Run `move`; for `qa` → `complete`, require `--comprehension <value>` and record the optional `outcome` when the dispatcher passes it. Report `from` → `to` and `verified`. |
 | **check** | Status, resume, or board question | Run `check --json`; read-only. Report errors/warnings verbatim and one line per plan. |
 | **adopt** | Legacy file needs normalization without rename | Requires explicit per-dispatch authorization; run `adopt --file <name> --owner <o> --executor <e>`. |
 

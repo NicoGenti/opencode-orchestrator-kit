@@ -284,6 +284,17 @@ describe("registrazione del tool nativo plan_board", () => {
     expect(input.properties.dryRun.type).toBe("boolean");
   });
 
+  test("#205 lo schema dichiara `outcome` come stringa opzionale con descrizione", () => {
+    const input = tools[0].input as Record<string, any>;
+    expect(input.properties.outcome).toBeDefined();
+    expect(input.properties.outcome.type).toBe("string");
+    expect(typeof input.properties.outcome.description).toBe("string");
+    expect(input.properties.outcome.description.length).toBeGreaterThan(0);
+    expect(input.properties.outcome.description).toContain("outcome");
+    // `outcome` e' opzionale: non entra fra le chiavi required.
+    expect(input.required).toEqual(["command"]);
+  });
+
   test("(j) execute ritorna una Promise: il host chiama `.then` sul valore", async () => {
     const returned = (tools[0].execute as (input: ToolInput) => unknown)({});
     expect(typeof (returned as { then?: unknown }).then).toBe("function");
@@ -376,6 +387,94 @@ describe("comportamento del tool — contratto move", () => {
     expect(json.dry_run).toBe(true);
     expect(existsSync(join(root, "draft", "9103-dry.md"))).toBe(true);
     expect(existsSync(join(root, "in-progress", "9103-dry.md"))).toBe(false);
+  });
+
+  // ── #205 P2: la chiave `outcome` (lesson outcome) ───────────────────────────
+
+  test("#205 verso complete con comprehension e outcome: scrive la chiave e la riporta nel payload", async () => {
+    const root = makeBoard();
+    seedPlan(root, "qa", "9104-outcome");
+    const json = await runTool({
+      command: "move",
+      id: "9104-outcome",
+      to: "complete",
+      comprehension: "pass",
+      outcome: "lesson: pin the file before the refactor",
+      root,
+    });
+    expect(json.ok).toBe(true);
+    expect(json.verified).toBe(true);
+    expect(json.outcome).toBe("lesson: pin the file before the refactor");
+    const dst = join(root, "complete", "9104-outcome.md");
+    expect(existsSync(dst)).toBe(true);
+    const text = readFileSync(dst, "utf-8");
+    expect(text).toContain("outcome: lesson: pin the file before the refactor");
+    // la chiave `outcome` sta dopo `executor` e prima delle chiavi sconosciute
+    const lines = text
+      .split("\n")
+      .filter((l) => l.trim() !== "" && l !== "---");
+    const iExecutor = lines.findIndex((l) => l.startsWith("executor:"));
+    const iOutcome = lines.findIndex((l) => l.startsWith("outcome:"));
+    const iComprehension = lines.findIndex((l) => l.startsWith("comprehension:"));
+    expect(iExecutor).toBeGreaterThan(-1);
+    expect(iOutcome).toBeGreaterThan(iExecutor);
+    expect(iComprehension).toBeGreaterThan(iOutcome);
+  });
+
+  test("#205 verso complete con outcome ma SENZA comprehension: rifiuta e non scrive", async () => {
+    const root = makeBoard();
+    seedPlan(root, "qa", "9105-refused");
+    const json = await runTool({
+      command: "move",
+      id: "9105-refused",
+      to: "complete",
+      outcome: "lesson: never written",
+      root,
+    });
+    expect(json.ok).toBe(false);
+    expect(json.code).toBe("comprehension-unrecorded");
+    expect(existsSync(join(root, "qa", "9105-refused.md"))).toBe(true);
+    expect(existsSync(join(root, "complete", "9105-refused.md"))).toBe(false);
+    const text = readFileSync(join(root, "qa", "9105-refused.md"), "utf-8");
+    expect(text).not.toContain("outcome:");
+  });
+
+  test("#205 un outcome non-stringa non viene emesso come flag: la chiave resta assente", async () => {
+    const root = makeBoard();
+    seedPlan(root, "qa", "9106-nonstring");
+    const json = await runTool({
+      command: "move",
+      id: "9106-nonstring",
+      to: "complete",
+      comprehension: "pass",
+      outcome: 42,
+      root,
+    });
+    expect(json.ok).toBe(true);
+    // un valore non-stringa non e' un flag: non viene serializzato
+    expect(json.outcome).toBeNull();
+    const text = readFileSync(
+      join(root, "complete", "9106-nonstring.md"),
+      "utf-8",
+    );
+    expect(text).not.toContain("outcome:");
+  });
+
+  test("#205 outcome su una move che NON atterra su complete: non scritto", async () => {
+    const root = makeBoard();
+    seedPlan(root, "in-progress", "9107-drop");
+    const json = await runTool({
+      command: "move",
+      id: "9107-drop",
+      to: "qa",
+      outcome: "lesson: dropped",
+      root,
+    });
+    expect(json.ok).toBe(true);
+    expect(json.verified).toBe(true);
+    expect("outcome" in json).toBe(false);
+    const text = readFileSync(join(root, "qa", "9107-drop.md"), "utf-8");
+    expect(text).not.toContain("outcome:");
   });
 });
 

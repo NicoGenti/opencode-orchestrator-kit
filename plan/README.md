@@ -35,7 +35,7 @@ exit `0` on success and `1` on a blocking error):
 
 ```
 python scripts/plan-board.py check  [--root <board root>] [--json]
-python scripts/plan-board.py move   --id <id> --to <column> [--comprehension <none|pass|skipped|needs_review|fail|disabled|n/a>] [--root <board root>] [--dry-run] [--json]
+python scripts/plan-board.py move   --id <id> --to <column> [--comprehension <none|pass|skipped|needs_review|fail|disabled|n/a>] [--outcome <text>] [--root <board root>] [--dry-run] [--json]
 python scripts/plan-board.py new    --id <id> --title <t> --owner <o> --executor <e> --body <file> [--column draft] [--root <board root>] [--json]
 python scripts/plan-board.py adopt  --file <name> --owner <o> --executor <e> [--root <board root>] [--json]
 ```
@@ -93,11 +93,15 @@ created: 2026-10-14
 updated: 2026-10-14
 owner: <human or agent that owns the plan>
 executor: <agent or human that will execute it>
+# tags: alpha,beta       # optional: comma-separated flat scalar, never a YAML list
+# outcome: <one-line lesson outcome written at promotion to complete>
 # comprehension: pass  # recorded outcome for qa→complete moves
 ---
 ```
 
 Frontmatter `status` MUST match the folder the file lives in.
+
+`tags` and `outcome` are optional flat scalars, written by hand or recorded at promotion. `tags` is a comma-separated flat scalar such as `alpha,beta` and is never a YAML list. Every value ends at the first `#`, so values truncate there. `outcome` is the one-line lesson outcome recorded when a plan is promoted to `complete`. `--outcome` takes a single line; a value containing a newline is rejected with `bad-argument`.
 
 ## Plan body
 
@@ -137,7 +141,7 @@ The user grants `plan-writer` a narrow standing authorization, limited to the bo
 runs, and `move` of an already-conforming plan file between columns (including the `status` /
 `updated` refresh), are covered without a fresh per-file approval, cited as
 `## Approved Mutation Summary — plan-board-standing-v1`. The outcome-carrying `qa` → `complete` move
-— including the `comprehension:` frontmatter refresh written atomically with it — is covered by the
+— including the `comprehension:` frontmatter refresh and the optional `outcome:` record written atomically with it — is covered by the
 same standing authorization. `new`, `adopt`, plan-body edits, and any deletion or rename are
 **not** covered and require their own approved Mutation Summary.
 
@@ -152,6 +156,8 @@ created: YYYY-MM-DD
 updated: YYYY-MM-DD
 owner: <owner>
 executor: <executor>
+# tags: alpha,beta
+# outcome: <one-line lesson outcome recorded at promotion to complete>
 ---
 
 ## Goal

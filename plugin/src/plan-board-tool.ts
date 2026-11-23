@@ -53,6 +53,10 @@ export const PLAN_BOARD_TOOL_INPUT: Record<string, unknown> = {
       ],
       description: "Comprehension verdict recorded when moving to complete.",
     },
+    outcome: {
+      type: "string",
+      description: "One-line lesson outcome recorded when moving to complete.",
+    },
     title: {
       type: "string",
       description: "Plan title for `new`.",
@@ -90,6 +94,7 @@ const STRING_FLAG_FIELDS = [
   "id",
   "to",
   "comprehension",
+  "outcome",
   "title",
   "body",
   "column",

@@ -313,6 +313,16 @@ Both slicing behaviour and escalation routing are configured through the same co
 - `recall.automatic` (default `false`, hard limit) — automatic recall is a non-goal: no scheduler, no trigger; `/recall` runs only on explicit user invocation.
 - `research.enabled` (default `false`) — enables the opt-in research mode (behavioral A/B crossover slots: slot A runs without the comprehension gate, slot B with it; Cognitive Overhead Ratio metrics) for a session. Explicit activation only: `/research-mode on` (with confirmation) or this flag. When off, the research dataset (`.context/research-dataset.jsonl`) is never read and never written — zero overhead. Full tuple contract: `command/research-mode.md`.
 
+### Lesson recall
+
+The `recall.enabled` and `recall.automatic` keys above describe the manual `/recall` command only; the lesson-recall step below is a distinct, prompt-level mechanism that adds no configuration key — there is nothing to enable, tune or disable in this file.
+
+At scoping time, before any plan card exists and before `planner` is dispatched, the orchestrator consults past lessons with no manual command. The read is grep only, and only the first frontmatter block of a plan is ever parsed, over four approved sources: `.context/decisions.md`, `.context/issues.md`, `.context/DESIGN-RULES.md` and the frontmatter of the plans under `plan/complete/`. Caps: at most 3 completed plans, the whole slice at 2k tokens, and ~30 lines per plan — frontmatter, Goal, Scope and the lesson outcome. A no-match read costs the grep alone: no extra read, no fallback source, no retry.
+
+The orchestrator then writes a pointer line to `.context/progress.md` naming the sources and their dates — the latest dated decision supersedes older ones, so the slice never concatenates contradictory lessons — and hands the slice to `planner` under Inputs Available, which never re-runs the recall.
+
+Isolation: the step never reads `.context/comprehension-log.md`, `.context/research-dataset.jsonl`, `.context/triage-dataset.jsonl` or `.context/comprehension/**`; it never triggers `/recall`; and it never runs inside a task lifecycle — scoping and pre-planning only.
+
 ### Telemetry log
 
 Every gated evaluation appends exactly one line to `.context/comprehension-log.md` (append-only; created on first write with a single header comment). The log is telemetry, not session memory: `/start-session` never loads it, and the write happens only after the verdict is final.
