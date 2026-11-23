@@ -69,3 +69,23 @@ coverage/
 
 # Hermes agent local state (plan-mode drafts, scratch notes).
 .hermes/
+
+.context/fix-round-1.md
+
+.context/fix-round-2.md
+
+.context/fix-round-3.md
+
+.context/phase-0-spike.md
+
+.context/phase-1-baseline.md
+
+.context/phase-2-ci.md
+
+.context/phase-3-release.md
+
+.context/phase-4-docs.md
+
+.context/phase-5-verification.md
+
+.context/ci-diag-207.md
