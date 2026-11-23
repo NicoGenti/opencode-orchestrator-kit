@@ -195,7 +195,8 @@ A task reaches `plan/complete/` only when BOTH hold:
 
 ### Configuration and precedence
 
-Limits live in `.opencode/comprehension.config.json` (file value > built-in defaults; absent is silent, invalid warns once); details are canonical in the `comprehension-workflow` skill — load it when running a LIGHT/DEEP gate or `/recall`. No new tier token is introduced (no `TIER_COMPREHENSION`); tier resolution stays on the existing `TIER_FAST` / `TIER_REVIEW` mapping via the preset resolver.
+Limits live in `.opencode/comprehension.config.json` (file value > built-in defaults; absent is silent, invalid warns once); details are canonical in the `comprehension-workflow` skill — load it when running a LIGHT/DEEP gate or `/recall`.
+No new tier token is introduced (no `TIER_COMPREHENSION`); tier resolution stays on the existing `TIER_FAST` / `TIER_REVIEW` mapping via the preset resolver.
 
 ### Context slicing (Slicer)
 
