@@ -62,6 +62,7 @@ skillspector scan .opencode/skills/<name>/ --no-llm \
 - **Author the `reason` on every entry.** The generator fills each fingerprint with a placeholder ("Accepted finding (auto-generated baseline)"); leaving it is a blanket acceptance that tells a later reviewer nothing. One reason per rule-and-file pair, naming why the pattern fires and why that site is safe.
 - **Fingerprints are version-bound.** An entry matches only the source and scanner version that produced it. Upgrading SkillSpector, or changing the scanned source, makes those findings active again. An upgrade therefore requires regenerating the baseline, re-triaging every delta, and recording the new version and commit in the same change. **Never regenerate a baseline in CI unattended** — the diff is the review.
 - **Keep the granularity.** A directory scan and a single-skill scan produce different fingerprints (on this repository, `skills/` aggregates 19 findings while `skills/security-audit/` alone yields 12 with two extra rule ids). The baseline and the gate must use the same command over the same directory.
+- **Regenerate from git-blob (LF) content, never from the working tree.** The fingerprint hashes the whole file, so CRLF working-tree bytes produce different hashes than the LF blobs CI checks out — the symptom is findings that appear only in CI while the counts stay identical — so on Windows materialise a blob-faithful tree (`git show`/`git archive`) and scan that.
 
 **How this repository does it:**
 
