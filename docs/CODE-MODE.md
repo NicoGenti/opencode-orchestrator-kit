@@ -5,10 +5,13 @@ part of the provider's native tool catalog, and agents reach them inside the
 `execute` tool through the `tools` object, under the server's namespace.
 
 This page is the canonical home for declaring and calling MCP servers under Code
-Mode. The kit's own detection and fallback policy for the Code Review Graph is
-separate and lives in ["Code Review Graph (CRG) under V2 Code
+Mode. The kit's own policy on top of it — keep every declared server under Code
+Mode, opt out per server only for a specific need — and its detection and
+fallback rules for the Code Review Graph are separate and live in ["Code Review
+Graph (CRG) under V2 Code
 Mode"](CONFIGURATION.md#code-review-graph-crg-under-v2-code-mode) in
-`docs/CONFIGURATION.md`.
+`docs/CONFIGURATION.md` ([MCP via Code
+Mode](CONFIGURATION.md#mcp-via-code-mode)).
 
 ## What Code Mode changes
 
@@ -21,26 +24,23 @@ Mode"](CONFIGURATION.md#code-review-graph-crg-under-v2-code-mode) in
   ```
 
   OpenCode names a tool `<server>_<tool>` (characters other than letters, numbers,
-  `_` and `-` become `_`), so the normalized dot form
-  `tools.code_review_graph.get_minimal_context_tool(...)` names the same tool.
+  `_` and `-` become `_`); the server name keeps its hyphens, so this server's
+  tool is `code-review-graph_get_minimal_context_tool`. Under Code Mode the
+  namespace is the normalized server name — `code-review-graph` — which is not a
+  valid identifier, so bracket notation is required; the dot form is not
+  available for a hyphenated server name.
 - **Discovery.** The Code Mode catalog instructions and the `search` function list
   what is callable. A tool missing from the native list is **not** evidence that
   its server is unconfigured.
 
-## Kit recommendation
-
-Keep the Code Review Graph, and the other MCP servers you declare, under Code Mode
-(the default). The native fallback remains available per server for a server whose
-tools must stay on the provider's native list, or whose client does not support
-`execute`.
-
 ## Declaring a server
 
 Server names live under `mcp.servers`, never directly under `mcp` in V2. `codemode`
-defaults to `true`; set it to `false` to expose that server's tools directly. Keep a
-server configured but disconnected with `disabled: true` — there is no `enabled`
-field. A higher-precedence config replaces the **entire** server object with the
-same name, so repeat every required field in an override.
+defaults to `true`; set it to `false` to expose that server's tools directly. The
+config-file server shape has no `enabled` field; use `disabled: true` to keep a
+server configured but disconnected. A higher-precedence config replaces the
+**entire** server object with the same name, so repeat every required field in an
+override.
 
 The opt-out shape (native fallback) for the kit's graph server:
 
@@ -65,7 +65,8 @@ headers substitute environment variables as `"{env:NAME}"`.
 
 ## Permissions
 
-MCP tool actions are the normalized `<server>_<tool>` name, with resource `"*"`.
+The action an MCP tool maps to, and the resource that matches it, are in
+[`docs/PLUGIN-V2-PERMISSIONS.md`](PLUGIN-V2-PERMISSIONS.md#action-mapping).
 Denying `execute` with resource `"*"` removes Code Mode altogether: every MCP tool
 from a server without `codemode: false` is then listed as a direct tool, with its
 full definition in every request, so deny those tools too if the agent must not

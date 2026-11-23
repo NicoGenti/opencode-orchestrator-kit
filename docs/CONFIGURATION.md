@@ -496,9 +496,10 @@ it whenever a detection signal is present and their own trigger applies — a pl
 back silently, without blocking the task, when CRG is absent, errors, times out,
 returns nothing, or reports `not_ready` / `stale_graph`. `code-reviewer` remains the
 sole refresh owner. Under OpenCode V2 Code Mode a connected server is absent from
-the native tool catalog, so this section records how it is declared, how it is
-called, and how the kit detects it; the `## Code Graph` section of each prompt owns
-the exact per-agent rule.
+the native tool catalog; the mechanism is owned by
+[`docs/CODE-MODE.md`](CODE-MODE.md), so this section records only how the kit
+declares, detects and sets policy for its graph server. The `## Code Graph`
+section of each prompt owns the exact per-agent rule.
 
 ### Declaring the server
 
@@ -507,25 +508,10 @@ The consuming project declares the MCP server in its own
 The entry's transport and command fields follow OpenCode's own MCP documentation;
 this kit pins no particular shape for them.
 
-MCP tools are matched as `<server>_<tool>`, so this server's tools appear as
-`code-review-graph_<tool>` — for example
-`code-review-graph_get_impact_radius_tool`. That naming rule, and how such a name
-is matched by agent `permission` rules, lives in
-[`docs/PLUGIN-V2-PERMISSIONS.md`](PLUGIN-V2-PERMISSIONS.md).
-
-### The Code Mode default
-
-Under V2 Code Mode, MCP tools are absent from an agent's native tool catalog. They
-are reachable only inside `execute`, as members of the `tools` object keyed by the
-server name:
-
-```js
-await tools["code-review-graph"].get_impact_radius_tool({ ... });
-```
-
-They are discoverable there through the Code Mode catalog instructions and the
-`search` function. A tool missing from the native list is therefore not evidence
-that CRG is unconfigured.
+The tools it exposes are named `code-review-graph_<tool>` — for example
+`code-review-graph_get_impact_radius_tool`, which is how the detection below
+recognises them — and how an agent `permission` rule matches such a name is in
+[`docs/PLUGIN-V2-PERMISSIONS.md`](PLUGIN-V2-PERMISSIONS.md#action-mapping).
 
 ### How the kit detects CRG
 
@@ -564,10 +550,10 @@ of it.
 - **Native fallback unchanged.** The two-signal detection above (#167) works the
   same under either setting: Code Mode changes where a tool is callable, not
   whether the kit looks for CRG.
-- **Permissions.** Denying `execute` at resource `"*"` removes Code Mode
-  altogether, so every server without `codemode: false` falls back to direct
-  tools; MCP actions are named `<server>_<tool>` (see
-  [`docs/PLUGIN-V2-PERMISSIONS.md`](PLUGIN-V2-PERMISSIONS.md)).
+- **Permissions.** The `execute` deny, the direct-tool fallback it triggers and the
+  MCP action names are Code Mode mechanism, owned by
+  [`docs/CODE-MODE.md`](CODE-MODE.md#permissions) and
+  [`docs/PLUGIN-V2-PERMISSIONS.md`](PLUGIN-V2-PERMISSIONS.md#action-mapping).
 
 `workflow.mode` has **no interaction** with any of the above: it governs intake and
 triage (#198), CRG stays task-driven by its own trigger, and `workflow.mode: lite`
@@ -579,8 +565,10 @@ Upstream, `codemode` is a boolean that defaults to `true` on two independent
 surfaces:
 
 - **Per MCP server** — `mcp.servers.<name>.codemode` is a field of the config
-  schema (<https://opencode.ai/config.json>: a boolean on both `Mcp.LocalConfig`
-  and `Mcp.RemoteConfig`), so one server can keep its tools on the provider's
+  schema (<https://opencode.ai/config.json>: a boolean on both
+  `Mcp.LocalConfigEncoded` and `Mcp.RemoteConfigEncoded`, the shapes `mcp.servers`
+  accepts; the un-suffixed `Mcp.LocalConfig` and `Mcp.RemoteConfig` carry neither
+  `codemode` nor `disabled`), so one server can keep its tools on the provider's
   native list while the rest stay in Code Mode. The opt-out shape is owned by
   [`docs/CODE-MODE.md`](CODE-MODE.md#declaring-a-server).
 - **Plugin tool registration** — a tool registered through `ctx.tool.transform`
