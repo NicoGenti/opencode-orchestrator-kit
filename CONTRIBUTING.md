@@ -120,7 +120,7 @@ The flow is branch-first: `main` carries development only, a release is cut on
 on that branch's head. There is no merge to `main` for the tag, and
 `release.yml` refuses a tag that does not sit exactly on top of its branch.
 
-`opencode-orchestrator-kit` is published on npm (1.2.3). `.github/workflows/release.yml`
+`opencode-orchestrator-kit` is published on npm (1.3.0). `.github/workflows/release.yml`
 runs only on tags matching `v*`, so merging the workflow does not publish. The
 first step after the checkout is the branch gate: for tag `v<x.y.z>` the branch
 `origin/release/v<x.y.z>` must exist and its head must be exactly the commit the
