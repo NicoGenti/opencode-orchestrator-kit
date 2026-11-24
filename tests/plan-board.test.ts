@@ -3,6 +3,7 @@ import {
   existsSync,
   mkdirSync,
   mkdtempSync,
+  readdirSync,
   readFileSync,
   rmSync,
   symlinkSync,
@@ -94,6 +95,24 @@ function makeBoard(): string {
   for (const col of COLUMNS) mkdirSync(join(root, col), { recursive: true });
   boards.push(root);
   return root;
+}
+
+/**
+ * Board annidata due livelli sotto un genitore usa-e-getta: `root / "../../evil"`
+ * risolve in `parent/evil`, quindi un eventuale escape cade DENTRO il sandbox del
+ * test e la sua assenza e' verificabile senza guardare la tmpdir condivisa.
+ */
+function makeNestedBoard(): { parent: string; root: string } {
+  const parent = mkdtempSync(join(tmpdir(), "pb-trav-"));
+  boards.push(parent);
+  const root = join(parent, "boards", "plan");
+  for (const col of COLUMNS) mkdirSync(join(root, col), { recursive: true });
+  return { parent, root };
+}
+
+/** Elenco ordinato delle voci di una directory: lo snapshot prima/dopo il CLI. */
+function listing(dir: string): string[] {
+  return readdirSync(dir).sort();
 }
 
 /** Scrive un body fuori dalla board (la board e' la sottocartella `plan/`). */
@@ -781,5 +800,108 @@ maybe("plan-board.py — path traversal guard", () => {
     expect(r.json?.verified).toBe(true);
     expect(r.json?.path).toBe(join(root, "qa", "9620-regressione.md"));
     expect(existsSync(join(root, "qa", "9620-regressione.md"))).toBe(true);
+  });
+
+  // Regression pins (#211, Snyk alert #20): the two mkdir sinks of the tool
+  // (`cmd_move` :304, `cmd_new` :341) sit behind the COLUMNS membership check,
+  // so a traversal column is refused as `bad-column` (never `path-traversal`)
+  // and no directory or file is created outside `--root`. These tests pin the
+  // CURRENT behavior on both halves — error code and filesystem state — so the
+  // P2 defense-in-depth guards cannot regress it. They are expected to be green
+  // immediately: the rejection already exists, nothing is faked to force RED.
+  test("--to ../../evil su move: bad-column e nessuna directory fuori dalla board", () => {
+    const { parent, root } = makeNestedBoard();
+    seedPlan(root, "draft", "9700-trav-to");
+    const before = listing(parent);
+
+    const r = run(["move", "--id", "9700-trav-to", "--to", "../../evil"], root);
+
+    expect(r.status).toBe(1);
+    expect(r.json?.ok).toBe(false);
+    expect(r.json?.code).toBe("bad-column");
+    // bersaglio lessicale di `root/../../evil`: `parent/evil`, dentro il sandbox.
+    expect(existsSync(join(parent, "evil"))).toBe(false);
+    expect(listing(parent)).toEqual(before);
+    expect(existsSync(join(root, "evil"))).toBe(false);
+    expect(existsSync(join(root, "draft", "9700-trav-to.md"))).toBe(true);
+  });
+
+  test("--column ../../evil su new: bad-column e nessuna directory fuori dalla board", () => {
+    const { parent, root } = makeNestedBoard();
+    const beforeParent = listing(parent);
+    const beforeRoot = listing(root);
+    const r = run(
+      [
+        "new",
+        "--id",
+        "9701-trav-column",
+        "--title",
+        "Trav column",
+        "--owner",
+        "plan-writer",
+        "--executor",
+        "developer-fixer",
+        "--column",
+        "../../evil",
+        "--body",
+        writeBody(BODY_OK),
+      ],
+      root,
+    );
+
+    expect(r.status).toBe(1);
+    expect(r.json?.ok).toBe(false);
+    expect(r.json?.code).toBe("bad-column");
+    expect(existsSync(join(parent, "evil"))).toBe(false);
+    expect(listing(parent)).toEqual(beforeParent);
+    expect(listing(root)).toEqual(beforeRoot);
+    for (const col of COLUMNS)
+      expect(existsSync(join(root, col, "9701-trav-column.md"))).toBe(false);
+  });
+
+  test("colonna symlink fuori dalla root su new: path-traversal (skip se EPERM)", () => {
+    const { root } = makeNestedBoard();
+    const outside = mkdtempSync(join(tmpdir(), "pb-outside-"));
+    boards.push(outside);
+    rmSync(join(root, "draft"), { recursive: true, force: true });
+    try {
+      // stesso pattern del caso move: `junction` su Windows senza privilegi,
+      // `dir` (symlink normale) su POSIX.
+      try {
+        symlinkSync(outside, join(root, "draft"), "junction");
+      } catch {
+        symlinkSync(outside, join(root, "draft"), "dir");
+      }
+    } catch {
+      // Windows senza developer mode / policy: il caso di escape non e'
+      // esercitabile su questa macchina.
+      return;
+    }
+    const before = listing(outside);
+
+    const r = run(
+      [
+        "new",
+        "--id",
+        "9702-symnew",
+        "--title",
+        "Sym new",
+        "--owner",
+        "plan-writer",
+        "--executor",
+        "developer-fixer",
+        "--column",
+        "draft",
+        "--body",
+        writeBody(BODY_OK),
+      ],
+      root,
+    );
+
+    expect(r.status).toBe(1);
+    expect(r.json?.ok).toBe(false);
+    expect(r.json?.code).toBe("path-traversal");
+    expect(listing(outside)).toEqual(before);
+    expect(existsSync(join(outside, "9702-symnew.md"))).toBe(false);
   });
 });
