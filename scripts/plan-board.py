@@ -298,6 +298,10 @@ def cmd_move(root: Path, ident: str, to: str, dry_run: bool, as_json: bool,
         # `outcome` reports what the frontmatter record carries (or, on a dry
         # run, would carry): the caller's value, or null when none was given.
         payload["outcome"] = outcome
+    escaped = _outside(root, root / to)
+    if escaped is not None:
+        return fail("path-traversal",
+                    f"--root write target escapes the board root, refusing: {escaped}", as_json)
     if not dry_run:
         # an unversioned empty column can vanish on a checkout: we create it
         # instead of raising on the write.
@@ -336,6 +340,10 @@ def cmd_new(root: Path, ident: str, title: str, owner: str, executor: str,
           "updated": today(), "owner": owner, "executor": executor}
     payload = {"ok": True, "action": "new", "id": ident, "column": column,
                "path": str(dst), "dry_run": dry_run}
+    escaped = _outside(root, root / column)
+    if escaped is not None:
+        return fail("path-traversal",
+                    f"--root write target escapes the board root, refusing: {escaped}", as_json)
     if not dry_run:
         # see cmd_move: a missing column is created, not a failure.
         (root / column).mkdir(parents=True, exist_ok=True)
