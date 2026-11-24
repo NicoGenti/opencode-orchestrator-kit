@@ -19,7 +19,7 @@
 
 With the `opencode-orchestrator-kit` plugin on OpenCode 2 (requires `@opencode/plugin` `^2.1.0`), agents, commands and skills are registered at runtime — nothing is copied into your project's `.opencode/` directory.
 
-The package is published on npm (`1.1.1`). The config key is `plugins`, and options use `{ "package", "options" }` ([Plugins](https://opencode.ai/v2/docs/plugins)):
+The package is published on npm (`1.3.0`). The config key is `plugins`, and options use `{ "package", "options" }` ([Plugins](https://opencode.ai/v2/docs/plugins)):
 
 ```jsonc
 {
@@ -110,9 +110,9 @@ The installer resolves the tokens for you; to switch presets afterwards, re-run
 
 ## How it works
 
-A single router agent dispatches requests to 14 core specialist subagents, or 16
-in total with the `withExtras` opt-in (`pc-doctor`, `writer`), without touching
-application code. On first run `profiler` writes a compact `.context/repo-map.md`
+A single router agent dispatches requests to 14 core specialist subagents — 16
+in total, 18 with the `withExtras` opt-in (`pc-doctor`, `writer`) — without
+touching application code. On first run `profiler` writes a compact `.context/repo-map.md`
 (hard 300-line budget) for the `explorer` to read before broad searches; on an
 empty repository it seeds `.context/DESIGN-RULES.md`. Operations helpers
 (`build-helper`, `npm-helper`, `deploy-helper`) ship by default and are routed
