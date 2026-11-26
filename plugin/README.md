@@ -1,22 +1,14 @@
 # OpenCode Orchestrator Kit
 
+**Resume multi-step coding work in OpenCode without reconstructing the plan from chat history.** The kit routes work to specialist agents and keeps plans and progress in your repository.
+
 **A cost-aware, multi-agent workflow for [OpenCode](https://opencode.ai): one router agent that never writes code, and specialists that each run on the cheapest model able to do the job.**
 
 [![npm](https://img.shields.io/npm/v/opencode-orchestrator-kit)](https://www.npmjs.com/package/opencode-orchestrator-kit) [![npm downloads](https://img.shields.io/npm/dm/opencode-orchestrator-kit)](https://www.npmjs.com/package/opencode-orchestrator-kit) [![Tests](https://github.com/NicoGenti/opencode-orchestrator-kit/actions/workflows/test.yml/badge.svg)](https://github.com/NicoGenti/opencode-orchestrator-kit/actions/workflows/test.yml) [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE.txt) [![OpenCode](https://img.shields.io/badge/works%20with-OpenCode%20CLI-blue)](https://opencode.ai) [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md) [![Selected for XERJ Corpus Hub](https://img.shields.io/badge/XERJ_Corpus_Hub-Selected-blue)](https://hub.xerj.org/)
 
-<!-- DEMO: add a short terminal GIF of /start-session followed by a small task here -->
+<!-- Demo: /start-session resuming an existing plan -->
 
-## Recognition
-
-A contribution from this repository was selected for the
-[XERJ Corpus Hub](https://hub.xerj.org/), a public reference-memory index
-that helps AI coding agents find and build on real, working implementations.
-
-The selected work is:
-
-- [`feat(issue-13): phase 5 V1->V2 permission translation wired into agent registration`](https://github.com/NicoGenti/opencode-orchestrator-kit/commit/1131841496d45e3d1207a1e65665a6b551a677e9)
-- 7 files and 650 changed lines, including the V1→V2 permission translation, agent registration wiring, and plugin permission tests.
-- Included with attribution to [NicoGenti](https://github.com/NicoGenti) and this repository, under the project’s MIT licence.
+![OpenCode Orchestrator Kit demo](docs/assets/demo-start-session.gif)
 
 ## The problem
 
@@ -188,6 +180,18 @@ q='''select s.agent, s.tokens_input, s.tokens_output, s.tokens_cache_read, s.par
 ```
 
 Caveats, in the spirit of [`docs/BENCHMARK-TOKEN-USAGE.md`](docs/BENCHMARK-TOKEN-USAGE.md): two tasks, one run per configuration, models differ by tier (`minimax-m3.1-flash` for `explorer`, `deepseek-v4.1-flash` for the orchestrator), and both tasks fit in a single context window.
+
+## Recognition
+
+A contribution from this repository was selected for the
+[XERJ Corpus Hub](https://hub.xerj.org/), a public reference-memory index
+that helps AI coding agents find and build on real, working implementations.
+
+The selected work is:
+
+- [`feat(issue-13): phase 5 V1->V2 permission translation wired into agent registration`](https://github.com/NicoGenti/opencode-orchestrator-kit/commit/1131841496d45e3d1207a1e65665a6b551a677e9)
+- 7 files and 650 changed lines, including the V1→V2 permission translation, agent registration wiring, and plugin permission tests.
+- Included with attribution to [NicoGenti](https://github.com/NicoGenti) and this repository, under the project’s MIT licence.
 
 ## Customizing
 

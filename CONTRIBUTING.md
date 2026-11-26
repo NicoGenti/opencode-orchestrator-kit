@@ -174,9 +174,9 @@ and fails with an explicit error when the resolved version is below 11.5.1.
 Two README facts are only true for the release they were written for, so
 refresh them on the release branch, in the same commit series as the bump:
 
-- the marker at `README.md:96` — `published on npm (x.y.z)` — must name the
+- the marker at `README.md:88` — `published on npm (x.y.z)` — must name the
   version being cut;
-- the runtime counts at `README.md:118` — re-count `agents/`, `command/` and
+- the runtime counts at `README.md:110` — re-count `agents/`, `command/` and
   `skills/` from the sources (16 agents, 5 commands, 10 skills when that line
   was written) instead of copying the previous number; `--with-extras` adds
   `pc-doctor` and `writer` on top of the agent count.

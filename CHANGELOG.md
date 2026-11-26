@@ -5,6 +5,7 @@ All notable changes to this project are documented in this file. The format foll
 ## [Unreleased]
 
 - **README/docs factual alignment (#215)**: `README.md` states the skills counting basis (11 = registered `SKILL.md` files, including the 3 under `skills/examples/`), `QUICKSTART.md` shows the current npm version (`1.3.0`) and the corrected agent counts (16 in total, 18 with `withExtras`), `CONTRIBUTING.md` README-refresh line pins update to `README.md:96`/`:118`, and `plugin/README.md` is regenerated via `bun run sync-assets`.
+- **README outcome-oriented opening (#217)**: the primary use case is stated first under the title, with the existing tagline below it; the demo GIF placeholder and its `docs/assets/demo-start-session.gif` reference sit under the badge row, and `## Recognition` moves intact after the "When to use the kit (and when not to)" section, so `CONTRIBUTING.md` README-refresh pins update to `README.md:88`/`:110` and `plugin/README.md` is regenerated via `bun run sync-assets`.
 
 ## [1.3.0] — 2026-11-24
 
